@@ -1,0 +1,116 @@
+# Test Configuration for {{.Name}} Backend
+
+# Test Database Configuration
+test_database:
+  driver: "postgres"
+  host: "localhost"
+  port: 5432
+  user: "{{.Name}}_test"
+  password: "test_password"
+  dbname: "{{.Name}}_test"
+  sslmode: "disable"
+  
+  # In-memory database for unit tests
+  memory_db:
+    driver: "sqlite"
+    dsn: ":memory:"
+
+# Test Redis Configuration
+test_redis:
+  host: "localhost"
+  port: 6379
+  password: ""
+  db: 1
+  pool_size: 5
+
+# Test JWT Configuration
+test_jwt:
+  secret: "test-jwt-secret-key-for-testing-only"
+  expiry_time: "1h"
+  refresh_expiry_time: "2h"
+
+# Test Coverage Configuration
+coverage:
+  threshold: 80
+  exclude_patterns:
+    - "*.pb.go"
+    - "*_mock.go"
+    - "*/mocks/*"
+    - "*/testutils/*"
+    - "main.go"
+
+# Test Timeouts
+timeouts:
+  unit_test: "30s"
+  integration_test: "2m"
+  benchmark_test: "5m"
+
+# Test Data
+test_data:
+  users:
+    - email: "admin@test.com"
+      username: "admin"
+      password: "admin123"
+      is_admin: true
+    - email: "user@test.com"
+      username: "user"
+      password: "user123"
+      is_admin: false
+  
+  roles:
+    - name: "admin"
+      description: "Administrator role"
+    - name: "user"
+      description: "Regular user role"
+  
+  permissions:
+    - name: "users.read"
+      description: "Read users"
+    - name: "users.write"
+      description: "Write users"
+    - name: "users.delete"
+      description: "Delete users"
+
+# Test Flags
+flags:
+  enable_race_detection: true
+  enable_parallel_tests: true
+  parallel_count: 4
+  verbose_output: false
+  fail_fast: false
+
+# Integration Test Configuration
+integration_tests:
+  setup_timeout: "30s"
+  cleanup_timeout: "10s"
+  retry_attempts: 3
+  retry_delay: "1s"
+
+# Performance Test Configuration
+performance_tests:
+  load_test:
+    concurrent_users: 10
+    duration: "30s"
+    ramp_up_time: "5s"
+  
+  stress_test:
+    concurrent_users: 100
+    duration: "1m"
+    ramp_up_time: "10s"
+
+# Mock Configuration
+mocks:
+  generate_on_test: true
+  mock_directories:
+    - "internal/repositories/mocks"
+    - "internal/services/mocks"
+    - "pkg/clients/mocks"
+
+# Test Reporting
+reporting:
+  formats:
+    - "junit"
+    - "json"
+    - "html"
+  output_directory: "test-reports"
+  include_coverage: true

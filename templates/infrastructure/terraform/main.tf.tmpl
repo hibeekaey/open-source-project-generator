@@ -1,0 +1,285 @@
+# {{.Name}} - Main Terraform Configuration
+# This file defines the core infrastructure for {{.Description}}
+
+terraform {
+  required_version = ">= 1.5"
+  
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 4.0"
+    }
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.0"
+    }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~> 2.0"
+    }
+    helm = {
+      source  = "hashicorp/helm"
+      version = "~> 2.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~> 4.0"
+    }
+  }
+
+  # Backend configuration for state management
+  backend "s3" {
+    # Configure this for your specific setup
+    # bucket = "{{.Name}}-terraform-state"
+    # key    = "infrastructure/terraform.tfstate"
+    # region = "us-west-2"
+    # 
+    # dynamodb_table = "{{.Name}}-terraform-locks"
+    # encrypt        = true
+  }
+}
+
+# Local values for common configurations
+locals {
+  project_name = "{{.Name}}"
+  organization = "{{.Organization}}"
+  environment  = var.environment
+  
+  common_tags = {
+    Project     = local.project_name
+    Organization = local.organization
+    Environment = local.environment
+    ManagedBy   = "terraform"
+    CreatedBy   = "{{.Name}}-template-generator"
+  }
+  
+  # Kubernetes cluster configuration
+  cluster_name = "${local.project_name}-${local.environment}"
+  
+  # Network configuration
+  vpc_cidr = var.vpc_cidr
+  availability_zones = var.availability_zones
+  
+  # Application configuration
+  app_port = 8080
+  frontend_port = 3000
+  
+  # Database configuration
+  db_name = "${replace(local.project_name, "-", "_")}_${local.environment}"
+  db_username = "${replace(local.project_name, "-", "_")}_user"
+}
+
+# Data sources for existing resources
+data "aws_caller_identity" "current" {
+  count = var.cloud_provider == "aws" ? 1 : 0
+}
+
+data "aws_region" "current" {
+  count = var.cloud_provider == "aws" ? 1 : 0
+}
+
+# Random password for database
+resource "random_password" "db_password" {
+  length  = 32
+  special = true
+}
+
+# Random JWT secret
+resource "random_password" "jwt_secret" {
+  length  = 64
+  special = false
+}
+
+# TLS private key for certificates
+resource "tls_private_key" "main" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+# Self-signed certificate for development
+resource "tls_self_signed_cert" "main" {
+  private_key_pem = tls_private_key.main.private_key_pem
+
+  subject {
+    common_name  = "${local.project_name}.${local.organization}.com"
+    organization = local.organization
+  }
+
+  dns_names = [
+    "${local.project_name}.${local.organization}.com",
+    {{if .Components.Frontend.Home}}"home.${local.project_name}.${local.organization}.com",{{end}}
+    {{if .Components.Frontend.Admin}}"admin.${local.project_name}.${local.organization}.com",{{end}}
+    "*.${local.project_name}.${local.organization}.com"
+  ]
+
+  validity_period_hours = 8760 # 1 year
+
+  allowed_uses = [
+    "key_encipherment",
+    "digital_signature",
+    "server_auth",
+  ]
+}
+
+# Cloud provider specific modules
+module "aws_infrastructure" {
+  count  = var.cloud_provider == "aws" ? 1 : 0
+  source = "./modules/aws"
+
+  project_name       = local.project_name
+  organization       = local.organization
+  environment        = local.environment
+  vpc_cidr          = local.vpc_cidr
+  availability_zones = local.availability_zones
+  cluster_name      = local.cluster_name
+  
+  # Database configuration
+  db_name     = local.db_name
+  db_username = local.db_username
+  db_password = random_password.db_password.result
+  
+  # Application secrets
+  jwt_secret = random_password.jwt_secret.result
+  
+  # SSL certificate
+  tls_cert = tls_self_signed_cert.main.cert_pem
+  tls_key  = tls_private_key.main.private_key_pem
+  
+  # Component flags
+  enable_frontend_app   = {{.Components.Frontend.MainApp}}
+  enable_frontend_home  = {{.Components.Frontend.Home}}
+  enable_frontend_admin = {{.Components.Frontend.Admin}}
+  enable_backend_api    = {{.Components.Backend.API}}
+  
+  tags = local.common_tags
+}
+
+module "gcp_infrastructure" {
+  count  = var.cloud_provider == "gcp" ? 1 : 0
+  source = "./modules/gcp"
+
+  project_name   = local.project_name
+  organization   = local.organization
+  environment    = local.environment
+  project_id     = var.gcp_project_id
+  region         = var.gcp_region
+  cluster_name   = local.cluster_name
+  
+  # Database configuration
+  db_name     = local.db_name
+  db_username = local.db_username
+  db_password = random_password.db_password.result
+  
+  # Application secrets
+  jwt_secret = random_password.jwt_secret.result
+  
+  # SSL certificate
+  tls_cert = tls_self_signed_cert.main.cert_pem
+  tls_key  = tls_private_key.main.private_key_pem
+  
+  # Component flags
+  enable_frontend_app   = {{.Components.Frontend.MainApp}}
+  enable_frontend_home  = {{.Components.Frontend.Home}}
+  enable_frontend_admin = {{.Components.Frontend.Admin}}
+  enable_backend_api    = {{.Components.Backend.API}}
+  
+  labels = local.common_tags
+}
+
+module "azure_infrastructure" {
+  count  = var.cloud_provider == "azure" ? 1 : 0
+  source = "./modules/azure"
+
+  project_name      = local.project_name
+  organization      = local.organization
+  environment       = local.environment
+  resource_group    = var.azure_resource_group
+  location          = var.azure_location
+  cluster_name      = local.cluster_name
+  
+  # Database configuration
+  db_name     = local.db_name
+  db_username = local.db_username
+  db_password = random_password.db_password.result
+  
+  # Application secrets
+  jwt_secret = random_password.jwt_secret.result
+  
+  # SSL certificate
+  tls_cert = tls_self_signed_cert.main.cert_pem
+  tls_key  = tls_private_key.main.private_key_pem
+  
+  # Component flags
+  enable_frontend_app   = {{.Components.Frontend.MainApp}}
+  enable_frontend_home  = {{.Components.Frontend.Home}}
+  enable_frontend_admin = {{.Components.Frontend.Admin}}
+  enable_backend_api    = {{.Components.Backend.API}}
+  
+  tags = local.common_tags
+}
+
+# Kubernetes deployment (cloud-agnostic)
+module "kubernetes_deployment" {
+  source = "./modules/kubernetes"
+  
+  depends_on = [
+    module.aws_infrastructure,
+    module.gcp_infrastructure,
+    module.azure_infrastructure
+  ]
+
+  project_name  = local.project_name
+  organization  = local.organization
+  environment   = local.environment
+  
+  # Cluster configuration
+  cluster_endpoint = var.cloud_provider == "aws" ? module.aws_infrastructure[0].cluster_endpoint : (
+    var.cloud_provider == "gcp" ? module.gcp_infrastructure[0].cluster_endpoint : 
+    module.azure_infrastructure[0].cluster_endpoint
+  )
+  
+  cluster_ca_certificate = var.cloud_provider == "aws" ? module.aws_infrastructure[0].cluster_ca_certificate : (
+    var.cloud_provider == "gcp" ? module.gcp_infrastructure[0].cluster_ca_certificate : 
+    module.azure_infrastructure[0].cluster_ca_certificate
+  )
+  
+  # Database configuration
+  db_host     = var.cloud_provider == "aws" ? module.aws_infrastructure[0].db_host : (
+    var.cloud_provider == "gcp" ? module.gcp_infrastructure[0].db_host : 
+    module.azure_infrastructure[0].db_host
+  )
+  db_name     = local.db_name
+  db_username = local.db_username
+  db_password = random_password.db_password.result
+  
+  # Redis configuration
+  redis_host = var.cloud_provider == "aws" ? module.aws_infrastructure[0].redis_host : (
+    var.cloud_provider == "gcp" ? module.gcp_infrastructure[0].redis_host : 
+    module.azure_infrastructure[0].redis_host
+  )
+  
+  # Application secrets
+  jwt_secret = random_password.jwt_secret.result
+  
+  # SSL certificate
+  tls_cert = tls_self_signed_cert.main.cert_pem
+  tls_key  = tls_private_key.main.private_key_pem
+  
+  # Component flags
+  enable_frontend_app   = {{.Components.Frontend.MainApp}}
+  enable_frontend_home  = {{.Components.Frontend.Home}}
+  enable_frontend_admin = {{.Components.Frontend.Admin}}
+  enable_backend_api    = {{.Components.Backend.API}}
+  
+  # Monitoring configuration
+  enable_monitoring = var.enable_monitoring
+  enable_logging    = var.enable_logging
+}

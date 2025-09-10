@@ -1,0 +1,140 @@
+package middleware
+
+import (
+	"net/http"
+	"strings"
+
+	"{{.Name}}/internal/config"
+	"{{.Name}}/internal/models"
+	"{{.Name}}/internal/services"
+	"{{.Name}}/pkg/utils"
+	"github.com/gin-gonic/gin"
+)
+
+// AuthMiddleware creates a middleware for JWT authentication
+func AuthMiddleware(cfg *config.Config, userService services.UserService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
+			c.Abort()
+			return
+		}
+
+		// Check if the header starts with "Bearer "
+		if !strings.HasPrefix(authHeader, "Bearer ") {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization header format"})
+			c.Abort()
+			return
+		}
+
+		// Extract the token
+		token := strings.TrimPrefix(authHeader, "Bearer ")
+		if token == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token required"})
+			c.Abort()
+			return
+		}
+
+		// Validate the token
+		claims, err := utils.ValidateJWT(token, cfg.JWT.Secret)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			c.Abort()
+			return
+		}
+
+		// Get user from database
+		user, err := userService.GetByID(claims.UserID)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+			c.Abort()
+			return
+		}
+
+		if !user.IsActive {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "User account is inactive"})
+			c.Abort()
+			return
+		}
+
+		// Set user in context
+		c.Set("user", user)
+		c.Set("user_id", user.ID)
+		c.Next()
+	}
+}
+
+// AdminMiddleware creates a middleware for admin-only routes
+func AdminMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		user, exists := c.Get("user")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found in context"})
+			c.Abort()
+			return
+		}
+
+		userModel, ok := user.(*models.User)
+		if !ok {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user type"})
+			c.Abort()
+			return
+		}
+
+		if !userModel.IsAdmin {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
+}
+
+// PermissionMiddleware creates a middleware for permission-based access control
+func PermissionMiddleware(resource, action string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		user, exists := c.Get("user")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found in context"})
+			c.Abort()
+			return
+		}
+
+		userModel, ok := user.(*models.User)
+		if !ok {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user type"})
+			c.Abort()
+			return
+		}
+
+		// Admin users have all permissions
+		if userModel.IsAdmin {
+			c.Next()
+			return
+		}
+
+		// Check if user has the required permission
+		hasPermission := false
+		for _, role := range userModel.Roles {
+			for _, permission := range role.Permissions {
+				if permission.Resource == resource && permission.Action == action {
+					hasPermission = true
+					break
+				}
+			}
+			if hasPermission {
+				break
+			}
+		}
+
+		if !hasPermission {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
+}

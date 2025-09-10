@@ -1,0 +1,31 @@
+package {{.Organization}}.{{.Name | lower}}.mobile.domain.usecase
+
+import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
+import {{.Organization}}.{{.Name | lower}}.mobile.domain.model.User
+import {{.Organization}}.{{.Name | lower}}.mobile.domain.repository.UserRepository
+import {{.Organization}}.{{.Name | lower}}.mobile.core.util.Resource
+
+class GetUsersUseCase @Inject constructor(
+    private val repository: UserRepository
+) {
+    operator fun invoke(): Flow<Resource<List<User>>> {
+        return repository.getUsers()
+    }
+}
+
+class GetUserByIdUseCase @Inject constructor(
+    private val repository: UserRepository
+) {
+    suspend operator fun invoke(id: String): Resource<User> {
+        return repository.getUserById(id)
+    }
+}
+
+class LoginUseCase @Inject constructor(
+    private val repository: UserRepository
+) {
+    suspend operator fun invoke(email: String, password: String): Resource<{{.Organization}}.{{.Name | lower}}.mobile.domain.model.AuthToken> {
+        return repository.login({{.Organization}}.{{.Name | lower}}.mobile.domain.model.LoginCredentials(email, password))
+    }
+}

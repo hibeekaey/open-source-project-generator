@@ -1,0 +1,29 @@
+package redis
+
+import (
+	"context"
+	"fmt"
+	"log"
+
+	"{{.Name}}/internal/config"
+	"github.com/redis/go-redis/v9"
+)
+
+// Initialize initializes Redis connection
+func Initialize(cfg config.RedisConfig) (*redis.Client, error) {
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     fmt.Sprintf("%s:%s", cfg.Host, cfg.Port),
+		Password: cfg.Password,
+		DB:       cfg.DB,
+	})
+
+	// Test connection
+	ctx := context.Background()
+	_, err := rdb.Ping(ctx).Result()
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to Redis: %w", err)
+	}
+
+	log.Println("Redis connection established")
+	return rdb, nil
+}

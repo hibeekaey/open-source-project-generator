@@ -1,0 +1,441 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v1.0.0)'
+        required: true
+        type: string
+
+env:
+  GO_VERSION: '1.22'
+
+jobs:
+  build:
+    name: Build Binaries
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - os: linux
+            arch: amd64
+          - os: linux
+            arch: arm64
+          - os: linux
+            arch: 386
+          - os: darwin
+            arch: amd64
+          - os: darwin
+            arch: arm64
+          - os: windows
+            arch: amd64
+          - os: windows
+            arch: 386
+          - os: freebsd
+            arch: amd64
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set build variables
+        id: vars
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          GIT_COMMIT=$(git rev-parse --short HEAD)
+          BUILD_TIME=$(date -u '+%Y-%m-%d_%H:%M:%S')
+          
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "git_commit=${GIT_COMMIT}" >> $GITHUB_OUTPUT
+          echo "build_time=${BUILD_TIME}" >> $GITHUB_OUTPUT
+          
+          # Set binary extension for Windows
+          if [ "${{ matrix.os }}" = "windows" ]; then
+            echo "binary_ext=.exe" >> $GITHUB_OUTPUT
+          else
+            echo "binary_ext=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.os }}
+          GOARCH: ${{ matrix.arch }}
+          CGO_ENABLED: 0
+        run: |
+          LDFLAGS="-X main.Version=${{ steps.vars.outputs.version }} -X main.GitCommit=${{ steps.vars.outputs.git_commit }} -X main.BuildTime=${{ steps.vars.outputs.build_time }}"
+          
+          mkdir -p dist/generator-${{ matrix.os }}-${{ matrix.arch }}
+          
+          go build -ldflags "${LDFLAGS}" -o "dist/generator-${{ matrix.os }}-${{ matrix.arch }}/generator${{ steps.vars.outputs.binary_ext }}" ./cmd/generator
+          
+          # Copy additional files
+          cp README.md "dist/generator-${{ matrix.os }}-${{ matrix.arch }}/"
+          cp LICENSE "dist/generator-${{ matrix.os }}-${{ matrix.arch }}/" || true
+          
+          # Create installation instructions
+          case "${{ matrix.os }}" in
+            "windows")
+              cat > "dist/generator-${{ matrix.os }}-${{ matrix.arch }}/INSTALL.txt" << 'EOF'
+          Installation Instructions for Windows
+          ====================================
+          
+          1. Extract the archive to a directory (e.g., C:\Program Files\generator)
+          2. Add the directory to your PATH environment variable:
+             - Open System Properties > Advanced > Environment Variables
+             - Edit the PATH variable and add the generator directory
+             - Or run: setx PATH "%PATH%;C:\Program Files\generator"
+          3. Open a new command prompt and run: generator --help
+          
+          Alternative: Place generator.exe in any directory that's already in your PATH.
+          EOF
+              ;;
+            "darwin")
+              cat > "dist/generator-${{ matrix.os }}-${{ matrix.arch }}/INSTALL.txt" << 'EOF'
+          Installation Instructions for macOS
+          ==================================
+          
+          Option 1: Manual Installation
+          1. Extract the archive to a directory (e.g., /usr/local/bin)
+          2. Make the binary executable: chmod +x generator
+          3. Ensure the directory is in your PATH
+          4. Run: generator --help
+          
+          Option 2: Using Homebrew (if available)
+          1. Move generator to /usr/local/bin/
+          2. Run: generator --help
+          
+          Option 3: User Installation
+          1. Create ~/bin directory: mkdir -p ~/bin
+          2. Move generator to ~/bin/
+          3. Add to PATH: echo 'export PATH="$HOME/bin:$PATH"' >> ~/.zshrc
+          4. Reload shell: source ~/.zshrc
+          5. Run: generator --help
+          EOF
+              ;;
+            *)
+              cat > "dist/generator-${{ matrix.os }}-${{ matrix.arch }}/INSTALL.txt" << 'EOF'
+          Installation Instructions for Linux
+          ==================================
+          
+          Option 1: System-wide Installation (requires sudo)
+          1. Extract the archive
+          2. Copy to system directory: sudo cp generator /usr/local/bin/
+          3. Make executable: sudo chmod +x /usr/local/bin/generator
+          4. Run: generator --help
+          
+          Option 2: User Installation
+          1. Create ~/bin directory: mkdir -p ~/bin
+          2. Copy generator to ~/bin/
+          3. Make executable: chmod +x ~/bin/generator
+          4. Add to PATH: echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
+          5. Reload shell: source ~/.bashrc
+          6. Run: generator --help
+          EOF
+              ;;
+          esac
+
+      - name: Create archive
+        run: |
+          cd dist
+          if [ "${{ matrix.os }}" = "windows" ]; then
+            zip -r "generator-${{ matrix.os }}-${{ matrix.arch }}.zip" "generator-${{ matrix.os }}-${{ matrix.arch }}/"
+          else
+            tar -czf "generator-${{ matrix.os }}-${{ matrix.arch }}.tar.gz" "generator-${{ matrix.os }}-${{ matrix.arch }}/"
+          fi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: generator-${{ matrix.os }}-${{ matrix.arch }}
+          path: |
+            dist/generator-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
+            dist/generator-${{ matrix.os }}-${{ matrix.arch }}.zip
+          retention-days: 7
+
+  package:
+    name: Build Packages
+    runs-on: ubuntu-latest
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Linux AMD64 artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: generator-linux-amd64
+          path: dist/
+
+      - name: Extract Linux binary
+        run: |
+          cd dist
+          tar -xzf generator-linux-amd64.tar.gz
+
+      - name: Install packaging tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm build-essential
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build packages
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          # Make sure the build script is executable
+          chmod +x scripts/build-packages.sh
+          
+          # Build packages
+          ./scripts/build-packages.sh deb
+          ./scripts/build-packages.sh rpm
+
+      - name: Upload package artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: packages
+          path: packages/
+          retention-days: 7
+
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [build, package]
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts/
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release-assets
+          
+          # Copy binary archives
+          find artifacts/ -name "*.tar.gz" -o -name "*.zip" | while read file; do
+            cp "$file" release-assets/
+          done
+          
+          # Copy packages
+          find artifacts/packages/ -name "*.deb" -o -name "*.rpm" | while read file; do
+            cp "$file" release-assets/
+          done
+
+      - name: Generate checksums
+        run: |
+          cd release-assets
+          sha256sum * > checksums.txt
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          cat > release_notes.md << EOF
+          # Release ${{ steps.version.outputs.version }}
+          
+          ## What's New
+          
+          This release includes the complete Open Source Template Generator with all features implemented.
+          
+          ## Features
+          
+          - ✅ Interactive project generation with component selection
+          - ✅ Support for frontend (Next.js), backend (Go), and mobile (Android/iOS) applications
+          - ✅ Infrastructure as code templates (Docker, Kubernetes, Terraform)
+          - ✅ Complete CI/CD workflows with GitHub Actions
+          - ✅ Comprehensive validation and error handling
+          - ✅ Cross-platform support (Linux, macOS, Windows, FreeBSD)
+          - ✅ Package management integration (APT, YUM, Homebrew, etc.)
+          
+          ## Installation
+          
+          ### Quick Install (Linux/macOS)
+          \`\`\`bash
+          curl -sSL https://raw.githubusercontent.com/open-source-template-generator/generator/main/scripts/install.sh | bash
+          \`\`\`
+          
+          ### Manual Installation
+          1. Download the appropriate archive for your platform
+          2. Extract the archive
+          3. Follow the installation instructions in the INSTALL.txt file
+          
+          ### Package Managers
+          - **Debian/Ubuntu**: Download the .deb package and install with \`dpkg -i\`
+          - **Red Hat/CentOS**: Download the .rpm package and install with \`rpm -i\`
+          - **Homebrew**: \`brew install generator\` (coming soon)
+          
+          ## Usage
+          
+          \`\`\`bash
+          # Generate a new project interactively
+          generator generate
+          
+          # Show help
+          generator --help
+          
+          # Validate a generated project
+          generator validate ./my-project
+          
+          # Show version and latest package versions
+          generator version --packages
+          \`\`\`
+          
+          ## Checksums
+          
+          See checksums.txt for SHA256 hashes of all release assets.
+          EOF
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Release ${{ steps.version.outputs.version }}
+          body_path: release_notes.md
+          files: |
+            release-assets/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  docker:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Linux AMD64 artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: generator-linux-amd64
+          path: dist/
+
+      - name: Extract binary
+        run: |
+          cd dist
+          tar -xzf generator-linux-amd64.tar.gz
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Create Dockerfile
+        run: |
+          cat > Dockerfile << 'EOF'
+          FROM alpine:latest
+          
+          # Install ca-certificates for HTTPS requests
+          RUN apk --no-cache add ca-certificates git
+          
+          # Create non-root user
+          RUN adduser -D -s /bin/sh generator
+          
+          # Copy binary
+          COPY dist/generator-linux-amd64/generator /usr/local/bin/generator
+          RUN chmod +x /usr/local/bin/generator
+          
+          # Switch to non-root user
+          USER generator
+          WORKDIR /workspace
+          
+          ENTRYPOINT ["generator"]
+          CMD ["--help"]
+          EOF
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            generator/generator:${{ steps.version.outputs.version }}
+            generator/generator:latest
+          platforms: linux/amd64
+
+  notify:
+    name: Notify Release
+    runs-on: ubuntu-latest
+    needs: [release, docker]
+    if: always() && (startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch')
+    
+    steps:
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Notify success
+        if: needs.release.result == 'success' && needs.docker.result == 'success'
+        run: |
+          echo "✅ Release ${{ steps.version.outputs.version }} completed successfully!"
+          echo "🚀 Binaries, packages, and Docker image are now available"
+
+      - name: Notify failure
+        if: needs.release.result == 'failure' || needs.docker.result == 'failure'
+        run: |
+          echo "❌ Release ${{ steps.version.outputs.version }} failed"
+          echo "Check the workflow logs for details"
+          exit 1

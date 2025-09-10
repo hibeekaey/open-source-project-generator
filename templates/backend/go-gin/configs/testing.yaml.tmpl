@@ -1,0 +1,77 @@
+server:
+  host: "localhost"
+  port: 8081
+  mode: "test"
+  read_timeout: 10s
+  write_timeout: 10s
+  idle_timeout: 30s
+
+database:
+  host: "localhost"
+  port: 5432
+  user: "{{.Name}}_test"
+  password: "test_password"
+  dbname: "{{.Name}}_test"
+  sslmode: "disable"
+  max_open_conns: 10
+  max_idle_conns: 2
+  conn_max_lifetime: 60s
+
+redis:
+  host: "localhost"
+  port: 6379
+  password: ""
+  db: 1
+  pool_size: 5
+  min_idle_conns: 1
+
+jwt:
+  secret: "test-jwt-secret-key-for-testing-only"
+  expiry_time: 1 # hours
+  refresh_expiry_time: 2 # hours
+
+cors:
+  allowed_origins:
+    - "*"
+  allowed_methods:
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "DELETE"
+    - "OPTIONS"
+  allowed_headers:
+    - "*"
+  allow_credentials: true
+  max_age: 86400
+
+logging:
+  level: "error"
+  format: "text"
+  output: "stdout"
+  file_path: ""
+  max_size: 10 # MB
+  max_backups: 1
+  max_age: 1 # days
+  compress: false
+
+rate_limiting:
+  enabled: false
+  requests_per_minute: 1000
+  burst: 100
+
+security:
+  bcrypt_cost: 4 # Lower cost for faster tests
+  session_timeout: 3600 # seconds
+  max_login_attempts: 10
+  lockout_duration: 60 # seconds
+
+monitoring:
+  metrics_enabled: false
+  health_check_enabled: true
+  profiling_enabled: false
+
+features:
+  user_registration: true
+  email_verification: false
+  password_reset: true
+  admin_panel: true

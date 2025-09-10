@@ -1,0 +1,33 @@
+import SwiftUI
+import Swinject
+
+@main
+struct {{.Name}}App: App {
+    let container = Container()
+    
+    init() {
+        setupDependencies()
+    }
+    
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+                .environmentObject(container.resolve(UserViewModel.self)!)
+        }
+    }
+    
+    private func setupDependencies() {
+        // Register dependencies
+        container.register(NetworkService.self) { _ in
+            NetworkServiceImpl()
+        }.inObjectScope(.container)
+        
+        container.register(UserRepository.self) { resolver in
+            UserRepositoryImpl(networkService: resolver.resolve(NetworkService.self)!)
+        }.inObjectScope(.container)
+        
+        container.register(UserViewModel.self) { resolver in
+            UserViewModel(userRepository: resolver.resolve(UserRepository.self)!)
+        }
+    }
+}

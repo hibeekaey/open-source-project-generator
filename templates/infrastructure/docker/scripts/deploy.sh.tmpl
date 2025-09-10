@@ -1,0 +1,364 @@
+#!/bin/bash
+
+# {{.Name}} - Docker Deployment Script
+# This script deploys the application using Docker Compose
+
+set -euo pipefail
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Configuration
+PROJECT_NAME="{{.Name}}"
+ENVIRONMENT="${ENVIRONMENT:-development}"
+COMPOSE_FILE=""
+ENV_FILE=""
+
+# Functions
+log_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+log_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+log_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Show usage
+usage() {
+    echo "Usage: $0 [OPTIONS] COMMAND"
+    echo ""
+    echo "Commands:"
+    echo "  up          Start all services"
+    echo "  down        Stop all services"
+    echo "  restart     Restart all services"
+    echo "  logs        Show logs"
+    echo "  status      Show service status"
+    echo "  clean       Clean up containers and volumes"
+    echo ""
+    echo "Options:"
+    echo "  -e, --env ENV       Environment (development|staging|production)"
+    echo "  -f, --file FILE     Docker Compose file"
+    echo "  -h, --help          Show this help"
+    echo ""
+    echo "Examples:"
+    echo "  $0 -e development up"
+    echo "  $0 -e production -f docker-compose.prod.yml up"
+}
+
+# Set compose file based on environment
+set_compose_file() {
+    case "${ENVIRONMENT}" in
+        "development"|"dev")
+            COMPOSE_FILE="templates/infrastructure/docker/docker-compose.dev.yml.tmpl"
+            ENV_FILE=".env.development"
+            ;;
+        "staging"|"stage")
+            COMPOSE_FILE="templates/infrastructure/docker/docker-compose.prod.yml.tmpl"
+            ENV_FILE=".env.staging"
+            ;;
+        "production"|"prod")
+            COMPOSE_FILE="templates/infrastructure/docker/docker-compose.prod.yml.tmpl"
+            ENV_FILE=".env.production"
+            ;;
+        *)
+            log_error "Unknown environment: ${ENVIRONMENT}"
+            log_info "Supported environments: development, staging, production"
+            exit 1
+            ;;
+    esac
+}
+
+# Check prerequisites
+check_prerequisites() {
+    log_info "Checking prerequisites..."
+    
+    if ! command -v docker &> /dev/null; then
+        log_error "Docker is not installed or not in PATH"
+        exit 1
+    fi
+    
+    if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
+        log_error "Docker Compose is not installed or not in PATH"
+        exit 1
+    fi
+    
+    if [ ! -f "${COMPOSE_FILE}" ]; then
+        log_error "Compose file not found: ${COMPOSE_FILE}"
+        exit 1
+    fi
+    
+    if [ ! -f "${ENV_FILE}" ]; then
+        log_warning "Environment file not found: ${ENV_FILE}"
+        log_info "Creating default environment file..."
+        create_env_file
+    fi
+    
+    log_success "Prerequisites check passed"
+}
+
+# Create default environment file
+create_env_file() {
+    cat > "${ENV_FILE}" << EOF
+# {{.Name}} Environment Configuration
+# Environment: ${ENVIRONMENT}
+
+# Database Configuration
+DB_HOST=postgres
+DB_PORT=5432
+DB_USER={{.Name}}_user
+DB_PASSWORD=change_this_password_in_production
+DB_NAME={{.Name}}_${ENVIRONMENT}
+
+# Redis Configuration
+REDIS_HOST=redis
+REDIS_PORT=6379
+
+# JWT Configuration
+JWT_SECRET=change_this_jwt_secret_in_production
+
+# API Configuration
+API_URL=http://localhost:8080
+
+# Monitoring
+GRAFANA_PASSWORD=admin
+
+# SSL Configuration (for production)
+SSL_CERT_PATH=/etc/nginx/ssl/cert.pem
+SSL_KEY_PATH=/etc/nginx/ssl/key.pem
+EOF
+    
+    log_success "Created default environment file: ${ENV_FILE}"
+    log_warning "Please update the configuration values before deploying to production!"
+}
+
+# Docker Compose wrapper
+docker_compose() {
+    if command -v docker-compose &> /dev/null; then
+        docker-compose --file "${COMPOSE_FILE}" --env-file "${ENV_FILE}" "$@"
+    else
+        docker compose --file "${COMPOSE_FILE}" --env-file "${ENV_FILE}" "$@"
+    fi
+}
+
+# Start services
+start_services() {
+    log_info "Starting ${PROJECT_NAME} services in ${ENVIRONMENT} environment..."
+    
+    # Pull latest images if in production
+    if [ "${ENVIRONMENT}" = "production" ]; then
+        log_info "Pulling latest images..."
+        docker_compose pull
+    fi
+    
+    # Start services
+    docker_compose up -d
+    
+    if [ $? -eq 0 ]; then
+        log_success "Services started successfully!"
+        show_status
+        show_urls
+    else
+        log_error "Failed to start services"
+        exit 1
+    fi
+}
+
+# Stop services
+stop_services() {
+    log_info "Stopping ${PROJECT_NAME} services..."
+    
+    docker_compose down
+    
+    if [ $? -eq 0 ]; then
+        log_success "Services stopped successfully!"
+    else
+        log_error "Failed to stop services"
+        exit 1
+    fi
+}
+
+# Restart services
+restart_services() {
+    log_info "Restarting ${PROJECT_NAME} services..."
+    
+    docker_compose restart
+    
+    if [ $? -eq 0 ]; then
+        log_success "Services restarted successfully!"
+        show_status
+    else
+        log_error "Failed to restart services"
+        exit 1
+    fi
+}
+
+# Show logs
+show_logs() {
+    local service="${1:-}"
+    
+    if [ -n "${service}" ]; then
+        log_info "Showing logs for ${service}..."
+        docker_compose logs -f "${service}"
+    else
+        log_info "Showing logs for all services..."
+        docker_compose logs -f
+    fi
+}
+
+# Show service status
+show_status() {
+    log_info "Service Status:"
+    docker_compose ps
+}
+
+# Show service URLs
+show_urls() {
+    log_info "Service URLs:"
+    {{if .Components.Frontend.MainApp}}
+    echo "  App:     http://localhost:3000"
+    {{end}}
+    {{if .Components.Frontend.Home}}
+    echo "  Home:    http://localhost:3001"
+    {{end}}
+    {{if .Components.Frontend.Admin}}
+    echo "  Admin:   http://localhost:3002"
+    {{end}}
+    {{if .Components.Backend.API}}
+    echo "  API:     http://localhost:8080"
+    {{end}}
+    echo "  Grafana: http://localhost:3003 (admin/admin)"
+    echo "  MailHog: http://localhost:8025"
+}
+
+# Clean up
+clean_up() {
+    log_warning "This will remove all containers, networks, and volumes for ${PROJECT_NAME}"
+    read -p "Are you sure? (y/N): " -n 1 -r
+    echo
+    
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        log_info "Cleaning up..."
+        docker_compose down -v --remove-orphans
+        docker system prune -f
+        log_success "Cleanup completed!"
+    else
+        log_info "Cleanup cancelled"
+    fi
+}
+
+# Parse command line arguments
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -e|--env)
+                ENVIRONMENT="$2"
+                shift 2
+                ;;
+            -f|--file)
+                COMPOSE_FILE="$2"
+                shift 2
+                ;;
+            -h|--help)
+                usage
+                exit 0
+                ;;
+            up|start)
+                COMMAND="start"
+                shift
+                ;;
+            down|stop)
+                COMMAND="stop"
+                shift
+                ;;
+            restart)
+                COMMAND="restart"
+                shift
+                ;;
+            logs)
+                COMMAND="logs"
+                SERVICE="${2:-}"
+                shift
+                [ -n "${SERVICE}" ] && shift
+                ;;
+            status|ps)
+                COMMAND="status"
+                shift
+                ;;
+            clean|cleanup)
+                COMMAND="clean"
+                shift
+                ;;
+            *)
+                log_error "Unknown option: $1"
+                usage
+                exit 1
+                ;;
+        esac
+    done
+}
+
+# Main function
+main() {
+    local COMMAND=""
+    local SERVICE=""
+    
+    # Parse arguments
+    parse_args "$@"
+    
+    # Set compose file if not provided
+    if [ -z "${COMPOSE_FILE}" ]; then
+        set_compose_file
+    fi
+    
+    # Check prerequisites
+    check_prerequisites
+    
+    # Execute command
+    case "${COMMAND}" in
+        "start")
+            start_services
+            ;;
+        "stop")
+            stop_services
+            ;;
+        "restart")
+            restart_services
+            ;;
+        "logs")
+            show_logs "${SERVICE}"
+            ;;
+        "status")
+            show_status
+            ;;
+        "clean")
+            clean_up
+            ;;
+        "")
+            log_error "No command specified"
+            usage
+            exit 1
+            ;;
+        *)
+            log_error "Unknown command: ${COMMAND}"
+            usage
+            exit 1
+            ;;
+    esac
+}
+
+# Script execution
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi

@@ -1,0 +1,200 @@
+package repositories
+
+import (
+	"testing"
+
+	"{{.Name}}/internal/models"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+)
+
+type UserRepositoryTestSuite struct {
+	suite.Suite
+	db   *gorm.DB
+	repo UserRepositoryInterface
+}
+
+func (suite *UserRepositoryTestSuite) SetupSuite() {
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	suite.Require().NoError(err)
+
+	err = db.AutoMigrate(&models.User{}, &models.Role{})
+	suite.Require().NoError(err)
+
+	suite.db = db
+	suite.repo = NewUserRepository(db)
+}
+
+func (suite *UserRepositoryTestSuite) SetupTest() {
+	// Clean up data before each test
+	suite.db.Exec("DELETE FROM users")
+	suite.db.Exec("DELETE FROM roles")
+}
+
+func (suite *UserRepositoryTestSuite) TestCreate() {
+	user := &models.User{
+		Email:     "test@example.com",
+		Username:  "testuser",
+		FirstName: "Test",
+		LastName:  "User",
+		Password:  "hashedpassword",
+		IsActive:  true,
+	}
+
+	err := suite.repo.Create(user)
+	assert.NoError(suite.T(), err)
+	assert.NotZero(suite.T(), user.ID)
+	assert.NotZero(suite.T(), user.CreatedAt)
+}
+
+func (suite *UserRepositoryTestSuite) TestGetByID() {
+	// Create a user first
+	user := &models.User{
+		Email:     "test@example.com",
+		Username:  "testuser",
+		FirstName: "Test",
+		LastName:  "User",
+		Password:  "hashedpassword",
+		IsActive:  true,
+	}
+	err := suite.repo.Create(user)
+	suite.Require().NoError(err)
+
+	// Test successful retrieval
+	foundUser, err := suite.repo.GetByID(user.ID)
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), user.Email, foundUser.Email)
+	assert.Equal(suite.T(), user.Username, foundUser.Username)
+
+	// Test user not found
+	_, err = suite.repo.GetByID(999)
+	assert.Error(suite.T(), err)
+}
+
+func (suite *UserRepositoryTestSuite) TestGetByEmail() {
+	// Create a user first
+	user := &models.User{
+		Email:     "test@example.com",
+		Username:  "testuser",
+		FirstName: "Test",
+		LastName:  "User",
+		Password:  "hashedpassword",
+		IsActive:  true,
+	}
+	err := suite.repo.Create(user)
+	suite.Require().NoError(err)
+
+	// Test successful retrieval
+	foundUser, err := suite.repo.GetByEmail("test@example.com")
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), user.ID, foundUser.ID)
+	assert.Equal(suite.T(), user.Username, foundUser.Username)
+
+	// Test user not found
+	_, err = suite.repo.GetByEmail("nonexistent@example.com")
+	assert.Error(suite.T(), err)
+}
+
+func (suite *UserRepositoryTestSuite) TestGetByUsername() {
+	// Create a user first
+	user := &models.User{
+		Email:     "test@example.com",
+		Username:  "testuser",
+		FirstName: "Test",
+		LastName:  "User",
+		Password:  "hashedpassword",
+		IsActive:  true,
+	}
+	err := suite.repo.Create(user)
+	suite.Require().NoError(err)
+
+	// Test successful retrieval
+	foundUser, err := suite.repo.GetByUsername("testuser")
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), user.ID, foundUser.ID)
+	assert.Equal(suite.T(), user.Email, foundUser.Email)
+
+	// Test user not found
+	_, err = suite.repo.GetByUsername("nonexistentuser")
+	assert.Error(suite.T(), err)
+}
+
+func (suite *UserRepositoryTestSuite) TestUpdate() {
+	// Create a user first
+	user := &models.User{
+		Email:     "test@example.com",
+		Username:  "testuser",
+		FirstName: "Test",
+		LastName:  "User",
+		Password:  "hashedpassword",
+		IsActive:  true,
+	}
+	err := suite.repo.Create(user)
+	suite.Require().NoError(err)
+
+	// Update the user
+	user.FirstName = "Updated"
+	user.LastName = "Name"
+	err = suite.repo.Update(user)
+	assert.NoError(suite.T(), err)
+
+	// Verify the update
+	updatedUser, err := suite.repo.GetByID(user.ID)
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), "Updated", updatedUser.FirstName)
+	assert.Equal(suite.T(), "Name", updatedUser.LastName)
+}
+
+func (suite *UserRepositoryTestSuite) TestDelete() {
+	// Create a user first
+	user := &models.User{
+		Email:     "test@example.com",
+		Username:  "testuser",
+		FirstName: "Test",
+		LastName:  "User",
+		Password:  "hashedpassword",
+		IsActive:  true,
+	}
+	err := suite.repo.Create(user)
+	suite.Require().NoError(err)
+
+	// Delete the user
+	err = suite.repo.Delete(user.ID)
+	assert.NoError(suite.T(), err)
+
+	// Verify the user is deleted
+	_, err = suite.repo.GetByID(user.ID)
+	assert.Error(suite.T(), err)
+}
+
+func (suite *UserRepositoryTestSuite) TestGetAll() {
+	// Create multiple users
+	users := []*models.User{
+		{Email: "user1@example.com", Username: "user1", FirstName: "User", LastName: "One", Password: "pass1", IsActive: true},
+		{Email: "user2@example.com", Username: "user2", FirstName: "User", LastName: "Two", Password: "pass2", IsActive: true},
+		{Email: "user3@example.com", Username: "user3", FirstName: "User", LastName: "Three", Password: "pass3", IsActive: false},
+	}
+
+	for _, user := range users {
+		err := suite.repo.Create(user)
+		suite.Require().NoError(err)
+	}
+
+	// Test pagination
+	result, total, err := suite.repo.GetAll(1, 2)
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), int64(3), total)
+	assert.Len(suite.T(), result, 2)
+
+	// Test second page
+	result, total, err = suite.repo.GetAll(2, 2)
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), int64(3), total)
+	assert.Len(suite.T(), result, 1)
+}
+
+func TestUserRepositoryTestSuite(t *testing.T) {
+	suite.Run(t, new(UserRepositoryTestSuite))
+}

@@ -1,0 +1,169 @@
+import Link from 'next/link';
+import { Github, Twitter, Linkedin } from 'lucide-react';
+
+const footerNavigation = {
+  product: [
+    { name: 'Features', href: '#' },
+    { name: 'Pricing', href: '#' },
+    { name: 'Documentation', href: '#' },
+    { name: 'API Reference', href: '#' },
+  ],
+  company: [
+    { name: 'About', href: '#' },
+    { name: 'Blog', href: '#' },
+    { name: 'Careers', href: '#' },
+    { name: 'Contact', href: '#' },
+  ],
+  support: [
+    { name: 'Help Center', href: '#' },
+    { name: 'Community', href: '#' },
+    { name: 'Status', href: '#' },
+    { name: 'Security', href: '#' },
+  ],
+  legal: [
+    { name: 'Privacy Policy', href: '#' },
+    { name: 'Terms of Service', href: '#' },
+    { name: 'Cookie Policy', href: '#' },
+    { name: 'GDPR', href: '#' },
+  ],
+};
+
+const socialLinks = [
+  {
+    name: 'GitHub',
+    href: '{{if .Repository}}{{.Repository}}{{else}}#{{end}}',
+    icon: Github,
+  },
+  {
+    name: 'Twitter',
+    href: '#',
+    icon: Twitter,
+  },
+  {
+    name: 'LinkedIn',
+    href: '#',
+    icon: Linkedin,
+  },
+];
+
+export function Footer() {
+  return (
+    <footer className="bg-gray-900 text-white">
+      <div className="container mx-auto px-4 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8">
+          {/* Brand */}
+          <div className="lg:col-span-2">
+            <Link href="/" className="flex items-center space-x-2 mb-4">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
+                {{.Name | slice 0 1 | upper}}
+              </div>
+              <span className="text-xl font-bold">{{.Name}}</span>
+            </Link>
+            <p className="text-gray-400 mb-6 max-w-md">
+              {{.Description}}. Build faster, scale better, and deliver exceptional user experiences.
+            </p>
+            <div className="flex space-x-4">
+              {socialLinks.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className="text-gray-400 hover:text-white transition-colors"
+                  target={item.href.startsWith('http') ? '_blank' : undefined}
+                  rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                >
+                  <span className="sr-only">{item.name}</span>
+                  <item.icon className="h-5 w-5" />
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Product */}
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-wider mb-4">
+              Product
+            </h3>
+            <ul className="space-y-3">
+              {footerNavigation.product.map((item) => (
+                <li key={item.name}>
+                  <Link
+                    href={item.href}
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    {item.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Company */}
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-wider mb-4">
+              Company
+            </h3>
+            <ul className="space-y-3">
+              {footerNavigation.company.map((item) => (
+                <li key={item.name}>
+                  <Link
+                    href={item.href}
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    {item.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Support */}
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-wider mb-4">
+              Support
+            </h3>
+            <ul className="space-y-3">
+              {footerNavigation.support.map((item) => (
+                <li key={item.name}>
+                  <Link
+                    href={item.href}
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    {item.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Legal */}
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-wider mb-4">
+              Legal
+            </h3>
+            <ul className="space-y-3">
+              {footerNavigation.legal.map((item) => (
+                <li key={item.name}>
+                  <Link
+                    href={item.href}
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    {item.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+          <p className="text-gray-400 text-sm">
+            © {new Date().getFullYear()} {{.Organization}}. All rights reserved.
+          </p>
+          <p className="text-gray-400 text-sm mt-4 md:mt-0">
+            Built with ❤️ using {{.Name}}
+          </p>
+        </div>
+      </div>
+    </footer>
+  );
+}

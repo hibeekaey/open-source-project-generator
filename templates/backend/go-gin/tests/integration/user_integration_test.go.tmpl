@@ -1,0 +1,214 @@
+package integration
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"{{.Name}}/internal/app"
+	"{{.Name}}/internal/config"
+	"{{.Name}}/internal/models"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+)
+
+type UserIntegrationTestSuite struct {
+	suite.Suite
+	app    *app.App
+	router http.Handler
+	token  string
+	userID uint
+}
+
+func (suite *UserIntegrationTestSuite) SetupSuite() {
+	// Setup test database
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	suite.Require().NoError(err)
+
+	// Run migrations
+	err = db.AutoMigrate(&models.User{}, &models.Role{}, &models.Permission{})
+	suite.Require().NoError(err)
+
+	// Setup test config
+	cfg := &config.Config{
+		Database: config.DatabaseConfig{
+			Host:     "localhost",
+			Port:     5432,
+			User:     "test",
+			Password: "test",
+			DBName:   "test",
+		},
+		JWT: config.JWTConfig{
+			Secret:     "test-secret-key-for-testing-purposes-only",
+			ExpiryTime: 24,
+		},
+		Redis: config.RedisConfig{
+			Host:     "localhost",
+			Port:     6379,
+			Password: "",
+			DB:       0,
+		},
+	}
+
+	// Initialize app with test database
+	suite.app = app.NewApp(cfg)
+	suite.app.DB = db
+	suite.router = suite.app.SetupRoutes()
+}
+
+func (suite *UserIntegrationTestSuite) SetupTest() {
+	// Clean up data before each test
+	suite.app.DB.Exec("DELETE FROM users")
+	suite.app.DB.Exec("DELETE FROM roles")
+
+	// Create a test user and get auth token
+	registerRequest := models.RegisterRequest{
+		Email:     "test@example.com",
+		Username:  "testuser",
+		FirstName: "Test",
+		LastName:  "User",
+		Password:  "password123",
+	}
+
+	body, _ := json.Marshal(registerRequest)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	suite.router.ServeHTTP(w, req)
+	suite.Require().Equal(http.StatusCreated, w.Code)
+
+	var authResponse models.AuthResponse
+	err := json.Unmarshal(w.Body.Bytes(), &authResponse)
+	suite.Require().NoError(err)
+
+	suite.token = authResponse.Token
+	suite.userID = authResponse.User.ID
+}
+
+func (suite *UserIntegrationTestSuite) TestGetProfile() {
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/users/profile", nil)
+	req.Header.Set("Authorization", "Bearer "+suite.token)
+	w := httptest.NewRecorder()
+
+	suite.router.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+
+	var response models.UserResponse
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), "test@example.com", response.Email)
+	assert.Equal(suite.T(), "testuser", response.Username)
+}
+
+func (suite *UserIntegrationTestSuite) TestUpdateProfile() {
+	updateRequest := models.UpdateUserRequest{
+		FirstName: "Updated",
+		LastName:  "Name",
+	}
+
+	body, _ := json.Marshal(updateRequest)
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/users/profile", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+suite.token)
+	w := httptest.NewRecorder()
+
+	suite.router.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+
+	// Verify the update by getting the profile
+	req = httptest.NewRequest(http.MethodGet, "/api/v1/users/profile", nil)
+	req.Header.Set("Authorization", "Bearer "+suite.token)
+	w = httptest.NewRecorder()
+
+	suite.router.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+
+	var response models.UserResponse
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), "Updated", response.FirstName)
+	assert.Equal(suite.T(), "Name", response.LastName)
+}
+
+func (suite *UserIntegrationTestSuite) TestGetUsers() {
+	// Create additional test users
+	users := []models.RegisterRequest{
+		{Email: "user1@example.com", Username: "user1", FirstName: "User", LastName: "One", Password: "password123"},
+		{Email: "user2@example.com", Username: "user2", FirstName: "User", LastName: "Two", Password: "password123"},
+	}
+
+	for _, user := range users {
+		body, _ := json.Marshal(user)
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", bytes.NewBuffer(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		suite.router.ServeHTTP(w, req)
+	}
+
+	// Test getting users with pagination
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/users?page=1&limit=2", nil)
+	req.Header.Set("Authorization", "Bearer "+suite.token)
+	w := httptest.NewRecorder()
+
+	suite.router.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+
+	var response map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), float64(3), response["total"]) // 3 total users including the test user
+	
+	users_data := response["users"].([]interface{})
+	assert.Len(suite.T(), users_data, 2) // Should return 2 users per page
+}
+
+func (suite *UserIntegrationTestSuite) TestGetUserByID() {
+	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/users/%d", suite.userID), nil)
+	req.Header.Set("Authorization", "Bearer "+suite.token)
+	w := httptest.NewRecorder()
+
+	suite.router.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+
+	var response models.UserResponse
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), suite.userID, response.ID)
+	assert.Equal(suite.T(), "test@example.com", response.Email)
+}
+
+func (suite *UserIntegrationTestSuite) TestGetNonExistentUser() {
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/users/999", nil)
+	req.Header.Set("Authorization", "Bearer "+suite.token)
+	w := httptest.NewRecorder()
+
+	suite.router.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusNotFound, w.Code)
+}
+
+func (suite *UserIntegrationTestSuite) TestUnauthorizedAccess() {
+	// Test accessing protected endpoints without token
+	endpoints := []string{
+		"/api/v1/users/profile",
+		"/api/v1/users",
+		fmt.Sprintf("/api/v1/users/%d", suite.userID),
+	}
+
+	for _, endpoint := range endpoints {
+		req := httptest.NewRequest(http.MethodGet, endpoint, nil)
+		w := httptest.NewRecorder()
+
+		suite.router.ServeHTTP(w, req)
+		assert.Equal(suite.T(), http.StatusUnauthorized, w.Code, "Endpoint %s should require authentication", endpoint)
+	}
+}
+
+func TestUserIntegrationTestSuite(t *testing.T) {
+	suite.Run(t, new(UserIntegrationTestSuite))
+}

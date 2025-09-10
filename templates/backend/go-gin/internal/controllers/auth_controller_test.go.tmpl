@@ -1,0 +1,189 @@
+package controllers
+
+import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"{{.Name}}/internal/models"
+	"{{.Name}}/internal/services/mocks"
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+)
+
+func TestAuthController_Register(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("successful registration", func(t *testing.T) {
+		authService := new(mocks.AuthService)
+		controller := NewAuthController(authService)
+
+		registerRequest := models.RegisterRequest{
+			Email:     "test@example.com",
+			Username:  "testuser",
+			FirstName: "Test",
+			LastName:  "User",
+			Password:  "password123",
+		}
+
+		expectedResponse := &models.AuthResponse{
+			Token: "jwt-token",
+			User: models.UserResponse{
+				ID:        1,
+				Email:     "test@example.com",
+				Username:  "testuser",
+				FirstName: "Test",
+				LastName:  "User",
+			},
+		}
+
+		authService.On("Register", mock.AnythingOfType("*models.RegisterRequest")).Return(expectedResponse, nil).Once()
+
+		body, _ := json.Marshal(registerRequest)
+		req := httptest.NewRequest(http.MethodPost, "/auth/register", bytes.NewBuffer(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router := gin.New()
+		router.POST("/auth/register", controller.Register)
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusCreated, w.Code)
+		
+		var response models.AuthResponse
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+		assert.Equal(t, expectedResponse.Token, response.Token)
+		assert.Equal(t, expectedResponse.User.Email, response.User.Email)
+
+		authService.AssertExpectations(t)
+	})
+
+	t.Run("invalid request body", func(t *testing.T) {
+		authService := new(mocks.AuthService)
+		controller := NewAuthController(authService)
+
+		req := httptest.NewRequest(http.MethodPost, "/auth/register", bytes.NewBuffer([]byte("invalid json")))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router := gin.New()
+		router.POST("/auth/register", controller.Register)
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+}
+
+func TestAuthController_Login(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("successful login", func(t *testing.T) {
+		authService := new(mocks.AuthService)
+		controller := NewAuthController(authService)
+
+		loginRequest := models.LoginRequest{
+			Email:    "test@example.com",
+			Password: "password123",
+		}
+
+		expectedResponse := &models.AuthResponse{
+			Token: "jwt-token",
+			User: models.UserResponse{
+				ID:       1,
+				Email:    "test@example.com",
+				Username: "testuser",
+			},
+		}
+
+		authService.On("Login", mock.AnythingOfType("*models.LoginRequest")).Return(expectedResponse, nil).Once()
+
+		body, _ := json.Marshal(loginRequest)
+		req := httptest.NewRequest(http.MethodPost, "/auth/login", bytes.NewBuffer(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router := gin.New()
+		router.POST("/auth/login", controller.Login)
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var response models.AuthResponse
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+		assert.Equal(t, expectedResponse.Token, response.Token)
+
+		authService.AssertExpectations(t)
+	})
+
+	t.Run("invalid credentials", func(t *testing.T) {
+		authService := new(mocks.AuthService)
+		controller := NewAuthController(authService)
+
+		loginRequest := models.LoginRequest{
+			Email:    "test@example.com",
+			Password: "wrongpassword",
+		}
+
+		authService.On("Login", mock.AnythingOfType("*models.LoginRequest")).Return(nil, errors.New("invalid credentials")).Once()
+
+		body, _ := json.Marshal(loginRequest)
+		req := httptest.NewRequest(http.MethodPost, "/auth/login", bytes.NewBuffer(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router := gin.New()
+		router.POST("/auth/login", controller.Login)
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+
+		authService.AssertExpectations(t)
+	})
+}
+
+func TestAuthController_RefreshToken(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("successful token refresh", func(t *testing.T) {
+		authService := new(mocks.AuthService)
+		controller := NewAuthController(authService)
+
+		refreshRequest := models.RefreshTokenRequest{
+			RefreshToken: "valid-refresh-token",
+		}
+
+		expectedResponse := &models.AuthResponse{
+			Token: "new-jwt-token",
+			User: models.UserResponse{
+				ID:       1,
+				Email:    "test@example.com",
+				Username: "testuser",
+			},
+		}
+
+		authService.On("RefreshToken", "valid-refresh-token").Return(expectedResponse, nil).Once()
+
+		body, _ := json.Marshal(refreshRequest)
+		req := httptest.NewRequest(http.MethodPost, "/auth/refresh", bytes.NewBuffer(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router := gin.New()
+		router.POST("/auth/refresh", controller.RefreshToken)
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var response models.AuthResponse
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+		assert.Equal(t, expectedResponse.Token, response.Token)
+
+		authService.AssertExpectations(t)
+	})
+}

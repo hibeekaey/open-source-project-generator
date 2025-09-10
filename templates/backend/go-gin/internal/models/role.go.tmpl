@@ -1,0 +1,60 @@
+package models
+
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
+
+// Role represents a role in the system
+type Role struct {
+	ID          uint           `json:"id" gorm:"primaryKey"`
+	Name        string         `json:"name" gorm:"uniqueIndex;not null" validate:"required,min=1,max=50"`
+	Description string         `json:"description" validate:"max=255"`
+	Permissions []Permission   `json:"permissions" gorm:"many2many:role_permissions;"`
+	Users       []User         `json:"-" gorm:"many2many:user_roles;"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index"`
+}
+
+// RoleCreateRequest represents the request payload for creating a role
+type RoleCreateRequest struct {
+	Name        string `json:"name" validate:"required,min=1,max=50"`
+	Description string `json:"description" validate:"max=255"`
+}
+
+// RoleUpdateRequest represents the request payload for updating a role
+type RoleUpdateRequest struct {
+	Name        *string `json:"name,omitempty" validate:"omitempty,min=1,max=50"`
+	Description *string `json:"description,omitempty" validate:"omitempty,max=255"`
+}
+
+// Permission represents a permission in the system
+type Permission struct {
+	ID          uint           `json:"id" gorm:"primaryKey"`
+	Name        string         `json:"name" gorm:"uniqueIndex;not null" validate:"required,min=1,max=50"`
+	Description string         `json:"description" validate:"max=255"`
+	Resource    string         `json:"resource" gorm:"not null" validate:"required,min=1,max=50"`
+	Action      string         `json:"action" gorm:"not null" validate:"required,min=1,max=50"`
+	Roles       []Role         `json:"-" gorm:"many2many:role_permissions;"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index"`
+}
+
+// PermissionCreateRequest represents the request payload for creating a permission
+type PermissionCreateRequest struct {
+	Name        string `json:"name" validate:"required,min=1,max=50"`
+	Description string `json:"description" validate:"max=255"`
+	Resource    string `json:"resource" validate:"required,min=1,max=50"`
+	Action      string `json:"action" validate:"required,min=1,max=50"`
+}
+
+// PermissionUpdateRequest represents the request payload for updating a permission
+type PermissionUpdateRequest struct {
+	Name        *string `json:"name,omitempty" validate:"omitempty,min=1,max=50"`
+	Description *string `json:"description,omitempty" validate:"omitempty,max=255"`
+	Resource    *string `json:"resource,omitempty" validate:"omitempty,min=1,max=50"`
+	Action      *string `json:"action,omitempty" validate:"omitempty,min=1,max=50"`
+}

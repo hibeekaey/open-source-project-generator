@@ -1,0 +1,73 @@
+package models
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"golang.org/x/crypto/bcrypt"
+)
+
+func TestUser_HashPassword(t *testing.T) {
+	user := &User{
+		Password: "testpassword123",
+	}
+
+	err := user.HashPassword()
+	assert.NoError(t, err)
+	assert.NotEqual(t, "testpassword123", user.Password)
+	assert.True(t, len(user.Password) > 0)
+}
+
+func TestUser_CheckPassword(t *testing.T) {
+	password := "testpassword123"
+	user := &User{
+		Password: password,
+	}
+
+	// Hash the password
+	err := user.HashPassword()
+	assert.NoError(t, err)
+
+	// Check correct password
+	assert.True(t, user.CheckPassword(password))
+
+	// Check incorrect password
+	assert.False(t, user.CheckPassword("wrongpassword"))
+}
+
+func TestUser_ToResponse(t *testing.T) {
+	user := &User{
+		ID:        1,
+		Email:     "test@example.com",
+		Username:  "testuser",
+		FirstName: "Test",
+		LastName:  "User",
+		IsActive:  true,
+		IsAdmin:   false,
+	}
+
+	response := user.ToResponse()
+
+	assert.Equal(t, user.ID, response.ID)
+	assert.Equal(t, user.Email, response.Email)
+	assert.Equal(t, user.Username, response.Username)
+	assert.Equal(t, user.FirstName, response.FirstName)
+	assert.Equal(t, user.LastName, response.LastName)
+	assert.Equal(t, user.IsActive, response.IsActive)
+	assert.Equal(t, user.IsAdmin, response.IsAdmin)
+}
+
+func TestUser_BeforeCreate(t *testing.T) {
+	user := &User{
+		Password: "testpassword123",
+	}
+
+	originalPassword := user.Password
+	err := user.BeforeCreate(nil)
+	assert.NoError(t, err)
+	assert.NotEqual(t, originalPassword, user.Password)
+
+	// Verify the password was hashed correctly
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(originalPassword))
+	assert.NoError(t, err)
+}

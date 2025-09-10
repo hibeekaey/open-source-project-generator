@@ -1,0 +1,45 @@
+# Build Dockerfile for creating distribution packages
+
+FROM ubuntu:22.04
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    golang-1.22 \
+    git \
+    ca-certificates \
+    curl \
+    wget \
+    tar \
+    gzip \
+    zip \
+    unzip \
+    build-essential \
+    rpm \
+    dpkg-dev \
+    fakeroot \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set up Go environment
+ENV PATH="/usr/lib/go-1.22/bin:${PATH}"
+ENV GOROOT="/usr/lib/go-1.22"
+ENV GOPATH="/go"
+ENV PATH="${GOPATH}/bin:${PATH}"
+
+# Create non-root user
+RUN useradd -m -s /bin/bash -u 1000 builder
+
+# Set working directory
+WORKDIR /app
+
+# Create necessary directories
+RUN mkdir -p /app/dist /app/packages && \
+    chown -R builder:builder /app
+
+# Switch to non-root user
+USER builder
+
+# Set environment variables for cross-compilation
+ENV CGO_ENABLED=0
+
+# Default command
+CMD ["./scripts/build.sh"]

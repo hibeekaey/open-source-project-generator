@@ -1,0 +1,196 @@
+package integration
+
+import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"{{.Name}}/internal/app"
+	"{{.Name}}/internal/config"
+	"{{.Name}}/internal/models"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+)
+
+type AuthIntegrationTestSuite struct {
+	suite.Suite
+	app    *app.App
+	router http.Handler
+}
+
+func (suite *AuthIntegrationTestSuite) SetupSuite() {
+	// Setup test database
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	suite.Require().NoError(err)
+
+	// Run migrations
+	err = db.AutoMigrate(&models.User{}, &models.Role{}, &models.Permission{})
+	suite.Require().NoError(err)
+
+	// Setup test config
+	cfg := &config.Config{
+		Database: config.DatabaseConfig{
+			Host:     "localhost",
+			Port:     5432,
+			User:     "test",
+			Password: "test",
+			DBName:   "test",
+		},
+		JWT: config.JWTConfig{
+			Secret:     "test-secret-key-for-testing-purposes-only",
+			ExpiryTime: 24,
+		},
+		Redis: config.RedisConfig{
+			Host:     "localhost",
+			Port:     6379,
+			Password: "",
+			DB:       0,
+		},
+	}
+
+	// Initialize app with test database
+	suite.app = app.NewApp(cfg)
+	suite.app.DB = db
+	suite.router = suite.app.SetupRoutes()
+}
+
+func (suite *AuthIntegrationTestSuite) SetupTest() {
+	// Clean up data before each test
+	suite.app.DB.Exec("DELETE FROM users")
+	suite.app.DB.Exec("DELETE FROM roles")
+	suite.app.DB.Exec("DELETE FROM permissions")
+}
+
+func (suite *AuthIntegrationTestSuite) TestRegisterLoginFlow() {
+	// Test user registration
+	registerRequest := models.RegisterRequest{
+		Email:     "test@example.com",
+		Username:  "testuser",
+		FirstName: "Test",
+		LastName:  "User",
+		Password:  "password123",
+	}
+
+	body, _ := json.Marshal(registerRequest)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	suite.router.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusCreated, w.Code)
+
+	var registerResponse models.AuthResponse
+	err := json.Unmarshal(w.Body.Bytes(), &registerResponse)
+	assert.NoError(suite.T(), err)
+	assert.NotEmpty(suite.T(), registerResponse.Token)
+	assert.Equal(suite.T(), registerRequest.Email, registerResponse.User.Email)
+
+	// Test user login with registered credentials
+	loginRequest := models.LoginRequest{
+		Email:    "test@example.com",
+		Password: "password123",
+	}
+
+	body, _ = json.Marshal(loginRequest)
+	req = httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+
+	suite.router.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+
+	var loginResponse models.AuthResponse
+	err = json.Unmarshal(w.Body.Bytes(), &loginResponse)
+	assert.NoError(suite.T(), err)
+	assert.NotEmpty(suite.T(), loginResponse.Token)
+	assert.Equal(suite.T(), registerRequest.Email, loginResponse.User.Email)
+}
+
+func (suite *AuthIntegrationTestSuite) TestProtectedEndpointAccess() {
+	// First register a user
+	registerRequest := models.RegisterRequest{
+		Email:     "test@example.com",
+		Username:  "testuser",
+		FirstName: "Test",
+		LastName:  "User",
+		Password:  "password123",
+	}
+
+	body, _ := json.Marshal(registerRequest)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	suite.router.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusCreated, w.Code)
+
+	var authResponse models.AuthResponse
+	err := json.Unmarshal(w.Body.Bytes(), &authResponse)
+	assert.NoError(suite.T(), err)
+
+	// Test accessing protected endpoint with valid token
+	req = httptest.NewRequest(http.MethodGet, "/api/v1/users/profile", nil)
+	req.Header.Set("Authorization", "Bearer "+authResponse.Token)
+	w = httptest.NewRecorder()
+
+	suite.router.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+
+	// Test accessing protected endpoint without token
+	req = httptest.NewRequest(http.MethodGet, "/api/v1/users/profile", nil)
+	w = httptest.NewRecorder()
+
+	suite.router.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusUnauthorized, w.Code)
+}
+
+func (suite *AuthIntegrationTestSuite) TestInvalidCredentials() {
+	// Test login with non-existent user
+	loginRequest := models.LoginRequest{
+		Email:    "nonexistent@example.com",
+		Password: "password123",
+	}
+
+	body, _ := json.Marshal(loginRequest)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	suite.router.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusUnauthorized, w.Code)
+}
+
+func (suite *AuthIntegrationTestSuite) TestDuplicateRegistration() {
+	// Register a user
+	registerRequest := models.RegisterRequest{
+		Email:     "test@example.com",
+		Username:  "testuser",
+		FirstName: "Test",
+		LastName:  "User",
+		Password:  "password123",
+	}
+
+	body, _ := json.Marshal(registerRequest)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	suite.router.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusCreated, w.Code)
+
+	// Try to register the same user again
+	req = httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+
+	suite.router.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusConflict, w.Code)
+}
+
+func TestAuthIntegrationTestSuite(t *testing.T) {
+	suite.Run(t, new(AuthIntegrationTestSuite))
+}

@@ -1,0 +1,20 @@
+import SwiftUI
+
+struct ContentView: View {
+    @EnvironmentObject var userViewModel: UserViewModel
+    
+    var body: some View {
+        NavigationView {
+            UsersListView()
+                .navigationTitle("{{.Name}}")
+        }
+        .onAppear {
+            userViewModel.loadUsers()
+        }
+    }
+}
+
+#Preview {
+    ContentView()
+        .environmentObject(UserViewModel(userRepository: MockUserRepository()))
+}

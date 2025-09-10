@@ -1,0 +1,154 @@
+package repositories
+
+import (
+	"testing"
+
+	"{{.Name}}/internal/models"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+)
+
+type RoleRepositoryTestSuite struct {
+	suite.Suite
+	db   *gorm.DB
+	repo RoleRepositoryInterface
+}
+
+func (suite *RoleRepositoryTestSuite) SetupSuite() {
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	suite.Require().NoError(err)
+
+	err = db.AutoMigrate(&models.Role{}, &models.Permission{})
+	suite.Require().NoError(err)
+
+	suite.db = db
+	suite.repo = NewRoleRepository(db)
+}
+
+func (suite *RoleRepositoryTestSuite) SetupTest() {
+	// Clean up data before each test
+	suite.db.Exec("DELETE FROM roles")
+	suite.db.Exec("DELETE FROM permissions")
+}
+
+func (suite *RoleRepositoryTestSuite) TestCreate() {
+	role := &models.Role{
+		Name:        "admin",
+		Description: "Administrator role",
+		IsActive:    true,
+	}
+
+	err := suite.repo.Create(role)
+	assert.NoError(suite.T(), err)
+	assert.NotZero(suite.T(), role.ID)
+	assert.NotZero(suite.T(), role.CreatedAt)
+}
+
+func (suite *RoleRepositoryTestSuite) TestGetByID() {
+	// Create a role first
+	role := &models.Role{
+		Name:        "admin",
+		Description: "Administrator role",
+		IsActive:    true,
+	}
+	err := suite.repo.Create(role)
+	suite.Require().NoError(err)
+
+	// Test successful retrieval
+	foundRole, err := suite.repo.GetByID(role.ID)
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), role.Name, foundRole.Name)
+	assert.Equal(suite.T(), role.Description, foundRole.Description)
+
+	// Test role not found
+	_, err = suite.repo.GetByID(999)
+	assert.Error(suite.T(), err)
+}
+
+func (suite *RoleRepositoryTestSuite) TestGetByName() {
+	// Create a role first
+	role := &models.Role{
+		Name:        "admin",
+		Description: "Administrator role",
+		IsActive:    true,
+	}
+	err := suite.repo.Create(role)
+	suite.Require().NoError(err)
+
+	// Test successful retrieval
+	foundRole, err := suite.repo.GetByName("admin")
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), role.ID, foundRole.ID)
+	assert.Equal(suite.T(), role.Description, foundRole.Description)
+
+	// Test role not found
+	_, err = suite.repo.GetByName("nonexistent")
+	assert.Error(suite.T(), err)
+}
+
+func (suite *RoleRepositoryTestSuite) TestUpdate() {
+	// Create a role first
+	role := &models.Role{
+		Name:        "admin",
+		Description: "Administrator role",
+		IsActive:    true,
+	}
+	err := suite.repo.Create(role)
+	suite.Require().NoError(err)
+
+	// Update the role
+	role.Description = "Updated administrator role"
+	role.IsActive = false
+	err = suite.repo.Update(role)
+	assert.NoError(suite.T(), err)
+
+	// Verify the update
+	updatedRole, err := suite.repo.GetByID(role.ID)
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), "Updated administrator role", updatedRole.Description)
+	assert.False(suite.T(), updatedRole.IsActive)
+}
+
+func (suite *RoleRepositoryTestSuite) TestDelete() {
+	// Create a role first
+	role := &models.Role{
+		Name:        "admin",
+		Description: "Administrator role",
+		IsActive:    true,
+	}
+	err := suite.repo.Create(role)
+	suite.Require().NoError(err)
+
+	// Delete the role
+	err = suite.repo.Delete(role.ID)
+	assert.NoError(suite.T(), err)
+
+	// Verify the role is deleted
+	_, err = suite.repo.GetByID(role.ID)
+	assert.Error(suite.T(), err)
+}
+
+func (suite *RoleRepositoryTestSuite) TestGetAll() {
+	// Create multiple roles
+	roles := []*models.Role{
+		{Name: "admin", Description: "Administrator", IsActive: true},
+		{Name: "user", Description: "Regular user", IsActive: true},
+		{Name: "moderator", Description: "Moderator", IsActive: false},
+	}
+
+	for _, role := range roles {
+		err := suite.repo.Create(role)
+		suite.Require().NoError(err)
+	}
+
+	// Test get all roles
+	result, err := suite.repo.GetAll()
+	assert.NoError(suite.T(), err)
+	assert.Len(suite.T(), result, 3)
+}
+
+func TestRoleRepositoryTestSuite(t *testing.T) {
+	suite.Run(t, new(RoleRepositoryTestSuite))
+}

@@ -1,0 +1,27 @@
+package {{.Organization}}.{{.Name | lower}}.mobile.di
+
+import android.content.Context
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
+import {{.Organization}}.{{.Name | lower}}.mobile.data.local.database.{{.Name}}Database
+import {{.Organization}}.{{.Name | lower}}.mobile.data.local.dao.UserDao
+import javax.inject.Singleton
+
+@Module
+@InstallIn(SingletonComponent::class)
+object DatabaseModule {
+    
+    @Provides
+    @Singleton
+    fun provideDatabase(@ApplicationContext context: Context): {{.Name}}Database {
+        return {{.Name}}Database.create(context)
+    }
+    
+    @Provides
+    fun provideUserDao(database: {{.Name}}Database): UserDao {
+        return database.userDao()
+    }
+}

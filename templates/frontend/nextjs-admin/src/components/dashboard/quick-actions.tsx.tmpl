@@ -1,0 +1,68 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Plus, Users, FileText, Settings, Download } from 'lucide-react';
+
+const actions = [
+  {
+    title: 'Add New User',
+    description: 'Create a new user account',
+    icon: Plus,
+    href: '/users/new',
+  },
+  {
+    title: 'Manage Users',
+    description: 'View and edit user accounts',
+    icon: Users,
+    href: '/users',
+  },
+  {
+    title: 'Create Content',
+    description: 'Add new content to the system',
+    icon: FileText,
+    href: '/content/new',
+  },
+  {
+    title: 'System Settings',
+    description: 'Configure system preferences',
+    icon: Settings,
+    href: '/settings',
+  },
+  {
+    title: 'Export Data',
+    description: 'Download system reports',
+    icon: Download,
+    href: '/reports',
+  },
+];
+
+export function QuickActions() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Quick Actions</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          {actions.map((action) => (
+            <Button
+              key={action.title}
+              variant="outline"
+              className="h-auto p-4 flex flex-col items-center space-y-2"
+              asChild
+            >
+              <a href={action.href}>
+                <action.icon className="h-6 w-6" />
+                <div className="text-center">
+                  <div className="font-medium">{action.title}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    {action.description}
+                  </div>
+                </div>
+              </a>
+            </Button>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

@@ -1,0 +1,152 @@
+// API client configuration and utilities
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
+
+// API response interface
+interface ApiResponse<T = any> {
+  data: T;
+  message?: string;
+  success: boolean;
+}
+
+// API error interface
+interface ApiError {
+  message: string;
+  status: number;
+  code?: string;
+}
+
+// Custom error class
+export class ApiClientError extends Error {
+  status: number;
+  code?: string;
+
+  constructor(message: string, status: number, code?: string) {
+    super(message);
+    this.name = 'ApiClientError';
+    this.status = status;
+    this.code = code;
+  }
+}
+
+// Request configuration interface
+interface RequestConfig extends RequestInit {
+  timeout?: number;
+}
+
+// API client class
+class ApiClient {
+  private baseURL: string;
+  private defaultTimeout: number = 10000; // 10 seconds
+
+  constructor(baseURL: string = API_BASE_URL) {
+    this.baseURL = baseURL;
+  }
+
+  private async request<T>(
+    endpoint: string,
+    config: RequestConfig = {}
+  ): Promise<ApiResponse<T>> {
+    const { timeout = this.defaultTimeout, ...requestConfig } = config;
+
+    // Create abort controller for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    try {
+      const url = `${this.baseURL}${endpoint}`;
+      const response = await fetch(url, {
+        ...requestConfig,
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          ...requestConfig.headers,
+        },
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new ApiClientError(
+          errorData.message || `HTTP ${response.status}`,
+          response.status,
+          errorData.code
+        );
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      clearTimeout(timeoutId);
+
+      if (error instanceof ApiClientError) {
+        throw error;
+      }
+
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          throw new ApiClientError('Request timeout', 408, 'TIMEOUT');
+        }
+        throw new ApiClientError(error.message, 0, 'NETWORK_ERROR');
+      }
+
+      throw new ApiClientError('Unknown error occurred', 0, 'UNKNOWN_ERROR');
+    }
+  }
+
+  // GET request
+  async get<T>(endpoint: string, config?: RequestConfig): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, { ...config, method: 'GET' });
+  }
+
+  // POST request
+  async post<T>(
+    endpoint: string,
+    data?: any,
+    config?: RequestConfig
+  ): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      ...config,
+      method: 'POST',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
+  // PUT request
+  async put<T>(
+    endpoint: string,
+    data?: any,
+    config?: RequestConfig
+  ): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      ...config,
+      method: 'PUT',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
+  // DELETE request
+  async delete<T>(endpoint: string, config?: RequestConfig): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, { ...config, method: 'DELETE' });
+  }
+
+  // PATCH request
+  async patch<T>(
+    endpoint: string,
+    data?: any,
+    config?: RequestConfig
+  ): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      ...config,
+      method: 'PATCH',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+}
+
+// Create and export default client instance
+export const apiClient = new ApiClient();
+
+// Export types
+export type { ApiResponse, ApiError, RequestConfig };

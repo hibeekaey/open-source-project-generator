@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  # Main generator service
+  generator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: generator:latest
+    container_name: generator
+    volumes:
+      - ./output:/workspace
+      - ./config:/home/generator/.config/generator:ro
+    environment:
+      - GENERATOR_LOG_LEVEL=info
+      - GENERATOR_CONFIG_DIR=/home/generator/.config/generator
+    working_dir: /workspace
+    command: ["--help"]
+    profiles:
+      - generator
+
+  # Development service with source code mounted
+  generator-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: generator:dev
+    container_name: generator-dev
+    volumes:
+      - .:/app
+      - ./output:/workspace
+      - go-mod-cache:/go/pkg/mod
+    environment:
+      - GENERATOR_LOG_LEVEL=debug
+      - CGO_ENABLED=0
+    working_dir: /app
+    command: ["go", "run", "./cmd/generator", "--help"]
+    profiles:
+      - development
+
+  # Testing service
+  generator-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: generator:dev
+    container_name: generator-test
+    volumes:
+      - .:/app
+      - go-mod-cache:/go/pkg/mod
+    environment:
+      - CGO_ENABLED=0
+    working_dir: /app
+    command: ["go", "test", "-v", "./..."]
+    profiles:
+      - testing
+
+  # Package building service
+  generator-build:
+    build:
+      context: .
+      dockerfile: Dockerfile.build
+    image: generator:build
+    container_name: generator-build
+    volumes:
+      - .:/app
+      - ./dist:/app/dist
+      - ./packages:/app/packages
+    working_dir: /app
+    command: ["./scripts/build.sh"]
+    profiles:
+      - build
+
+volumes:
+  go-mod-cache:
+    driver: local

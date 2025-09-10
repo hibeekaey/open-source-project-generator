@@ -1,0 +1,119 @@
+import SwiftUI
+
+struct UsersListView: View {
+    @EnvironmentObject var userViewModel: UserViewModel
+    
+    var body: some View {
+        ZStack {
+            if userViewModel.isLoading && userViewModel.users.isEmpty {
+                ProgressView("Loading users...")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let errorMessage = userViewModel.errorMessage {
+                ErrorView(message: errorMessage) {
+                    userViewModel.refreshUsers()
+                }
+            } else {
+                List(userViewModel.users) { user in
+                    UserRowView(user: user)
+                        .onTapGesture {
+                            // Navigate to user detail
+                        }
+                }
+                .refreshable {
+                    userViewModel.refreshUsers()
+                }
+            }
+        }
+        .overlay(
+            Group {
+                if userViewModel.isLoading && !userViewModel.users.isEmpty {
+                    VStack {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                        Spacer()
+                    }
+                    .padding(.top, 8)
+                }
+            }
+        )
+        .alert("Error", isPresented: .constant(userViewModel.errorMessage != nil)) {
+            Button("OK") {
+                userViewModel.clearError()
+            }
+        } message: {
+            Text(userViewModel.errorMessage ?? "")
+        }
+    }
+}
+
+struct UserRowView: View {
+    let user: User
+    
+    var body: some View {
+        HStack {
+            AsyncImage(url: URL(string: user.avatarUrl ?? "")) { image in
+                image
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            } placeholder: {
+                Circle()
+                    .fill(Color.gray.opacity(0.3))
+                    .overlay(
+                        Image(systemName: "person.fill")
+                            .foregroundColor(.gray)
+                    )
+            }
+            .frame(width: 50, height: 50)
+            .clipShape(Circle())
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(user.name)
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                
+                Text(user.email)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            
+            Spacer()
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+struct ErrorView: View {
+    let message: String
+    let onRetry: () -> Void
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 50))
+                .foregroundColor(.orange)
+            
+            Text("Error")
+                .font(.title2)
+                .fontWeight(.semibold)
+            
+            Text(message)
+                .font(.body)
+                .multilineTextAlignment(.center)
+                .foregroundColor(.secondary)
+            
+            Button("Retry") {
+                onRetry()
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+#Preview {
+    NavigationView {
+        UsersListView()
+            .environmentObject(UserViewModel(userRepository: MockUserRepository()))
+    }
+}

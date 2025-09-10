@@ -1,0 +1,129 @@
+#!/bin/bash
+
+# {{.Name}} Backend Test Setup Script
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+echo -e "${BLUE}Setting up test environment for {{.Name}}...${NC}"
+
+# Check if required tools are installed
+check_tool() {
+    if ! command -v $1 &> /dev/null; then
+        echo -e "${RED}Error: $1 is not installed${NC}"
+        exit 1
+    fi
+}
+
+echo -e "${YELLOW}Checking required tools...${NC}"
+check_tool go
+check_tool psql
+check_tool createdb
+
+# Set up test database
+DB_HOST=${DB_HOST:-localhost}
+DB_PORT=${DB_PORT:-5432}
+DB_USER=${DB_USER:-{{.Name}}_test}
+DB_PASSWORD=${DB_PASSWORD:-test_password}
+DB_NAME=${DB_NAME:-{{.Name}}_test}
+
+echo -e "${YELLOW}Setting up test database...${NC}"
+
+# Create test database if it doesn't exist
+createdb -h $DB_HOST -p $DB_PORT -U postgres $DB_NAME 2>/dev/null || {
+    echo -e "${BLUE}Test database already exists or could not be created${NC}"
+}
+
+# Run migrations on test database
+echo -e "${YELLOW}Running test database migrations...${NC}"
+export DATABASE_URL="postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable"
+
+if [ -d "migrations" ]; then
+    if command -v migrate &> /dev/null; then
+        migrate -path migrations -database "$DATABASE_URL" up
+        echo -e "${GREEN}Test database migrations completed${NC}"
+    else
+        echo -e "${YELLOW}migrate tool not found, skipping migrations${NC}"
+    fi
+else
+    echo -e "${YELLOW}No migrations directory found, skipping migrations${NC}"
+fi
+
+# Install test dependencies
+echo -e "${YELLOW}Installing test dependencies...${NC}"
+go mod download
+go mod tidy
+
+# Install testing tools
+echo -e "${YELLOW}Installing testing tools...${NC}"
+go install github.com/stretchr/testify@latest
+go install github.com/golang/mock/mockgen@latest
+
+# Generate mocks if mockgen is available
+if command -v mockgen &> /dev/null; then
+    echo -e "${YELLOW}Generating mocks...${NC}"
+    
+    # Create mocks directory if it doesn't exist
+    mkdir -p internal/repositories/mocks
+    mkdir -p internal/services/mocks
+    
+    # Generate repository mocks
+    if [ -f "internal/repositories/user_repository.go" ]; then
+        mockgen -source=internal/repositories/user_repository.go -destination=internal/repositories/mocks/user_repository.go
+    fi
+    
+    if [ -f "internal/repositories/role_repository.go" ]; then
+        mockgen -source=internal/repositories/role_repository.go -destination=internal/repositories/mocks/role_repository.go
+    fi
+    
+    # Generate service mocks
+    if [ -f "internal/services/auth_service.go" ]; then
+        mockgen -source=internal/services/auth_service.go -destination=internal/services/mocks/auth_service.go
+    fi
+    
+    if [ -f "internal/services/user_service.go" ]; then
+        mockgen -source=internal/services/user_service.go -destination=internal/services/mocks/user_service.go
+    fi
+    
+    echo -e "${GREEN}Mocks generated successfully${NC}"
+else
+    echo -e "${YELLOW}mockgen not found, skipping mock generation${NC}"
+fi
+
+# Set up test environment file
+echo -e "${YELLOW}Setting up test environment file...${NC}"
+if [ ! -f ".env.test" ]; then
+    cp .env.test.tmpl .env.test 2>/dev/null || {
+        echo -e "${YELLOW}.env.test template not found, creating basic test environment${NC}"
+        cat > .env.test << EOF
+APP_ENV=test
+DB_HOST=$DB_HOST
+DB_PORT=$DB_PORT
+DB_USER=$DB_USER
+DB_PASSWORD=$DB_PASSWORD
+DB_NAME=$DB_NAME
+JWT_SECRET=test-jwt-secret-key-for-testing-only
+EOF
+    }
+fi
+
+# Run a quick test to verify setup
+echo -e "${YELLOW}Running quick verification test...${NC}"
+if go test -short ./... > /dev/null 2>&1; then
+    echo -e "${GREEN}Test setup verification passed${NC}"
+else
+    echo -e "${YELLOW}Some tests failed, but setup is complete. Run 'make test' for detailed output${NC}"
+fi
+
+echo -e "${GREEN}Test environment setup complete!${NC}"
+echo -e "${BLUE}You can now run tests with:${NC}"
+echo -e "  ${GREEN}make test${NC}          - Run all tests"
+echo -e "  ${GREEN}make test-unit${NC}     - Run unit tests only"
+echo -e "  ${GREEN}make test-integration${NC} - Run integration tests only"
+echo -e "  ${GREEN}make test-coverage${NC} - Run tests with coverage"

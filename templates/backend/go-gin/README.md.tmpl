@@ -1,0 +1,252 @@
+# {{.Name}} API Server
+
+A production-ready Go API server built with Gin framework, GORM, JWT authentication, and Redis integration.
+
+## Features
+
+- **RESTful API** with Gin framework
+- **JWT Authentication** with refresh tokens
+- **Role-based Access Control** (RBAC)
+- **PostgreSQL** database with GORM
+- **Redis** for caching and session management
+- **Swagger Documentation** for API endpoints
+- **Docker** containerization
+- **Kubernetes** deployment manifests
+- **Database Migrations** with SQL files
+- **Comprehensive Testing** setup
+- **Graceful Shutdown** handling
+
+## Quick Start
+
+### Prerequisites
+
+- Go 1.22+
+- PostgreSQL 15+
+- Redis 7+
+- Docker (optional)
+
+### Local Development
+
+1. **Clone and setup**
+   ```bash
+   git clone <repository-url>
+   cd {{.Name}}
+   ```
+
+2. **Install dependencies**
+   ```bash
+   go mod download
+   ```
+
+3. **Setup environment**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
+
+4. **Start dependencies with Docker**
+   ```bash
+   docker-compose up -d postgres redis
+   ```
+
+5. **Run migrations**
+   ```bash
+   # Apply migrations manually or let GORM auto-migrate
+   ```
+
+6. **Start the server**
+   ```bash
+   go run main.go
+   ```
+
+The API will be available at `http://localhost:8080`
+
+### Docker Development
+
+```bash
+# Start all services
+docker-compose up
+
+# Start in background
+docker-compose up -d
+
+# View logs
+docker-compose logs -f app
+
+# Stop services
+docker-compose down
+```
+
+## API Documentation
+
+When running in development mode, Swagger documentation is available at:
+- `http://localhost:8080/swagger/index.html`
+
+### Authentication Endpoints
+
+- `POST /api/v1/auth/register` - Register new user
+- `POST /api/v1/auth/login` - User login
+- `POST /api/v1/auth/refresh` - Refresh access token
+- `POST /api/v1/auth/logout` - User logout
+- `GET /api/v1/auth/me` - Get current user
+- `POST /api/v1/auth/change-password` - Change password
+- `POST /api/v1/auth/reset-password` - Request password reset
+- `POST /api/v1/auth/reset-password/confirm` - Confirm password reset
+
+### User Management Endpoints
+
+- `GET /api/v1/users` - List users (admin only)
+- `POST /api/v1/users` - Create user (admin only)
+- `GET /api/v1/users/:id` - Get user by ID
+- `PUT /api/v1/users/:id` - Update user
+- `DELETE /api/v1/users/:id` - Delete user (admin only)
+- `POST /api/v1/users/:id/roles/:roleId` - Assign role (admin only)
+- `DELETE /api/v1/users/:id/roles/:roleId` - Remove role (admin only)
+
+## Configuration
+
+The application uses environment variables for configuration:
+
+### Application Settings
+- `APP_ENV` - Environment (development/production)
+- `APP_DEBUG` - Debug mode (true/false)
+
+### Server Settings
+- `SERVER_HOST` - Server host (default: 0.0.0.0)
+- `SERVER_PORT` - Server port (default: 8080)
+- `SERVER_READ_TIMEOUT` - Read timeout (default: 30s)
+- `SERVER_WRITE_TIMEOUT` - Write timeout (default: 30s)
+- `SERVER_IDLE_TIMEOUT` - Idle timeout (default: 60s)
+
+### Database Settings
+- `DB_HOST` - PostgreSQL host
+- `DB_PORT` - PostgreSQL port
+- `DB_USER` - Database user
+- `DB_PASSWORD` - Database password
+- `DB_NAME` - Database name
+- `DB_SSLMODE` - SSL mode (disable/require)
+
+### Redis Settings
+- `REDIS_HOST` - Redis host
+- `REDIS_PORT` - Redis port
+- `REDIS_PASSWORD` - Redis password
+- `REDIS_DB` - Redis database number
+
+### JWT Settings
+- `JWT_SECRET` - JWT signing secret
+- `JWT_EXPIRATION` - Access token expiration (default: 24h)
+- `JWT_REFRESH` - Refresh token expiration (default: 168h)
+
+## Database Schema
+
+The application uses the following main entities:
+
+- **Users** - User accounts with authentication
+- **Roles** - User roles for access control
+- **Permissions** - Granular permissions for resources
+- **User Roles** - Many-to-many relationship between users and roles
+- **Role Permissions** - Many-to-many relationship between roles and permissions
+
+## Deployment
+
+### Kubernetes
+
+1. **Apply manifests**
+   ```bash
+   kubectl apply -f k8s/
+   ```
+
+2. **Update secrets**
+   ```bash
+   # Edit k8s/secret.yaml with your values
+   kubectl apply -f k8s/secret.yaml
+   ```
+
+### Docker
+
+1. **Build image**
+   ```bash
+   docker build -t {{.Name}}-api .
+   ```
+
+2. **Run container**
+   ```bash
+   docker run -p 8080:8080 --env-file .env {{.Name}}-api
+   ```
+
+## Development
+
+### Project Structure
+
+```
+.
+├── cmd/                    # Application entrypoints
+├── internal/              # Private application code
+│   ├── config/           # Configuration management
+│   ├── controllers/      # HTTP handlers
+│   ├── database/         # Database connection
+│   ├── middleware/       # HTTP middleware
+│   ├── models/          # Data models
+│   ├── repositories/    # Data access layer
+│   ├── router/          # Route definitions
+│   ├── server/          # HTTP server
+│   └── services/        # Business logic
+├── pkg/                  # Public library code
+│   └── utils/           # Utility functions
+├── migrations/          # Database migrations
+├── k8s/                # Kubernetes manifests
+├── docs/               # Documentation
+└── tests/              # Test files
+```
+
+### Adding New Features
+
+1. **Create models** in `internal/models/`
+2. **Add repositories** in `internal/repositories/`
+3. **Implement services** in `internal/services/`
+4. **Create controllers** in `internal/controllers/`
+5. **Add routes** in `internal/router/`
+6. **Write tests** in appropriate test files
+
+### Testing
+
+```bash
+# Run all tests
+go test ./...
+
+# Run tests with coverage
+go test -cover ./...
+
+# Run specific package tests
+go test ./internal/services/...
+```
+
+## Security
+
+- JWT tokens for authentication
+- Password hashing with bcrypt
+- Role-based access control
+- Input validation
+- SQL injection prevention with GORM
+- CORS middleware
+- Rate limiting (can be added)
+- HTTPS support (configure reverse proxy)
+
+## Monitoring
+
+- Health check endpoint: `/health`
+- Request logging middleware
+- Error tracking (can be integrated)
+- Metrics collection (can be added)
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Submit a pull request
+
+## License
+
+This project is licensed under the {{.License}} License.

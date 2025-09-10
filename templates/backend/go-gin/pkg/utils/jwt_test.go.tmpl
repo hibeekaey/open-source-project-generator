@@ -1,0 +1,126 @@
+package utils
+
+import (
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestGenerateToken(t *testing.T) {
+	t.Run("successful token generation", func(t *testing.T) {
+		userID := uint(1)
+		email := "test@example.com"
+
+		token, err := GenerateToken(userID, email)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, token)
+	})
+
+	t.Run("token generation with zero user ID", func(t *testing.T) {
+		userID := uint(0)
+		email := "test@example.com"
+
+		token, err := GenerateToken(userID, email)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, token)
+	})
+
+	t.Run("token generation with empty email", func(t *testing.T) {
+		userID := uint(1)
+		email := ""
+
+		token, err := GenerateToken(userID, email)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, token)
+	})
+}
+
+func TestValidateToken(t *testing.T) {
+	t.Run("valid token validation", func(t *testing.T) {
+		userID := uint(1)
+		email := "test@example.com"
+
+		// Generate a token
+		token, err := GenerateToken(userID, email)
+		assert.NoError(t, err)
+
+		// Validate the token
+		claims, err := ValidateToken(token)
+		assert.NoError(t, err)
+		assert.NotNil(t, claims)
+		assert.Equal(t, userID, claims.UserID)
+		assert.Equal(t, email, claims.Email)
+	})
+
+	t.Run("invalid token validation", func(t *testing.T) {
+		invalidToken := "invalid.token.here"
+
+		claims, err := ValidateToken(invalidToken)
+		assert.Error(t, err)
+		assert.Nil(t, claims)
+	})
+
+	t.Run("malformed token validation", func(t *testing.T) {
+		malformedToken := "not.a.jwt"
+
+		claims, err := ValidateToken(malformedToken)
+		assert.Error(t, err)
+		assert.Nil(t, claims)
+	})
+
+	t.Run("empty token validation", func(t *testing.T) {
+		emptyToken := ""
+
+		claims, err := ValidateToken(emptyToken)
+		assert.Error(t, err)
+		assert.Nil(t, claims)
+	})
+}
+
+func TestTokenExpiration(t *testing.T) {
+	t.Run("token should not be expired immediately", func(t *testing.T) {
+		userID := uint(1)
+		email := "test@example.com"
+
+		token, err := GenerateToken(userID, email)
+		assert.NoError(t, err)
+
+		claims, err := ValidateToken(token)
+		assert.NoError(t, err)
+		assert.True(t, claims.ExpiresAt.After(time.Now()))
+	})
+}
+
+func TestRefreshToken(t *testing.T) {
+	t.Run("successful refresh token generation", func(t *testing.T) {
+		userID := uint(1)
+		email := "test@example.com"
+
+		refreshToken, err := GenerateRefreshToken(userID, email)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, refreshToken)
+	})
+
+	t.Run("refresh token validation", func(t *testing.T) {
+		userID := uint(1)
+		email := "test@example.com"
+
+		refreshToken, err := GenerateRefreshToken(userID, email)
+		assert.NoError(t, err)
+
+		claims, err := ValidateRefreshToken(refreshToken)
+		assert.NoError(t, err)
+		assert.NotNil(t, claims)
+		assert.Equal(t, userID, claims.UserID)
+		assert.Equal(t, email, claims.Email)
+	})
+
+	t.Run("invalid refresh token validation", func(t *testing.T) {
+		invalidToken := "invalid.refresh.token"
+
+		claims, err := ValidateRefreshToken(invalidToken)
+		assert.Error(t, err)
+		assert.Nil(t, claims)
+	})
+}

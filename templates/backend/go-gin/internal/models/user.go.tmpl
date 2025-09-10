@@ -1,0 +1,93 @@
+package models
+
+import (
+	"time"
+
+	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
+)
+
+// User represents a user in the system
+type User struct {
+	ID        uint           `json:"id" gorm:"primaryKey"`
+	Email     string         `json:"email" gorm:"uniqueIndex;not null" validate:"required,email"`
+	Username  string         `json:"username" gorm:"uniqueIndex;not null" validate:"required,min=3,max=50"`
+	Password  string         `json:"-" gorm:"not null" validate:"required,min=8"`
+	FirstName string         `json:"first_name" validate:"required,min=1,max=50"`
+	LastName  string         `json:"last_name" validate:"required,min=1,max=50"`
+	IsActive  bool           `json:"is_active" gorm:"default:true"`
+	IsAdmin   bool           `json:"is_admin" gorm:"default:false"`
+	Roles     []Role         `json:"roles" gorm:"many2many:user_roles;"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+}
+
+// UserCreateRequest represents the request payload for creating a user
+type UserCreateRequest struct {
+	Email     string `json:"email" validate:"required,email"`
+	Username  string `json:"username" validate:"required,min=3,max=50"`
+	Password  string `json:"password" validate:"required,min=8"`
+	FirstName string `json:"first_name" validate:"required,min=1,max=50"`
+	LastName  string `json:"last_name" validate:"required,min=1,max=50"`
+}
+
+// UserUpdateRequest represents the request payload for updating a user
+type UserUpdateRequest struct {
+	Email     *string `json:"email,omitempty" validate:"omitempty,email"`
+	Username  *string `json:"username,omitempty" validate:"omitempty,min=3,max=50"`
+	FirstName *string `json:"first_name,omitempty" validate:"omitempty,min=1,max=50"`
+	LastName  *string `json:"last_name,omitempty" validate:"omitempty,min=1,max=50"`
+	IsActive  *bool   `json:"is_active,omitempty"`
+}
+
+// UserResponse represents the response payload for user data
+type UserResponse struct {
+	ID        uint      `json:"id"`
+	Email     string    `json:"email"`
+	Username  string    `json:"username"`
+	FirstName string    `json:"first_name"`
+	LastName  string    `json:"last_name"`
+	IsActive  bool      `json:"is_active"`
+	IsAdmin   bool      `json:"is_admin"`
+	Roles     []Role    `json:"roles"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// BeforeCreate is a GORM hook that runs before creating a user
+func (u *User) BeforeCreate(tx *gorm.DB) error {
+	return u.HashPassword()
+}
+
+// HashPassword hashes the user's password
+func (u *User) HashPassword() error {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	u.Password = string(hashedPassword)
+	return nil
+}
+
+// CheckPassword checks if the provided password matches the user's password
+func (u *User) CheckPassword(password string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
+	return err == nil
+}
+
+// ToResponse converts a User to UserResponse
+func (u *User) ToResponse() UserResponse {
+	return UserResponse{
+		ID:        u.ID,
+		Email:     u.Email,
+		Username:  u.Username,
+		FirstName: u.FirstName,
+		LastName:  u.LastName,
+		IsActive:  u.IsActive,
+		IsAdmin:   u.IsAdmin,
+		Roles:     u.Roles,
+		CreatedAt: u.CreatedAt,
+		UpdatedAt: u.UpdatedAt,
+	}
+}

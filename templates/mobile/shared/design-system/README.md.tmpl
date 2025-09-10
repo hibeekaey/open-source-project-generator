@@ -1,0 +1,192 @@
+# {{.Name}} Design System
+
+This document outlines the design system for {{.Name}} mobile applications, ensuring consistency across Android and iOS platforms.
+
+## Brand Identity
+
+### Logo
+- Primary logo: Use the full logo with text
+- Icon only: Use for small spaces (app icons, favicons)
+- Minimum size: 24px for icon, 120px for full logo
+- Clear space: Minimum 1x logo height on all sides
+
+### Typography
+
+#### Primary Font: Inter
+- **Headings**: Inter Bold (700)
+- **Body Text**: Inter Regular (400)
+- **Captions**: Inter Light (300)
+
+#### Secondary Font: Roboto (Android fallback)
+- **Headings**: Roboto Bold (700)
+- **Body Text**: Roboto Regular (400)
+- **Captions**: Roboto Light (300)
+
+#### Font Scales
+- **Display**: 32sp/32pt
+- **Headline**: 24sp/24pt
+- **Title**: 20sp/20pt
+- **Body Large**: 16sp/16pt
+- **Body Medium**: 14sp/14pt
+- **Body Small**: 12sp/12pt
+- **Caption**: 10sp/10pt
+
+## Color Palette
+
+### Primary Colors
+- **Primary**: #1976D2 (Blue 700)
+- **Primary Variant**: #1565C0 (Blue 800)
+- **Secondary**: #03DAC6 (Teal 200)
+- **Secondary Variant**: #018786 (Teal 700)
+
+### Semantic Colors
+- **Success**: #4CAF50 (Green 500)
+- **Warning**: #FF9800 (Orange 500)
+- **Error**: #F44336 (Red 500)
+- **Info**: #2196F3 (Blue 500)
+
+### Neutral Colors
+- **Background**: #FFFFFF (Light) / #121212 (Dark)
+- **Surface**: #F5F5F5 (Light) / #1E1E1E (Dark)
+- **On Background**: #000000 (Light) / #FFFFFF (Dark)
+- **On Surface**: #212121 (Light) / #E0E0E0 (Dark)
+
+## Spacing System
+
+### Base Unit: 8dp/8pt
+
+- **XXS**: 4dp/4pt
+- **XS**: 8dp/8pt
+- **S**: 12dp/12pt
+- **M**: 16dp/16pt
+- **L**: 24dp/24pt
+- **XL**: 32dp/32pt
+- **XXL**: 48dp/48pt
+
+## Component Guidelines
+
+### Buttons
+
+#### Primary Button
+- Background: Primary color
+- Text: On Primary color
+- Corner radius: 8dp/8pt
+- Height: 48dp/48pt
+- Padding: 16dp/16pt horizontal
+
+#### Secondary Button
+- Background: Transparent
+- Border: 1dp/1pt Primary color
+- Text: Primary color
+- Corner radius: 8dp/8pt
+- Height: 48dp/48pt
+- Padding: 16dp/16pt horizontal
+
+#### Text Button
+- Background: Transparent
+- Text: Primary color
+- Height: 48dp/48pt
+- Padding: 16dp/16pt horizontal
+
+### Cards
+- Background: Surface color
+- Corner radius: 12dp/12pt
+- Elevation: 2dp/2pt (Android) / Shadow (iOS)
+- Padding: 16dp/16pt
+
+### Input Fields
+- Background: Surface color
+- Border: 1dp/1pt Outline color
+- Corner radius: 8dp/8pt
+- Height: 56dp/56pt
+- Padding: 16dp/16pt horizontal
+
+### Navigation
+- Tab height: 56dp/56pt
+- Icon size: 24dp/24pt
+- Text: Body Medium
+
+## Iconography
+
+### Style
+- **Style**: Outlined (primary), Filled (selected states)
+- **Weight**: 400 (regular)
+- **Size**: 24dp/24pt (standard), 20dp/20pt (small), 32dp/32pt (large)
+
+### Common Icons
+- Home: house
+- Profile: person
+- Settings: settings
+- Search: search
+- Add: add
+- Edit: edit
+- Delete: delete
+- Back: arrow_back
+- Forward: arrow_forward
+- Menu: menu
+- Close: close
+
+## Animation Guidelines
+
+### Duration
+- **Micro**: 100ms (hover, focus states)
+- **Short**: 200ms (simple transitions)
+- **Medium**: 300ms (complex transitions)
+- **Long**: 500ms (page transitions)
+
+### Easing
+- **Standard**: Cubic Bezier (0.4, 0.0, 0.2, 1)
+- **Decelerate**: Cubic Bezier (0.0, 0.0, 0.2, 1)
+- **Accelerate**: Cubic Bezier (0.4, 0.0, 1, 1)
+
+## Platform-Specific Guidelines
+
+### Android (Material Design 3)
+- Follow Material Design 3 guidelines
+- Use Material Components
+- Implement proper elevation and shadows
+- Support dynamic theming (Material You)
+
+### iOS (Human Interface Guidelines)
+- Follow Apple's Human Interface Guidelines
+- Use SF Symbols when possible
+- Implement proper navigation patterns
+- Support Dynamic Type and accessibility features
+
+## Accessibility
+
+### Color Contrast
+- **Normal text**: Minimum 4.5:1 contrast ratio
+- **Large text**: Minimum 3:1 contrast ratio
+- **UI elements**: Minimum 3:1 contrast ratio
+
+### Touch Targets
+- **Minimum size**: 44dp/44pt
+- **Recommended size**: 48dp/48pt
+- **Spacing**: Minimum 8dp/8pt between targets
+
+### Text
+- Support Dynamic Type (iOS) and font scaling (Android)
+- Provide alternative text for images
+- Use semantic markup for screen readers
+
+## Implementation Notes
+
+### Android
+- Use Material Design Components library
+- Implement themes using Theme.Material3
+- Use vector drawables for icons
+- Support dark theme with DayNight theme
+
+### iOS
+- Use SwiftUI or UIKit with proper styling
+- Implement appearance proxies for consistent theming
+- Use SF Symbols for system icons
+- Support Dark Mode with semantic colors
+
+## Resources
+
+- [Material Design 3](https://m3.material.io/)
+- [Apple Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/)
+- [Web Content Accessibility Guidelines](https://www.w3.org/WAI/WCAG21/quickref/)
+- [Color Contrast Checker](https://webaim.org/resources/contrastchecker/)

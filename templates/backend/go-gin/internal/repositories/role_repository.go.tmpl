@@ -1,0 +1,98 @@
+package repositories
+
+import (
+	"{{.Name}}/internal/models"
+	"gorm.io/gorm"
+)
+
+// RoleRepository defines the interface for role data operations
+type RoleRepository interface {
+	Create(role *models.Role) (*models.Role, error)
+	GetByID(id uint) (*models.Role, error)
+	GetByName(name string) (*models.Role, error)
+	Update(role *models.Role) (*models.Role, error)
+	Delete(id uint) error
+	List(offset, limit int) ([]*models.Role, int64, error)
+	AssignPermission(roleID, permissionID uint) error
+	RemovePermission(roleID, permissionID uint) error
+}
+
+// roleRepository implements RoleRepository
+type roleRepository struct {
+	db *gorm.DB
+}
+
+// NewRoleRepository creates a new role repository
+func NewRoleRepository(db *gorm.DB) RoleRepository {
+	return &roleRepository{db: db}
+}
+
+// Create creates a new role
+func (r *roleRepository) Create(role *models.Role) (*models.Role, error) {
+	if err := r.db.Create(role).Error; err != nil {
+		return nil, err
+	}
+	return r.GetByID(role.ID)
+}
+
+// GetByID gets a role by ID with permissions
+func (r *roleRepository) GetByID(id uint) (*models.Role, error) {
+	var role models.Role
+	err := r.db.Preload("Permissions").First(&role, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &role, nil
+}
+
+// GetByName gets a role by name with permissions
+func (r *roleRepository) GetByName(name string) (*models.Role, error) {
+	var role models.Role
+	err := r.db.Preload("Permissions").Where("name = ?", name).First(&role).Error
+	if err != nil {
+		return nil, err
+	}
+	return &role, nil
+}
+
+// Update updates a role
+func (r *roleRepository) Update(role *models.Role) (*models.Role, error) {
+	if err := r.db.Save(role).Error; err != nil {
+		return nil, err
+	}
+	return r.GetByID(role.ID)
+}
+
+// Delete soft deletes a role
+func (r *roleRepository) Delete(id uint) error {
+	return r.db.Delete(&models.Role{}, id).Error
+}
+
+// List lists roles with pagination
+func (r *roleRepository) List(offset, limit int) ([]*models.Role, int64, error) {
+	var roles []*models.Role
+	var total int64
+
+	// Count total roles
+	if err := r.db.Model(&models.Role{}).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Get roles with pagination
+	err := r.db.Preload("Permissions").
+		Offset(offset).
+		Limit(limit).
+		Find(&roles).Error
+
+	return roles, total, err
+}
+
+// AssignPermission assigns a permission to a role
+func (r *roleRepository) AssignPermission(roleID, permissionID uint) error {
+	return r.db.Exec("INSERT INTO role_permissions (role_id, permission_id) VALUES (?, ?)", roleID, permissionID).Error
+}
+
+// RemovePermission removes a permission from a role
+func (r *roleRepository) RemovePermission(roleID, permissionID uint) error {
+	return r.db.Exec("DELETE FROM role_permissions WHERE role_id = ? AND permission_id = ?", roleID, permissionID).Error
+}

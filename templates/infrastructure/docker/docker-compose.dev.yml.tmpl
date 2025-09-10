@@ -1,0 +1,176 @@
+version: '3.8'
+
+services:
+  # Frontend Applications
+  {{if .Components.Frontend.MainApp}}
+  app:
+    build:
+      context: ./App
+      dockerfile: ../templates/infrastructure/docker/frontend.Dockerfile.tmpl
+      target: builder
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./App:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:8080
+    depends_on:
+      - api
+    networks:
+      - {{.Name}}-network
+    restart: unless-stopped
+  {{end}}
+
+  {{if .Components.Frontend.Home}}
+  home:
+    build:
+      context: ./Home
+      dockerfile: ../templates/infrastructure/docker/frontend.Dockerfile.tmpl
+      target: builder
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./Home:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:8080
+    networks:
+      - {{.Name}}-network
+    restart: unless-stopped
+  {{end}}
+
+  {{if .Components.Frontend.Admin}}
+  admin:
+    build:
+      context: ./Admin
+      dockerfile: ../templates/infrastructure/docker/frontend.Dockerfile.tmpl
+      target: builder
+    ports:
+      - "3002:3000"
+    volumes:
+      - ./Admin:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:8080
+    depends_on:
+      - api
+    networks:
+      - {{.Name}}-network
+    restart: unless-stopped
+  {{end}}
+
+  # Backend API
+  {{if .Components.Backend.API}}
+  api:
+    build:
+      context: ./CommonServer
+      dockerfile: ../templates/infrastructure/docker/backend.Dockerfile.tmpl
+      target: builder
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./CommonServer:/app
+    environment:
+      - GO_ENV=development
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER={{.Name}}_user
+      - DB_PASSWORD={{.Name}}_password
+      - DB_NAME={{.Name}}_dev
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=dev_jwt_secret_change_in_production
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - {{.Name}}-network
+    restart: unless-stopped
+    command: ["go", "run", "./cmd/generator"]
+  {{end}}
+
+  # Database
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER={{.Name}}_user
+      - POSTGRES_PASSWORD={{.Name}}_password
+      - POSTGRES_DB={{.Name}}_dev
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./CommonServer/migrations:/docker-entrypoint-initdb.d
+    networks:
+      - {{.Name}}-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U {{.Name}}_user -d {{.Name}}_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - {{.Name}}-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Development Tools
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    networks:
+      - {{.Name}}-network
+    restart: unless-stopped
+
+  # Monitoring (Development)
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./Deploy/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - {{.Name}}-network
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3003:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - {{.Name}}-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  grafana_data:
+
+networks:
+  {{.Name}}-network:
+    driver: bridge

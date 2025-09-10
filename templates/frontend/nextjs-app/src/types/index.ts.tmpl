@@ -1,0 +1,57 @@
+// Common type definitions
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ApiResponse<T = any> {
+  data: T;
+  message?: string;
+  success: boolean;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface ErrorResponse {
+  message: string;
+  code?: string;
+  details?: Record<string, any>;
+}
+
+// Form types
+export interface LoginForm {
+  email: string;
+  password: string;
+}
+
+export interface RegisterForm {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
+// Component props types
+export interface BaseComponentProps {
+  className?: string;
+  children?: React.ReactNode;
+}
+
+// Theme types
+export type Theme = 'light' | 'dark' | 'system';
+
+// Status types
+export type Status = 'idle' | 'loading' | 'success' | 'error';

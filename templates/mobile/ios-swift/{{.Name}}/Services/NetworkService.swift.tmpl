@@ -1,0 +1,59 @@
+import Foundation
+import Alamofire
+import Combine
+
+protocol NetworkService {
+    func request<T: Codable>(_ endpoint: APIEndpoint, responseType: T.Type) -> AnyPublisher<T, NetworkError>
+}
+
+class NetworkServiceImpl: NetworkService {
+    private let baseURL = "https://api.{{.Name | lower}}.com/v1/"
+    private let session: Session
+    
+    init() {
+        let configuration = URLSessionConfiguration.default
+        configuration.timeoutIntervalForRequest = 30
+        configuration.timeoutIntervalForResource = 60
+        
+        self.session = Session(configuration: configuration)
+    }
+    
+    func request<T: Codable>(_ endpoint: APIEndpoint, responseType: T.Type) -> AnyPublisher<T, NetworkError> {
+        let url = baseURL + endpoint.path
+        
+        return session.request(
+            url,
+            method: HTTPMethod(rawValue: endpoint.method.rawValue) ?? .get,
+            parameters: endpoint.parameters,
+            encoding: endpoint.encoding,
+            headers: endpoint.headers
+        )
+        .validate()
+        .publishDecodable(type: T.self)
+        .value()
+        .mapError { error in
+            if let afError = error as? AFError {
+                return NetworkError.alamofireError(afError)
+            }
+            return NetworkError.unknown(error)
+        }
+        .eraseToAnyPublisher()
+    }
+}
+
+enum NetworkError: Error, LocalizedError {
+    case alamofireError(AFError)
+    case decodingError(DecodingError)
+    case unknown(Error)
+    
+    var errorDescription: String? {
+        switch self {
+        case .alamofireError(let afError):
+            return afError.localizedDescription
+        case .decodingError(let decodingError):
+            return decodingError.localizedDescription
+        case .unknown(let error):
+            return error.localizedDescription
+        }
+    }
+}

@@ -1,0 +1,33 @@
+package {{.Organization}}.{{.Name | lower}}.mobile.data.local.database
+
+import androidx.room.Database
+import androidx.room.Room
+import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
+import android.content.Context
+import {{.Organization}}.{{.Name | lower}}.mobile.data.local.dao.UserDao
+import {{.Organization}}.{{.Name | lower}}.mobile.data.local.entity.UserEntity
+import {{.Organization}}.{{.Name | lower}}.mobile.data.local.converter.Converters
+
+@Database(
+    entities = [UserEntity::class],
+    version = 1,
+    exportSchema = false
+)
+@TypeConverters(Converters::class)
+abstract class {{.Name}}Database : RoomDatabase() {
+    
+    abstract fun userDao(): UserDao
+    
+    companion object {
+        const val DATABASE_NAME = "{{.Name | lower}}_database"
+        
+        fun create(context: Context): {{.Name}}Database {
+            return Room.databaseBuilder(
+                context,
+                {{.Name}}Database::class.java,
+                DATABASE_NAME
+            ).build()
+        }
+    }
+}

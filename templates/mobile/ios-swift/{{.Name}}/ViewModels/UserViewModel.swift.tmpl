@@ -1,0 +1,124 @@
+import Foundation
+import Combine
+
+class UserViewModel: ObservableObject {
+    @Published var users: [User] = []
+    @Published var isLoading: Bool = false
+    @Published var errorMessage: String?
+    @Published var currentUser: User?
+    
+    private let userRepository: UserRepository
+    private var cancellables = Set<AnyCancellable>()
+    
+    init(userRepository: UserRepository) {
+        self.userRepository = userRepository
+        loadCachedUsers()
+    }
+    
+    func loadUsers() {
+        isLoading = true
+        errorMessage = nil
+        
+        userRepository.getUsers()
+            .receive(on: DispatchQueue.main)
+            .sink(
+                receiveCompletion: { [weak self] completion in
+                    self?.isLoading = false
+                    if case .failure(let error) = completion {
+                        self?.errorMessage = error.localizedDescription
+                    }
+                },
+                receiveValue: { [weak self] users in
+                    self?.users = users
+                }
+            )
+            .store(in: &cancellables)
+    }
+    
+    func refreshUsers() {
+        loadUsers()
+    }
+    
+    func login(email: String, password: String) {
+        isLoading = true
+        errorMessage = nil
+        
+        let credentials = LoginCredentials(email: email, password: password)
+        
+        userRepository.login(credentials: credentials)
+            .receive(on: DispatchQueue.main)
+            .sink(
+                receiveCompletion: { [weak self] completion in
+                    self?.isLoading = false
+                    if case .failure(let error) = completion {
+                        self?.errorMessage = error.localizedDescription
+                    }
+                },
+                receiveValue: { [weak self] authToken in
+                    self?.currentUser = authToken.user
+                    // Store token securely here
+                }
+            )
+            .store(in: &cancellables)
+    }
+    
+    func getUserProfile() {
+        userRepository.getUserProfile()
+            .receive(on: DispatchQueue.main)
+            .sink(
+                receiveCompletion: { [weak self] completion in
+                    if case .failure(let error) = completion {
+                        self?.errorMessage = error.localizedDescription
+                    }
+                },
+                receiveValue: { [weak self] user in
+                    self?.currentUser = user
+                }
+            )
+            .store(in: &cancellables)
+    }
+    
+    func updateUser(_ user: User) {
+        userRepository.updateUser(user)
+            .receive(on: DispatchQueue.main)
+            .sink(
+                receiveCompletion: { [weak self] completion in
+                    if case .failure(let error) = completion {
+                        self?.errorMessage = error.localizedDescription
+                    }
+                },
+                receiveValue: { [weak self] updatedUser in
+                    self?.currentUser = updatedUser
+                    // Update user in the list
+                    if let index = self?.users.firstIndex(where: { $0.id == updatedUser.id }) {
+                        self?.users[index] = updatedUser
+                    }
+                }
+            )
+            .store(in: &cancellables)
+    }
+    
+    func deleteUser(_ id: String) {
+        userRepository.deleteUser(id)
+            .receive(on: DispatchQueue.main)
+            .sink(
+                receiveCompletion: { [weak self] completion in
+                    if case .failure(let error) = completion {
+                        self?.errorMessage = error.localizedDescription
+                    }
+                },
+                receiveValue: { [weak self] _ in
+                    self?.users.removeAll { $0.id == id }
+                }
+            )
+            .store(in: &cancellables)
+    }
+    
+    func clearError() {
+        errorMessage = nil
+    }
+    
+    private func loadCachedUsers() {
+        users = userRepository.getCachedUsers()
+    }
+}

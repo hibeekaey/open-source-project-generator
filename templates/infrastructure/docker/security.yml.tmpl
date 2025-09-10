@@ -1,0 +1,131 @@
+# Docker Security Configuration
+# This file contains security best practices for Docker containers
+
+# Security scanning with Trivy
+security:
+  scanning:
+    enabled: true
+    tools:
+      - trivy
+      - snyk
+    schedule: "0 2 * * *"  # Daily at 2 AM
+    
+  # Container security policies
+  policies:
+    # Run containers as non-root
+    non_root_user: true
+    
+    # Read-only root filesystem
+    read_only_root_fs: true
+    
+    # Drop all capabilities by default
+    drop_capabilities:
+      - ALL
+    
+    # Add only required capabilities
+    add_capabilities: []
+    
+    # Security context
+    security_context:
+      runAsNonRoot: true
+      runAsUser: 1001
+      runAsGroup: 1001
+      fsGroup: 1001
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      
+    # Resource limits
+    resources:
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+        
+    # Network policies
+    network:
+      # Restrict network access
+      ingress:
+        - from:
+          - namespaceSelector:
+              matchLabels:
+                name: {{.Name}}-namespace
+          ports:
+          - protocol: TCP
+            port: 8080
+      egress:
+        - to: []
+          ports:
+          - protocol: TCP
+            port: 443  # HTTPS
+          - protocol: TCP
+            port: 53   # DNS
+          - protocol: UDP
+            port: 53   # DNS
+
+# Image security configuration
+images:
+  # Base image security
+  base_images:
+    allowed:
+      - "alpine:*"
+      - "node:*-alpine"
+      - "golang:*-alpine"
+      - "postgres:*-alpine"
+      - "redis:*-alpine"
+    
+  # Image signing
+  signing:
+    enabled: true
+    cosign: true
+    
+  # Vulnerability scanning
+  vulnerability_scanning:
+    enabled: true
+    fail_on: "HIGH"
+    ignore_unfixed: false
+
+# Runtime security
+runtime:
+  # AppArmor profiles
+  apparmor:
+    enabled: true
+    profiles:
+      - docker-default
+      
+  # Seccomp profiles
+  seccomp:
+    enabled: true
+    profile: runtime/default
+    
+  # SELinux
+  selinux:
+    enabled: false  # Set to true if using SELinux
+    
+# Secrets management
+secrets:
+  # External secrets operator
+  external_secrets:
+    enabled: true
+    provider: "kubernetes"
+    
+  # Secret rotation
+  rotation:
+    enabled: true
+    schedule: "0 0 1 * *"  # Monthly
+    
+# Compliance
+compliance:
+  # CIS benchmarks
+  cis:
+    enabled: true
+    version: "1.6.0"
+    
+  # NIST compliance
+  nist:
+    enabled: true
+    
+  # SOC2 compliance
+  soc2:
+    enabled: false

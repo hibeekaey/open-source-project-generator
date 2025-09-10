@@ -1,0 +1,103 @@
+#!/bin/bash
+
+# {{.Name}} Android Build Script
+# This script builds the Android application with proper configuration
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Configuration
+PROJECT_NAME="{{.Name}}"
+BUILD_TYPE="${BUILD_TYPE:-debug}"
+FLAVOR="${FLAVOR:-}"
+OUTPUT_DIR="build/outputs"
+
+echo -e "${BLUE}🚀 Building ${PROJECT_NAME} Android App${NC}"
+echo -e "${BLUE}Build Type: ${BUILD_TYPE}${NC}"
+echo -e "${BLUE}Flavor: ${FLAVOR:-default}${NC}"
+
+# Check if we're in the right directory
+if [ ! -f "build.gradle.kts" ] && [ ! -f "build.gradle" ]; then
+    echo -e "${RED}❌ Error: Not in Android project root directory${NC}"
+    echo -e "${YELLOW}Please run this script from the Android project root${NC}"
+    exit 1
+fi
+
+# Check if Gradle wrapper exists
+if [ ! -f "gradlew" ]; then
+    echo -e "${RED}❌ Error: Gradle wrapper not found${NC}"
+    echo -e "${YELLOW}Please ensure gradlew is present in the project root${NC}"
+    exit 1
+fi
+
+# Make gradlew executable
+chmod +x gradlew
+
+# Clean previous builds
+echo -e "${YELLOW}🧹 Cleaning previous builds...${NC}"
+./gradlew clean
+
+# Run tests
+echo -e "${YELLOW}🧪 Running tests...${NC}"
+./gradlew test
+
+# Build the application
+echo -e "${YELLOW}🔨 Building application...${NC}"
+if [ -n "$FLAVOR" ]; then
+    BUILD_TASK="assemble${FLAVOR^}${BUILD_TYPE^}"
+else
+    BUILD_TASK="assemble${BUILD_TYPE^}"
+fi
+
+./gradlew $BUILD_TASK
+
+# Check if build was successful
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}✅ Build completed successfully!${NC}"
+    
+    # Find and display APK location
+    APK_PATH=$(find $OUTPUT_DIR -name "*.apk" -type f | head -1)
+    if [ -n "$APK_PATH" ]; then
+        echo -e "${GREEN}📱 APK generated: $APK_PATH${NC}"
+        
+        # Display APK size
+        APK_SIZE=$(du -h "$APK_PATH" | cut -f1)
+        echo -e "${GREEN}📏 APK size: $APK_SIZE${NC}"
+    fi
+    
+    # Display build artifacts
+    echo -e "${BLUE}📦 Build artifacts:${NC}"
+    find $OUTPUT_DIR -name "*.apk" -o -name "*.aab" | while read file; do
+        echo -e "${BLUE}  - $file${NC}"
+    done
+    
+else
+    echo -e "${RED}❌ Build failed!${NC}"
+    exit 1
+fi
+
+# Optional: Install APK if device is connected and it's a debug build
+if [ "$BUILD_TYPE" = "debug" ] && command -v adb &> /dev/null; then
+    DEVICES=$(adb devices | grep -v "List of devices" | grep "device$" | wc -l)
+    if [ $DEVICES -gt 0 ]; then
+        echo -e "${YELLOW}📱 Android device detected. Install APK? (y/n)${NC}"
+        read -r INSTALL_CHOICE
+        if [ "$INSTALL_CHOICE" = "y" ] || [ "$INSTALL_CHOICE" = "Y" ]; then
+            echo -e "${YELLOW}📲 Installing APK...${NC}"
+            adb install -r "$APK_PATH"
+            if [ $? -eq 0 ]; then
+                echo -e "${GREEN}✅ APK installed successfully!${NC}"
+            else
+                echo -e "${RED}❌ Failed to install APK${NC}"
+            fi
+        fi
+    fi
+fi
+
+echo -e "${GREEN}🎉 Android build process completed!${NC}"

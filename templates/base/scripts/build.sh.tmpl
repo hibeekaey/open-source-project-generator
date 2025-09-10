@@ -1,0 +1,660 @@
+#!/bin/bash
+
+# {{.Name}} - Build Script
+# This script builds all components of the application
+
+set -euo pipefail
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
+
+# Configuration
+PROJECT_NAME="{{.Name}}"
+VERSION="${VERSION:-$(git describe --tags --always --dirty 2>/dev/null || echo "dev")}"
+BUILD_TIME="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+GIT_COMMIT="$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")"
+GIT_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")"
+
+# Directories
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+BUILD_DIR="$PROJECT_ROOT/build"
+DIST_DIR="$PROJECT_ROOT/dist"
+
+{{if .Components.Frontend.MainApp}}FRONTEND_DIRS=("App"{{if .Components.Frontend.Home}} "Home"{{end}}{{if .Components.Frontend.Admin}} "Admin"{{end}}){{end}}
+{{if .Components.Backend.API}}BACKEND_DIR="CommonServer"{{end}}
+
+# Build configuration
+BUILD_MODE="${BUILD_MODE:-production}"
+PARALLEL_BUILDS="${PARALLEL_BUILDS:-true}"
+SKIP_TESTS="${SKIP_TESTS:-false}"
+SKIP_LINT="${SKIP_LINT:-false}"
+
+# Logging functions
+log_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+log_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+log_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+log_step() {
+    echo -e "${CYAN}[STEP]${NC} $1"
+}
+
+# Error handling
+handle_error() {
+    log_error "Build failed at line $1"
+    cleanup_on_error
+    exit 1
+}
+
+trap 'handle_error $LINENO' ERR
+
+# Cleanup function
+cleanup_on_error() {
+    log_warning "Cleaning up after error..."
+    # Kill any background processes
+    jobs -p | xargs -r kill 2>/dev/null || true
+}
+
+# Check if command exists
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+# Create build directories
+setup_build_dirs() {
+    log_step "Setting up build directories..."
+    
+    mkdir -p "$BUILD_DIR"
+    mkdir -p "$DIST_DIR"
+    
+    # Clean previous builds if requested
+    if [[ "${CLEAN_BUILD:-false}" == "true" ]]; then
+        log_info "Cleaning previous builds..."
+        rm -rf "$BUILD_DIR"/*
+        rm -rf "$DIST_DIR"/*
+    fi
+    
+    log_success "Build directories ready"
+}
+
+# Pre-build checks
+pre_build_checks() {
+    log_step "Running pre-build checks..."
+    
+    cd "$PROJECT_ROOT"
+    
+    # Check if we're in a git repository
+    if [[ -d .git ]]; then
+        log_info "Git repository detected"
+        log_info "Version: $VERSION"
+        log_info "Commit: $GIT_COMMIT"
+        log_info "Branch: $GIT_BRANCH"
+    else
+        log_warning "Not in a git repository"
+    fi
+    
+    # Check required tools
+{{if .Components.Frontend.MainApp}}    if ! command_exists node; then
+        log_error "Node.js is required but not installed"
+        exit 1
+    fi
+    
+    if ! command_exists npm; then
+        log_error "npm is required but not installed"
+        exit 1
+    fi{{end}}
+    
+{{if .Components.Backend.API}}    if ! command_exists go; then
+        log_error "Go is required but not installed"
+        exit 1
+    fi{{end}}
+    
+    log_success "Pre-build checks passed"
+}
+
+# Run linting
+run_linting() {
+    if [[ "$SKIP_LINT" == "true" ]]; then
+        log_warning "Skipping linting (SKIP_LINT=true)"
+        return 0
+    fi
+    
+    log_step "Running linting..."
+    
+    cd "$PROJECT_ROOT"
+    
+{{if .Components.Frontend.MainApp}}    # Frontend linting
+    for dir in "${FRONTEND_DIRS[@]}"; do
+        if [[ -d "$dir" ]]; then
+            log_info "Linting $dir..."
+            cd "$dir"
+            npm run lint
+            cd "$PROJECT_ROOT"
+            log_success "$dir linting passed"
+        fi
+    done{{end}}
+    
+{{if .Components.Backend.API}}    # Backend linting
+    if [[ -d "$BACKEND_DIR" ]]; then
+        log_info "Linting backend..."
+        cd "$BACKEND_DIR"
+        if command_exists golangci-lint; then
+            golangci-lint run
+        else
+            go vet ./...
+        fi
+        cd "$PROJECT_ROOT"
+        log_success "Backend linting passed"
+    fi{{end}}
+    
+    log_success "All linting passed"
+}
+
+# Run tests
+run_tests() {
+    if [[ "$SKIP_TESTS" == "true" ]]; then
+        log_warning "Skipping tests (SKIP_TESTS=true)"
+        return 0
+    fi
+    
+    log_step "Running tests..."
+    
+    cd "$PROJECT_ROOT"
+    
+{{if .Components.Frontend.MainApp}}    # Frontend tests
+    for dir in "${FRONTEND_DIRS[@]}"; do
+        if [[ -d "$dir" ]]; then
+            log_info "Testing $dir..."
+            cd "$dir"
+            npm test -- --run --reporter=verbose
+            cd "$PROJECT_ROOT"
+            log_success "$dir tests passed"
+        fi
+    done{{end}}
+    
+{{if .Components.Backend.API}}    # Backend tests
+    if [[ -d "$BACKEND_DIR" ]]; then
+        log_info "Testing backend..."
+        cd "$BACKEND_DIR"
+        go test -v ./...
+        cd "$PROJECT_ROOT"
+        log_success "Backend tests passed"
+    fi{{end}}
+    
+    log_success "All tests passed"
+}
+
+{{if .Components.Frontend.MainApp}}# Build frontend applications
+build_frontend() {
+    log_step "Building frontend applications..."
+    
+    local pids=()
+    
+    for dir in "${FRONTEND_DIRS[@]}"; do
+        if [[ -d "$dir" ]]; then
+            log_info "Building $dir..."
+            
+            if [[ "$PARALLEL_BUILDS" == "true" ]]; then
+                # Build in parallel
+                (
+                    cd "$dir"
+                    
+                    # Set production environment
+                    export NODE_ENV=production
+                    export NEXT_TELEMETRY_DISABLED=1
+                    
+                    # Install dependencies if needed
+                    if [[ ! -d node_modules ]]; then
+                        log_info "Installing dependencies for $dir..."
+                        npm ci --production=false
+                    fi
+                    
+                    # Build the application
+                    npm run build
+                    
+                    # Copy build artifacts
+                    mkdir -p "$BUILD_DIR/$dir"
+                    if [[ -d .next ]]; then
+                        cp -r .next "$BUILD_DIR/$dir/"
+                    fi
+                    if [[ -d dist ]]; then
+                        cp -r dist "$BUILD_DIR/$dir/"
+                    fi
+                    if [[ -d build ]]; then
+                        cp -r build "$BUILD_DIR/$dir/"
+                    fi
+                    
+                    # Copy package files
+                    cp package.json "$BUILD_DIR/$dir/"
+                    if [[ -f package-lock.json ]]; then
+                        cp package-lock.json "$BUILD_DIR/$dir/"
+                    fi
+                    
+                    log_success "$dir build completed"
+                ) &
+                pids+=($!)
+            else
+                # Build sequentially
+                cd "$dir"
+                
+                export NODE_ENV=production
+                export NEXT_TELEMETRY_DISABLED=1
+                
+                if [[ ! -d node_modules ]]; then
+                    log_info "Installing dependencies for $dir..."
+                    npm ci --production=false
+                fi
+                
+                npm run build
+                
+                mkdir -p "$BUILD_DIR/$dir"
+                if [[ -d .next ]]; then
+                    cp -r .next "$BUILD_DIR/$dir/"
+                fi
+                if [[ -d dist ]]; then
+                    cp -r dist "$BUILD_DIR/$dir/"
+                fi
+                if [[ -d build ]]; then
+                    cp -r build "$BUILD_DIR/$dir/"
+                fi
+                
+                cp package.json "$BUILD_DIR/$dir/"
+                if [[ -f package-lock.json ]]; then
+                    cp package-lock.json "$BUILD_DIR/$dir/"
+                fi
+                
+                cd "$PROJECT_ROOT"
+                log_success "$dir build completed"
+            fi
+        else
+            log_warning "$dir directory not found"
+        fi
+    done
+    
+    # Wait for parallel builds to complete
+    if [[ "$PARALLEL_BUILDS" == "true" && ${#pids[@]} -gt 0 ]]; then
+        log_info "Waiting for parallel builds to complete..."
+        for pid in "${pids[@]}"; do
+            wait "$pid"
+        done
+    fi
+    
+    log_success "Frontend builds completed"
+}{{end}}
+
+{{if .Components.Backend.API}}# Build backend application
+build_backend() {
+    log_step "Building backend application..."
+    
+    cd "$BACKEND_DIR"
+    
+    # Build flags
+    local ldflags="-ldflags="
+    ldflags+="-X main.Version=$VERSION "
+    ldflags+="-X main.BuildTime=$BUILD_TIME "
+    ldflags+="-X main.GitCommit=$GIT_COMMIT "
+    ldflags+="-X main.GitBranch=$GIT_BRANCH"
+    
+    if [[ "$BUILD_MODE" == "production" ]]; then
+        ldflags+=" -s -w"  # Strip debug info for production
+    fi
+    
+    # Create binary directory
+    mkdir -p bin
+    
+    # Build for current platform
+    log_info "Building for current platform..."
+    go build $ldflags -o "bin/{{.Name}}-server" ./main.go
+    
+    # Build for multiple platforms if requested
+    if [[ "${BUILD_ALL_PLATFORMS:-false}" == "true" ]]; then
+        log_info "Building for multiple platforms..."
+        
+        # Linux AMD64
+        GOOS=linux GOARCH=amd64 go build $ldflags -o "bin/{{.Name}}-server-linux-amd64" ./main.go
+        
+        # Linux ARM64
+        GOOS=linux GOARCH=arm64 go build $ldflags -o "bin/{{.Name}}-server-linux-arm64" ./main.go
+        
+        # Windows AMD64
+        GOOS=windows GOARCH=amd64 go build $ldflags -o "bin/{{.Name}}-server-windows-amd64.exe" ./main.go
+        
+        # macOS AMD64
+        GOOS=darwin GOARCH=amd64 go build $ldflags -o "bin/{{.Name}}-server-darwin-amd64" ./main.go
+        
+        # macOS ARM64 (Apple Silicon)
+        GOOS=darwin GOARCH=arm64 go build $ldflags -o "bin/{{.Name}}-server-darwin-arm64" ./main.go
+        
+        log_success "Multi-platform builds completed"
+    fi
+    
+    # Copy build artifacts
+    mkdir -p "$BUILD_DIR/$BACKEND_DIR"
+    cp -r bin "$BUILD_DIR/$BACKEND_DIR/"
+    
+    # Copy configuration files
+    if [[ -f go.mod ]]; then
+        cp go.mod "$BUILD_DIR/$BACKEND_DIR/"
+    fi
+    if [[ -f go.sum ]]; then
+        cp go.sum "$BUILD_DIR/$BACKEND_DIR/"
+    fi
+    
+    # Copy migrations if they exist
+    if [[ -d migrations ]]; then
+        cp -r migrations "$BUILD_DIR/$BACKEND_DIR/"
+    fi
+    
+    cd "$PROJECT_ROOT"
+    log_success "Backend build completed"
+}{{end}}
+
+# Build Docker images
+build_docker_images() {
+    if [[ "${BUILD_DOCKER:-false}" != "true" ]]; then
+        log_info "Skipping Docker builds (BUILD_DOCKER not set)"
+        return 0
+    fi
+    
+    if ! command_exists docker; then
+        log_warning "Docker not found, skipping Docker builds"
+        return 0
+    fi
+    
+    log_step "Building Docker images..."
+    
+    cd "$PROJECT_ROOT"
+    
+{{if .Components.Frontend.MainApp}}    # Frontend Docker images
+    for dir in "${FRONTEND_DIRS[@]}"; do
+        if [[ -d "$dir" && -f "$dir/Dockerfile" ]]; then
+            log_info "Building Docker image for $dir..."
+            
+            local image_name="{{.Organization}}/{{.Name}}-$(echo "$dir" | tr '[:upper:]' '[:lower:]')"
+            
+            docker build \
+                --build-arg VERSION="$VERSION" \
+                --build-arg BUILD_TIME="$BUILD_TIME" \
+                --build-arg GIT_COMMIT="$GIT_COMMIT" \
+                -t "$image_name:$VERSION" \
+                -t "$image_name:latest" \
+                "$dir/"
+            
+            log_success "Docker image built: $image_name:$VERSION"
+        fi
+    done{{end}}
+    
+{{if .Components.Backend.API}}    # Backend Docker image
+    if [[ -d "$BACKEND_DIR" && -f "$BACKEND_DIR/Dockerfile" ]]; then
+        log_info "Building Docker image for backend..."
+        
+        local image_name="{{.Organization}}/{{.Name}}-backend"
+        
+        docker build \
+            --build-arg VERSION="$VERSION" \
+            --build-arg BUILD_TIME="$BUILD_TIME" \
+            --build-arg GIT_COMMIT="$GIT_COMMIT" \
+            -t "$image_name:$VERSION" \
+            -t "$image_name:latest" \
+            "$BACKEND_DIR/"
+        
+        log_success "Docker image built: $image_name:$VERSION"
+    fi{{end}}
+    
+    log_success "Docker builds completed"
+}
+
+# Create distribution packages
+create_distribution() {
+    log_step "Creating distribution packages..."
+    
+    cd "$PROJECT_ROOT"
+    
+    # Create version info file
+    cat > "$BUILD_DIR/version.json" << EOF
+{
+  "name": "$PROJECT_NAME",
+  "version": "$VERSION",
+  "buildTime": "$BUILD_TIME",
+  "gitCommit": "$GIT_COMMIT",
+  "gitBranch": "$GIT_BRANCH",
+  "buildMode": "$BUILD_MODE"
+}
+EOF
+    
+    # Copy additional files
+    if [[ -f README.md ]]; then
+        cp README.md "$BUILD_DIR/"
+    fi
+    
+    if [[ -f LICENSE ]]; then
+        cp LICENSE "$BUILD_DIR/"
+    fi
+    
+    if [[ -f CHANGELOG.md ]]; then
+        cp CHANGELOG.md "$BUILD_DIR/"
+    fi
+    
+    # Create tar.gz archive
+    log_info "Creating tar.gz archive..."
+    cd "$BUILD_DIR"
+    tar -czf "$DIST_DIR/{{.Name}}-$VERSION.tar.gz" .
+    cd "$PROJECT_ROOT"
+    
+    # Create zip archive
+    if command_exists zip; then
+        log_info "Creating zip archive..."
+        cd "$BUILD_DIR"
+        zip -r "$DIST_DIR/{{.Name}}-$VERSION.zip" .
+        cd "$PROJECT_ROOT"
+    fi
+    
+    # Generate checksums
+    log_info "Generating checksums..."
+    cd "$DIST_DIR"
+    if command_exists sha256sum; then
+        sha256sum *.tar.gz *.zip 2>/dev/null > checksums.txt || true
+    elif command_exists shasum; then
+        shasum -a 256 *.tar.gz *.zip 2>/dev/null > checksums.txt || true
+    fi
+    cd "$PROJECT_ROOT"
+    
+    log_success "Distribution packages created"
+}
+
+# Generate build report
+generate_build_report() {
+    log_step "Generating build report..."
+    
+    local report_file="$BUILD_DIR/build-report.md"
+    
+    cat > "$report_file" << EOF
+# {{.Name}} Build Report
+
+**Build Date:** $BUILD_TIME  
+**Version:** $VERSION  
+**Git Commit:** $GIT_COMMIT  
+**Git Branch:** $GIT_BRANCH  
+**Build Mode:** $BUILD_MODE  
+
+## Build Configuration
+
+- Parallel Builds: $PARALLEL_BUILDS
+- Skip Tests: $SKIP_TESTS
+- Skip Lint: $SKIP_LINT
+- Build Docker: ${BUILD_DOCKER:-false}
+- Build All Platforms: ${BUILD_ALL_PLATFORMS:-false}
+
+## Components Built
+
+EOF
+
+{{if .Components.Frontend.MainApp}}    echo "### Frontend Applications" >> "$report_file"
+    echo "" >> "$report_file"
+    for dir in "${FRONTEND_DIRS[@]}"; do
+        if [[ -d "$dir" ]]; then
+            echo "- ✅ $dir" >> "$report_file"
+        else
+            echo "- ❌ $dir (not found)" >> "$report_file"
+        fi
+    done
+    echo "" >> "$report_file"{{end}}
+
+{{if .Components.Backend.API}}    echo "### Backend Services" >> "$report_file"
+    echo "" >> "$report_file"
+    if [[ -d "$BACKEND_DIR" ]]; then
+        echo "- ✅ $BACKEND_DIR" >> "$report_file"
+    else
+        echo "- ❌ $BACKEND_DIR (not found)" >> "$report_file"
+    fi
+    echo "" >> "$report_file"{{end}}
+
+    echo "## Build Artifacts" >> "$report_file"
+    echo "" >> "$report_file"
+    
+    if [[ -d "$BUILD_DIR" ]]; then
+        echo "\`\`\`" >> "$report_file"
+        find "$BUILD_DIR" -type f -name "*.tar.gz" -o -name "*.zip" -o -name "*server*" | sort >> "$report_file"
+        echo "\`\`\`" >> "$report_file"
+    fi
+    
+    log_success "Build report generated: $report_file"
+}
+
+# Show build summary
+show_build_summary() {
+    log_success "Build completed successfully!"
+    echo ""
+    echo -e "${CYAN}Build Summary:${NC}"
+    echo "  Version: $VERSION"
+    echo "  Build Time: $BUILD_TIME"
+    echo "  Git Commit: $GIT_COMMIT"
+    echo "  Build Mode: $BUILD_MODE"
+    echo ""
+    echo -e "${CYAN}Build Artifacts:${NC}"
+    
+    if [[ -d "$BUILD_DIR" ]]; then
+        echo "  Build Directory: $BUILD_DIR"
+        find "$BUILD_DIR" -type f \( -name "*.tar.gz" -o -name "*.zip" -o -name "*server*" \) | head -10 | while read -r file; do
+            echo "    $(basename "$file")"
+        done
+    fi
+    
+    if [[ -d "$DIST_DIR" ]]; then
+        echo "  Distribution Directory: $DIST_DIR"
+        find "$DIST_DIR" -type f | while read -r file; do
+            echo "    $(basename "$file")"
+        done
+    fi
+    
+    echo ""
+    echo -e "${GREEN}Build completed in $(date -u +"%Y-%m-%dT%H:%M:%SZ")${NC}"
+}
+
+# Main build function
+main() {
+    echo -e "${CYAN}"
+    echo "╔══════════════════════════════════════════════════════════════╗"
+    echo "║                     {{.Name}} Build Script                     ║"
+    echo "║                Building all project components               ║"
+    echo "╚══════════════════════════════════════════════════════════════╝"
+    echo -e "${NC}"
+    
+    setup_build_dirs
+    pre_build_checks
+    run_linting
+    run_tests
+{{if .Components.Frontend.MainApp}}    build_frontend{{end}}
+{{if .Components.Backend.API}}    build_backend{{end}}
+    build_docker_images
+    create_distribution
+    generate_build_report
+    show_build_summary
+}
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --mode)
+            BUILD_MODE="$2"
+            shift 2
+            ;;
+        --version)
+            VERSION="$2"
+            shift 2
+            ;;
+        --skip-tests)
+            SKIP_TESTS=true
+            shift
+            ;;
+        --skip-lint)
+            SKIP_LINT=true
+            shift
+            ;;
+        --docker)
+            BUILD_DOCKER=true
+            shift
+            ;;
+        --all-platforms)
+            BUILD_ALL_PLATFORMS=true
+            shift
+            ;;
+        --clean)
+            CLEAN_BUILD=true
+            shift
+            ;;
+        --sequential)
+            PARALLEL_BUILDS=false
+            shift
+            ;;
+        --help|-h)
+            echo "{{.Name}} Build Script"
+            echo ""
+            echo "Usage: $0 [options]"
+            echo ""
+            echo "Options:"
+            echo "  --mode MODE           Build mode (development|production) [default: production]"
+            echo "  --version VERSION     Override version string"
+            echo "  --skip-tests          Skip running tests"
+            echo "  --skip-lint           Skip linting"
+            echo "  --docker              Build Docker images"
+            echo "  --all-platforms       Build for all platforms"
+            echo "  --clean               Clean previous builds"
+            echo "  --sequential          Build components sequentially"
+            echo "  --help, -h            Show this help message"
+            echo ""
+            echo "Environment Variables:"
+            echo "  BUILD_MODE            Build mode (development|production)"
+            echo "  SKIP_TESTS            Skip tests (true|false)"
+            echo "  SKIP_LINT             Skip linting (true|false)"
+            echo "  BUILD_DOCKER          Build Docker images (true|false)"
+            echo "  BUILD_ALL_PLATFORMS   Build for all platforms (true|false)"
+            echo "  PARALLEL_BUILDS       Enable parallel builds (true|false)"
+            exit 0
+            ;;
+        *)
+            log_error "Unknown option: $1"
+            exit 1
+            ;;
+    esac
+done
+
+# Run main build
+main

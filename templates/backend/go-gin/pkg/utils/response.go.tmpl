@@ -1,0 +1,98 @@
+package utils
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
+)
+
+// SuccessResponse represents a successful API response
+type SuccessResponse struct {
+	Success bool        `json:"success"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data,omitempty"`
+}
+
+// ErrorResponse represents an error API response
+type ErrorResponse struct {
+	Success bool        `json:"success"`
+	Message string      `json:"message"`
+	Error   interface{} `json:"error,omitempty"`
+}
+
+// ValidationError represents a validation error
+type ValidationError struct {
+	Field   string `json:"field"`
+	Message string `json:"message"`
+}
+
+// PaginatedResponse represents a paginated API response
+type PaginatedResponse struct {
+	Data       interface{} `json:"data"`
+	Page       int         `json:"page"`
+	Limit      int         `json:"limit"`
+	Total      int64       `json:"total"`
+	TotalPages int64       `json:"total_pages"`
+}
+
+// SuccessResponse sends a successful response
+func SuccessResponse(c *gin.Context, statusCode int, message string, data interface{}) {
+	c.JSON(statusCode, SuccessResponse{
+		Success: true,
+		Message: message,
+		Data:    data,
+	})
+}
+
+// ErrorResponse sends an error response
+func ErrorResponse(c *gin.Context, statusCode int, message string, err error) {
+	response := ErrorResponse{
+		Success: false,
+		Message: message,
+	}
+
+	if err != nil {
+		response.Error = err.Error()
+	}
+
+	c.JSON(statusCode, response)
+}
+
+// ValidationErrorResponse sends a validation error response
+func ValidationErrorResponse(c *gin.Context, err error) {
+	var validationErrors []ValidationError
+
+	if validationErr, ok := err.(validator.ValidationErrors); ok {
+		for _, fieldErr := range validationErr {
+			validationErrors = append(validationErrors, ValidationError{
+				Field:   fieldErr.Field(),
+				Message: getValidationErrorMessage(fieldErr),
+			})
+		}
+	}
+
+	c.JSON(http.StatusBadRequest, ErrorResponse{
+		Success: false,
+		Message: "Validation failed",
+		Error:   validationErrors,
+	})
+}
+
+// getValidationErrorMessage returns a human-readable validation error message
+func getValidationErrorMessage(err validator.FieldError) string {
+	switch err.Tag() {
+	case "required":
+		return "This field is required"
+	case "email":
+		return "Invalid email format"
+	case "min":
+		return "Value is too short"
+	case "max":
+		return "Value is too long"
+	case "oneof":
+		return "Invalid value"
+	default:
+		return "Invalid value"
+	}
+}

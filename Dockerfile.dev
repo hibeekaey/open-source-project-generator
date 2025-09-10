@@ -1,0 +1,44 @@
+# Development Dockerfile for Open Source Template Generator
+
+FROM golang:1.22-alpine
+
+# Install development dependencies
+RUN apk add --no-cache \
+    git \
+    ca-certificates \
+    tzdata \
+    make \
+    bash \
+    curl \
+    wget \
+    tar \
+    gzip \
+    && rm -rf /var/cache/apk/*
+
+# Install development tools
+RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest && \
+    go install github.com/air-verse/air@latest && \
+    go install gotest.tools/gotestsum@latest
+
+# Create non-root user
+RUN addgroup -g 1000 developer && \
+    adduser -D -s /bin/bash -u 1000 -G developer developer
+
+# Set working directory
+WORKDIR /app
+
+# Create necessary directories
+RUN mkdir -p /workspace /home/developer/.config/generator /home/developer/.cache/generator && \
+    chown -R developer:developer /app /workspace /home/developer
+
+# Switch to non-root user
+USER developer
+
+# Set environment variables
+ENV GOOS=linux
+ENV GOARCH=amd64
+ENV CGO_ENABLED=0
+ENV GENERATOR_LOG_LEVEL=debug
+
+# Default command
+CMD ["bash"]

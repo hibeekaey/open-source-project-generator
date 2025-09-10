@@ -1,0 +1,63 @@
+package {{.Organization}}.{{.Name | lower}}.mobile.presentation.users
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import {{.Organization}}.{{.Name | lower}}.mobile.domain.usecase.GetUsersUseCase
+import {{.Organization}}.{{.Name | lower}}.mobile.domain.model.User
+import {{.Organization}}.{{.Name | lower}}.mobile.core.util.Resource
+import javax.inject.Inject
+
+@HiltViewModel
+class UsersViewModel @Inject constructor(
+    private val getUsersUseCase: GetUsersUseCase
+) : ViewModel() {
+    
+    private val _uiState = MutableStateFlow(UsersUiState())
+    val uiState: StateFlow<UsersUiState> = _uiState.asStateFlow()
+    
+    init {
+        getUsers()
+    }
+    
+    fun getUsers() {
+        viewModelScope.launch {
+            getUsersUseCase().collect { result ->
+                when (result) {
+                    is Resource.Loading -> {
+                        _uiState.value = _uiState.value.copy(isLoading = true)
+                    }
+                    is Resource.Success -> {
+                        _uiState.value = _uiState.value.copy(
+                            users = result.data ?: emptyList(),
+                            isLoading = false,
+                            error = null
+                        )
+                    }
+                    is Resource.Error -> {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            error = result.message
+                        )
+                    }
+                }
+            }
+        }
+    }
+    
+    fun refreshUsers() {
+        getUsers()
+    }
+    
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(error = null)
+    }
+}
+
+data class UsersUiState(
+    val users: List<User> = emptyList(),
+    val isLoading: Boolean = false,
+    val error: String? = null
+)

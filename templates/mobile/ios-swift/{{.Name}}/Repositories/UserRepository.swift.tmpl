@@ -1,0 +1,194 @@
+import Foundation
+import Combine
+import SwiftData
+
+protocol UserRepository {
+    func login(credentials: LoginCredentials) -> AnyPublisher<AuthToken, NetworkError>
+    func getUsers() -> AnyPublisher<[User], NetworkError>
+    func getUserById(_ id: String) -> AnyPublisher<User, NetworkError>
+    func getUserProfile() -> AnyPublisher<User, NetworkError>
+    func updateUser(_ user: User) -> AnyPublisher<User, NetworkError>
+    func deleteUser(_ id: String) -> AnyPublisher<Void, NetworkError>
+    func getCachedUsers() -> [User]
+    func syncUsers() -> AnyPublisher<Void, NetworkError>
+}
+
+class UserRepositoryImpl: UserRepository {
+    private let networkService: NetworkService
+    private let modelContext: ModelContext
+    private var cancellables = Set<AnyCancellable>()
+    
+    init(networkService: NetworkService, modelContext: ModelContext = ModelContext(try! ModelContainer(for: UserEntity.self))) {
+        self.networkService = networkService
+        self.modelContext = modelContext
+    }
+    
+    func login(credentials: LoginCredentials) -> AnyPublisher<AuthToken, NetworkError> {
+        let endpoint = APIEndpoint.login(email: credentials.email, password: credentials.password)
+        return networkService.request(endpoint, responseType: APIResponse<AuthToken>.self)
+            .compactMap { response in
+                guard response.success, let data = response.data else {
+                    throw NetworkError.unknown(NSError(domain: "LoginError", code: 0, userInfo: [NSLocalizedDescriptionKey: response.error ?? "Login failed"]))
+                }
+                return data
+            }
+            .eraseToAnyPublisher()
+    }
+    
+    func getUsers() -> AnyPublisher<[User], NetworkError> {
+        let endpoint = APIEndpoint.getUsers()
+        return networkService.request(endpoint, responseType: APIResponse<[User]>.self)
+            .compactMap { response in
+                guard response.success, let data = response.data else {
+                    throw NetworkError.unknown(NSError(domain: "UsersError", code: 0, userInfo: [NSLocalizedDescriptionKey: response.error ?? "Failed to fetch users"]))
+                }
+                return data
+            }
+            .handleEvents(receiveOutput: { [weak self] users in
+                self?.cacheUsers(users)
+            })
+            .eraseToAnyPublisher()
+    }
+    
+    func getUserById(_ id: String) -> AnyPublisher<User, NetworkError> {
+        let endpoint = APIEndpoint.getUserById(id)
+        return networkService.request(endpoint, responseType: APIResponse<User>.self)
+            .compactMap { response in
+                guard response.success, let data = response.data else {
+                    throw NetworkError.unknown(NSError(domain: "UserError", code: 0, userInfo: [NSLocalizedDescriptionKey: response.error ?? "User not found"]))
+                }
+                return data
+            }
+            .eraseToAnyPublisher()
+    }    
+
+    func getUserProfile() -> AnyPublisher<User, NetworkError> {
+        let endpoint = APIEndpoint.getUserProfile()
+        return networkService.request(endpoint, responseType: APIResponse<User>.self)
+            .compactMap { response in
+                guard response.success, let data = response.data else {
+                    throw NetworkError.unknown(NSError(domain: "ProfileError", code: 0, userInfo: [NSLocalizedDescriptionKey: response.error ?? "Failed to get profile"]))
+                }
+                return data
+            }
+            .eraseToAnyPublisher()
+    }
+    
+    func updateUser(_ user: User) -> AnyPublisher<User, NetworkError> {
+        let endpoint = APIEndpoint.updateUser(user)
+        return networkService.request(endpoint, responseType: APIResponse<User>.self)
+            .compactMap { response in
+                guard response.success, let data = response.data else {
+                    throw NetworkError.unknown(NSError(domain: "UpdateError", code: 0, userInfo: [NSLocalizedDescriptionKey: response.error ?? "Failed to update user"]))
+                }
+                return data
+            }
+            .eraseToAnyPublisher()
+    }
+    
+    func deleteUser(_ id: String) -> AnyPublisher<Void, NetworkError> {
+        let endpoint = APIEndpoint.deleteUser(id)
+        return networkService.request(endpoint, responseType: APIResponse<String>.self)
+            .compactMap { response in
+                guard response.success else {
+                    throw NetworkError.unknown(NSError(domain: "DeleteError", code: 0, userInfo: [NSLocalizedDescriptionKey: response.error ?? "Failed to delete user"]))
+                }
+                return ()
+            }
+            .eraseToAnyPublisher()
+    }
+    
+    func getCachedUsers() -> [User] {
+        let descriptor = FetchDescriptor<UserEntity>()
+        do {
+            let entities = try modelContext.fetch(descriptor)
+            return entities.map { $0.toUser() }
+        } catch {
+            return []
+        }
+    }
+    
+    func syncUsers() -> AnyPublisher<Void, NetworkError> {
+        return getUsers()
+            .map { _ in () }
+            .eraseToAnyPublisher()
+    }
+    
+    private func cacheUsers(_ users: [User]) {
+        // Clear existing users
+        let descriptor = FetchDescriptor<UserEntity>()
+        do {
+            let existingEntities = try modelContext.fetch(descriptor)
+            for entity in existingEntities {
+                modelContext.delete(entity)
+            }
+            
+            // Insert new users
+            for user in users {
+                let entity = UserEntity.from(user)
+                modelContext.insert(entity)
+            }
+            
+            try modelContext.save()
+        } catch {
+            print("Failed to cache users: \(error)")
+        }
+    }
+}
+
+// Mock implementation for testing
+class MockUserRepository: UserRepository {
+    func login(credentials: LoginCredentials) -> AnyPublisher<AuthToken, NetworkError> {
+        let user = User(id: "1", email: credentials.email, name: "Test User", avatarUrl: nil, createdAt: Date(), updatedAt: Date())
+        let token = AuthToken(token: "mock_token", user: user)
+        return Just(token)
+            .setFailureType(to: NetworkError.self)
+            .eraseToAnyPublisher()
+    }
+    
+    func getUsers() -> AnyPublisher<[User], NetworkError> {
+        let users = [
+            User(id: "1", email: "user1@example.com", name: "User 1", avatarUrl: nil, createdAt: Date(), updatedAt: Date()),
+            User(id: "2", email: "user2@example.com", name: "User 2", avatarUrl: nil, createdAt: Date(), updatedAt: Date())
+        ]
+        return Just(users)
+            .setFailureType(to: NetworkError.self)
+            .eraseToAnyPublisher()
+    }
+    
+    func getUserById(_ id: String) -> AnyPublisher<User, NetworkError> {
+        let user = User(id: id, email: "user@example.com", name: "Test User", avatarUrl: nil, createdAt: Date(), updatedAt: Date())
+        return Just(user)
+            .setFailureType(to: NetworkError.self)
+            .eraseToAnyPublisher()
+    }
+    
+    func getUserProfile() -> AnyPublisher<User, NetworkError> {
+        let user = User(id: "1", email: "profile@example.com", name: "Profile User", avatarUrl: nil, createdAt: Date(), updatedAt: Date())
+        return Just(user)
+            .setFailureType(to: NetworkError.self)
+            .eraseToAnyPublisher()
+    }
+    
+    func updateUser(_ user: User) -> AnyPublisher<User, NetworkError> {
+        return Just(user)
+            .setFailureType(to: NetworkError.self)
+            .eraseToAnyPublisher()
+    }
+    
+    func deleteUser(_ id: String) -> AnyPublisher<Void, NetworkError> {
+        return Just(())
+            .setFailureType(to: NetworkError.self)
+            .eraseToAnyPublisher()
+    }
+    
+    func getCachedUsers() -> [User] {
+        return []
+    }
+    
+    func syncUsers() -> AnyPublisher<Void, NetworkError> {
+        return Just(())
+            .setFailureType(to: NetworkError.self)
+            .eraseToAnyPublisher()
+    }
+}

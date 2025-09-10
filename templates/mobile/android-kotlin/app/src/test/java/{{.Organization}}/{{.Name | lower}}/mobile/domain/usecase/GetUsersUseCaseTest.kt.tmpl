@@ -1,0 +1,47 @@
+package {{.Organization}}.{{.Name | lower}}.mobile.domain.usecase
+
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.test.runTest
+import org.junit.Before
+import org.junit.Test
+import org.mockito.Mock
+import org.mockito.MockitoAnnotations
+import org.mockito.kotlin.whenever
+import {{.Organization}}.{{.Name | lower}}.mobile.domain.repository.UserRepository
+import {{.Organization}}.{{.Name | lower}}.mobile.domain.model.User
+import {{.Organization}}.{{.Name | lower}}.mobile.core.util.Resource
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+
+class GetUsersUseCaseTest {
+    
+    @Mock
+    private lateinit var repository: UserRepository
+    
+    private lateinit var useCase: GetUsersUseCase
+    
+    @Before
+    fun setUp() {
+        MockitoAnnotations.openMocks(this)
+        useCase = GetUsersUseCase(repository)
+    }
+    
+    @Test
+    fun `invoke should return users from repository`() = runTest {
+        // Given
+        val users = listOf(
+            User("1", "test@example.com", "Test User", null, 0L, 0L)
+        )
+        val expected = Resource.Success(users)
+        whenever(repository.getUsers()).thenReturn(flowOf(expected))
+        
+        // When
+        val result = useCase().toList()
+        
+        // Then
+        assertEquals(1, result.size)
+        assertTrue(result[0] is Resource.Success)
+        assertEquals(users, (result[0] as Resource.Success).data)
+    }
+}

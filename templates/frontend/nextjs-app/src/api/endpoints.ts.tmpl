@@ -1,0 +1,32 @@
+// API endpoints configuration
+
+export const API_ENDPOINTS = {
+  // Authentication
+  AUTH: {
+    LOGIN: '/auth/login',
+    LOGOUT: '/auth/logout',
+    REGISTER: '/auth/register',
+    REFRESH: '/auth/refresh',
+    PROFILE: '/auth/profile',
+  },
+
+  // Users
+  USERS: {
+    LIST: '/users',
+    GET: (id: string) => `/users/${id}`,
+    CREATE: '/users',
+    UPDATE: (id: string) => `/users/${id}`,
+    DELETE: (id: string) => `/users/${id}`,
+  },
+
+  // Health check
+  HEALTH: '/health',
+} as const;
+
+// Type-safe endpoint builder
+export function buildEndpoint(template: string, params: Record<string, string>): string {
+  return Object.entries(params).reduce(
+    (url, [key, value]) => url.replace(`{${key}}`, encodeURIComponent(value)),
+    template
+  );
+}
