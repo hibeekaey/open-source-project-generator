@@ -9,7 +9,7 @@ import (
 
 	"github.com/open-source-template-generator/pkg/interfaces"
 	"github.com/open-source-template-generator/pkg/models"
-	"gopkg.in/yaml.v3"
+	yaml "gopkg.in/yaml.v3"
 )
 
 // Engine implements the ValidationEngine interface
@@ -357,50 +357,6 @@ func (e *Engine) validateConfigurationFiles(projectPath string, result *models.V
 					Tag:     "syntax",
 					Value:   fileName,
 					Message: fmt.Sprintf("Workflow file validation failed: %s", err.Error()),
-				})
-			}
-		}
-
-		return nil
-	})
-
-	return err
-}
-
-// validatePackageFiles validates package management files
-func (e *Engine) validatePackageFiles(projectPath string, result *models.ValidationResult) error {
-	// Find and validate package.json files
-	err := filepath.Walk(projectPath, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if info.IsDir() {
-			return nil
-		}
-
-		fileName := filepath.Base(path)
-		relativePath, _ := filepath.Rel(projectPath, path)
-
-		switch fileName {
-		case "package.json":
-			if err := e.ValidatePackageJSON(path); err != nil {
-				result.Valid = false
-				result.Errors = append(result.Errors, models.ValidationError{
-					Field:   relativePath,
-					Tag:     "syntax",
-					Value:   fileName,
-					Message: fmt.Sprintf("Package.json validation failed: %s", err.Error()),
-				})
-			}
-		case "go.mod":
-			if err := e.ValidateGoMod(path); err != nil {
-				result.Valid = false
-				result.Errors = append(result.Errors, models.ValidationError{
-					Field:   relativePath,
-					Tag:     "syntax",
-					Value:   fileName,
-					Message: fmt.Sprintf("Go.mod validation failed: %s", err.Error()),
 				})
 			}
 		}

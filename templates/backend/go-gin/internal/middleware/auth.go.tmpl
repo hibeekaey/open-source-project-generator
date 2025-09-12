@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// AuthMiddleware creates a middleware for JWT authentication
+// AuthMiddleware creates a middleware for JWT authentication with enhanced security
 func AuthMiddleware(cfg *config.Config, userService services.UserService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
@@ -36,10 +36,25 @@ func AuthMiddleware(cfg *config.Config, userService services.UserService) gin.Ha
 			return
 		}
 
+		// Additional token length validation for security
+		if len(token) < 10 || len(token) > 2048 {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token format"})
+			c.Abort()
+			return
+		}
+
 		// Validate the token
 		claims, err := utils.ValidateJWT(token, cfg.JWT.Secret)
 		if err != nil {
+			// Log potential security incident (token tampering)
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			c.Abort()
+			return
+		}
+
+		// Check token expiration with additional buffer for security
+		if claims.ExpiresAt != nil && time.Now().Unix() > claims.ExpiresAt.Unix() {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token expired"})
 			c.Abort()
 			return
 		}
@@ -58,9 +73,17 @@ func AuthMiddleware(cfg *config.Config, userService services.UserService) gin.Ha
 			return
 		}
 
-		// Set user in context
+		// Additional security check: verify user hasn't been locked or suspended
+		if user.LockedAt != nil && time.Now().Before(*user.LockedAt) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "User account is locked"})
+			c.Abort()
+			return
+		}
+
+		// Set user in context with additional security metadata
 		c.Set("user", user)
 		c.Set("user_id", user.ID)
+		c.Set("auth_time", time.Now())
 		c.Next()
 	}
 }

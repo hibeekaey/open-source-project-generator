@@ -20,7 +20,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/generator
 
 # Production stage
-FROM alpine:latest AS runner
+FROM alpine:3.20 AS runner
 
 WORKDIR /root/
 

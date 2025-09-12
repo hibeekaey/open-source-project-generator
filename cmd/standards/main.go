@@ -105,7 +105,7 @@ func applyStandards(manager *standards.StandardsManager, templatesDir, templateT
 
 	// Example version map (in real usage, this would come from version management system)
 	versions := map[string]string{
-		"NextJS": "15.5.2",
+		"NextJS": "15.5.3",
 		"React":  "19.1.0",
 	}
 

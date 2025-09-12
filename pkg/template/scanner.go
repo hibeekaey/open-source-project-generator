@@ -228,6 +228,10 @@ func (s *TemplateScanner) parsePackageJSON(filePath string) (*PackageJSONInfo, e
 
 // extractScriptsFromTemplate extracts scripts from template content
 func (s *TemplateScanner) extractScriptsFromTemplate(content string, packageInfo *PackageJSONInfo) {
+	// First extract dependencies
+	s.extractDependenciesFromTemplate(content, packageInfo)
+
+	// Then extract scripts
 	lines := strings.Split(content, "\n")
 	inScripts := false
 
@@ -253,6 +257,54 @@ func (s *TemplateScanner) extractScriptsFromTemplate(content string, packageInfo
 					scriptCmd := strings.Trim(strings.TrimSpace(parts[1]), `",`)
 					scriptCmd = strings.Trim(scriptCmd, `"`)
 					packageInfo.Scripts[scriptName] = scriptCmd
+				}
+			}
+		}
+	}
+}
+
+// extractDependenciesFromTemplate extracts dependency names from template content
+func (s *TemplateScanner) extractDependenciesFromTemplate(content string, packageInfo *PackageJSONInfo) {
+	lines := strings.Split(content, "\n")
+	inDependencies := false
+	inDevDependencies := false
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+
+		// Check for dependencies sections
+		if strings.Contains(line, `"dependencies"`) && strings.Contains(line, "{") {
+			inDependencies = true
+			inDevDependencies = false
+			continue
+		}
+		if strings.Contains(line, `"devDependencies"`) && strings.Contains(line, "{") {
+			inDevDependencies = true
+			inDependencies = false
+			continue
+		}
+
+		// End of section
+		if (inDependencies || inDevDependencies) && strings.Contains(line, "}") {
+			inDependencies = false
+			inDevDependencies = false
+			continue
+		}
+
+		// Extract dependency names
+		if inDependencies || inDevDependencies {
+			if strings.Contains(line, ":") && strings.Contains(line, `"`) {
+				// Extract package name from line like: "react": "{{.Versions.React}}"
+				parts := strings.Split(line, ":")
+				if len(parts) >= 2 {
+					packageName := strings.Trim(strings.TrimSpace(parts[0]), `"`)
+					if packageName != "" {
+						if inDependencies {
+							packageInfo.Dependencies[packageName] = "template"
+						} else {
+							packageInfo.DevDependencies[packageName] = "template"
+						}
+					}
 				}
 			}
 		}

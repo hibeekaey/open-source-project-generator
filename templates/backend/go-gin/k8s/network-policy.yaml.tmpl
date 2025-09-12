@@ -1,0 +1,55 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{.Name}}-api-network-policy
+  namespace: {{.Name}}
+spec:
+  podSelector:
+    matchLabels:
+      app: {{.Name}}-api
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: {{.Name}}
+    - podSelector:
+        matchLabels:
+          app: {{.Name}}-frontend
+    ports:
+    - protocol: TCP
+      port: 8080
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: {{.Name}}-database
+    ports:
+    - protocol: TCP
+      port: 5432
+  - to:
+    - podSelector:
+        matchLabels:
+          app: {{.Name}}-redis
+    ports:
+    - protocol: TCP
+      port: 6379
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{.Name}}-default-deny
+  namespace: {{.Name}}
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress

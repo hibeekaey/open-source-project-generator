@@ -41,11 +41,13 @@ graph TB
 **Purpose:** Central component for managing version information and updates across all templates.
 
 **Key Interfaces:**
+
 - `VersionRegistry`: Interface for querying external registries
 - `VersionStore`: Interface for persisting version information
 - `TemplateUpdater`: Interface for applying version updates to templates
 
 **Implementation:**
+
 ```go
 type VersionManager struct {
     registries map[string]VersionRegistry
@@ -67,6 +69,7 @@ type VersionInfo struct {
 **Purpose:** Ensures consistent configurations across all templates, especially frontend templates for Vercel deployment.
 
 **Frontend Standardization Rules:**
+
 1. **Package.json Scripts:** All Next.js templates must have identical script configurations
 2. **TypeScript Configuration:** Standardized tsconfig.json across all TypeScript templates
 3. **ESLint Configuration:** Consistent linting rules and plugins
@@ -75,6 +78,7 @@ type VersionInfo struct {
 6. **Development Ports:** Standardized port assignments (app: 3000, home: 3001, admin: 3002)
 
 **Key Standardization Areas:**
+
 ```yaml
 frontend_standards:
   nextjs:
@@ -101,6 +105,7 @@ frontend_standards:
 **Purpose:** Interface with external package registries to fetch latest version information.
 
 **Supported Registries:**
+
 - **NPM Registry:** For Node.js, Next.js, React packages
 - **Go Modules:** For Go language versions and dependencies
 - **Maven Central:** For Java dependencies
@@ -108,6 +113,7 @@ frontend_standards:
 - **Docker Hub:** For base image versions
 
 **Implementation Strategy:**
+
 ```go
 type NPMClient struct {
     baseURL string
@@ -205,17 +211,20 @@ templates:
 ## Error Handling
 
 ### Version Update Failures
+
 - **Registry Unavailable:** Use cached versions with warning
 - **Invalid Version Format:** Log error and maintain current version
 - **Breaking Changes Detected:** Flag for manual review
 - **Security Vulnerabilities:** Force update to secure version
 
 ### Template Update Failures
+
 - **File Lock Conflicts:** Retry with exponential backoff
 - **Template Syntax Errors:** Rollback to previous version
 - **Validation Failures:** Block update until issues resolved
 
 ### Validation Failures
+
 - **Configuration Inconsistencies:** Generate detailed diff report
 - **Deployment Issues:** Provide specific remediation steps
 - **Security Issues:** Block template generation until resolved
@@ -223,21 +232,25 @@ templates:
 ## Testing Strategy
 
 ### Unit Testing
+
 - **Version Manager:** Test version comparison, update logic, registry interactions
 - **Template Standardizer:** Test configuration merging, file generation, consistency checks
 - **Validation Engine:** Test validation rules, error detection, reporting
 
 ### Integration Testing
+
 - **End-to-End Version Updates:** Test complete update cycle from registry to template
 - **Template Generation:** Verify generated projects work locally and deploy to Vercel
 - **Cross-Template Consistency:** Validate all frontend templates produce consistent results
 
 ### Performance Testing
+
 - **Registry Query Performance:** Measure response times for version checks
 - **Template Update Speed:** Benchmark bulk template updates
 - **Validation Performance:** Test validation speed on large template sets
 
 ### Security Testing
+
 - **Vulnerability Detection:** Test security advisory integration
 - **Version Validation:** Verify security version enforcement
 - **Template Security:** Validate generated templates follow security best practices
@@ -245,24 +258,28 @@ templates:
 ## Implementation Phases
 
 ### Phase 1: Version Management Core
+
 1. Implement basic version manager with registry clients
 2. Create version storage and update mechanisms
 3. Add CLI commands for manual version updates
 4. Implement basic validation for version consistency
 
 ### Phase 2: Template Standardization
+
 1. Analyze current frontend template differences
 2. Create standardized configuration templates
 3. Implement template updater with standardization rules
 4. Add validation for template consistency
 
 ### Phase 3: Automation and Monitoring
+
 1. Add scheduled version checking
 2. Implement automated template updates
 3. Create reporting and notification system
 4. Add webhook support for external triggers
 
 ### Phase 4: Advanced Features
+
 1. Add breaking change detection and approval workflow
 2. Implement rollback capabilities
 3. Add advanced security scanning

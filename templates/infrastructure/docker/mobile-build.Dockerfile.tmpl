@@ -1,6 +1,6 @@
 # Multi-stage Dockerfile for Mobile Build Environment
 # Android Build Stage
-FROM openjdk:17-jdk-slim AS android-builder
+FROM openjdk:21-jdk-slim AS android-builder
 
 WORKDIR /app
 
@@ -33,7 +33,7 @@ WORKDIR /app/android
 RUN ./gradlew assembleRelease
 
 # iOS Build Stage (for CI/CD environments with macOS runners)
-FROM alpine:latest AS ios-builder
+FROM alpine:3.20 AS ios-builder
 
 WORKDIR /app
 
@@ -47,7 +47,7 @@ COPY ios/ ./ios/
 # xcodebuild -workspace {{.Name}}.xcworkspace -scheme {{.Name}} -configuration Release archive
 
 # Final stage for build artifacts
-FROM alpine:latest AS artifacts
+FROM alpine:3.20 AS artifacts
 
 WORKDIR /artifacts
 

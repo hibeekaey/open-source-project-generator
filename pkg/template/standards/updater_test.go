@@ -177,7 +177,7 @@ func TestApplyVersionUpdates(t *testing.T) {
 	// Create updater and apply version updates
 	updater := NewTemplateUpdater()
 	versions := map[string]string{
-		"NextJS": "15.5.2",
+		"NextJS": "15.5.3",
 		"React":  "19.1.0",
 	}
 
@@ -192,7 +192,7 @@ func TestApplyVersionUpdates(t *testing.T) {
 	}
 
 	updatedStr := string(updatedContent)
-	if !strings.Contains(updatedStr, `"next": "15.5.2"`) {
+	if !strings.Contains(updatedStr, `"next": "15.5.3"`) {
 		t.Error("NextJS version was not updated correctly")
 	}
 

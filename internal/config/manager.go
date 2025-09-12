@@ -10,7 +10,7 @@ import (
 
 	"github.com/open-source-template-generator/pkg/interfaces"
 	"github.com/open-source-template-generator/pkg/models"
-	"gopkg.in/yaml.v3"
+	yaml "gopkg.in/yaml.v3"
 )
 
 // Manager implements the ConfigManager interface
@@ -67,7 +67,7 @@ func (m *Manager) LoadDefaults() (*models.ProjectConfig, error) {
 			Go:        "1.22.0",
 			Kotlin:    "2.0.0",
 			Swift:     "5.9.0",
-			NextJS:    "15.0.0",
+			NextJS:    "15.5.3",
 			React:     "18.0.0",
 			Packages:  make(map[string]string),
 			UpdatedAt: time.Now(),
@@ -111,7 +111,7 @@ func (m *Manager) GetLatestVersions() (*models.VersionConfig, error) {
 		Go:     "1.22.0",
 		Kotlin: "2.0.0",
 		Swift:  "5.9.0",
-		NextJS: "15.0.0",
+		NextJS: "15.5.3",
 		React:  "18.0.0",
 		Packages: map[string]string{
 			"express":     "4.18.0",

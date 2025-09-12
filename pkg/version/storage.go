@@ -6,9 +6,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
-	"gopkg.in/yaml.v3"
+	yaml "gopkg.in/yaml.v3"
 
 	"github.com/open-source-template-generator/pkg/interfaces"
 	"github.com/open-source-template-generator/pkg/models"
@@ -21,6 +22,7 @@ type FileStorage struct {
 	format     string // "yaml" or "json"
 	store      *models.VersionStore
 	lastLoaded time.Time
+	mu         sync.RWMutex // Mutex for concurrent access
 }
 
 // NewFileStorage creates a new file-based version storage
@@ -66,6 +68,9 @@ func NewFileStorage(filePath string, format string) (*FileStorage, error) {
 
 // Load loads the complete version store from storage
 func (fs *FileStorage) Load() (*models.VersionStore, error) {
+	fs.mu.RLock()
+	defer fs.mu.RUnlock()
+
 	data, err := os.ReadFile(fs.filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read version store file: %w", err)
@@ -101,6 +106,9 @@ func (fs *FileStorage) Load() (*models.VersionStore, error) {
 
 // Save saves the complete version store to storage
 func (fs *FileStorage) Save(store *models.VersionStore) error {
+	fs.mu.Lock()
+	defer fs.mu.Unlock()
+
 	// Update timestamp
 	store.LastUpdated = time.Now()
 
@@ -126,7 +134,7 @@ func (fs *FileStorage) Save(store *models.VersionStore) error {
 	}
 
 	// Write to temporary file first, then rename for atomic operation
-	tempFile := fs.filePath + ".tmp"
+	tempFile := fmt.Sprintf("%s.tmp.%d", fs.filePath, time.Now().UnixNano())
 	if err := os.WriteFile(tempFile, data, 0644); err != nil {
 		return fmt.Errorf("failed to write temporary file: %w", err)
 	}

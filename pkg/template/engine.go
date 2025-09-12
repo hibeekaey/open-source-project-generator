@@ -3,7 +3,6 @@ package template
 import (
 	"bytes"
 	"fmt"
-	htmltemplate "html/template"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -17,8 +16,6 @@ import (
 
 // Engine implements the TemplateEngine interface
 type Engine struct {
-	textTemplate   *texttemplate.Template
-	htmlTemplate   *htmltemplate.Template
 	funcMap        texttemplate.FuncMap
 	versionManager interfaces.VersionManager
 }

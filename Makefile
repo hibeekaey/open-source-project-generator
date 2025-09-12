@@ -44,9 +44,23 @@ dev: ## Run in development mode
 	@echo "Starting development mode..."
 	go run ./cmd/generator
 
+# Install golangci-lint
+install-lint: ## Install golangci-lint
+	@echo "Installing golangci-lint..."
+	@if ! command -v golangci-lint >/dev/null 2>&1; then \
+		echo "Installing golangci-lint..."; \
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.55.2; \
+	else \
+		echo "golangci-lint already installed"; \
+	fi
+
 # Lint the code
 lint: ## Run golangci-lint
 	@echo "Running linter..."
+	@if ! command -v golangci-lint >/dev/null 2>&1; then \
+		echo "golangci-lint not found. Installing..."; \
+		$(MAKE) install-lint; \
+	fi
 	golangci-lint run
 
 # Format the code
@@ -112,6 +126,27 @@ test-install: ## Test installation script
 	bash -n scripts/install.sh
 	@echo "Installation script syntax is valid"
 
+# Audit targets
+audit: ## Run comprehensive codebase audit
+	@echo "Running comprehensive codebase audit..."
+	./scripts/audit.sh
+
+audit-structure: ## Run structural analysis only
+	@echo "Running structural analysis..."
+	./scripts/audit.sh --structure
+
+audit-dependencies: ## Run dependency analysis only
+	@echo "Running dependency analysis..."
+	./scripts/audit.sh --dependencies
+
+audit-quality: ## Run code quality analysis only
+	@echo "Running code quality analysis..."
+	./scripts/audit.sh --quality
+
+audit-clean: ## Clean audit results
+	@echo "Cleaning audit results..."
+	rm -rf audit-results/
+
 # Docker targets
 docker-build: ## Build Docker image
 	@echo "Building Docker image..."
@@ -119,4 +154,4 @@ docker-build: ## Build Docker image
 
 docker-test: ## Test Docker image
 	@echo "Testing Docker image..."
-	docker run --rm generator:latest --version
+	docker run --rm generator:latest version

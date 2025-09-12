@@ -432,28 +432,67 @@ func (vv *VercelValidator) validateEnvironmentVariables(projectPath string, resu
 func (vv *VercelValidator) validateEnvVarsConsistency(templateDirs []string, result *models.ValidationResult) error {
 	envVars := make(map[string]map[string]bool) // template -> env vars
 
+	// Debug logging
+	result.Warnings = append(result.Warnings, models.ValidationWarning{
+		Field:   "Debug",
+		Message: fmt.Sprintf("Processing %d template directories", len(templateDirs)),
+	})
+
 	for _, dir := range templateDirs {
 		templateName := filepath.Base(dir)
 		envVars[templateName] = make(map[string]bool)
+
+		result.Warnings = append(result.Warnings, models.ValidationWarning{
+			Field:   "Debug",
+			Message: fmt.Sprintf("Processing template: %s", templateName),
+		})
 
 		// Check vercel.json for environment variables
 		vercelConfigPath := filepath.Join(dir, "vercel.json.tmpl")
 		if _, err := os.Stat(vercelConfigPath); err == nil {
 			if vars, err := vv.extractEnvVarsFromVercelConfig(vercelConfigPath); err == nil {
+				result.Warnings = append(result.Warnings, models.ValidationWarning{
+					Field:   "Debug",
+					Message: fmt.Sprintf("Found %d env vars in %s vercel.json: %v", len(vars), templateName, vars),
+				})
 				for _, envVar := range vars {
 					envVars[templateName][envVar] = true
 				}
+			} else {
+				result.Warnings = append(result.Warnings, models.ValidationWarning{
+					Field:   "Debug",
+					Message: fmt.Sprintf("Error extracting env vars from %s vercel.json: %v", templateName, err),
+				})
 			}
+		} else {
+			result.Warnings = append(result.Warnings, models.ValidationWarning{
+				Field:   "Debug",
+				Message: fmt.Sprintf("No vercel.json.tmpl found for %s", templateName),
+			})
 		}
 
 		// Check .env.example files
 		envExamplePath := filepath.Join(dir, ".env.example.tmpl")
 		if _, err := os.Stat(envExamplePath); err == nil {
 			if vars, err := vv.extractEnvVarsFromEnvFile(envExamplePath); err == nil {
+				result.Warnings = append(result.Warnings, models.ValidationWarning{
+					Field:   "Debug",
+					Message: fmt.Sprintf("Found %d env vars in %s .env.example: %v", len(vars), templateName, vars),
+				})
 				for _, envVar := range vars {
 					envVars[templateName][envVar] = true
 				}
+			} else {
+				result.Warnings = append(result.Warnings, models.ValidationWarning{
+					Field:   "Debug",
+					Message: fmt.Sprintf("Error extracting env vars from %s .env.example: %v", templateName, err),
+				})
 			}
+		} else {
+			result.Warnings = append(result.Warnings, models.ValidationWarning{
+				Field:   "Debug",
+				Message: fmt.Sprintf("No .env.example.tmpl found for %s", templateName),
+			})
 		}
 	}
 
@@ -625,15 +664,30 @@ func (vv *VercelValidator) compareEnvVarsConsistency(envVars map[string]map[stri
 	commonVars := make(map[string]int)
 	totalTemplates := len(envVars)
 
+	result.Warnings = append(result.Warnings, models.ValidationWarning{
+		Field:   "Debug",
+		Message: fmt.Sprintf("Comparing env vars across %d templates", totalTemplates),
+	})
+
 	for _, templateVars := range envVars {
 		for envVar := range templateVars {
 			commonVars[envVar]++
 		}
 	}
 
+	result.Warnings = append(result.Warnings, models.ValidationWarning{
+		Field:   "Debug",
+		Message: fmt.Sprintf("Common vars found: %v", commonVars),
+	})
+
 	// Check for inconsistencies
 	for envVar, count := range commonVars {
-		if count > 1 && count < totalTemplates {
+		result.Warnings = append(result.Warnings, models.ValidationWarning{
+			Field:   "Debug",
+			Message: fmt.Sprintf("Checking %s: count=%d, total=%d", envVar, count, totalTemplates),
+		})
+
+		if count > 0 && count < totalTemplates {
 			// This env var exists in some but not all templates
 			missingIn := []string{}
 			for templateName, templateVars := range envVars {

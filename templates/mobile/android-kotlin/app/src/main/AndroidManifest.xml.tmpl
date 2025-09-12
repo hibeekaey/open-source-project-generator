@@ -2,10 +2,27 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Network permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    
+    <!-- Security: Prevent backup of app data -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" 
+        tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" 
+        tools:node="remove" />
 
     <application
+        android:allowBackup="false"
+        android:allowClearUserData="true"
+        android:extractNativeLibs="false"
+        android:fullBackupContent="false"
+        android:hardwareAccelerated="true"
+        android:largeHeap="false"
+        android:requestLegacyExternalStorage="false"
+        android:supportsRtl="true"
+        android:usesCleartextTraffic="false"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:name=".{{.Name}}Application"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"

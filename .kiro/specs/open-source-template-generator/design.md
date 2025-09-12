@@ -52,6 +52,7 @@ templates/
 **Purpose**: Provides user interaction for project configuration and generation.
 
 **Interface**:
+
 ```go
 type CLIInterface interface {
     Run() error
@@ -62,6 +63,7 @@ type CLIInterface interface {
 ```
 
 **Implementation**:
+
 - Uses Cobra CLI framework for command structure
 - Interactive prompts using survey library
 - Validation of user inputs
@@ -72,6 +74,7 @@ type CLIInterface interface {
 **Purpose**: Processes template files with variable substitution and conditional logic.
 
 **Interface**:
+
 ```go
 type TemplateEngine interface {
     ProcessTemplate(templatePath string, config *ProjectConfig) ([]byte, error)
@@ -81,6 +84,7 @@ type TemplateEngine interface {
 ```
 
 **Implementation**:
+
 - Go's text/template and html/template packages
 - Custom template functions for string manipulation, version handling
 - Conditional template rendering based on selected components
@@ -91,6 +95,7 @@ type TemplateEngine interface {
 **Purpose**: Manages project configuration, component selection, and template variables.
 
 **Interface**:
+
 ```go
 type ConfigManager interface {
     LoadDefaults() (*ProjectConfig, error)
@@ -125,6 +130,7 @@ type VersionConfig struct {
 **Purpose**: Creates directory structures and files based on templates and configuration.
 
 **Interface**:
+
 ```go
 type FileSystemGenerator interface {
     CreateProject(config *ProjectConfig, outputPath string) error
@@ -135,6 +141,7 @@ type FileSystemGenerator interface {
 ```
 
 **Implementation**:
+
 - Recursive directory creation
 - File permission handling
 - Binary asset copying (images, fonts, etc.)
@@ -145,6 +152,7 @@ type FileSystemGenerator interface {
 **Purpose**: Fetches and manages latest package versions from various registries.
 
 **Interface**:
+
 ```go
 type VersionManager interface {
     GetLatestNodeVersion() (string, error)
@@ -156,6 +164,7 @@ type VersionManager interface {
 ```
 
 **Implementation**:
+
 - NPM registry API integration
 - Go module proxy integration
 - GitHub releases API for tools
@@ -167,6 +176,7 @@ type VersionManager interface {
 **Purpose**: Validates generated project structure and configurations.
 
 **Interface**:
+
 ```go
 type ValidationEngine interface {
     ValidateProject(projectPath string) (*ValidationResult, error)

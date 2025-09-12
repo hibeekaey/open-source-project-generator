@@ -1,0 +1,145 @@
+package middleware
+
+import (
+	"net/http"
+	"os"
+	"sync"
+	"time"
+
+	"github.com/gin-gonic/gin"
+)
+
+// SecurityHeadersMiddleware adds comprehensive security headers to all responses
+func SecurityHeadersMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Prevent clickjacking
+		c.Header("X-Frame-Options", "DENY")
+		
+		// Prevent MIME sniffing
+		c.Header("X-Content-Type-Options", "nosniff")
+		
+		// Enable XSS protection (deprecated but still useful for older browsers)
+		c.Header("X-XSS-Protection", "1; mode=block")
+		
+		// Control referrer information
+		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
+		
+		// Restrict dangerous browser features
+		c.Header("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()")
+		
+		// Enforce HTTPS (only in production)
+		if gin.Mode() == gin.ReleaseMode || os.Getenv("FORCE_HTTPS") == "true" {
+			c.Header("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
+		}
+		
+		// Enhanced Content Security Policy for API responses
+		csp := "default-src 'none'; " +
+			"frame-ancestors 'none'; " +
+			"base-uri 'none'; " +
+			"form-action 'none';"
+		c.Header("Content-Security-Policy", csp)
+		
+		// Remove server information to prevent information disclosure
+		c.Header("Server", "")
+		
+		// Add cache control for sensitive endpoints
+		if c.Request.URL.Path == "/auth/login" || c.Request.URL.Path == "/auth/refresh" {
+			c.Header("Cache-Control", "no-store, no-cache, must-revalidate, private")
+			c.Header("Pragma", "no-cache")
+			c.Header("Expires", "0")
+		}
+		
+		// Add security headers for JSON responses
+		if c.GetHeader("Content-Type") == "application/json" {
+			c.Header("X-Content-Type-Options", "nosniff")
+		}
+		
+		c.Next()
+	}
+}
+
+// Simple in-memory rate limiter for basic protection
+type rateLimiter struct {
+	requests map[string][]time.Time
+	mutex    sync.RWMutex
+	limit    int
+	window   time.Duration
+}
+
+var globalRateLimiter = &rateLimiter{
+	requests: make(map[string][]time.Time),
+	limit:    100, // 100 requests per window
+	window:   time.Minute,
+}
+
+// RateLimitMiddleware provides basic rate limiting protection
+func RateLimitMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		clientIP := c.ClientIP()
+		
+		globalRateLimiter.mutex.Lock()
+		defer globalRateLimiter.mutex.Unlock()
+		
+		now := time.Now()
+		
+		// Clean old requests
+		if requests, exists := globalRateLimiter.requests[clientIP]; exists {
+			var validRequests []time.Time
+			for _, reqTime := range requests {
+				if now.Sub(reqTime) < globalRateLimiter.window {
+					validRequests = append(validRequests, reqTime)
+				}
+			}
+			globalRateLimiter.requests[clientIP] = validRequests
+		}
+		
+		// Check rate limit
+		if len(globalRateLimiter.requests[clientIP]) >= globalRateLimiter.limit {
+			c.Header("Retry-After", "60")
+			c.JSON(http.StatusTooManyRequests, gin.H{
+				"error": "Rate limit exceeded",
+				"retry_after": 60,
+			})
+			c.Abort()
+			return
+		}
+		
+		// Add current request
+		globalRateLimiter.requests[clientIP] = append(globalRateLimiter.requests[clientIP], now)
+		
+		c.Next()
+	}
+}
+
+// CSRFProtectionMiddleware provides basic CSRF protection for state-changing operations
+func CSRFProtectionMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Skip CSRF check for safe methods
+		if c.Request.Method == "GET" || c.Request.Method == "HEAD" || c.Request.Method == "OPTIONS" {
+			c.Next()
+			return
+		}
+		
+		// Check for CSRF token in header
+		csrfToken := c.GetHeader("X-CSRF-Token")
+		if csrfToken == "" {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error": "CSRF token required",
+			})
+			c.Abort()
+			return
+		}
+		
+		// In a real implementation, validate the CSRF token against session
+		// For now, just check that it's present and not empty
+		if len(csrfToken) < 10 {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error": "Invalid CSRF token",
+			})
+			c.Abort()
+			return
+		}
+		
+		c.Next()
+	}
+}

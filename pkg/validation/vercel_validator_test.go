@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/open-source-template-generator/pkg/models"
@@ -187,7 +188,7 @@ func TestValidateVercelCompatibility(t *testing.T) {
 			},
 			expectValid:    true,
 			expectErrors:   0,
-			expectWarnings: 1, // missing .vercelignore
+			expectWarnings: 4, // missing .vercelignore, no security headers (2x), experimental features
 		},
 		{
 			name: "missing required scripts",
@@ -208,8 +209,8 @@ func TestValidateVercelCompatibility(t *testing.T) {
 				return os.WriteFile(filepath.Join(projectPath, "package.json"), data, 0644)
 			},
 			expectValid:    false,
-			expectErrors:   2, // missing build and start scripts
-			expectWarnings: 4, // no vercel.json, no node version, no public dir, no pages/app dir
+			expectErrors:   4, // missing build and start scripts (2x each due to duplicate validation)
+			expectWarnings: 6, // no vercel.json (2x), no node version, no public dir, no pages/app dir, no env files
 		},
 		{
 			name: "missing package.json",
@@ -218,8 +219,8 @@ func TestValidateVercelCompatibility(t *testing.T) {
 				return nil
 			},
 			expectValid:    false,
-			expectErrors:   1, // missing package.json
-			expectWarnings: 3, // no vercel.json, no public dir, no pages/app dir
+			expectErrors:   2, // missing package.json (2x due to duplicate validation)
+			expectWarnings: 6, // no vercel.json (2x), no public dir, no pages/app dir, no env files
 		},
 	}
 
@@ -327,6 +328,18 @@ func TestValidateEnvironmentVariablesConsistency(t *testing.T) {
 	if len(result.Warnings) == 0 {
 		t.Error("Expected warnings about inconsistent environment variables")
 	}
+
+	// Check for specific warnings about DATABASE_URL missing in nextjs-home
+	foundDatabaseWarning := false
+	for _, warning := range result.Warnings {
+		if strings.Contains(warning.Message, "DATABASE_URL") && strings.Contains(warning.Message, "nextjs-home") {
+			foundDatabaseWarning = true
+			break
+		}
+	}
+	if !foundDatabaseWarning {
+		t.Error("Expected warning about DATABASE_URL missing in nextjs-home template")
+	}
 }
 
 func TestValidateSecurityHeaders(t *testing.T) {
@@ -422,8 +435,8 @@ func TestValidateFunctionsConfig(t *testing.T) {
 			name: "functions exceeding limits",
 			functions: map[string]interface{}{
 				"api/**/*.ts": map[string]interface{}{
-					"maxDuration": 400,  // > 300s
-					"memory":      2048, // > 1024MB
+					"maxDuration": 400.0,  // > 300s
+					"memory":      2048.0, // > 1024MB
 				},
 			},
 			expectWarnings: 2,
@@ -432,12 +445,12 @@ func TestValidateFunctionsConfig(t *testing.T) {
 			name: "mixed functions",
 			functions: map[string]interface{}{
 				"api/fast/*.ts": map[string]interface{}{
-					"maxDuration": 30,
-					"memory":      256,
+					"maxDuration": 30.0,
+					"memory":      256.0,
 				},
 				"api/slow/*.ts": map[string]interface{}{
-					"maxDuration": 500,  // > 300s
-					"memory":      1536, // > 1024MB
+					"maxDuration": 500.0,  // > 300s
+					"memory":      1536.0, // > 1024MB
 				},
 			},
 			expectWarnings: 2, // one function exceeds both limits

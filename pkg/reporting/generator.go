@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/open-source-template-generator/pkg/models"
-	"gopkg.in/yaml.v3"
+	yaml "gopkg.in/yaml.v3"
 )
 
 // ReportGenerator handles generation of version update reports

@@ -15,11 +15,24 @@ spec:
       labels:
         app: {{.Name}}-api
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
       containers:
       - name: {{.Name}}-api
         image: {{.Name}}-api:latest
         ports:
         - containerPort: 8080
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1001
+          capabilities:
+            drop:
+              - ALL
         env:
         - name: APP_ENV
           valueFrom:

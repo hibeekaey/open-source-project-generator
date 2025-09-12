@@ -26,6 +26,7 @@ make dist
 ```
 
 **Supported Platforms**:
+
 - Linux: amd64, arm64, 386
 - macOS: amd64 (Intel), arm64 (Apple Silicon)
 - Windows: amd64, 386
@@ -104,6 +105,7 @@ VERSION=v1.2.0 ./scripts/build.sh
 ### GitHub Releases
 
 Primary distribution method:
+
 - **URL**: `https://github.com/open-source-template-generator/generator/releases`
 - **Assets**: Binaries, packages, checksums
 - **Automation**: Fully automated via GitHub Actions

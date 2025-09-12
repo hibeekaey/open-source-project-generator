@@ -36,7 +36,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: ${{ env.NODE_VERSION }}
+        node-version: '{{.Versions.Node}}'
         cache: 'npm'
         cache-dependency-path: '${{ matrix.app }}/package-lock.json'
 
@@ -84,7 +84,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: ${{ env.NODE_VERSION }}
+        node-version: '{{.Versions.Node}}'
         cache: 'npm'
         cache-dependency-path: 'App/package-lock.json'
 
@@ -116,7 +116,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: ${{ env.NODE_VERSION }}
+        node-version: '{{.Versions.Node}}'
         cache: 'npm'
         cache-dependency-path: 'App/package-lock.json'
 

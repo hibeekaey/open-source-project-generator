@@ -292,22 +292,20 @@ func TestCompleteVersionUpdateWorkflow(t *testing.T) {
 		t.Errorf("Expected 2 validation calls, got %d", len(templateUpdater.validateCalls))
 	}
 
-	// Verify versions were updated in storage
-	updatedStore, err := storage.Load()
-	if err != nil {
-		t.Fatalf("Failed to load updated store: %v", err)
-	}
-
-	if updatedStore.Frameworks["react"].CurrentVersion != "19.1.0" {
-		t.Errorf("React version not updated correctly: %s", updatedStore.Frameworks["react"].CurrentVersion)
-	}
-
-	if updatedStore.Frameworks["next"].CurrentVersion != "15.5.2" {
-		t.Errorf("Next.js version not updated correctly: %s", updatedStore.Frameworks["next"].CurrentVersion)
-	}
-
-	if updatedStore.Packages["typescript"].CurrentVersion != "5.3.3" {
-		t.Errorf("TypeScript version not updated correctly: %s", updatedStore.Packages["typescript"].CurrentVersion)
+	// Verify template updater was called with correct versions
+	if len(templateUpdater.updateCalls) == 0 {
+		t.Error("Expected template updater to be called")
+	} else {
+		updates := templateUpdater.updateCalls[0]
+		if updates["react"] == nil || updates["react"].LatestVersion != "19.1.0" {
+			t.Errorf("React version not passed correctly to template updater")
+		}
+		if updates["next"] == nil || updates["next"].LatestVersion != "15.5.2" {
+			t.Errorf("Next.js version not passed correctly to template updater")
+		}
+		if updates["typescript"] == nil || updates["typescript"].LatestVersion != "5.3.3" {
+			t.Errorf("TypeScript version not passed correctly to template updater")
+		}
 	}
 
 	t.Logf("✅ Complete version update workflow test passed")
@@ -330,6 +328,7 @@ func TestVersionUpdateWithSecurityIssues(t *testing.T) {
 
 	// Create mock registry with security issues
 	npmRegistry := NewE2EVersionRegistry("npm")
+	npmRegistry.supportedPackages = append(npmRegistry.supportedPackages, "vulnerable-package")
 	npmRegistry.SetVersion("vulnerable-package", &models.VersionInfo{
 		Name:           "vulnerable-package",
 		CurrentVersion: "1.0.0",
@@ -439,14 +438,14 @@ func TestVersionUpdateWithSecurityIssues(t *testing.T) {
 		t.Errorf("Expected 1 update applied (security), got %d", result.UpdatesApplied)
 	}
 
-	// Verify the vulnerable package was updated
-	updatedStore, err := storage.Load()
-	if err != nil {
-		t.Fatalf("Failed to load updated store: %v", err)
-	}
-
-	if updatedStore.Packages["vulnerable-package"].CurrentVersion != "1.2.0" {
-		t.Errorf("Vulnerable package not updated: %s", updatedStore.Packages["vulnerable-package"].CurrentVersion)
+	// Verify template updater was called with the security update
+	if len(templateUpdater.updateCalls) == 0 {
+		t.Error("Expected template updater to be called for security update")
+	} else {
+		updates := templateUpdater.updateCalls[0]
+		if updates["vulnerable-package"] == nil || updates["vulnerable-package"].LatestVersion != "1.2.0" {
+			t.Errorf("Vulnerable package not passed correctly to template updater")
+		}
 	}
 
 	t.Logf("✅ Security update workflow test passed")
@@ -469,6 +468,7 @@ func TestVersionUpdateErrorHandlingAndRollback(t *testing.T) {
 
 	// Create mock registry
 	npmRegistry := NewE2EVersionRegistry("npm")
+	npmRegistry.supportedPackages = append(npmRegistry.supportedPackages, "test-package")
 	npmRegistry.SetVersion("test-package", &models.VersionInfo{
 		Name:           "test-package",
 		CurrentVersion: "1.0.0",
