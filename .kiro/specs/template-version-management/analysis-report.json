@@ -1,0 +1,244 @@
+{
+  "templates": [
+    {
+      "name": "nextjs-app",
+      "path": "templates/frontend/nextjs-app",
+      "type": "application",
+      "config_files": [
+        ".env.local.example.tmpl",
+        ".eslintrc.json.tmpl",
+        ".gitignore.tmpl",
+        ".prettierrc.tmpl",
+        "jest.config.js.tmpl",
+        "next.config.js.tmpl",
+        "package.json.tmpl",
+        "postcss.config.js.tmpl",
+        "tailwind.config.js.tmpl",
+        "tsconfig.json.tmpl",
+        "vercel.json.tmpl"
+      ],
+      "package_json": {
+        "name": "",
+        "version": "",
+        "scripts": {
+          "build": "next build",
+          "clean": "rm -rf .next out dist",
+          "dev": "next dev",
+          "format": "check\": \"prettier --check .",
+          "lint": "fix\": \"next lint --fix",
+          "start": "next start",
+          "test": "coverage\": \"jest --coverage",
+          "type-check": "tsc --noEmit"
+        },
+        "dependencies": {},
+        "devDependencies": {},
+        "engines": {}
+      },
+      "scripts": {
+        "build": "next build",
+        "clean": "rm -rf .next out dist",
+        "dev": "next dev",
+        "format": "check\": \"prettier --check .",
+        "lint": "fix\": \"next lint --fix",
+        "start": "next start",
+        "test": "coverage\": \"jest --coverage",
+        "type-check": "tsc --noEmit"
+      },
+      "port": "3000"
+    },
+    {
+      "name": "nextjs-home",
+      "path": "templates/frontend/nextjs-home",
+      "type": "landing",
+      "config_files": [
+        "next.config.js.tmpl",
+        "package.json.tmpl",
+        "tailwind.config.js.tmpl"
+      ],
+      "package_json": {
+        "name": "",
+        "version": "",
+        "scripts": {
+          "build": "next build",
+          "clean": "rm -rf .next out dist",
+          "dev": "next dev -p 3001",
+          "format": "check\": \"prettier --check .",
+          "lint": "fix\": \"next lint --fix",
+          "start": "next start -p 3001",
+          "test": "coverage\": \"jest --coverage",
+          "type-check": "tsc --noEmit"
+        },
+        "dependencies": {},
+        "devDependencies": {},
+        "engines": {}
+      },
+      "scripts": {
+        "build": "next build",
+        "clean": "rm -rf .next out dist",
+        "dev": "next dev -p 3001",
+        "format": "check\": \"prettier --check .",
+        "lint": "fix\": \"next lint --fix",
+        "start": "next start -p 3001",
+        "test": "coverage\": \"jest --coverage",
+        "type-check": "tsc --noEmit"
+      },
+      "port": "3001"
+    },
+    {
+      "name": "nextjs-admin",
+      "path": "templates/frontend/nextjs-admin",
+      "type": "dashboard",
+      "config_files": [
+        "package.json.tmpl"
+      ],
+      "package_json": {
+        "name": "",
+        "version": "",
+        "scripts": {
+          "build": "next build",
+          "clean": "rm -rf .next out dist",
+          "dev": "next dev -p 3002",
+          "format": "check\": \"prettier --check .",
+          "lint": "fix\": \"next lint --fix",
+          "start": "next start -p 3002",
+          "test": "coverage\": \"jest --coverage",
+          "type-check": "tsc --noEmit"
+        },
+        "dependencies": {},
+        "devDependencies": {},
+        "engines": {}
+      },
+      "scripts": {
+        "build": "next build",
+        "clean": "rm -rf .next out dist",
+        "dev": "next dev -p 3002",
+        "format": "check\": \"prettier --check .",
+        "lint": "fix\": \"next lint --fix",
+        "start": "next start -p 3002",
+        "test": "coverage\": \"jest --coverage",
+        "type-check": "tsc --noEmit"
+      },
+      "port": "3002"
+    }
+  ],
+  "inconsistencies": [
+    {
+      "type": "missing_config_file",
+      "description": "Configuration file '.env.local.example.tmpl' is missing from some templates",
+      "templates": [
+        "nextjs-home",
+        "nextjs-admin"
+      ],
+      "details": "Present in: nextjs-app; Missing from: nextjs-home, nextjs-admin"
+    },
+    {
+      "type": "missing_config_file",
+      "description": "Configuration file '.eslintrc.json.tmpl' is missing from some templates",
+      "templates": [
+        "nextjs-home",
+        "nextjs-admin"
+      ],
+      "details": "Present in: nextjs-app; Missing from: nextjs-home, nextjs-admin"
+    },
+    {
+      "type": "missing_config_file",
+      "description": "Configuration file '.gitignore.tmpl' is missing from some templates",
+      "templates": [
+        "nextjs-home",
+        "nextjs-admin"
+      ],
+      "details": "Present in: nextjs-app; Missing from: nextjs-home, nextjs-admin"
+    },
+    {
+      "type": "missing_config_file",
+      "description": "Configuration file 'next.config.js.tmpl' is missing from some templates",
+      "templates": [
+        "nextjs-admin"
+      ],
+      "details": "Present in: nextjs-app, nextjs-home; Missing from: nextjs-admin"
+    },
+    {
+      "type": "missing_config_file",
+      "description": "Configuration file 'tsconfig.json.tmpl' is missing from some templates",
+      "templates": [
+        "nextjs-admin",
+        "nextjs-home"
+      ],
+      "details": "Present in: nextjs-app; Missing from: nextjs-admin, nextjs-home"
+    },
+    {
+      "type": "missing_config_file",
+      "description": "Configuration file 'vercel.json.tmpl' is missing from some templates",
+      "templates": [
+        "nextjs-admin",
+        "nextjs-home"
+      ],
+      "details": "Present in: nextjs-app; Missing from: nextjs-admin, nextjs-home"
+    },
+    {
+      "type": "missing_config_file",
+      "description": "Configuration file '.prettierrc.tmpl' is missing from some templates",
+      "templates": [
+        "nextjs-admin",
+        "nextjs-home"
+      ],
+      "details": "Present in: nextjs-app; Missing from: nextjs-admin, nextjs-home"
+    },
+    {
+      "type": "missing_config_file",
+      "description": "Configuration file 'jest.config.js.tmpl' is missing from some templates",
+      "templates": [
+        "nextjs-home",
+        "nextjs-admin"
+      ],
+      "details": "Present in: nextjs-app; Missing from: nextjs-home, nextjs-admin"
+    },
+    {
+      "type": "missing_config_file",
+      "description": "Configuration file 'postcss.config.js.tmpl' is missing from some templates",
+      "templates": [
+        "nextjs-home",
+        "nextjs-admin"
+      ],
+      "details": "Present in: nextjs-app; Missing from: nextjs-home, nextjs-admin"
+    },
+    {
+      "type": "missing_config_file",
+      "description": "Configuration file 'tailwind.config.js.tmpl' is missing from some templates",
+      "templates": [
+        "nextjs-admin"
+      ],
+      "details": "Present in: nextjs-app, nextjs-home; Missing from: nextjs-admin"
+    }
+  ],
+  "missing_files": [
+    {
+      "template": "nextjs-admin",
+      "file": "next.config.js.tmpl",
+      "reason": "Required for consistent frontend template configuration"
+    },
+    {
+      "template": "nextjs-admin",
+      "file": "tailwind.config.js.tmpl",
+      "reason": "Required for consistent frontend template configuration"
+    }
+  ],
+  "version_references": {
+    "NextJS": [
+      "nextjs-app",
+      "nextjs-home",
+      "nextjs-admin"
+    ],
+    "Node": [
+      "nextjs-app",
+      "nextjs-home",
+      "nextjs-admin"
+    ],
+    "React": [
+      "nextjs-app",
+      "nextjs-home",
+      "nextjs-admin"
+    ]
+  },
+  "dependency_patterns": {}
+}

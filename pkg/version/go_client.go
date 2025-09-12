@@ -11,7 +11,7 @@ import (
 // GoClient handles Go module proxy API interactions
 type GoClient struct {
 	httpClient *http.Client
-	baseURL    string
+	BaseURL    string
 }
 
 // GoModuleVersions represents the list of versions from the Go module proxy
@@ -35,7 +35,7 @@ func NewGoClient(httpClient *http.Client) *GoClient {
 
 	return &GoClient{
 		httpClient: httpClient,
-		baseURL:    "https://proxy.golang.org",
+		BaseURL:    "https://proxy.golang.org",
 	}
 }
 
@@ -45,7 +45,7 @@ func (c *GoClient) GetLatestVersion(moduleName string) (string, error) {
 	encodedModule := encodeModuleName(moduleName)
 
 	// First try to get the latest version directly
-	url := fmt.Sprintf("%s/%s/@latest", c.baseURL, encodedModule)
+	url := fmt.Sprintf("%s/%s/@latest", c.BaseURL, encodedModule)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -76,7 +76,7 @@ func (c *GoClient) GetLatestVersion(moduleName string) (string, error) {
 
 // getLatestFromVersionList fetches all versions and returns the latest
 func (c *GoClient) getLatestFromVersionList(encodedModule string) (string, error) {
-	url := fmt.Sprintf("%s/%s/@v/list", c.baseURL, encodedModule)
+	url := fmt.Sprintf("%s/%s/@v/list", c.BaseURL, encodedModule)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -92,7 +92,7 @@ func (c *GoClient) getLatestFromVersionList(encodedModule string) (string, error
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("Go module proxy returned status %d for module %s", resp.StatusCode, encodedModule)
+		return "", fmt.Errorf("go module proxy returned status %d for module %s", resp.StatusCode, encodedModule)
 	}
 
 	// The response is a plain text list of versions, one per line
@@ -125,7 +125,7 @@ func (c *GoClient) getLatestFromVersionList(encodedModule string) (string, error
 // GetVersionInfo fetches detailed information about a specific version
 func (c *GoClient) GetVersionInfo(moduleName, version string) (*GoModuleInfo, error) {
 	encodedModule := encodeModuleName(moduleName)
-	url := fmt.Sprintf("%s/%s/@v/%s.info", c.baseURL, encodedModule, version)
+	url := fmt.Sprintf("%s/%s/@v/%s.info", c.BaseURL, encodedModule, version)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -142,7 +142,7 @@ func (c *GoClient) GetVersionInfo(moduleName, version string) (*GoModuleInfo, er
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Go module proxy returned status %d for module %s@%s", resp.StatusCode, moduleName, version)
+		return nil, fmt.Errorf("go module proxy returned status %d for module %s@%s", resp.StatusCode, moduleName, version)
 	}
 
 	var moduleInfo GoModuleInfo

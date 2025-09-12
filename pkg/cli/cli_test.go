@@ -97,6 +97,83 @@ func (m *MockValidationEngine) ValidateJSON(path string) error {
 	return m.err
 }
 
+func (m *MockValidationEngine) ValidateTemplateConsistency(templatesPath string) (*models.ValidationResult, error) {
+	if m.result != nil {
+		return m.result, m.err
+	}
+	return &models.ValidationResult{
+		Valid:    true,
+		Errors:   []models.ValidationError{},
+		Warnings: []models.ValidationWarning{},
+	}, m.err
+}
+
+func (m *MockValidationEngine) ValidatePackageJSONStructure(packageJSONPath string) (*models.ValidationResult, error) {
+	if m.result != nil {
+		return m.result, m.err
+	}
+	return &models.ValidationResult{
+		Valid:    true,
+		Errors:   []models.ValidationError{},
+		Warnings: []models.ValidationWarning{},
+	}, m.err
+}
+
+func (m *MockValidationEngine) ValidateTypeScriptConfig(tsconfigPath string) (*models.ValidationResult, error) {
+	if m.result != nil {
+		return m.result, m.err
+	}
+	return &models.ValidationResult{
+		Valid:    true,
+		Errors:   []models.ValidationError{},
+		Warnings: []models.ValidationWarning{},
+	}, m.err
+}
+
+func (m *MockValidationEngine) ValidateVercelCompatibility(projectPath string) (*models.ValidationResult, error) {
+	if m.result != nil {
+		return m.result, m.err
+	}
+	return &models.ValidationResult{
+		Valid:    true,
+		Errors:   []models.ValidationError{},
+		Warnings: []models.ValidationWarning{},
+	}, m.err
+}
+
+func (m *MockValidationEngine) ValidateVercelConfig(vercelConfigPath string) (*models.ValidationResult, error) {
+	if m.result != nil {
+		return m.result, m.err
+	}
+	return &models.ValidationResult{
+		Valid:    true,
+		Errors:   []models.ValidationError{},
+		Warnings: []models.ValidationWarning{},
+	}, m.err
+}
+
+func (m *MockValidationEngine) ValidateEnvironmentVariablesConsistency(templatesPath string) (*models.ValidationResult, error) {
+	if m.result != nil {
+		return m.result, m.err
+	}
+	return &models.ValidationResult{
+		Valid:    true,
+		Errors:   []models.ValidationError{},
+		Warnings: []models.ValidationWarning{},
+	}, m.err
+}
+
+func (m *MockValidationEngine) ValidateSecurityVulnerabilities(projectPath string) (*models.ValidationResult, error) {
+	if m.result != nil {
+		return m.result, m.err
+	}
+	return &models.ValidationResult{
+		Valid:    true,
+		Errors:   []models.ValidationError{},
+		Warnings: []models.ValidationWarning{},
+	}, m.err
+}
+
 func TestNewCLI(t *testing.T) {
 	configManager := &MockConfigManager{}
 	validator := &MockValidationEngine{}

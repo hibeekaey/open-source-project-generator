@@ -86,7 +86,7 @@ func TestGoClient_GetLatestVersion(t *testing.T) {
 
 			// Create client with mock server URL
 			client := NewGoClient(server.Client())
-			client.baseURL = server.URL
+			client.BaseURL = server.URL
 
 			// Execute test
 			result, err := client.GetLatestVersion(tt.moduleName)
@@ -157,7 +157,7 @@ func TestGoClient_GetVersionInfo(t *testing.T) {
 
 			// Create client with mock server URL
 			client := NewGoClient(server.Client())
-			client.baseURL = server.URL
+			client.BaseURL = server.URL
 
 			// Execute test
 			result, err := client.GetVersionInfo(tt.moduleName, tt.version)
@@ -220,8 +220,8 @@ func TestNewGoClient(t *testing.T) {
 		if client.httpClient != customClient {
 			t.Errorf("Expected custom http client to be used")
 		}
-		if client.baseURL != "https://proxy.golang.org" {
-			t.Errorf("Expected baseURL to be https://proxy.golang.org, got %s", client.baseURL)
+		if client.BaseURL != "https://proxy.golang.org" {
+			t.Errorf("Expected baseURL to be https://proxy.golang.org, got %s", client.BaseURL)
 		}
 	})
 
@@ -231,8 +231,8 @@ func TestNewGoClient(t *testing.T) {
 		if client.httpClient == nil {
 			t.Errorf("Expected default http client to be created")
 		}
-		if client.baseURL != "https://proxy.golang.org" {
-			t.Errorf("Expected baseURL to be https://proxy.golang.org, got %s", client.baseURL)
+		if client.BaseURL != "https://proxy.golang.org" {
+			t.Errorf("Expected baseURL to be https://proxy.golang.org, got %s", client.BaseURL)
 		}
 	})
 }

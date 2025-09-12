@@ -688,3 +688,15 @@ func (c *CLI) CheckOutputPath(path string) error {
 
 	return nil
 }
+
+// ExecuteCommand executes CLI commands based on the provided arguments
+func (c *CLI) ExecuteCommand(command string, args []string) error {
+	switch command {
+	case "analyze-templates":
+		return c.AnalyzeTemplatesCommand(args)
+	case "save-analysis-report":
+		return c.SaveAnalysisReportCommand(args)
+	default:
+		return fmt.Errorf("unknown command: %s", command)
+	}
+}
