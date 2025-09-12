@@ -32,13 +32,21 @@ func (e *Engine) registerDefaultFunctions() {
 		"join":       strings.Join,
 
 		// Version handling functions
-		"semverMajor":   getSemverMajor,
-		"semverMinor":   getSemverMinor,
-		"semverPatch":   getSemverPatch,
-		"semverCompare": compareSemver,
-		"latestVersion": getLatestVersion,
-		"versionPrefix": addVersionPrefix,
-		"stripVersion":  stripVersionPrefix,
+		"semverMajor":    getSemverMajor,
+		"semverMinor":    getSemverMinor,
+		"semverPatch":    getSemverPatch,
+		"semverCompare":  compareSemver,
+		"latestVersion":  getLatestVersion,
+		"versionPrefix":  addVersionPrefix,
+		"stripVersion":   stripVersionPrefix,
+		"nodeVersion":    getNodeVersion,
+		"goVersion":      getGoVersion,
+		"nextjsVersion":  getNextjsVersion,
+		"reactVersion":   getReactVersion,
+		"kotlinVersion":  getKotlinVersion,
+		"swiftVersion":   getSwiftVersion,
+		"packageVersion": getPackageVersion,
+		"hasPackage":     hasPackage,
 
 		// Conditional functions
 		"if":       templateIf,
@@ -232,6 +240,25 @@ func getLatestVersion(config *models.ProjectConfig, packageName string) string {
 			return version
 		}
 	}
+
+	// Check core language/framework versions
+	if config.Versions != nil {
+		switch packageName {
+		case "node", "nodejs":
+			return config.Versions.Node
+		case "go", "golang":
+			return config.Versions.Go
+		case "next", "nextjs":
+			return config.Versions.NextJS
+		case "react":
+			return config.Versions.React
+		case "kotlin":
+			return config.Versions.Kotlin
+		case "swift":
+			return config.Versions.Swift
+		}
+	}
+
 	return "latest"
 }
 
@@ -244,6 +271,66 @@ func addVersionPrefix(version string) string {
 
 func stripVersionPrefix(version string) string {
 	return strings.TrimPrefix(version, "v")
+}
+
+// Specific version getter functions for common languages/frameworks
+func getNodeVersion(config *models.ProjectConfig) string {
+	if config.Versions != nil && config.Versions.Node != "" {
+		return config.Versions.Node
+	}
+	return "20.11.0" // Default fallback
+}
+
+func getGoVersion(config *models.ProjectConfig) string {
+	if config.Versions != nil && config.Versions.Go != "" {
+		return config.Versions.Go
+	}
+	return "1.22.0" // Default fallback
+}
+
+func getNextjsVersion(config *models.ProjectConfig) string {
+	if config.Versions != nil && config.Versions.NextJS != "" {
+		return config.Versions.NextJS
+	}
+	return "15.0.0" // Default fallback
+}
+
+func getReactVersion(config *models.ProjectConfig) string {
+	if config.Versions != nil && config.Versions.React != "" {
+		return config.Versions.React
+	}
+	return "18.2.0" // Default fallback
+}
+
+func getKotlinVersion(config *models.ProjectConfig) string {
+	if config.Versions != nil && config.Versions.Kotlin != "" {
+		return config.Versions.Kotlin
+	}
+	return "2.0.0" // Default fallback
+}
+
+func getSwiftVersion(config *models.ProjectConfig) string {
+	if config.Versions != nil && config.Versions.Swift != "" {
+		return config.Versions.Swift
+	}
+	return "5.9.0" // Default fallback
+}
+
+func getPackageVersion(config *models.ProjectConfig, packageName string) string {
+	if config.Versions != nil && config.Versions.Packages != nil {
+		if version, exists := config.Versions.Packages[packageName]; exists {
+			return version
+		}
+	}
+	return "latest"
+}
+
+func hasPackage(config *models.ProjectConfig, packageName string) bool {
+	if config.Versions != nil && config.Versions.Packages != nil {
+		_, exists := config.Versions.Packages[packageName]
+		return exists
+	}
+	return false
 }
 
 // Conditional functions

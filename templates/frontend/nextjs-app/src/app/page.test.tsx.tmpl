@@ -7,8 +7,8 @@ const mockConfig = {
   Description: '{{.Description}}',
   Repository: '{{if .Repository}}{{.Repository}}{{end}}',
   Versions: {
-    NextJS: '{{.Versions.NextJS}}',
-    React: '{{.Versions.React}}'
+    NextJS: '15.5.2',
+    React: '19.1.0'
   }
 }
 
@@ -61,8 +61,8 @@ describe('HomePage', () => {
   it('renders the tech stack badges', () => {
     render(<HomePage />)
     
-    expect(screen.getByText('Next.js {{.Versions.NextJS}}')).toBeInTheDocument()
-    expect(screen.getByText('React {{.Versions.React}}')).toBeInTheDocument()
+    expect(screen.getByText('Next.js 15.5.2')).toBeInTheDocument()
+    expect(screen.getByText('React 19.1.0')).toBeInTheDocument()
     expect(screen.getByText('TypeScript')).toBeInTheDocument()
     expect(screen.getByText('Tailwind CSS')).toBeInTheDocument()
   })

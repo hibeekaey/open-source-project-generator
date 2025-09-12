@@ -14,13 +14,19 @@ import (
 
 // Engine implements the ValidationEngine interface
 type Engine struct {
-	configValidator *models.ConfigValidator
+	configValidator   *models.ConfigValidator
+	templateValidator *TemplateValidator
+	vercelValidator   *VercelValidator
+	securityValidator *SecurityValidator
 }
 
 // NewEngine creates a new validation engine
 func NewEngine() interfaces.ValidationEngine {
 	return &Engine{
-		configValidator: models.NewConfigValidator(),
+		configValidator:   models.NewConfigValidator(),
+		templateValidator: NewTemplateValidator(),
+		vercelValidator:   NewVercelValidator(),
+		securityValidator: NewSecurityValidator(),
 	}
 }
 
@@ -521,4 +527,39 @@ func (e *Engine) isValidGoVersion(version string) bool {
 	}
 
 	return true
+}
+
+// ValidateTemplateConsistency validates consistency across frontend templates
+func (e *Engine) ValidateTemplateConsistency(templatesPath string) (*models.ValidationResult, error) {
+	return e.templateValidator.ValidateTemplateConsistency(templatesPath)
+}
+
+// ValidatePackageJSONStructure validates a single package.json against standards
+func (e *Engine) ValidatePackageJSONStructure(packageJSONPath string) (*models.ValidationResult, error) {
+	return e.templateValidator.ValidatePackageJSONStructure(packageJSONPath)
+}
+
+// ValidateTypeScriptConfig validates TypeScript configuration
+func (e *Engine) ValidateTypeScriptConfig(tsconfigPath string) (*models.ValidationResult, error) {
+	return e.templateValidator.ValidateTypeScriptConfig(tsconfigPath)
+}
+
+// ValidateVercelCompatibility validates Vercel deployment compatibility
+func (e *Engine) ValidateVercelCompatibility(projectPath string) (*models.ValidationResult, error) {
+	return e.vercelValidator.ValidateVercelCompatibility(projectPath)
+}
+
+// ValidateVercelConfig validates a vercel.json configuration file
+func (e *Engine) ValidateVercelConfig(vercelConfigPath string) (*models.ValidationResult, error) {
+	return e.vercelValidator.ValidateVercelConfig(vercelConfigPath)
+}
+
+// ValidateEnvironmentVariablesConsistency validates environment variables across templates
+func (e *Engine) ValidateEnvironmentVariablesConsistency(templatesPath string) (*models.ValidationResult, error) {
+	return e.vercelValidator.ValidateEnvironmentVariablesConsistency(templatesPath)
+}
+
+// ValidateSecurityVulnerabilities validates packages for security vulnerabilities
+func (e *Engine) ValidateSecurityVulnerabilities(projectPath string) (*models.ValidationResult, error) {
+	return e.securityValidator.ValidateSecurityVulnerabilities(projectPath)
 }
