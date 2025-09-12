@@ -40,6 +40,11 @@ func NewNPMClient(httpClient *http.Client) *NPMClient {
 	}
 }
 
+// SetBaseURL sets the base URL for the NPM client (for testing purposes)
+func (c *NPMClient) SetBaseURL(url string) {
+	c.baseURL = url
+}
+
 // GetLatestVersion fetches the latest version of an NPM package
 func (c *NPMClient) GetLatestVersion(packageName string) (string, error) {
 	url := fmt.Sprintf("%s/%s", c.baseURL, packageName)

@@ -12,13 +12,15 @@ import (
 
 	"github.com/open-source-template-generator/pkg/interfaces"
 	"github.com/open-source-template-generator/pkg/models"
+	"github.com/open-source-template-generator/pkg/version"
 )
 
 // Engine implements the TemplateEngine interface
 type Engine struct {
-	textTemplate *texttemplate.Template
-	htmlTemplate *htmltemplate.Template
-	funcMap      texttemplate.FuncMap
+	textTemplate   *texttemplate.Template
+	htmlTemplate   *htmltemplate.Template
+	funcMap        texttemplate.FuncMap
+	versionManager interfaces.VersionManager
 }
 
 // NewEngine creates a new template engine instance
@@ -33,8 +35,27 @@ func NewEngine() interfaces.TemplateEngine {
 	return engine
 }
 
+// NewEngineWithVersionManager creates a new template engine with version management
+func NewEngineWithVersionManager(versionManager interfaces.VersionManager) interfaces.TemplateEngine {
+	engine := &Engine{
+		funcMap:        make(texttemplate.FuncMap),
+		versionManager: versionManager,
+	}
+
+	// Register default template functions
+	engine.registerDefaultFunctions()
+
+	return engine
+}
+
 // ProcessTemplate processes a single template file with the given configuration
 func (e *Engine) ProcessTemplate(templatePath string, config *models.ProjectConfig) ([]byte, error) {
+	// Enhance config with centralized version information
+	enhancedConfig, err := e.enhanceConfigWithVersions(config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to enhance config with versions: %w", err)
+	}
+
 	// Load the template
 	tmpl, err := e.LoadTemplate(templatePath)
 	if err != nil {
@@ -42,11 +63,17 @@ func (e *Engine) ProcessTemplate(templatePath string, config *models.ProjectConf
 	}
 
 	// Render the template
-	return e.RenderTemplate(tmpl, config)
+	return e.RenderTemplate(tmpl, enhancedConfig)
 }
 
 // ProcessDirectory processes an entire template directory recursively
 func (e *Engine) ProcessDirectory(templateDir string, outputDir string, config *models.ProjectConfig) error {
+	// Enhance config with centralized version information once for the entire directory
+	enhancedConfig, err := e.enhanceConfigWithVersions(config)
+	if err != nil {
+		return fmt.Errorf("failed to enhance config with versions: %w", err)
+	}
+
 	return filepath.WalkDir(templateDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return fmt.Errorf("error walking directory %s: %w", path, err)
@@ -66,8 +93,8 @@ func (e *Engine) ProcessDirectory(templateDir string, outputDir string, config *
 			return os.MkdirAll(outputPath, 0755)
 		}
 
-		// Process file
-		return e.processFile(path, outputPath, config)
+		// Process file with enhanced config
+		return e.processFile(path, outputPath, enhancedConfig)
 	})
 }
 
@@ -164,4 +191,96 @@ func (e *Engine) copyFile(src, dest string) error {
 	}
 
 	return os.Chmod(dest, srcInfo.Mode())
+}
+
+// enhanceConfigWithVersions merges centralized version information into the project config
+func (e *Engine) enhanceConfigWithVersions(config *models.ProjectConfig) (*models.ProjectConfig, error) {
+	// If no version manager is configured, return config as-is
+	if e.versionManager == nil {
+		return config, nil
+	}
+
+	// Create a copy of the config to avoid modifying the original
+	enhancedConfig := *config
+	if enhancedConfig.Versions == nil {
+		enhancedConfig.Versions = &models.VersionConfig{
+			Packages: make(map[string]string),
+		}
+	} else {
+		// Deep copy the versions
+		enhancedVersions := *enhancedConfig.Versions
+		enhancedVersions.Packages = make(map[string]string)
+		for k, v := range config.Versions.Packages {
+			enhancedVersions.Packages[k] = v
+		}
+		enhancedConfig.Versions = &enhancedVersions
+	}
+
+	// Check if version manager supports storage (enhanced functionality)
+	if managerWithStorage, ok := e.versionManager.(*version.Manager); ok {
+		store, err := managerWithStorage.GetVersionStore()
+		if err != nil {
+			// Log warning but don't fail - use existing versions
+			fmt.Printf("Warning: Could not load version store: %v\n", err)
+			return &enhancedConfig, nil
+		}
+
+		// Merge language versions
+		for name, info := range store.Languages {
+			switch name {
+			case "nodejs":
+				enhancedConfig.Versions.Node = info.CurrentVersion
+			case "go":
+				enhancedConfig.Versions.Go = info.CurrentVersion
+			case "kotlin":
+				enhancedConfig.Versions.Kotlin = info.CurrentVersion
+			case "swift":
+				enhancedConfig.Versions.Swift = info.CurrentVersion
+			}
+		}
+
+		// Merge framework versions
+		for name, info := range store.Frameworks {
+			switch name {
+			case "nextjs":
+				enhancedConfig.Versions.NextJS = info.CurrentVersion
+			case "react":
+				enhancedConfig.Versions.React = info.CurrentVersion
+			}
+		}
+
+		// Merge package versions
+		for name, info := range store.Packages {
+			enhancedConfig.Versions.Packages[name] = info.CurrentVersion
+		}
+
+		enhancedConfig.Versions.UpdatedAt = store.LastUpdated
+	} else {
+		// Fallback to basic version manager functionality
+		if nodeVersion, err := e.versionManager.GetLatestNodeVersion(); err == nil {
+			enhancedConfig.Versions.Node = nodeVersion
+		}
+		if goVersion, err := e.versionManager.GetLatestGoVersion(); err == nil {
+			enhancedConfig.Versions.Go = goVersion
+		}
+		if nextjsVersion, err := e.versionManager.GetLatestNPMPackage("next"); err == nil {
+			enhancedConfig.Versions.NextJS = nextjsVersion
+		}
+		if reactVersion, err := e.versionManager.GetLatestNPMPackage("react"); err == nil {
+			enhancedConfig.Versions.React = reactVersion
+		}
+
+		// Add common packages
+		commonPackages := []string{
+			"typescript", "tailwindcss", "eslint", "prettier", "jest",
+			"@types/node", "@types/react", "autoprefixer", "postcss",
+		}
+		for _, pkg := range commonPackages {
+			if version, err := e.versionManager.GetLatestNPMPackage(pkg); err == nil {
+				enhancedConfig.Versions.Packages[pkg] = version
+			}
+		}
+	}
+
+	return &enhancedConfig, nil
 }
