@@ -44,7 +44,7 @@ func getSecurityFixes() []SecurityFix {
 			IssueType:      MissingSecurityHeader,
 			Description:    "Added comprehensive security headers",
 			FixDescription: "Added X-Frame-Options, X-XSS-Protection, and X-Content-Type-Options headers",
-			FixFunction:    addSecurityHeaders,
+			FixFunction:    AddSecurityHeaders,
 			Enabled:        true,
 		},
 
@@ -226,7 +226,7 @@ func addContentTypeOptionsHeader(line string) string {
 	return line
 }
 
-func addSecurityHeaders(line string) string {
+func AddSecurityHeaders(line string) string {
 	indent := getIndentation(line)
 
 	// Add comprehensive security headers
@@ -257,6 +257,13 @@ func fixJWTNoneAlgorithm(line string) string {
 		return strings.ReplaceAll(line, "\"none\"", "\"HS256\"") +
 			" // SECURITY FIX: Replaced 'none' with secure HS256 algorithm"
 	}
+
+	// Replace SigningMethodNone with secure alternative
+	if strings.Contains(line, "SigningMethodNone") {
+		return strings.ReplaceAll(line, "SigningMethodNone", "SigningMethodHS256") +
+			" // SECURITY FIX: Replaced SigningMethodNone with secure HS256 algorithm"
+	}
+
 	return line
 }
 
@@ -327,7 +334,7 @@ func fixDetailedErrors(line string) string {
 }
 
 func fixDebugExposure(line string) string {
-	// Disable debug information in production
+	// Only fix hardcoded debug values, not environment-based configurations
 	if (strings.Contains(strings.ToLower(line), "debug") ||
 		strings.Contains(strings.ToLower(line), "trace") ||
 		strings.Contains(strings.ToLower(line), "stack")) &&
@@ -335,7 +342,15 @@ func fixDebugExposure(line string) string {
 			strings.Contains(line, "enabled") ||
 			strings.Contains(line, "on")) {
 
-		// Replace with environment-based configuration
+		// Skip environment-based configurations (they're already secure)
+		if strings.Contains(line, "os.Getenv") ||
+			strings.Contains(line, "process.env") ||
+			strings.Contains(line, "ENV[") ||
+			strings.Contains(line, "${") {
+			return line
+		}
+
+		// Replace hardcoded debug values with environment-based configuration
 		newLine := strings.ReplaceAll(line, "true", "false")
 		newLine = strings.ReplaceAll(newLine, "enabled", "disabled")
 		newLine = strings.ReplaceAll(newLine, "on", "off")
@@ -393,9 +408,11 @@ func fixPredictableRandFunctions(line string) string {
 	if strings.Contains(line, "rand.Int") || strings.Contains(line, "rand.Float") {
 		indent := getIndentation(line)
 		return indent + "// SECURITY FIX: Replace predictable rand functions with crypto/rand" +
-			"\n" + indent + "// Use crypto/rand.Read() with appropriate byte conversion" +
-			"\n" + indent + "// Example: randomBytes := make([]byte, 8); rand.Read(randomBytes)" +
-			"\n" + line + " // TODO: Replace with secure random generation"
+			"\n" + indent + "// Use security.GenerateBytes() for secure random generation" +
+			"\n" + indent + "randomBytes, err := security.GenerateBytes(8)" +
+			"\n" + indent + "if err != nil { return err }" +
+			"\n" + indent + "randomInt := binary.BigEndian.Uint64(randomBytes)" +
+			"\n" + indent + "// " + line + " // REPLACED: was using predictable rand functions"
 	}
 	return line
 }
@@ -406,10 +423,10 @@ func fixTimestampIDGeneration(line string) string {
 		(strings.Contains(line, "time.Now().Unix()") || strings.Contains(line, "time.Now().UnixNano()")) {
 		indent := getIndentation(line)
 		return indent + "// SECURITY FIX: Replaced timestamp-based ID with secure random ID" +
-			"\n" + indent + "// Use security.SecureRandom.GenerateSecureID() instead" +
-			"\n" + indent + "// Example: secureRandom := security.NewSecureRandom()" +
-			"\n" + indent + "// id, err := secureRandom.GenerateSecureID(\"prefix\")" +
-			"\n" + line + " // TODO: Replace with secure ID generation"
+			"\n" + indent + "secureRandom := security.NewSecureRandom()" +
+			"\n" + indent + "id, err := secureRandom.GenerateSecureID(\"audit\")" +
+			"\n" + indent + "if err != nil { return err }" +
+			"\n" + indent + "// " + line + " // REPLACED: was using timestamp-based ID generation"
 	}
 	return line
 }
@@ -419,10 +436,10 @@ func fixPredictableTempFiles(line string) string {
 	if strings.Contains(line, ".tmp") && strings.Contains(line, "time.Now()") {
 		indent := getIndentation(line)
 		return indent + "// SECURITY FIX: Replaced predictable temp file with secure naming" +
-			"\n" + indent + "// Use security.SecureFileOperations.CreateSecureTempFile() instead" +
-			"\n" + indent + "// Example: secureFileOps := security.NewSecureFileOperations()" +
-			"\n" + indent + "// tempFile, err := secureFileOps.CreateSecureTempFile(dir, pattern)" +
-			"\n" + line + " // TODO: Replace with secure temp file creation"
+			"\n" + indent + "secureFileOps := security.NewSecureFileOperations()" +
+			"\n" + indent + "tempFile, err := secureFileOps.CreateSecureTempFile(dir, \"temp-*.tmp\")" +
+			"\n" + indent + "if err != nil { return err }" +
+			"\n" + indent + "// " + line + " // REPLACED: was using predictable temp file names"
 	}
 	return line
 }

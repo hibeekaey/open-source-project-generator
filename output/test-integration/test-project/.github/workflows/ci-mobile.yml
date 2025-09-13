@@ -1,0 +1,33 @@
+name: Mobile CI
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'Mobile/**'
+      - '.github/workflows/ci-mobile.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'Mobile/**'
+
+env:
+  JAVA_VERSION: '17'
+  KOTLIN_VERSION: ''
+  SWIFT_VERSION: ''
+
+jobs:
+
+
+
+
+  mobile-security-scan:
+    runs-on: ubuntu-latest
+    
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+
+

@@ -97,7 +97,7 @@ Version information is embedded during build:
 VERSION=v1.2.0 ./scripts/build.sh
 
 # Version is embedded in binary
-./generator --version
+./bin/generator --version
 ```
 
 ## Distribution Channels

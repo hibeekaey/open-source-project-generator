@@ -44,7 +44,7 @@ make validate-templates
 go run scripts/validate-templates/main.go --file path/to/template.tmpl
 
 # Generate and test project
-go run cmd/generator/main.go --config test-config.yaml --output test-output
+go run cmd/generator/main.go --config config/test-configs/test-config.yaml --output test-output
 cd test-output && go mod tidy && go build ./...
 ```
 

@@ -313,7 +313,7 @@ Key requirements for template changes:
 - All used functions must have corresponding import statements
 - Follow Go import organization conventions (standard library, third-party, local)
 - Run validation tools before committing: `go run scripts/validate-templates/main.go --check-imports`
-- Test template compilation with sample data: `go run cmd/generator/main.go --config test-config.yaml --output test-validation`
+- Test template compilation with sample data: `go run cmd/generator/main.go --config config/test-configs/test-config.yaml --output test-validation`
 
 ### Documentation Standards
 
@@ -431,6 +431,12 @@ go test ./pkg/template/...
 
 # Run integration tests
 go test -tags=integration ./test/integration/...
+
+# Validate templates (recommended before committing template changes)
+go run scripts/validate-templates/main.go --check-imports
+
+# Generate test project to verify templates
+go run cmd/generator/main.go --config config/test-configs/test-config.yaml --output test-validation
 ```
 
 ## Documentation
@@ -528,7 +534,7 @@ Understanding the project structure helps with contributions:
 A: Create the template files in the appropriate `templates/` subdirectory, following existing patterns. Include proper variable substitution and test the template generation.
 
 **Q: How do I test template changes?**
-A: Use `make test` to run unit tests, then test template generation manually with `./bin/generator generate --dry-run`.
+A: Use `make test` to run unit tests, validate templates with `go run scripts/validate-templates/main.go --check-imports`, then test template generation manually with `./bin/generator generate --dry-run`.
 
 **Q: What should I work on as a first contribution?**
 A: Look for issues labeled `good first issue` or `help wanted`. Template improvements are often good starting points.

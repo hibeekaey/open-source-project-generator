@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/open-source-template-generator/internal/testutils"
 )
 
 func TestMemoryCache(t *testing.T) {
@@ -105,12 +107,10 @@ func TestMemoryCache(t *testing.T) {
 }
 
 func TestFileCache(t *testing.T) {
-	// Create temporary directory for testing
-	tempDir, err := os.MkdirTemp("", "version-cache-test")
-	if err != nil {
-		t.Fatalf("Failed to create temp dir: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
+	suite := testutils.NewTestSuite()
+	tempDir, err := suite.File.CreateTempDir("version-cache-test")
+	suite.Assertions.AssertNoError(t, err, "Failed to create temp dir")
+	defer suite.File.CleanupTestFiles(tempDir)
 
 	cache, err := NewFileCache(tempDir, 1*time.Hour)
 	if err != nil {
@@ -186,11 +186,10 @@ func TestFileCache(t *testing.T) {
 }
 
 func TestFileCacheLoad(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "version-cache-load-test")
-	if err != nil {
-		t.Fatalf("Failed to create temp dir: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
+	suite := testutils.NewTestSuite()
+	tempDir, err := suite.File.CreateTempDir("version-cache-load-test")
+	suite.Assertions.AssertNoError(t, err, "Failed to create temp dir")
+	defer suite.File.CleanupTestFiles(tempDir)
 
 	t.Run("load non-existent file", func(t *testing.T) {
 		// Should not fail when cache file doesn't exist

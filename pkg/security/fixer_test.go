@@ -105,10 +105,10 @@ func TestFixer_AddSecurityHeaders(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := addSecurityHeaders(tt.input)
+			result := AddSecurityHeaders(tt.input)
 			for _, expected := range tt.contains {
 				if !strings.Contains(result, expected) {
-					t.Errorf("addSecurityHeaders() result should contain %q, got %q", expected, result)
+					t.Errorf("AddSecurityHeaders() result should contain %q, got %q", expected, result)
 				}
 			}
 		})

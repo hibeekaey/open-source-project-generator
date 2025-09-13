@@ -1,0 +1,131 @@
+# Code Owners for test-project
+# 
+# This file defines who owns different parts of the codebase.
+# Code owners are automatically requested for review when someone 
+# opens a pull request that modifies code that they own.
+#
+# Order is important; the last matching pattern takes the most precedence.
+# More specific patterns should be placed after less specific ones.
+
+# Global owners - these users/teams own everything by default
+* @test-org/maintainers
+
+# Root configuration files
+/.github/ @test-org/maintainers @test-org/devops-team
+/Makefile @test-org/maintainers @test-org/devops-team
+/docker-compose*.yml @test-org/devops-team
+/.gitignore @test-org/maintainers
+/.editorconfig @test-org/maintainers
+/README.md @test-org/maintainers @test-org/docs-team
+/CONTRIBUTING.md @test-org/maintainers @test-org/docs-team
+/CODE_OF_CONDUCT.md @test-org/maintainers
+/LICENSE @test-org/maintainers
+/SECURITY.md @test-org/maintainers @test-org/security-team
+
+
+# Frontend - Main App
+/App/ @test-org/frontend-team @test-org/maintainers
+/App/package.json @test-org/frontend-team @test-org/maintainers
+/App/package-lock.json @test-org/frontend-team
+/App/next.config.js @test-org/frontend-team
+/App/tailwind.config.js @test-org/frontend-team
+/App/tsconfig.json @test-org/frontend-team
+/App/src/components/ui/ @test-org/frontend-team @test-org/design-team
+/App/src/styles/ @test-org/frontend-team @test-org/design-team
+/App/Dockerfile @test-org/frontend-team @test-org/devops-team
+
+
+
+
+
+
+# Backend - API Server
+/CommonServer/ @test-org/backend-team @test-org/maintainers
+/go.mod @test-org/backend-team @test-org/maintainers
+/go.sum @test-org/backend-team
+/cmd/ @test-org/backend-team
+/internal/ @test-org/backend-team
+/pkg/ @test-org/backend-team
+
+# Backend - Specific components
+/CommonServer/internal/auth/ @test-org/backend-team @test-org/security-team
+/CommonServer/internal/middleware/auth.go @test-org/backend-team @test-org/security-team
+/CommonServer/internal/middleware/cors.go @test-org/backend-team @test-org/security-team
+/CommonServer/pkg/utils/jwt.go @test-org/backend-team @test-org/security-team
+/CommonServer/configs/ @test-org/backend-team @test-org/devops-team
+/CommonServer/Dockerfile @test-org/backend-team @test-org/devops-team
+
+
+
+
+
+# Mobile - Shared resources
+/Mobile/shared/ @test-org/mobile-team @test-org/maintainers
+/Mobile/shared/api/ @test-org/mobile-team @test-org/backend-team
+/Mobile/shared/assets/ @test-org/mobile-team @test-org/design-team
+/Mobile/shared/design-system/ @test-org/mobile-team @test-org/design-team
+
+# Infrastructure and Deployment
+/Deploy/ @test-org/devops-team @test-org/maintainers
+
+
+
+
+
+
+
+# Documentation
+/Docs/ @test-org/docs-team @test-org/maintainers
+/Docs/api/ @test-org/docs-team @test-org/backend-team
+/Docs/user-guide/ @test-org/docs-team @test-org/product-team
+/Docs/developer-guide/ @test-org/docs-team @test-org/maintainers
+
+# Tests
+/Tests/ @test-org/qa-team @test-org/maintainers
+/Tests/unit/ @test-org/qa-team
+/Tests/integration/ @test-org/qa-team @test-org/backend-team
+/Tests/e2e/ @test-org/qa-team @test-org/frontend-team
+/Tests/performance/ @test-org/qa-team @test-org/devops-team
+/Tests/security/ @test-org/qa-team @test-org/security-team
+
+# Scripts and automation
+/Scripts/ @test-org/devops-team @test-org/maintainers
+/Scripts/setup/ @test-org/devops-team
+/Scripts/build/ @test-org/devops-team
+/Scripts/deploy/ @test-org/devops-team @test-org/security-team
+/Scripts/test/ @test-org/devops-team @test-org/qa-team
+
+# CI/CD workflows
+/.github/workflows/ @test-org/devops-team @test-org/maintainers
+/.github/workflows/security-*.yml @test-org/devops-team @test-org/security-team
+/.github/workflows/deploy-*.yml @test-org/devops-team @test-org/security-team
+/.github/workflows/release.yml @test-org/devops-team @test-org/maintainers
+
+# Security-related files
+/SECURITY.md @test-org/security-team @test-org/maintainers
+/.github/dependabot.yml @test-org/security-team @test-org/devops-team
+/.github/workflows/security-scan.yml @test-org/security-team @test-org/devops-team
+
+# Configuration files that affect security
+**/*security* @test-org/security-team
+**/*auth* @test-org/security-team @test-org/backend-team
+**/*jwt* @test-org/security-team @test-org/backend-team
+**/*cors* @test-org/security-team @test-org/backend-team
+**/*middleware* @test-org/security-team @test-org/backend-team
+
+# Package management files (security implications)
+**/package.json @test-org/security-team
+**/package-lock.json @test-org/security-team
+**/go.mod @test-org/security-team
+**/go.sum @test-org/security-team
+**/Podfile @test-org/security-team
+**/build.gradle.kts @test-org/security-team
+
+# Environment and configuration files
+**/.env* @test-org/devops-team @test-org/security-team
+**/config* @test-org/devops-team
+**/secrets* @test-org/devops-team @test-org/security-team
+
+# Database migrations and schemas
+**/migrations/ @test-org/backend-team @test-org/dba-team
+**/schema/ @test-org/backend-team @test-org/dba-team

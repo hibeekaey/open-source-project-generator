@@ -24,6 +24,7 @@ import (
 	"github.com/open-source-template-generator/pkg/interfaces"
 	"github.com/open-source-template-generator/pkg/models"
 	"github.com/open-source-template-generator/pkg/template"
+	"github.com/open-source-template-generator/pkg/utils"
 	"github.com/open-source-template-generator/pkg/validation"
 	"github.com/open-source-template-generator/pkg/version"
 	"github.com/spf13/cobra"
@@ -40,11 +41,12 @@ import (
 //   - Validation and auditing operations
 //   - Configuration management
 type App struct {
-	container    *container.Container // Dependency injection container
-	rootCmd      *cobra.Command       // Root CLI command
-	cli          *cli.CLI             // CLI interface for user interaction
-	logger       *Logger              // Application logger
-	errorHandler *ErrorHandler        // Centralized error handling
+	container       *container.Container // Dependency injection container
+	rootCmd         *cobra.Command       // Root CLI command
+	cli             *cli.CLI             // CLI interface for user interaction
+	logger          *Logger              // Application logger
+	errorHandler    *ErrorHandler        // Centralized error handling
+	resourceManager *ResourceManager     // Resource and memory management
 }
 
 // NewApp creates a new application instance with the provided dependency container.
@@ -65,6 +67,9 @@ func NewApp(c *container.Container) *App {
 	app := &App{
 		container: c,
 	}
+
+	// Initialize resource manager first
+	app.resourceManager = NewResourceManager()
 
 	// Initialize logger
 	logger, err := NewLogger(LogLevelInfo, true)
@@ -89,6 +94,7 @@ func NewApp(c *container.Container) *App {
 //   - Temporary files and directories
 //   - Network connections (if any)
 //   - Cache files and locks
+//   - Resource manager and memory pools
 //
 // It should be called using defer in the main function to ensure cleanup
 // occurs even if the application exits due to an error.
@@ -96,10 +102,26 @@ func NewApp(c *container.Container) *App {
 // Returns:
 //   - error: Any error that occurred during cleanup, nil if successful
 func (a *App) Close() error {
-	if a.logger != nil {
-		return a.logger.Close()
+	var lastErr error
+
+	// Close resource manager first
+	if a.resourceManager != nil {
+		if err := a.resourceManager.Close(); err != nil {
+			lastErr = err
+		}
 	}
-	return nil
+
+	// Close logger
+	if a.logger != nil {
+		if err := a.logger.Close(); err != nil {
+			lastErr = err
+		}
+	}
+
+	// Force final garbage collection
+	utils.ForceGlobalGC()
+
+	return lastErr
 }
 
 // initializeComponents initializes all required components in the container

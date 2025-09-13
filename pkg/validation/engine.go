@@ -1,3 +1,46 @@
+// Package validation provides comprehensive validation capabilities for generated
+// projects, templates, and configurations in the Open Source Template Generator.
+//
+// This package implements the ValidationEngine interface and provides:
+//   - Project structure and file organization validation
+//   - Configuration file syntax and semantic validation
+//   - Cross-template consistency and compatibility checks
+//   - Security vulnerability scanning and best practices validation
+//   - Version compatibility validation across different technologies
+//   - Platform-specific deployment validation (Vercel, Docker, Kubernetes)
+//
+// The validation engine ensures that generated projects meet quality standards,
+// follow best practices, and are free from common configuration issues.
+//
+// Key Features:
+//   - Detailed validation results with actionable feedback
+//   - Performance optimization for large projects
+//   - Extensible validation rules and custom validators
+//   - Integration with external validation tools and services
+//   - Security-focused validation with vulnerability scanning
+//   - Cross-platform compatibility validation
+//
+// Validation Types:
+//   - Syntax validation for JSON, YAML, and other configuration files
+//   - Semantic validation for package.json, go.mod, Dockerfile
+//   - Cross-file consistency validation
+//   - Version compatibility validation
+//   - Security best practices validation
+//   - Platform deployment readiness validation
+//
+// Usage:
+//
+//	validator := validation.NewEngine()
+//	result, err := validator.ValidateProject("/path/to/project")
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//
+//	if !result.Valid {
+//	    for _, issue := range result.Issues {
+//	        fmt.Printf("Issue: %s\n", issue.Message)
+//	    }
+//	}
 package validation
 
 import (
@@ -11,6 +54,7 @@ import (
 
 	"github.com/open-source-template-generator/pkg/interfaces"
 	"github.com/open-source-template-generator/pkg/models"
+	"github.com/open-source-template-generator/pkg/utils"
 	yaml "gopkg.in/yaml.v3"
 )
 
@@ -77,27 +121,94 @@ func (e *Engine) ValidateProject(projectPath string) (*models.ValidationResult, 
 	return result, nil
 }
 
-// ValidatePackageJSON validates a package.json file
+// ValidatePackageJSON validates a package.json file with comprehensive validation
 func (e *Engine) ValidatePackageJSON(path string) error {
+	// Validate file path first
+	validator := utils.NewValidator()
+	validator.ValidateFilePath(path, "package_json_path")
+
+	if validator.HasErrors() {
+		return fmt.Errorf("invalid package.json path: %s", utils.FormatValidationErrors(validator.GetErrors()))
+	}
+
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return fmt.Errorf("failed to read package.json: %w", err)
+		return utils.NewFileSystemError(path, "read", "failed to read package.json file", err)
 	}
 
 	var packageJSON map[string]interface{}
 	if err := json.Unmarshal(data, &packageJSON); err != nil {
-		return fmt.Errorf("invalid JSON format: %w", err)
+		return utils.NewValidationError("package_json_content", "invalid JSON format in package.json", err)
 	}
 
+	// Use enhanced validation for package.json structure
+	return e.validatePackageJSONStructure(packageJSON, validator)
+}
+
+// validatePackageJSONStructure validates the structure and content of package.json
+func (e *Engine) validatePackageJSONStructure(packageJSON map[string]interface{}, validator *utils.Validator) error {
 	// Validate required fields
 	requiredFields := []string{"name", "version", "scripts"}
 	for _, field := range requiredFields {
 		if _, exists := packageJSON[field]; !exists {
-			return fmt.Errorf("missing required field: %s", field)
+			validator.AddError(field, fmt.Sprintf("Required field '%s' is missing from package.json", field), "required", nil)
 		}
 	}
 
-	// Validate name format
+	// Validate package name format
+	if name, exists := packageJSON["name"]; exists {
+		if nameStr, ok := name.(string); ok {
+			validator.ValidateStringLength(nameStr, "name", 1, 214)
+			validator.ValidateStringPattern(nameStr, "name", `^[a-z0-9]([a-z0-9\-_.])*$`, "valid npm package name")
+		} else {
+			validator.AddError("name", "Package name must be a string", "invalid_type", name)
+		}
+	}
+
+	// Validate version format
+	if version, exists := packageJSON["version"]; exists {
+		if versionStr, ok := version.(string); ok {
+			validator.ValidateStringPattern(versionStr, "version", `^\d+\.\d+\.\d+`, "semantic version")
+		} else {
+			validator.AddError("version", "Version must be a string", "invalid_type", version)
+		}
+	}
+
+	// Validate description if present
+	if description, exists := packageJSON["description"]; exists {
+		if descStr, ok := description.(string); ok {
+			validator.ValidateStringLength(descStr, "description", 0, 500)
+			validator.ValidateSecureString(descStr, "description")
+		}
+	}
+
+	// Validate author email if present
+	if author, exists := packageJSON["author"]; exists {
+		if authorMap, ok := author.(map[string]interface{}); ok {
+			if email, emailExists := authorMap["email"]; emailExists {
+				if emailStr, ok := email.(string); ok {
+					validator.ValidateEmail(emailStr, "author.email")
+				}
+			}
+		}
+	}
+
+	// Validate repository URL if present
+	if repository, exists := packageJSON["repository"]; exists {
+		if repoMap, ok := repository.(map[string]interface{}); ok {
+			if url, urlExists := repoMap["url"]; urlExists {
+				if urlStr, ok := url.(string); ok {
+					validator.ValidateURL(urlStr, "repository.url")
+				}
+			}
+		}
+	}
+
+	if validator.HasErrors() {
+		return fmt.Errorf("package.json validation failed: %s", utils.FormatValidationErrors(validator.GetErrors()))
+	}
+
+	return nil
 	if name, ok := packageJSON["name"].(string); ok {
 		if strings.Contains(name, " ") || strings.Contains(name, "_") {
 			return fmt.Errorf("package name should use kebab-case format")
@@ -114,47 +225,143 @@ func (e *Engine) ValidatePackageJSON(path string) error {
 	return nil
 }
 
-// ValidateGoMod validates a go.mod file
+// ValidateGoMod validates a go.mod file with comprehensive validation
 func (e *Engine) ValidateGoMod(path string) error {
+	// Validate file path first
+	validator := utils.NewValidator()
+	validator.ValidateFilePath(path, "go_mod_path")
+
+	if validator.HasErrors() {
+		return fmt.Errorf("invalid go.mod path: %s", utils.FormatValidationErrors(validator.GetErrors()))
+	}
+
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return fmt.Errorf("failed to read go.mod: %w", err)
+		return utils.NewFileSystemError(path, "read", "failed to read go.mod file", err)
 	}
 
 	content := string(data)
+
+	// Validate content security
+	validator.ValidateSecureString(content, "go_mod_content")
+
+	if validator.HasErrors() {
+		return fmt.Errorf("go.mod security validation failed: %s", utils.FormatValidationErrors(validator.GetErrors()))
+	}
+
+	return e.validateGoModStructure(content, validator)
+}
+
+// validateGoModStructure validates the structure and content of go.mod
+func (e *Engine) validateGoModStructure(content string, validator *utils.Validator) error {
 	lines := strings.Split(content, "\n")
 
-	// Check for module declaration
+	// Check for required declarations
 	hasModule := false
 	hasGoVersion := false
+	var moduleName string
 
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
+
+		// Skip comments and empty lines
+		if line == "" || strings.HasPrefix(line, "//") {
+			continue
+		}
+
 		if strings.HasPrefix(line, "module ") {
 			hasModule = true
+			parts := strings.Fields(line)
+			if len(parts) >= 2 {
+				moduleName = parts[1]
+				// Validate module name format
+				validator.ValidateStringPattern(moduleName, "module_name",
+					`^[a-zA-Z0-9._/-]+$`, "valid Go module name")
+
+				// Check for common security issues in module names
+				validator.ValidateSecureString(moduleName, "module_name")
+			} else {
+				validator.AddError("module_declaration", "Module declaration is incomplete", "incomplete", line)
+			}
 		}
+
 		if strings.HasPrefix(line, "go ") {
 			hasGoVersion = true
-			// Validate Go version format
 			parts := strings.Fields(line)
 			if len(parts) >= 2 {
 				version := parts[1]
 				if !e.isValidGoVersion(version) {
-					return fmt.Errorf("invalid Go version format: %s", version)
+					validator.AddError("go_version", fmt.Sprintf("Invalid Go version format: %s", version), "invalid_format", version)
 				}
+
+				// Validate minimum Go version for security
+				if e.isGoVersionTooOld(version) {
+					validator.AddError("go_version", fmt.Sprintf("Go version %s is too old and may have security vulnerabilities", version), "security_risk", version)
+				}
+			} else {
+				validator.AddError("go_declaration", "Go version declaration is incomplete", "incomplete", line)
 			}
+		}
+
+		// Validate require statements for security
+		if strings.HasPrefix(line, "require ") || strings.Contains(line, "require(") {
+			e.validateGoRequireStatement(line, validator)
 		}
 	}
 
+	// Check for required declarations
 	if !hasModule {
-		return fmt.Errorf("missing module declaration")
+		validator.AddError("module_declaration", "Missing module declaration in go.mod", "required", nil)
 	}
 
 	if !hasGoVersion {
-		return fmt.Errorf("missing Go version declaration")
+		validator.AddError("go_version", "Missing Go version declaration in go.mod", "required", nil)
+	}
+
+	if validator.HasErrors() {
+		return fmt.Errorf("go.mod validation failed: %s", utils.FormatValidationErrors(validator.GetErrors()))
 	}
 
 	return nil
+}
+
+// validateGoRequireStatement validates individual require statements
+func (e *Engine) validateGoRequireStatement(line string, validator *utils.Validator) {
+	// Basic validation for require statements
+	if strings.Contains(line, "//") {
+		// Remove comments for validation
+		line = strings.Split(line, "//")[0]
+	}
+
+	line = strings.TrimSpace(line)
+
+	// Check for suspicious patterns in dependencies
+	suspiciousPatterns := []string{
+		"localhost",
+		"127.0.0.1",
+		"file://",
+		"../",
+	}
+
+	for _, pattern := range suspiciousPatterns {
+		if strings.Contains(strings.ToLower(line), pattern) {
+			validator.AddError("require_statement",
+				fmt.Sprintf("Potentially unsafe dependency pattern detected: %s", pattern),
+				"security_risk", line)
+		}
+	}
+}
+
+// isGoVersionTooOld checks if a Go version is too old for security
+func (e *Engine) isGoVersionTooOld(version string) bool {
+	// Consider versions older than 1.19 as potentially risky
+	// This is a simplified check - in production you might want more sophisticated version comparison
+	if strings.HasPrefix(version, "1.1") && len(version) >= 4 {
+		if version[3] < '9' {
+			return true
+		}
+	}
+	return false
 }
 
 // ValidateDockerfile validates a Dockerfile

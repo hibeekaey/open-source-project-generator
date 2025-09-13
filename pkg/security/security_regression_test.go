@@ -1,3 +1,5 @@
+//go:build !ci
+
 package security
 
 import (
@@ -253,7 +255,7 @@ func TestSecurityFixRegression(t *testing.T) {
 		{
 			name:           "Security headers fix regression",
 			vulnerableCode: `c.Header("Content-Type", "application/json")`,
-			fixFunction:    addSecurityHeaders,
+			fixFunction:    AddSecurityHeaders,
 			expectedFix:    []string{"X-Content-Type-Options", "X-Frame-Options", "X-XSS-Protection"},
 			shouldChange:   true,
 		},

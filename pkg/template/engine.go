@@ -1,3 +1,39 @@
+// Package template provides comprehensive template processing capabilities for the
+// Open Source Template Generator.
+//
+// This package implements the TemplateEngine interface and provides:
+//   - Single template file processing with variable substitution
+//   - Recursive directory processing for complete project generation
+//   - Custom function registration for extended template functionality
+//   - Template and render result caching for performance optimization
+//   - Version management integration for automatic dependency updates
+//   - Pre-generation validation and consistency checking
+//
+// The template engine uses Go's text/template package with custom functions
+// for enhanced functionality including string manipulation, version formatting,
+// and security-related operations.
+//
+// Key Features:
+//   - Robust error handling with detailed error messages
+//   - Performance optimization through multi-level caching
+//   - Security considerations for safe template processing
+//   - Integration with version management for automatic updates
+//   - Cross-template validation and consistency checking
+//
+// Usage:
+//
+//	engine := template.NewEngine()
+//	content, err := engine.ProcessTemplate("template.tmpl", config)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//
+// For directory processing:
+//
+//	err := engine.ProcessDirectory("templates/", "output/", config)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
 package template
 
 import (
@@ -21,12 +57,16 @@ import (
 type Engine struct {
 	funcMap        texttemplate.FuncMap
 	versionManager interfaces.VersionManager
+	templateCache  *TemplateCache
+	renderCache    *RenderCache
 }
 
 // NewEngine creates a new template engine instance
 func NewEngine() interfaces.TemplateEngine {
 	engine := &Engine{
-		funcMap: make(texttemplate.FuncMap),
+		funcMap:       make(texttemplate.FuncMap),
+		templateCache: NewTemplateCache(100, 30*time.Minute), // Cache 100 templates for 30 minutes
+		renderCache:   NewRenderCache(200, 15*time.Minute),   // Cache 200 renders for 15 minutes
 	}
 
 	// Register default template functions
@@ -40,6 +80,8 @@ func NewEngineWithVersionManager(versionManager interfaces.VersionManager) inter
 	engine := &Engine{
 		funcMap:        make(texttemplate.FuncMap),
 		versionManager: versionManager,
+		templateCache:  NewTemplateCache(100, 30*time.Minute), // Cache 100 templates for 30 minutes
+		renderCache:    NewRenderCache(200, 15*time.Minute),   // Cache 200 renders for 15 minutes
 	}
 
 	// Register default template functions
@@ -123,6 +165,14 @@ func (e *Engine) LoadTemplate(templatePath string) (*texttemplate.Template, erro
 		return nil, fmt.Errorf("failed to read template file: %w", err)
 	}
 
+	// Create content hash for cache validation
+	contentHash := HashContent(content)
+
+	// Check cache first
+	if cachedTemplate, found := e.templateCache.Get(templatePath, contentHash); found {
+		return cachedTemplate, nil
+	}
+
 	// Create template with custom functions
 	tmpl := texttemplate.New(filepath.Base(templatePath)).Funcs(e.funcMap)
 
@@ -132,19 +182,46 @@ func (e *Engine) LoadTemplate(templatePath string) (*texttemplate.Template, erro
 		return nil, fmt.Errorf("failed to parse template: %w", err)
 	}
 
+	// Cache the parsed template
+	e.templateCache.Put(templatePath, tmpl, contentHash)
+
 	return tmpl, nil
 }
 
 // RenderTemplate renders a template with the provided data
 func (e *Engine) RenderTemplate(tmpl *texttemplate.Template, data interface{}) ([]byte, error) {
-	var buf bytes.Buffer
+	// Create config hash for render caching
+	configHash, err := HashConfig(data)
+	if err != nil {
+		// If hashing fails, proceed without caching
+		var buf bytes.Buffer
+		err := tmpl.Execute(&buf, data)
+		if err != nil {
+			return nil, fmt.Errorf("failed to execute template: %w", err)
+		}
+		return buf.Bytes(), nil
+	}
 
-	err := tmpl.Execute(&buf, data)
+	templateName := tmpl.Name()
+
+	// Check render cache first
+	if cachedRender, found := e.renderCache.Get(templateName, configHash); found {
+		return cachedRender, nil
+	}
+
+	// Render template
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute template: %w", err)
 	}
 
-	return buf.Bytes(), nil
+	result := buf.Bytes()
+
+	// Cache the rendered result
+	e.renderCache.Put(templateName, configHash, result)
+
+	return result, nil
 }
 
 // processFile processes a single file (template or binary)
@@ -924,4 +1001,33 @@ func (e *Engine) extractMajorVersion(version string) (int, error) {
 	}
 
 	return major, nil
+}
+
+// Cleanup performs cleanup of caches and resources
+func (e *Engine) Cleanup() {
+	if e.templateCache != nil {
+		e.templateCache.Cleanup()
+	}
+	if e.renderCache != nil {
+		e.renderCache.Cleanup()
+	}
+}
+
+// ClearCaches clears all caches
+func (e *Engine) ClearCaches() {
+	if e.templateCache != nil {
+		e.templateCache.Clear()
+	}
+	if e.renderCache != nil {
+		e.renderCache.Clear()
+	}
+}
+
+// GetCacheStats returns cache statistics
+func (e *Engine) GetCacheStats() (templateStats CacheStats, renderStats interface{}) {
+	if e.templateCache != nil {
+		templateStats = e.templateCache.Stats()
+	}
+	// renderStats would be implemented similarly for render cache
+	return templateStats, "render cache stats placeholder"
 }

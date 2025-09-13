@@ -122,7 +122,7 @@ Before committing template changes:
 2. **Generate Test Project**: Create a sample project using modified templates
 
    ```bash
-   go run cmd/generator/main.go --config test-config.yaml --output test-output
+   go run cmd/generator/main.go --config config/test-configs/test-config.yaml --output test-output
    ```
 
 3. **Compile Generated Code**: Verify all generated Go files compile
@@ -335,7 +335,7 @@ go run scripts/validate-templates/main.go --fix
 go run scripts/validate-templates/main.go --file templates/backend/go-gin/internal/services/auth_service.go.tmpl
 
 # Generate test project and validate
-go run cmd/generator/main.go --config minimal-test-config.yaml --output validation-test
+go run cmd/generator/main.go --config config/test-configs/minimal-test-config.yaml --output validation-test
 cd validation-test && go mod tidy && go build ./...
 ```
 

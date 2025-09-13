@@ -38,7 +38,7 @@ Use this checklist when reviewing template changes or adding new templates.
 ### Automated Testing
 
 - [ ] Run import detection: `go run scripts/validate-templates/main.go --check-imports`
-- [ ] Generate test project: `go run cmd/generator/main.go --config test-config.yaml --output test-validation`
+- [ ] Generate test project: `go run cmd/generator/main.go --config config/test-configs/test-config.yaml --output test-validation`
 - [ ] Compile generated code: `cd test-validation && go mod tidy && go build ./...`
 - [ ] Run template-specific tests if available
 

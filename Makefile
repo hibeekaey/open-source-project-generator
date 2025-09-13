@@ -17,6 +17,12 @@ test: ## Run all tests
 	@echo "Running tests..."
 	go test -v ./...
 
+# Run CI-friendly tests
+test-ci: ## Run tests suitable for CI/CD pipelines
+	@echo "Running CI test suite..."
+	@echo "ℹ️  Excluding resource-intensive and flaky tests"
+	go test -tags=ci -timeout=5m ./...
+
 # Run tests with coverage
 test-coverage: ## Run tests with coverage report
 	@echo "Running tests with coverage..."

@@ -6,16 +6,26 @@ import (
 	"testing"
 	"time"
 
+	"github.com/open-source-template-generator/internal/testutils"
 	"github.com/open-source-template-generator/pkg/models"
 )
 
-func TestReportGenerator_GenerateVersionUpdateReport(t *testing.T) {
-	// Create temporary directory for test reports
-	tempDir, err := os.MkdirTemp("", "test_reports")
-	if err != nil {
-		t.Fatalf("Failed to create temp directory: %v", err)
+// setupReportTest creates a temporary directory for report testing
+func setupReportTest(t *testing.T) (string, func()) {
+	suite := testutils.NewTestSuite()
+	tempDir, err := suite.File.CreateTempDir("test_reports")
+	suite.Assertions.AssertNoError(t, err, "Failed to create temp directory")
+
+	cleanup := func() {
+		suite.File.CleanupTestFiles(tempDir)
 	}
-	defer os.RemoveAll(tempDir)
+
+	return tempDir, cleanup
+}
+
+func TestReportGenerator_GenerateVersionUpdateReport(t *testing.T) {
+	tempDir, cleanup := setupReportTest(t)
+	defer cleanup()
 
 	generator := NewReportGenerator(tempDir)
 
@@ -84,11 +94,8 @@ func TestReportGenerator_GenerateVersionUpdateReport(t *testing.T) {
 }
 
 func TestReportGenerator_GenerateSecurityReport(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "test_reports")
-	if err != nil {
-		t.Fatalf("Failed to create temp directory: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
+	tempDir, cleanup := setupReportTest(t)
+	defer cleanup()
 
 	generator := NewReportGenerator(tempDir)
 

@@ -1,0 +1,20 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discussions
+    url: https://github.com/test-org/test-project/discussions
+    about: Ask questions, share ideas, and discuss test-project with the community
+  - name: 📚 Documentation
+    url: https://test-project.test-org.com/docs
+    about: Check our comprehensive documentation for guides and API references
+  - name: 🔒 Security Vulnerability (Private)
+    url: https://github.com/test-org/test-project/security/advisories/new
+    about: Report security vulnerabilities privately through GitHub Security Advisories
+  - name: 📧 Security Email
+    url: mailto:security@test-org.com
+    about: Report security vulnerabilities via email (security@test-org.com)
+  - name: 💼 Commercial Support
+    url: https://test-org.com/support
+    about: Get commercial support and professional services for test-project
+  - name: 🐛 Bug Bounty Program
+    url: https://test-org.com/security/bounty
+    about: Participate in our bug bounty program for security research

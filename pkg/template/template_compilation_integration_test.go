@@ -1,3 +1,5 @@
+//go:build !ci
+
 package template
 
 import (
@@ -134,12 +136,12 @@ import (
 )
 
 func main() {
-	fmt.Printf("Project: %s\n", "{{.ProjectName}}")
+	fmt.Printf("Project: %s\n", "{{.Name}}")
 	fmt.Printf("Author: %s\n", "{{.Author}}")
-	fmt.Printf("Version: %s\n", "{{.Version}}")
+	fmt.Printf("Organization: %s\n", "{{.Organization}}")
 	fmt.Printf("Time: %v\n", time.Now())
 }`,
-			expectedVars: []string{"testproject", "Test Project", "Test Author", "1.0.0"},
+			expectedVars: []string{"testproject", "Test Author", "Test Organization"},
 		},
 		{
 			name: "ConditionalBlocks",
@@ -147,18 +149,18 @@ func main() {
 
 import (
 	"fmt"
-	{{- if .EnableAuth }}
+	{{- if .Components.Backend.API }}
 	"time"
 	{{- end }}
 )
 
 func main() {
-	fmt.Println("Starting {{.ServiceName}}")
-	{{- if .EnableAuth }}
-	fmt.Printf("Auth enabled at %v\n", time.Now())
+	fmt.Println("Starting {{.Name}}")
+	{{- if .Components.Backend.API }}
+	fmt.Printf("API enabled at %v\n", time.Now())
 	{{- end }}
 }`,
-			expectedVars: []string{"testproject", "TestService"},
+			expectedVars: []string{"testproject"},
 		},
 		{
 			name: "LoopStructures",
@@ -167,14 +169,14 @@ func main() {
 import "fmt"
 
 func main() {
-	services := []string{
-		{{- range .Services }}
-		"{{.Name}}",
+	packages := []string{
+		{{- range $name, $version := .Versions.Packages }}
+		"{{$name}}@{{$version}}",
 		{{- end }}
 	}
 	
-	for _, service := range services {
-		fmt.Printf("Service: %s\n", service)
+	for _, pkg := range packages {
+		fmt.Printf("Package: %s\n", pkg)
 	}
 }`,
 			expectedVars: []string{"testproject"},

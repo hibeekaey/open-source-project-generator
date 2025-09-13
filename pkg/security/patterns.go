@@ -57,7 +57,7 @@ func getSecurityPatterns() []SecurityPattern {
 		// Authentication Issues
 		{
 			Name:           "JWT None Algorithm",
-			Pattern:        regexp.MustCompile(`(?i)jwt\.SigningMethodNone|algorithm.*["']none["']`),
+			Pattern:        regexp.MustCompile(`(?i)jwt\.SigningMethodNone|SigningMethodNone|algorithm.*["']none["']`),
 			IssueType:      WeakAuthentication,
 			Severity:       SeverityCritical,
 			Description:    "JWT 'none' algorithm allows token forgery",
@@ -75,11 +75,11 @@ func getSecurityPatterns() []SecurityPattern {
 		},
 		{
 			Name:           "JWT Token Signing",
-			Pattern:        regexp.MustCompile(`(?i)jwt\.sign|jwt\.Sign`),
+			Pattern:        regexp.MustCompile(`(?i)jwt\.sign.*SigningMethodNone|SigningMethodNone`),
 			IssueType:      WeakAuthentication,
-			Severity:       SeverityLow,
-			Description:    "JWT token signing detected - ensure expiration time is set",
-			Recommendation: "Set appropriate expiration time for JWT tokens (e.g., 15 minutes for access tokens)",
+			Severity:       SeverityHigh,
+			Description:    "JWT token using 'none' algorithm is insecure",
+			Recommendation: "Use a secure signing algorithm like HS256, RS256, or ES256",
 			FixAvailable:   true,
 		},
 
@@ -114,23 +114,23 @@ func getSecurityPatterns() []SecurityPattern {
 			FixAvailable:   true,
 		},
 		{
-			Name:           "Debug Information Exposure",
-			Pattern:        regexp.MustCompile(`(?i)(?:debug|trace|stack).*(?:true|enabled|on)`),
+			Name:           "Hardcoded Debug Information",
+			Pattern:        regexp.MustCompile(`(?i)(?:debug|trace).*[:=]\s*(?:true|enabled|on)`),
 			IssueType:      InformationLeakage,
 			Severity:       SeverityMedium,
 			Description:    "Debug information may be exposed in production",
-			Recommendation: "Disable debug information in production environments",
+			Recommendation: "Use environment variables for debug settings instead of hardcoded values",
 			FixAvailable:   true,
 		},
 
 		// Insecure Configurations
 		{
 			Name:           "Cookie Configuration",
-			Pattern:        regexp.MustCompile(`(?i)cookie|setcookie`),
+			Pattern:        regexp.MustCompile(`(?i)setcookie.*(?:httponly.*false|secure.*false)`),
 			IssueType:      WeakAuthentication,
-			Severity:       SeverityLow,
-			Description:    "Cookie configuration detected - ensure HttpOnly and Secure flags are set",
-			Recommendation: "Set HttpOnly and Secure flags on sensitive cookies",
+			Severity:       SeverityMedium,
+			Description:    "Cookie configuration with insecure flags detected",
+			Recommendation: "Set HttpOnly and Secure flags to true on sensitive cookies",
 			FixAvailable:   true,
 		},
 

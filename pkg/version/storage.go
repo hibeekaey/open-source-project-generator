@@ -111,7 +111,11 @@ func (fs *FileStorage) Load() (*models.VersionStore, error) {
 func (fs *FileStorage) Save(store *models.VersionStore) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
+	return fs.saveUnlocked(store)
+}
 
+// saveUnlocked saves the store without acquiring locks (internal use)
+func (fs *FileStorage) saveUnlocked(store *models.VersionStore) error {
 	// Update timestamp
 	store.LastUpdated = time.Now()
 
@@ -142,10 +146,17 @@ func (fs *FileStorage) Save(store *models.VersionStore) error {
 
 // GetVersionInfo retrieves version information for a specific package
 func (fs *FileStorage) GetVersionInfo(name string) (*models.VersionInfo, error) {
+	fs.mu.RLock()
+	defer fs.mu.RUnlock()
+
 	if fs.store == nil {
+		// Temporarily unlock to load, then relock
+		fs.mu.RUnlock()
 		if _, err := fs.Load(); err != nil {
+			fs.mu.RLock()
 			return nil, err
 		}
+		fs.mu.RLock()
 	}
 
 	// Search in all categories
@@ -164,10 +175,17 @@ func (fs *FileStorage) GetVersionInfo(name string) (*models.VersionInfo, error) 
 
 // SetVersionInfo stores version information for a specific package
 func (fs *FileStorage) SetVersionInfo(name string, info *models.VersionInfo) error {
+	fs.mu.Lock()
+	defer fs.mu.Unlock()
+
 	if fs.store == nil {
+		// Temporarily unlock to load, then relock
+		fs.mu.Unlock()
 		if _, err := fs.Load(); err != nil {
+			fs.mu.Lock()
 			return err
 		}
+		fs.mu.Lock()
 	}
 
 	// Determine which category to store in based on type
@@ -182,7 +200,8 @@ func (fs *FileStorage) SetVersionInfo(name string, info *models.VersionInfo) err
 		return fmt.Errorf("unknown version info type: %s", info.Type)
 	}
 
-	return fs.Save(fs.store)
+	// Call save without additional locking since we already hold the lock
+	return fs.saveUnlocked(fs.store)
 }
 
 // DeleteVersionInfo removes version information for a specific package

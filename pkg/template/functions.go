@@ -91,6 +91,7 @@ func (e *Engine) registerDefaultFunctions() {
 		"squote":     singleQuote,
 		"indent":     indent,
 		"nindent":    nindent,
+		"env":        getEnvVar,
 	}
 }
 
@@ -574,4 +575,14 @@ func isNodeLTS(config *models.ProjectConfig) bool {
 		return config.Versions.NodeJS.LTSStatus
 	}
 	return true // Default to LTS
+}
+
+// getEnvVar returns an environment variable value or a default
+func getEnvVar(key string, defaultValue ...string) string {
+	// For templates, we return a placeholder that will be replaced during CI/CD
+	// This allows the template to generate valid GitHub Actions syntax
+	if len(defaultValue) > 0 {
+		return "${{ env." + key + " || '" + defaultValue[0] + "' }}"
+	}
+	return "${{ env." + key + " }}"
 }

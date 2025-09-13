@@ -92,7 +92,7 @@ The audit uses `.golangci.yml` for comprehensive linting with:
 
 ### Audit Configuration
 
-`audit-config.yml` contains settings for:
+`config/audit-config.yml` contains settings for:
 
 - Analysis thresholds (coverage, complexity)
 - Tool configurations

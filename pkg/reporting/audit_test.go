@@ -7,21 +7,32 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/open-source-template-generator/internal/testutils"
 )
 
-func TestAuditTrail_LogVersionUpdate(t *testing.T) {
-	// Create temporary file for audit log
-	tempDir, err := os.MkdirTemp("", "test_audit")
-	if err != nil {
-		t.Fatalf("Failed to create temp directory: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
+// setupAuditTest creates a temporary directory and audit trail for testing
+func setupAuditTest(t *testing.T) (string, *AuditTrail, func()) {
+	suite := testutils.NewTestSuite()
+	tempDir, err := suite.File.CreateTempDir("test_audit")
+	suite.Assertions.AssertNoError(t, err, "Failed to create temp directory")
 
 	logFile := filepath.Join(tempDir, "audit.log")
 	audit := NewAuditTrail(logFile)
 
+	cleanup := func() {
+		suite.File.CleanupTestFiles(tempDir)
+	}
+
+	return tempDir, audit, cleanup
+}
+
+func TestAuditTrail_LogVersionUpdate(t *testing.T) {
+	tempDir, audit, cleanup := setupAuditTest(t)
+	defer cleanup()
+
 	// Test successful version update
-	err = audit.LogVersionUpdate("react", "18.0.0", "19.0.0", true, nil)
+	err := audit.LogVersionUpdate("react", "18.0.0", "19.0.0", true, nil)
 	if err != nil {
 		t.Fatalf("Failed to log version update: %v", err)
 	}
@@ -34,6 +45,7 @@ func TestAuditTrail_LogVersionUpdate(t *testing.T) {
 	}
 
 	// Verify log file was created
+	logFile := filepath.Join(tempDir, "audit.log")
 	if _, err := os.Stat(logFile); os.IsNotExist(err) {
 		t.Errorf("Audit log file was not created")
 	}
@@ -77,14 +89,8 @@ func TestAuditTrail_LogVersionUpdate(t *testing.T) {
 }
 
 func TestAuditTrail_LogTemplateUpdate(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "test_audit")
-	if err != nil {
-		t.Fatalf("Failed to create temp directory: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
-
-	logFile := filepath.Join(tempDir, "audit.log")
-	audit := NewAuditTrail(logFile)
+	_, audit, cleanup := setupAuditTest(t)
+	defer cleanup()
 
 	versionChanges := map[string]string{
 		"react":  "18.0.0 -> 19.0.0",
@@ -92,7 +98,7 @@ func TestAuditTrail_LogTemplateUpdate(t *testing.T) {
 	}
 
 	// Test template update
-	err = audit.LogTemplateUpdate("templates/frontend/nextjs-app", versionChanges, true, nil)
+	err := audit.LogTemplateUpdate("templates/frontend/nextjs-app", versionChanges, true, nil)
 	if err != nil {
 		t.Fatalf("Failed to log template update: %v", err)
 	}
@@ -122,17 +128,11 @@ func TestAuditTrail_LogTemplateUpdate(t *testing.T) {
 }
 
 func TestAuditTrail_LogSecurityScan(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "test_audit")
-	if err != nil {
-		t.Fatalf("Failed to create temp directory: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
-
-	logFile := filepath.Join(tempDir, "audit.log")
-	audit := NewAuditTrail(logFile)
+	_, audit, cleanup := setupAuditTest(t)
+	defer cleanup()
 
 	// Test security scan
-	err = audit.LogSecurityScan(50, 3, true, nil)
+	err := audit.LogSecurityScan(50, 3, true, nil)
 	if err != nil {
 		t.Fatalf("Failed to log security scan: %v", err)
 	}
@@ -161,15 +161,9 @@ func TestAuditTrail_LogSecurityScan(t *testing.T) {
 	}
 }
 
-func TestAuditTrail_GetAuditHistory_TimeFilter(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "test_audit")
-	if err != nil {
-		t.Fatalf("Failed to create temp directory: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
-
-	logFile := filepath.Join(tempDir, "audit.log")
-	audit := NewAuditTrail(logFile)
+func TestAuditTrailGetAuditHistory_WithTimeFilter(t *testing.T) {
+	_, audit, cleanup := setupAuditTest(t)
+	defer cleanup()
 
 	// Log events at different times
 	now := time.Now()
@@ -207,18 +201,12 @@ func TestAuditTrail_GetAuditHistory_TimeFilter(t *testing.T) {
 	}
 }
 
-func TestAuditTrail_GetAuditHistory_EventTypeFilter(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "test_audit")
-	if err != nil {
-		t.Fatalf("Failed to create temp directory: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
-
-	logFile := filepath.Join(tempDir, "audit.log")
-	audit := NewAuditTrail(logFile)
+func TestAuditTrailGetAuditHistory_WithEventTypeFilter(t *testing.T) {
+	_, audit, cleanup := setupAuditTest(t)
+	defer cleanup()
 
 	// Log different types of events
-	err = audit.LogVersionUpdate("react", "18.0.0", "19.0.0", true, nil)
+	err := audit.LogVersionUpdate("react", "18.0.0", "19.0.0", true, nil)
 	if err != nil {
 		t.Fatalf("Failed to log version update: %v", err)
 	}
@@ -244,17 +232,11 @@ func TestAuditTrail_GetAuditHistory_EventTypeFilter(t *testing.T) {
 }
 
 func TestAuditTrail_GetAuditSummary(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "test_audit")
-	if err != nil {
-		t.Fatalf("Failed to create temp directory: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
-
-	logFile := filepath.Join(tempDir, "audit.log")
-	audit := NewAuditTrail(logFile)
+	_, audit, cleanup := setupAuditTest(t)
+	defer cleanup()
 
 	// Log various events
-	err = audit.LogVersionUpdate("react", "18.0.0", "19.0.0", true, nil)
+	err := audit.LogVersionUpdate("react", "18.0.0", "19.0.0", true, nil)
 	if err != nil {
 		t.Fatalf("Failed to log version update: %v", err)
 	}
@@ -295,17 +277,11 @@ func TestAuditTrail_GetAuditSummary(t *testing.T) {
 }
 
 func TestAuditTrail_RotateLog(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "test_audit")
-	if err != nil {
-		t.Fatalf("Failed to create temp directory: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
-
-	logFile := filepath.Join(tempDir, "audit.log")
-	audit := NewAuditTrail(logFile)
+	tempDir, audit, cleanup := setupAuditTest(t)
+	defer cleanup()
 
 	// Create a log file with some content
-	err = audit.LogVersionUpdate("react", "18.0.0", "19.0.0", true, nil)
+	err := audit.LogVersionUpdate("react", "18.0.0", "19.0.0", true, nil)
 	if err != nil {
 		t.Fatalf("Failed to log version update: %v", err)
 	}
@@ -317,6 +293,7 @@ func TestAuditTrail_RotateLog(t *testing.T) {
 	}
 
 	// Check that original log file no longer exists
+	logFile := filepath.Join(tempDir, "audit.log")
 	if _, err := os.Stat(logFile); !os.IsNotExist(err) {
 		t.Errorf("Original log file should not exist after rotation")
 	}
@@ -355,14 +332,8 @@ func TestAuditTrail_NonExistentLogFile(t *testing.T) {
 }
 
 func TestAuditTrail_SecureIDGeneration(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "test_audit")
-	if err != nil {
-		t.Fatalf("Failed to create temp directory: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
-
-	logFile := filepath.Join(tempDir, "audit.log")
-	audit := NewAuditTrail(logFile)
+	_, audit, cleanup := setupAuditTest(t)
+	defer cleanup()
 
 	// Generate multiple audit events and collect their IDs
 	var eventIDs []string
@@ -435,11 +406,8 @@ func TestAuditTrail_SecureIDGeneration(t *testing.T) {
 }
 
 func TestAuditTrail_SecureIDGenerationWithCustomRandom(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "test_audit")
-	if err != nil {
-		t.Fatalf("Failed to create temp directory: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
+	tempDir, _, cleanup := setupAuditTest(t)
+	defer cleanup()
 
 	logFile := filepath.Join(tempDir, "audit.log")
 
@@ -448,7 +416,7 @@ func TestAuditTrail_SecureIDGenerationWithCustomRandom(t *testing.T) {
 	audit := NewAuditTrailWithSecureRandom(logFile, customRandom)
 
 	// Log an event
-	err = audit.LogVersionUpdate("test-package", "1.0.0", "1.0.1", true, nil)
+	err := audit.LogVersionUpdate("test-package", "1.0.0", "1.0.1", true, nil)
 	if err != nil {
 		t.Fatalf("Failed to log version update: %v", err)
 	}
@@ -475,11 +443,8 @@ func TestAuditTrail_SecureIDGenerationWithCustomRandom(t *testing.T) {
 }
 
 func TestAuditTrail_SecureIDGenerationFallback(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "test_audit")
-	if err != nil {
-		t.Fatalf("Failed to create temp directory: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
+	tempDir, _, cleanup := setupAuditTest(t)
+	defer cleanup()
 
 	logFile := filepath.Join(tempDir, "audit.log")
 
@@ -488,7 +453,7 @@ func TestAuditTrail_SecureIDGenerationFallback(t *testing.T) {
 	audit := NewAuditTrailWithSecureRandom(logFile, failingRandom)
 
 	// Log an event (should use fallback ID generation)
-	err = audit.LogVersionUpdate("test-package", "1.0.0", "1.0.1", true, nil)
+	err := audit.LogVersionUpdate("test-package", "1.0.0", "1.0.1", true, nil)
 	if err != nil {
 		t.Fatalf("Failed to log version update: %v", err)
 	}
