@@ -444,7 +444,7 @@ func createBackendProject(projectPath string) error {
 	files := map[string]string{
 		"go.mod": `module backend-project
 
-go 1.21
+go 1.24
 
 require (
 	github.com/gin-gonic/gin v1.9.0
@@ -477,7 +477,7 @@ type User struct {
 	ID   int    ` + "`json:\"id\"`" + `
 	Name string ` + "`json:\"name\"`" + `
 }`,
-		"Dockerfile": `FROM golang:1.21-alpine
+		"Dockerfile": `FROM golang:1.24-alpine
 WORKDIR /app
 COPY . .
 RUN go build -o main cmd/api/main.go

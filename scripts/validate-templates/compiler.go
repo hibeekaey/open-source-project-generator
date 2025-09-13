@@ -42,7 +42,7 @@ func (v *TemplateValidator) compileGoFile(filePath string) error {
 
 	// Create a simple go.mod for the temp directory
 	goModContent := `module temp-validation
-go 1.22
+go 1.24
 `
 	goModPath := filepath.Join(tempDir, "go.mod")
 	if err := os.WriteFile(goModPath, []byte(goModContent), 0644); err != nil {

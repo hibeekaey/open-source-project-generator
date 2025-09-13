@@ -66,7 +66,7 @@ func TestSetupEngine_SetupProject(t *testing.T) {
 
 				goMod := `module test-backend
 
-go 1.21`
+go 1.24`
 				if err := os.WriteFile(filepath.Join(backendPath, "go.mod"), []byte(goMod), 0644); err != nil {
 					return err
 				}
@@ -247,7 +247,7 @@ func TestSetupEngine_VerifyProject(t *testing.T) {
 
 				goMod := `module test-backend
 
-go 1.21`
+go 1.24`
 				if err := os.WriteFile(filepath.Join(backendPath, "go.mod"), []byte(goMod), 0644); err != nil {
 					return err
 				}
@@ -284,7 +284,7 @@ func main() {
 
 				goMod := `module test-backend
 
-go 1.21`
+go 1.24`
 				if err := os.WriteFile(filepath.Join(backendPath, "go.mod"), []byte(goMod), 0644); err != nil {
 					return err
 				}
@@ -460,7 +460,7 @@ func TestSetupEngine_SetupBackendComponents(t *testing.T) {
 
 				goMod := `module test-backend
 
-go 1.21`
+go 1.24`
 				return os.WriteFile(filepath.Join(backendPath, "go.mod"), []byte(goMod), 0644)
 			},
 			expectedErrors: 0,
@@ -638,7 +638,7 @@ func BenchmarkSetupEngine_VerifyProject(b *testing.B) {
 
 	goMod := `module test-backend
 
-go 1.21`
+go 1.24`
 	err = os.WriteFile(filepath.Join(backendPath, "go.mod"), []byte(goMod), 0644)
 	require.NoError(b, err)
 

@@ -23,6 +23,9 @@ type FileCache struct {
 	cache    map[string]CacheEntry
 	filePath string
 	ttl      time.Duration
+	dirty    bool          // Track if cache needs saving
+	saveChan chan struct{} // Channel for batching saves
+	stopChan chan struct{} // Channel to stop background saver
 }
 
 // NewFileCache creates a new file-based version cache
@@ -42,6 +45,8 @@ func NewFileCache(cacheDir string, ttl time.Duration) (*FileCache, error) {
 		cache:    make(map[string]CacheEntry),
 		filePath: filePath,
 		ttl:      ttl,
+		saveChan: make(chan struct{}, 1),
+		stopChan: make(chan struct{}),
 	}
 
 	// Load existing cache from file
@@ -49,6 +54,9 @@ func NewFileCache(cacheDir string, ttl time.Duration) (*FileCache, error) {
 		// Log warning but don't fail - start with empty cache
 		fmt.Printf("Warning: failed to load cache from %s: %v\n", filePath, err)
 	}
+
+	// Start background saver
+	go cache.backgroundSaver()
 
 	return cache, nil
 }
@@ -67,12 +75,8 @@ func (c *FileCache) Get(key string) (string, bool) {
 	if time.Now().After(entry.ExpiresAt) {
 		// Entry expired, remove it
 		delete(c.cache, key)
-		// Save updated cache asynchronously
-		go func() {
-			if err := c.save(); err != nil {
-				fmt.Printf("Warning: failed to save cache after expiry cleanup: %v\n", err)
-			}
-		}()
+		c.dirty = true
+		c.requestSave()
 		return "", false
 	}
 
@@ -88,13 +92,8 @@ func (c *FileCache) Set(key, version string) error {
 		Version:   version,
 		ExpiresAt: time.Now().Add(c.ttl),
 	}
-
-	// Save to file asynchronously
-	go func() {
-		if err := c.save(); err != nil {
-			fmt.Printf("Warning: failed to save cache: %v\n", err)
-		}
-	}()
+	c.dirty = true
+	c.requestSave()
 
 	return nil
 }
@@ -105,13 +104,8 @@ func (c *FileCache) Delete(key string) error {
 	defer c.mu.Unlock()
 
 	delete(c.cache, key)
-
-	// Save to file asynchronously
-	go func() {
-		if err := c.save(); err != nil {
-			fmt.Printf("Warning: failed to save cache: %v\n", err)
-		}
-	}()
+	c.dirty = true
+	c.requestSave()
 
 	return nil
 }
@@ -122,13 +116,8 @@ func (c *FileCache) Clear() error {
 	defer c.mu.Unlock()
 
 	c.cache = make(map[string]CacheEntry)
-
-	// Save to file asynchronously
-	go func() {
-		if err := c.save(); err != nil {
-			fmt.Printf("Warning: failed to save cache: %v\n", err)
-		}
-	}()
+	c.dirty = true
+	c.requestSave()
 
 	return nil
 }
@@ -167,12 +156,8 @@ func (c *FileCache) CleanExpired() int {
 	}
 
 	if removed > 0 {
-		// Save to file asynchronously
-		go func() {
-			if err := c.save(); err != nil {
-				fmt.Printf("Warning: failed to save cache after cleanup: %v\n", err)
-			}
-		}()
+		c.dirty = true
+		c.requestSave()
 	}
 
 	return removed
@@ -218,6 +203,59 @@ func (c *FileCache) save() error {
 		return fmt.Errorf("failed to rename cache file: %w", err)
 	}
 
+	return nil
+}
+
+// requestSave signals the background saver to save the cache
+func (c *FileCache) requestSave() {
+	select {
+	case c.saveChan <- struct{}{}:
+		// Signal sent
+	default:
+		// Channel full, save already requested
+	}
+}
+
+// backgroundSaver runs in a goroutine to batch save operations
+func (c *FileCache) backgroundSaver() {
+	ticker := time.NewTicker(100 * time.Millisecond) // Batch saves every 100ms
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-c.saveChan:
+			// Wait a bit to batch multiple operations
+			time.Sleep(10 * time.Millisecond)
+			c.performSave()
+		case <-ticker.C:
+			// Periodic save if dirty
+			c.performSave()
+		case <-c.stopChan:
+			// Final save before stopping
+			c.performSave()
+			return
+		}
+	}
+}
+
+// performSave saves the cache if it's dirty
+func (c *FileCache) performSave() {
+	c.mu.Lock()
+	if !c.dirty {
+		c.mu.Unlock()
+		return
+	}
+	c.dirty = false
+	c.mu.Unlock()
+
+	if err := c.save(); err != nil {
+		fmt.Printf("Warning: failed to save cache: %v\n", err)
+	}
+}
+
+// Close stops the background saver and performs a final save
+func (c *FileCache) Close() error {
+	close(c.stopChan)
 	return nil
 }
 

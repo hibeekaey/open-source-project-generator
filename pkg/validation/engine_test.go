@@ -34,7 +34,7 @@ func TestEngine_ValidateProject(t *testing.T) {
 				files := map[string]string{
 					"README.md": "# Test Project",
 					"Makefile":  "all:\n\techo 'test'",
-					"go.mod":    "module test\n\ngo 1.21",
+					"go.mod":    "module test\n\ngo 1.24",
 					"frontend/package.json": `{
 						"name": "test-frontend",
 						"version": "1.0.0",
@@ -93,7 +93,7 @@ func TestEngine_ValidateProject(t *testing.T) {
 				}
 
 				// Create invalid go.mod (missing module declaration)
-				invalidGoMod := "go 1.21"
+				invalidGoMod := "go 1.24"
 				return os.WriteFile(filepath.Join(projectPath, "backend", "go.mod"), []byte(invalidGoMod), 0644)
 			},
 			expectedValid:  false,
@@ -217,7 +217,7 @@ func TestEngine_ValidateGoMod(t *testing.T) {
 			name: "valid go.mod",
 			content: `module github.com/example/project
 
-go 1.21
+go 1.24
 
 require (
 	github.com/gin-gonic/gin v1.9.1
@@ -227,7 +227,7 @@ require (
 		},
 		{
 			name: "missing module declaration",
-			content: `go 1.21
+			content: `go 1.24
 
 require (
 	github.com/gin-gonic/gin v1.9.1
@@ -710,13 +710,13 @@ func createTestProject(tb testing.TB, projectPath string) {
 		}`,
 		"backend/go.mod": `module github.com/example/test-backend
 
-go 1.21
+go 1.24
 
 require (
 	github.com/gin-gonic/gin v1.9.1
 	gorm.io/gorm v1.25.0
 )`,
-		"backend/Dockerfile": `FROM golang:1.21-alpine
+		"backend/Dockerfile": `FROM golang:1.24-alpine
 
 WORKDIR /app
 

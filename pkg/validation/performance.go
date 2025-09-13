@@ -302,7 +302,7 @@ func (pt *PerformanceTester) generateTestFiles(projectPath string, fileCount int
 				"build": "next build"
 			}
 		}`,
-		"backend/go.mod": "module test-backend\n\ngo 1.21\n",
+		"backend/go.mod": "module test-backend\n\ngo 1.24\n",
 		"backend/main.go": `package main
 
 import "fmt"

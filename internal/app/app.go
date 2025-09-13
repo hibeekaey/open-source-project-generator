@@ -777,7 +777,7 @@ func (a *App) runVersionCommand(showPackages bool) error {
 		version = "1.0.0" // fallback
 	}
 	fmt.Printf("Open Source Template Generator %s\n", version)
-	fmt.Println("Built with Go 1.23+")
+	fmt.Println("Built with Go 1.24+")
 
 	if a.gitCommit != "" && a.gitCommit != "unknown" {
 		fmt.Printf("Git commit: %s\n", a.gitCommit)
