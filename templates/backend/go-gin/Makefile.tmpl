@@ -196,7 +196,7 @@ lint: ## Run linting
 		golangci-lint run; \
 	else \
 		echo "$(YELLOW)golangci-lint not found, installing...$(RESET)"; \
-		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.54.2; \
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.61.0; \
 		golangci-lint run; \
 	fi
 
