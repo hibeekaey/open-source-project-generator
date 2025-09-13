@@ -198,7 +198,12 @@ func testMemoryEfficiencyBenchmarks(t *testing.T) {
 	for _, projectType := range projectTypes {
 		tempDir, err := os.MkdirTemp("", fmt.Sprintf("memory-test-%s-*", projectType.name))
 		require.NoError(t, err)
-		defer os.RemoveAll(tempDir)
+		defer func() {
+			os.RemoveAll(tempDir)
+			// Force garbage collection after each test to prevent memory accumulation
+			runtime.GC()
+			runtime.GC()
+		}()
 
 		// Generate project with specific characteristics
 		err = tester.generateTestFiles(tempDir, projectType.fileCount)
@@ -214,6 +219,7 @@ func testMemoryEfficiencyBenchmarks(t *testing.T) {
 		startTime := time.Now()
 		_, err = tester.validationEngine.ValidateProject(tempDir)
 		validationTime := time.Since(startTime)
+		require.NoError(t, err)
 
 		runtime.ReadMemStats(&memStats)
 		endMemory := memStats.Alloc

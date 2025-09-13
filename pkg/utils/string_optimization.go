@@ -48,8 +48,8 @@ func (sb *StringBuilder) WriteString(s string) {
 }
 
 // WriteByte writes a byte to the builder
-func (sb *StringBuilder) WriteByte(b byte) {
-	sb.buf.WriteByte(b)
+func (sb *StringBuilder) WriteByte(b byte) error {
+	return sb.buf.WriteByte(b)
 }
 
 // String returns the built string

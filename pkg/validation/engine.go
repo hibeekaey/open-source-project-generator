@@ -209,20 +209,6 @@ func (e *Engine) validatePackageJSONStructure(packageJSON map[string]interface{}
 	}
 
 	return nil
-	if name, ok := packageJSON["name"].(string); ok {
-		if strings.Contains(name, " ") || strings.Contains(name, "_") {
-			return fmt.Errorf("package name should use kebab-case format")
-		}
-	}
-
-	// Validate version format
-	if version, ok := packageJSON["version"].(string); ok {
-		if !e.isValidSemVer(version) {
-			return fmt.Errorf("invalid semantic version format: %s", version)
-		}
-	}
-
-	return nil
 }
 
 // ValidateGoMod validates a go.mod file with comprehensive validation
@@ -766,14 +752,14 @@ func (e *Engine) ValidatePreGeneration(config *models.ProjectConfig, templatePat
 	// Validate Node.js versions for frontend templates
 	if e.isFrontendTemplate(templatePath) {
 		if err := e.validateNodeJSPreGeneration(config, result); err != nil {
-			return nil, fmt.Errorf("Node.js pre-generation validation failed: %w", err)
+			return nil, fmt.Errorf("node.js pre-generation validation failed: %w", err)
 		}
 	}
 
 	// Validate Go versions for backend templates
 	if e.isBackendTemplate(templatePath) {
 		if err := e.validateGoPreGeneration(config, result); err != nil {
-			return nil, fmt.Errorf("Go pre-generation validation failed: %w", err)
+			return nil, fmt.Errorf("go pre-generation validation failed: %w", err)
 		}
 	}
 
@@ -833,14 +819,14 @@ func (e *Engine) ValidatePreGenerationDirectory(config *models.ProjectConfig, te
 	// Validate Node.js versions if frontend templates are present
 	if e.hasFrontendTemplates(templateFiles) {
 		if err := e.validateNodeJSPreGeneration(config, result); err != nil {
-			return nil, fmt.Errorf("Node.js pre-generation validation failed: %w", err)
+			return nil, fmt.Errorf("node.js pre-generation validation failed: %w", err)
 		}
 	}
 
 	// Validate Go versions if backend templates are present
 	if e.hasBackendTemplates(templateFiles) {
 		if err := e.validateGoPreGeneration(config, result); err != nil {
-			return nil, fmt.Errorf("Go pre-generation validation failed: %w", err)
+			return nil, fmt.Errorf("go pre-generation validation failed: %w", err)
 		}
 	}
 

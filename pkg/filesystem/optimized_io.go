@@ -351,9 +351,9 @@ func (pdw *ParallelDirectoryWalk) worker() {
 				case pdw.workChan <- entryPath:
 					pdw.wg.Add(1)
 				default:
-					// Channel full, process synchronously
+					// Channel full, add to waitgroup before goroutine
+					pdw.wg.Add(1)
 					go func(p string) {
-						pdw.wg.Add(1)
 						pdw.workChan <- p
 					}(entryPath)
 				}

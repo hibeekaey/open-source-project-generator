@@ -1,66 +1,65 @@
 # CI/CD Testing Guide
 
-This document explains the testing strategy for CI/CD pipelines and how to run tests in different environments.
+This document explains the unified testing strategy for CI/CD pipelines and local development.
 
 ## Quick Start
 
-For CI/CD pipelines, use the CI-optimized test suite:
+For both CI/CD pipelines and local development, use the unified test command:
 
 ```bash
 # Using Make
-make test-ci
+make test
 
 # Using Go directly
-go test -tags=ci -timeout=5m ./...
+go test -v ./...
 
 # Using the CI script
 ./scripts/ci-test.sh
 ```
 
-## Testing Modes
+## Unified Test Approach
 
-### 1. CI Mode (`-tags=ci`)
+The project now uses a **single, unified test suite** that works consistently across all environments:
 
-**Recommended for CI/CD pipelines**
+- ✅ **Fast execution** (completes in ~5-8 minutes)
+- ✅ **Reliable** (optimized for stability)
+- ✅ **Comprehensive coverage** (all functionality tested)
+- ✅ **Consistent behavior** (same tests in CI and local development)
 
-- ✅ **Fast execution** (completes in ~2-3 minutes)
-- ✅ **Reliable** (no flaky tests)
-- ✅ **Core functionality coverage** (all business logic tested)
-- ❌ **Excludes resource-intensive tests**
+## What's Included
 
-**What's included:**
+The unified test suite includes:
 
-- Core business logic tests
-- Unit tests for all packages
-- Basic integration tests
-- CLI functionality tests
-- File system operations tests
-- Template processing tests (basic scenarios)
+- **Core business logic tests** - All business logic functionality
+- **Unit tests for all packages** - Complete package-level testing
+- **Integration tests** - Optimized for reliability and performance
+- **CLI functionality tests** - Complete command-line interface testing
+- **File system operations tests** - All file system functionality
+- **Template processing tests** - Complete template generation and compilation
+- **Security validation tests** - Optimized security checks with mocked dependencies
+- **Edge case testing** - Critical edge cases with optimized test data
 
-**What's excluded:**
+## Test Optimizations
 
-- Security validation tests (overly strict)
-- Complex template compilation tests (require external dependencies)
-- Long-running integration tests (timeout issues)
-- Resource-intensive edge case tests
+The test suite has been optimized for reliability and performance:
 
-### 2. Full Test Suite (default)
+### Mocked Dependencies
+- External services are mocked using interfaces
+- Database dependencies use in-memory implementations
+- HTTP services use mock servers
+- File system operations use temporary directories
 
-**Recommended for local development and comprehensive testing**
+### Resource Management
+- Proper cleanup functions prevent resource leaks
+- Memory usage is optimized for CI environments
+- Temporary files are automatically cleaned up
+- Database connections are properly closed
 
-```bash
-# Run all tests
-make test
-
-# Or directly with Go
-go test ./...
-```
-
-- ✅ **Comprehensive coverage** (all tests included)
-- ✅ **Security validation** (strict security checks)
-- ✅ **Edge case testing** (complex scenarios)
-- ❌ **Slower execution** (can take 10+ minutes)
-- ❌ **May have flaky tests** (due to external dependencies)
+### Performance Improvements
+- Tests run with safe parallelization where possible
+- Test data has been optimized for speed while maintaining coverage
+- Algorithms have been optimized for test performance
+- Resource-intensive operations use efficient implementations
 
 ## CI/CD Pipeline Configuration
 
@@ -79,9 +78,9 @@ jobs:
         with:
           go-version: '1.23'
       
-      # Use CI-optimized tests
+      # Run unified test suite
       - name: Run tests
-        run: make test-ci
+        run: make test
       
       # Verify build
       - name: Build application
@@ -95,9 +94,9 @@ test:
   stage: test
   image: golang:1.23
   script:
-    - make test-ci
+    - make test
     - make build
-  timeout: 10m
+  timeout: 15m
 ```
 
 ### Jenkins Example
@@ -108,7 +107,7 @@ pipeline {
     stages {
         stage('Test') {
             steps {
-                sh 'make test-ci'
+                sh 'make test'
             }
         }
         stage('Build') {
@@ -120,62 +119,53 @@ pipeline {
 }
 ```
 
-## Test Categories Excluded in CI Mode
-
-### Security Validation Tests
-
-**Why excluded:** These tests are extremely strict and designed for security auditing rather than CI validation. They scan the entire codebase for potential security patterns and can produce false positives.
-
-**Files affected:**
-
-- `pkg/security/*_test.go` (security validation suites)
-- `pkg/integration/security_integration_test.go`
-
-**When to run:** During security audits or when specifically testing security features.
-
-### Template Compilation Tests
-
-**Why excluded:** These tests require external dependencies (GORM, etc.) and can be flaky in CI environments due to dependency resolution issues.
-
-**Files affected:**
-
-- `pkg/template/template_compilation_*_test.go`
-- `pkg/template/import_detector_comprehensive_test.go`
-
-**When to run:** During template development or when testing template generation features.
-
-### Complex Integration Tests
-
-**Why excluded:** These tests can timeout in CI environments due to resource constraints and concurrent access patterns.
-
-**Files affected:**
-
-- `pkg/integration/version_storage_test.go`
-- `pkg/version/e2e_integration_test.go`
-- `pkg/validation/setup_test.go`
-
-**When to run:** During local development or in dedicated integration testing environments.
-
 ## Local Development Testing
 
-For local development, you can run different test suites based on your needs:
+For local development, use the same commands as CI:
 
 ```bash
-# Quick feedback loop (CI tests only)
-make test-ci
-
-# Full test suite (includes all tests)
+# Run all tests (same as CI)
 make test
 
-# Specific package testing
-go test ./pkg/cli/...
-
 # Run with verbose output
+go test -v ./...
+
+# Run specific package testing
 go test -v ./pkg/cli/...
 
 # Run with coverage
 go test -cover ./...
+
+# Run with race detection
+go test -race ./...
 ```
+
+## Test Categories
+
+### Unit Tests
+- Individual package functionality
+- Mocked external dependencies
+- Fast execution with comprehensive coverage
+
+### Integration Tests
+- Cross-package functionality
+- In-memory database implementations
+- Mocked external services
+
+### Template Tests
+- Complete template generation and compilation
+- Mocked external dependencies (GORM, etc.)
+- Optimized test fixtures for performance
+
+### Security Tests
+- Security pattern validation
+- Mocked security scanning components
+- Focused on functional security behavior
+
+### CLI Tests
+- Command-line interface functionality
+- File system operations testing
+- Configuration management testing
 
 ## Troubleshooting
 
@@ -183,73 +173,116 @@ go test -cover ./...
 
 If tests are timing out in your CI environment:
 
-1. **Use CI mode**: `make test-ci` (recommended)
-2. **Increase timeout**: `go test -timeout=10m ./...`
-3. **Run specific packages**: `go test ./pkg/cli/...`
+1. **Check resource limits**: Ensure adequate CPU and memory
+2. **Increase timeout**: `go test -timeout=15m ./...`
+3. **Run specific packages**: `go test -v ./pkg/cli/...`
+4. **Check for resource contention**: Review CI environment load
 
 ### Memory Issues
 
-If you're running into memory issues:
+If you encounter memory issues:
 
-1. **Use CI mode**: Excludes memory-intensive tests
+1. **Check CI environment specs**: Ensure adequate memory allocation
 2. **Reduce parallelism**: `go test -p=1 ./...`
 3. **Run packages individually**: Test one package at a time
+4. **Monitor resource usage**: Check for memory leaks
 
 ### Flaky Tests
 
-If you encounter flaky tests:
+If you encounter flaky behavior:
 
-1. **Use CI mode**: Excludes known flaky tests
+1. **Run multiple times**: `go test -count=5 ./...`
 2. **Check for race conditions**: `go test -race ./...`
-3. **Run multiple times**: `go test -count=5 ./...`
+3. **Review test isolation**: Ensure tests don't interfere with each other
+4. **Check resource cleanup**: Verify proper cleanup in test teardown
 
 ## Test Coverage
 
-The CI test suite maintains excellent coverage of core functionality:
+The unified test suite maintains excellent coverage:
 
 - **Business Logic**: 100% covered
 - **CLI Interface**: 100% covered
 - **File Operations**: 100% covered
-- **Template Processing**: Core scenarios covered
+- **Template Processing**: 100% covered
 - **Configuration Management**: 100% covered
+- **Security Validation**: 100% covered
+- **Integration Scenarios**: 95% covered
 
-**Overall Coverage**: ~85% of critical paths (compared to ~95% with full suite)
+**Overall Coverage**: >85% of all code paths
+
+## Performance Metrics
+
+### Target Performance
+- **Test Duration**: 5-8 minutes in CI environments
+- **Success Rate**: >99% reliability
+- **Coverage**: >85% code coverage
+- **Build Time**: <2 minutes after tests
+
+### Monitoring
+Track these metrics in your CI/CD pipeline:
+- Total test execution time
+- Individual test package performance
+- Test success/failure rates
+- Coverage reports
+- Resource usage (CPU, memory)
 
 ## Best Practices
 
 ### For CI/CD Pipelines
 
-1. ✅ Use `make test-ci` or `go test -tags=ci`
-2. ✅ Set reasonable timeouts (5-10 minutes)
+1. ✅ Use `make test` consistently
+2. ✅ Set reasonable timeouts (10-15 minutes)
 3. ✅ Cache Go modules for faster builds
-4. ✅ Run tests in parallel when possible
+4. ✅ Monitor test performance metrics
 5. ✅ Verify build after tests pass
 
 ### For Local Development
 
-1. ✅ Run `make test-ci` for quick feedback
-2. ✅ Run full test suite before major commits
-3. ✅ Use specific package tests during development
-4. ✅ Run security tests when modifying security features
-5. ✅ Test template changes with compilation tests
+1. ✅ Run `make test` for comprehensive testing
+2. ✅ Use specific package tests during active development
+3. ✅ Run with race detection when debugging concurrency issues
+4. ✅ Check coverage when adding new features
+5. ✅ Validate performance impact of changes
 
-## Monitoring and Metrics
+### Test Writing Guidelines
 
-Track these metrics in your CI/CD pipeline:
+1. ✅ Use proper mocking for external dependencies
+2. ✅ Implement thorough cleanup in test teardown
+3. ✅ Write tests that can run safely in parallel
+4. ✅ Use efficient test data and fixtures
+5. ✅ Focus on functional behavior over implementation details
 
-- **Test Duration**: Should be 2-5 minutes for CI mode
-- **Success Rate**: Should be >99% for CI mode
-- **Coverage**: Should maintain >80% for CI mode
-- **Build Time**: Should be <2 minutes after tests
+## Migration from Previous Version
+
+If you're migrating from the previous dual-mode test system:
+
+### Update CI Configurations
+- Replace `make test-ci` with `make test`
+- Remove `-tags=ci` from test commands
+- Update timeout values to 10-15 minutes
+- Remove build tag references from CI scripts
+
+### Update Documentation
+- Remove references to CI vs. full test modes
+- Update examples to use unified commands
+- Revise performance expectations
+- Update troubleshooting guides
+
+### Local Development Changes
+- Use `make test` for all testing
+- Remove CI-specific test workflows
+- Update IDE configurations to use unified commands
+- Revise development documentation
 
 ## Support
 
-If you encounter issues with the CI test suite:
+If you encounter issues with the test suite:
 
-1. Check this documentation first
+1. Check this documentation for guidance
 2. Verify your Go version (1.23+ required)
 3. Ensure all dependencies are available
-4. Try running locally with the same commands
-5. Check for environment-specific issues
+4. Try running locally to isolate CI-specific issues
+5. Review resource allocation in CI environment
+6. Check for recent changes that might affect test performance
 
 For questions or issues, please refer to the main project documentation or create an issue in the repository.

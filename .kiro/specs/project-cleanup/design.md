@@ -23,6 +23,7 @@ The cleanup process follows a systematic removal approach:
 Based on the codebase examination, the following components will be evaluated:
 
 #### Commands to Remove
+
 - `cmd/cleanup/` - Project cleanup utilities (not core generator function)
 - `cmd/consolidate-duplicates/` - Code consolidation tools (not core generator function)
 - `cmd/duplicate-scanner/` - Duplicate detection tools (not core generator function)
@@ -38,9 +39,11 @@ Based on the codebase examination, the following components will be evaluated:
 - `cmd/unused-code-scanner/` - Unused code detection tools (not core generator function)
 
 #### Commands to Keep
+
 - `cmd/generator/` - Core template generation functionality (ESSENTIAL)
 
 #### Supporting Components to Evaluate
+
 - `internal/` packages - Keep only those essential for generator
 - `pkg/` packages - Keep only those essential for template generation
 - `config/` files - Keep only generator-related configurations

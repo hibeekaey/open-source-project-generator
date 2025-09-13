@@ -92,11 +92,8 @@ make setup
 # Run in development mode
 make dev
 
-# Run tests (full suite)
+# Run tests (unified test suite)
 make test
-
-# Run CI-friendly tests (recommended for pipelines)
-make test-ci
 
 # Run tests with coverage
 make test-coverage

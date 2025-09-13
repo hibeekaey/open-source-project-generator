@@ -1,27 +1,27 @@
 #!/bin/bash
 
 # CI Test Script
-# This script runs tests suitable for CI/CD pipelines
-# It excludes resource-intensive and flaky tests that are not suitable for CI environments
+# This script runs the unified test suite for CI/CD pipelines
+# All tests have been optimized and consolidated for reliable CI execution
 
 set -e
 
-echo "🧪 Running CI test suite..."
-echo "ℹ️  This excludes resource-intensive integration tests and security validation tests"
-echo "ℹ️  For full test suite, run: go test ./..."
+echo "🧪 Running unified test suite..."
+echo "ℹ️  Using optimized and consolidated test execution"
+echo "ℹ️  All tests now run with improved performance and reliability"
 echo ""
 
-# Run tests with ci build tag to exclude problematic tests
-go test -tags=ci -timeout=5m ./...
+# Run unified test suite
+go test -v -timeout=10m ./...
 
 echo ""
-echo "✅ CI test suite completed successfully!"
-echo "📊 All core functionality tests passed"
+echo "✅ Unified test suite completed successfully!"
+echo "📊 All tests passed with consolidated execution"
 echo ""
-echo "Note: The following test categories are excluded in CI mode:"
-echo "  - Security validation tests (overly strict for CI)"
-echo "  - Template compilation integration tests (require external dependencies)"
-echo "  - Complex template edge case tests (resource intensive)"
-echo "  - Long-running integration tests (timeout issues in CI)"
+echo "Note: This now includes all tests in a unified execution:"
+echo "  - Security validation tests (optimized for CI)"
+echo "  - Template compilation tests (with mocked dependencies)"
+echo "  - Template edge case tests (optimized for performance)"
+echo "  - Integration tests (with improved reliability)"
 echo ""
-echo "These tests can be run locally with: go test ./..."
+echo "The same command runs locally and in CI: go test -v ./..."

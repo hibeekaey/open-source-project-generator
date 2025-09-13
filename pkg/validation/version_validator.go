@@ -230,7 +230,7 @@ func (v *VersionValidator) validateDockerImageFormat(image string) error {
 
 	// Check if it's a Node.js image
 	if !strings.Contains(strings.ToLower(image), "node") {
-		return fmt.Errorf("Docker image should be a Node.js image: %s", image)
+		return fmt.Errorf("docker image should be a Node.js image: %s", image)
 	}
 
 	return nil
