@@ -17,7 +17,7 @@ output:
 
 linters-settings:
   govet:
-    check-shadowing: true
+    # check-shadowing is deprecated, use shadow linter instead
     enable-all: true
   gocyclo:
     min-complexity: 15
@@ -138,6 +138,7 @@ linters:
     - unconvert
     - unused
     - whitespace
+    - shadow
 
 issues:
   exclude-rules:

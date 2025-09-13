@@ -18,10 +18,11 @@ linters:
     - goconst
     - gocyclo
     - dupl
+    - shadow
 
 linters-settings:
   govet:
-    check-shadowing: true
+    # check-shadowing is deprecated, use shadow linter instead
   gocyclo:
     min-complexity: 15
   dupl:
