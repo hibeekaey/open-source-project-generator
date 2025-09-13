@@ -38,39 +38,39 @@ jobs:
       with:
         node-version: '{{.Versions.Node}}'
         cache: 'npm'
-        cache-dependency-path: '${{ matrix.app }}/package-lock.json'
+        cache-dependency-path: '${{`{{ matrix.app }}`}}/package-lock.json'
 
     - name: Install dependencies
       run: |
-        cd ${{ matrix.app }}
+        cd ${{`{{ matrix.app }}`}}
         npm ci
 
     - name: Run linting
       run: |
-        cd ${{ matrix.app }}
+        cd ${{`{{ matrix.app }}`}}
         npm run lint
 
     - name: Run type checking
       run: |
-        cd ${{ matrix.app }}
+        cd ${{`{{ matrix.app }}`}}
         npm run type-check
 
     - name: Run tests
       run: |
-        cd ${{ matrix.app }}
+        cd ${{`{{ matrix.app }}`}}
         npm run test:ci
 
     - name: Build application
       run: |
-        cd ${{ matrix.app }}
+        cd ${{`{{ matrix.app }}`}}
         npm run build
 
     - name: Upload coverage reports
       uses: codecov/codecov-action@v3
       with:
-        file: ${{ matrix.app }}/coverage/lcov.info
-        flags: frontend-${{ matrix.app }}
-        name: ${{ matrix.app }}-coverage
+        file: ${{`{{ matrix.app }}`}}/coverage/lcov.info
+        flags: frontend-${{`{{ matrix.app }}`}}
+        name: ${{`{{ matrix.app }}`}}-coverage
 
   lighthouse-audit:
     runs-on: ubuntu-latest

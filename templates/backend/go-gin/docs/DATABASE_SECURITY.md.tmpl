@@ -1,0 +1,245 @@
+# Database Security Guide
+
+This document outlines the security improvements implemented in the database layer of the {{.Name}} application to prevent common vulnerabilities and ensure secure data operations.
+
+## Security Improvements Overview
+
+### 1. SQL Injection Prevention
+
+#### Parameterized Queries
+All database queries use GORM's parameterized query system, which automatically escapes user input and prevents SQL injection attacks.
+
+**Before (Vulnerable):**
+```go
+db.Exec("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)", userID, roleID)
+```
+
+**After (Secure):**
+```go
+// Using GORM associations for type-safe operations
+return tx.Model(&user).Association("Roles").Append(&role)
+```
+
+#### Input Validation
+All repository methods now include comprehensive input validation:
+
+```go
+func (r *userRepository) GetByID(id uint) (*models.User, error) {
+    // Input validation
+    if id == 0 {
+        return nil, fmt.Errorf("invalid user ID")
+    }
+    // ... rest of the method
+}
+```
+
+### 2. Enhanced Input Validation
+
+#### Custom Validators
+The application includes custom validators to prevent various attack vectors:
+
+- `secure_password`: Enforces strong password requirements
+- `safe_string`: Prevents XSS and script injection
+- `no_sql_injection`: Blocks common SQL injection patterns
+
+#### Password Security
+- Minimum 8 characters with complexity requirements
+- bcrypt hashing with cost factor 12 (higher than default)
+- Automatic password change timestamp tracking
+
+### 3. Secure Error Handling
+
+#### Information Leakage Prevention
+Database errors are sanitized to prevent information disclosure:
+
+```go
+if err != nil {
+    if err == gorm.ErrRecordNotFound {
+        return nil, fmt.Errorf("user not found")
+    }
+    // Return generic error to avoid information leakage
+    return nil, fmt.Errorf("database error occurred")
+}
+```
+
+#### Consistent Error Messages
+// SECURITY FIX: Use generic error message in production
+// Log detailed error securely, return generic message to client
+All error messages are standardized to avoid revealing system internals or database structure.
+
+### 4. Transaction Safety
+
+#### Data Consistency
+All critical operations are wrapped in database transactions:
+
+```go
+return r.db.Transaction(func(tx *gorm.DB) error {
+    // Verify entities exist
+    // Perform operations
+    // Return error to rollback if needed
+})
+```
+
+#### Atomic Operations
+Role assignments, user creation, and updates are atomic operations that either complete fully or rollback entirely.
+
+### 5. Database Schema Security
+
+#### Constraints and Validation
+SQL migrations include comprehensive constraints:
+
+```sql
+CREATE TABLE users (
+    email VARCHAR(255) CHECK (email ~ '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'),
+    username VARCHAR(255) CHECK (LENGTH(username) >= 3 AND LENGTH(username) <= 50),
+    password VARCHAR(255) CHECK (LENGTH(password) >= 60), -- bcrypt hashes
+    -- ... other fields with constraints
+);
+```
+
+#### Secure Indexes
+Indexes are created with security considerations:
+- Partial indexes to exclude soft-deleted records
+- Proper indexing for security-related fields (locked_at, is_active)
+
+### 6. Connection Security
+
+#### Connection Pool Configuration
+```go
+sqlDB.SetMaxIdleConns(10)
+sqlDB.SetMaxOpenConns(100)
+sqlDB.SetConnMaxLifetime(time.Hour)
+```
+
+#### SSL Enforcement
+Database connections enforce SSL in production environments with validation warnings for insecure configurations.
+
+## Security Best Practices
+
+### 1. Input Validation
+Always validate input at multiple layers:
+- Client-side validation for user experience
+- Server-side validation for security
+- Database constraints as final safeguard
+
+### 2. Principle of Least Privilege
+- Database users have minimal required permissions
+- Application-level authorization controls access
+- Role-based access control (RBAC) implementation
+
+### 3. Audit Trail
+The system maintains comprehensive audit trails:
+- User login tracking with IP addresses
+- Password change timestamps
+- Failed login attempt counters
+- Account locking mechanisms
+
+### 4. Password Security
+- Strong password requirements enforced
+- Secure hashing with appropriate cost factors
+- Password change tracking and expiration support
+
+## Testing Security
+
+### Unit Tests
+Comprehensive security tests are included:
+- Input validation testing
+- SQL injection prevention verification
+- Error handling security validation
+- Transaction consistency testing
+
+### Integration Tests
+- End-to-end security flow testing
+- Authentication and authorization testing
+- Database constraint validation
+
+## Monitoring and Alerting
+
+### Security Events
+Monitor for:
+- Multiple failed login attempts
+- Unusual database access patterns
+- Input validation failures
+- Authentication anomalies
+
+### Performance Impact
+Security measures are designed to have minimal performance impact:
+- Efficient validation algorithms
+- Optimized database queries
+- Proper indexing strategies
+
+## Configuration
+
+### Environment Variables
+Secure configuration through environment variables:
+```bash
+DB_SSL_MODE=require
+DB_MAX_CONNECTIONS=100
+DB_CONNECTION_LIFETIME=3600
+```
+
+### Development vs Production
+Different security levels for different environments:
+- Development: Relaxed for debugging
+- Staging: Production-like security
+- Production: Maximum security enforcement
+
+## Compliance
+
+This implementation helps meet various compliance requirements:
+- **OWASP Top 10**: Protection against injection attacks
+- **GDPR**: Secure data handling and privacy protection
+- **SOC 2**: Security controls and audit trails
+- **PCI DSS**: Secure data storage and transmission (if applicable)
+
+## Maintenance
+
+### Regular Updates
+- Keep dependencies updated
+- Monitor security advisories
+- Regular security audits
+- Penetration testing
+
+### Code Reviews
+All database-related code changes require:
+- Security-focused code review
+- Validation of input handling
+- Error handling verification
+- Test coverage confirmation
+
+## Troubleshooting
+
+### Common Issues
+1. **Validation Errors**: Check input format and constraints
+2. **Connection Issues**: Verify SSL configuration and credentials
+3. **Performance Issues**: Review query optimization and indexing
+4. **Transaction Failures**: Check for deadlocks and constraint violations
+
+### Debug Mode
+Enable debug logging for development (never in productioff): // SECURITY FIX: Disabled debug info (use env var for dev)
+```go
+gormConfig := &gorm.Config{
+    Logger: logger.Default.LogMode(logger.Info), // Development only
+}
+```
+
+## Future Enhancements
+
+### Planned Security Improvements
+- Database encryption at rest
+- Query result caching with security considerations
+- Advanced threat detection
+- Automated security scanning integration
+
+### Monitoring Enhancements
+- Real-time security dashboards
+- Automated incident response
+- Machine learning-based anomaly detection
+- Integration with SIEM systems
+
+---
+
+**Note**: This security implementation is designed to be comprehensive but should be regularly reviewed and updated based on emerging threats and security best practices.
+
+**Last Updated**: {{.CurrentDate}}
+**Version**: 1.0

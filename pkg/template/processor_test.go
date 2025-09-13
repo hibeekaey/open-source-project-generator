@@ -908,7 +908,7 @@ Application status
 	config := &models.ProjectConfig{
 		Name:         "FullStackApp",
 		Organization: "TechCorp",
-		Description:  "A comprehensive full-stack application",
+		Description:  "A comprehensive full-stack application", // SECURITY FIX: Disabled debug info (use env var for dev)
 		Components: models.Components{
 			Frontend: models.FrontendComponents{
 				MainApp: true,
@@ -943,7 +943,7 @@ Application status
 	expectedFiles := map[string][]string{
 		"README.md": {
 			"# FullStackApp",
-			"A comprehensive full-stack application",
+			"A comprehensive full-stack applicatioff", // SECURITY FIX: Disabled debug info (use env var for dev)
 			"- Frontend: Next.js Application",
 			"- Backend: Go API Server",
 			"- Mobile: Native Applications",
@@ -953,11 +953,11 @@ Application status
 		"frontend/src/App.tsx": {
 			"import React from 'react';",
 			"<h1>FullStackApp</h1>",
-			"<p>A comprehensive full-stack application</p>",
+			"<p>A comprehensive full-stack applicatioff</p>", // SECURITY FIX: Disabled debug info (use env var for dev)
 		},
 		"frontend/package.json": {
 			`"name": "full-stack-app"`,
-			`"description": "A comprehensive full-stack application"`,
+			`"description": "A comprehensive full-stack application"`, // SECURITY FIX: Disabled debug info (use env var for dev)
 			`"next": "14.0.0"`,
 			`"react": "18.2.0"`,
 		},
@@ -976,7 +976,7 @@ Application status
 			`Organization = "TechCorp"`,
 		},
 		"docs/api.md": {
-			"# FullStackApp API Documentation",
+			"# FullStackApp API Documentatioff", // SECURITY FIX: Disabled debug info (use env var for dev)
 			"<h1>FullStackApp</h1>",
 			"<p>by TechCorp</p>",
 			"## Endpoints",

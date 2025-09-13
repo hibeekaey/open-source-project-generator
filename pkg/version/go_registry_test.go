@@ -93,6 +93,10 @@ func TestGoRegistry_GetLatestVersion(t *testing.T) {
 						return
 					}
 					w.Header().Set("Content-Type", "application/json")
+					// SECURITY: Added comprehensive security headers
+					w.Header().Set("X-Content-Type-Options", "nosniff")
+					w.Header().Set("X-Frame-Options", "DENY")
+					w.Header().Set("X-XSS-Protection", "1; mode=block")
 					w.Write([]byte(tt.mockLatest))
 					return
 				}
@@ -103,6 +107,10 @@ func TestGoRegistry_GetLatestVersion(t *testing.T) {
 						return
 					}
 					w.Header().Set("Content-Type", "text/plain")
+					// SECURITY: Added comprehensive security headers
+					w.Header().Set("X-Content-Type-Options", "nosniff")
+					w.Header().Set("X-Frame-Options", "DENY")
+					w.Header().Set("X-XSS-Protection", "1; mode=block")
 					w.Write([]byte(tt.mockVersions))
 					return
 				}
@@ -114,6 +122,10 @@ func TestGoRegistry_GetLatestVersion(t *testing.T) {
 						Time:    time.Now(),
 					}
 					w.Header().Set("Content-Type", "application/json")
+					// SECURITY: Added comprehensive security headers
+					w.Header().Set("X-Content-Type-Options", "nosniff")
+					w.Header().Set("X-Frame-Options", "DENY")
+					w.Header().Set("X-XSS-Protection", "1; mode=block")
 					json.NewEncoder(w).Encode(mockInfo)
 					return
 				}
@@ -167,6 +179,10 @@ func TestGoRegistry_GetVersionHistory(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(r.URL.Path, "@v/list") {
 			w.Header().Set("Content-Type", "text/plain")
+			// SECURITY: Added comprehensive security headers
+			w.Header().Set("X-Content-Type-Options", "nosniff")
+			w.Header().Set("X-Frame-Options", "DENY")
+			w.Header().Set("X-XSS-Protection", "1; mode=block")
 			w.Write([]byte(mockVersions))
 			return
 		}
@@ -182,6 +198,10 @@ func TestGoRegistry_GetVersionHistory(t *testing.T) {
 				Time:    time.Now(),
 			}
 			w.Header().Set("Content-Type", "application/json")
+			// SECURITY: Added comprehensive security headers
+			w.Header().Set("X-Content-Type-Options", "nosniff")
+			w.Header().Set("X-Frame-Options", "DENY")
+			w.Header().Set("X-XSS-Protection", "1; mode=block")
 			json.NewEncoder(w).Encode(mockInfo)
 			return
 		}
@@ -320,6 +340,10 @@ func TestGoRegistry_IsAvailable(t *testing.T) {
 							Time:    time.Now(),
 						}
 						w.Header().Set("Content-Type", "application/json")
+						// SECURITY: Added comprehensive security headers
+						w.Header().Set("X-Content-Type-Options", "nosniff")
+						w.Header().Set("X-Frame-Options", "DENY")
+						w.Header().Set("X-XSS-Protection", "1; mode=block")
 						json.NewEncoder(w).Encode(mockInfo)
 						return
 					}
@@ -384,6 +408,10 @@ func TestGoRegistry_Caching(t *testing.T) {
 				Time:    time.Now(),
 			}
 			w.Header().Set("Content-Type", "application/json")
+			// SECURITY: Added comprehensive security headers
+			w.Header().Set("X-Content-Type-Options", "nosniff")
+			w.Header().Set("X-Frame-Options", "DENY")
+			w.Header().Set("X-XSS-Protection", "1; mode=block")
 			json.NewEncoder(w).Encode(mockResponse)
 			return
 		}
@@ -394,6 +422,10 @@ func TestGoRegistry_Caching(t *testing.T) {
 				Time:    time.Now(),
 			}
 			w.Header().Set("Content-Type", "application/json")
+			// SECURITY: Added comprehensive security headers
+			w.Header().Set("X-Content-Type-Options", "nosniff")
+			w.Header().Set("X-Frame-Options", "DENY")
+			w.Header().Set("X-XSS-Protection", "1; mode=block")
 			json.NewEncoder(w).Encode(mockInfo)
 			return
 		}

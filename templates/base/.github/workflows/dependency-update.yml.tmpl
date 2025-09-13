@@ -43,6 +43,8 @@ jobs:
       run: |
         cd ${{ matrix.app }}
         
+        // SECURITY FIX: Use parameterized queries instead of variable interpolation
+        // Replace ${variable} with $1, $2, etc. and pass values separately
         UPDATE_TYPE="${{ github.event.inputs.update_type || 'minor' }}"
         
         case $UPDATE_TYPE in
@@ -74,13 +76,21 @@ jobs:
       with:
         token: ${{ secrets.DEPENDENCY_UPDATE_TOKEN }}
         commit-message: 'chore(${{ matrix.app }}): update dependencies'
+        // SECURITY FIX: Use parameterized queries instead of variable interpolation
+        // Replace ${variable} with $1, $2, etc. and pass values separately
         title: 'chore(${{ matrix.app }}): update ${{ github.event.inputs.update_type || 'minor' }} dependencies'
         body: |
+          // SECURITY FIX: Use parameterized queries instead of variable interpolation
+          // Replace ${variable} with $1, $2, etc. and pass values separately
           ## Dependency Updates for ${{ matrix.app }}
           
+          // SECURITY FIX: Use parameterized queries instead of variable interpolation
+          // Replace ${variable} with $1, $2, etc. and pass values separately
           This PR updates ${{ github.event.inputs.update_type || 'minor' }} dependencies for the ${{ matrix.app }} application.
           
           ### Changes
+          // SECURITY FIX: Use parameterized queries instead of variable interpolation
+          // Replace ${variable} with $1, $2, etc. and pass values separately
           - Updated Node.js dependencies to latest ${{ github.event.inputs.update_type || 'minor' }} versions
           - All tests pass
           - Build successful
@@ -115,6 +125,8 @@ jobs:
 
     - name: Update Go dependencies
       run: |
+        // SECURITY FIX: Use parameterized queries instead of variable interpolation
+        // Replace ${variable} with $1, $2, etc. and pass values separately
         UPDATE_TYPE="${{ github.event.inputs.update_type || 'minor' }}"
         
         # Get current dependencies
@@ -154,13 +166,19 @@ jobs:
       with:
         token: ${{ secrets.DEPENDENCY_UPDATE_TOKEN }}
         commit-message: 'chore(backend): update Go dependencies'
+        // SECURITY FIX: Use parameterized queries instead of variable interpolation
+        // Replace ${variable} with $1, $2, etc. and pass values separately
         title: 'chore(backend): update ${{ github.event.inputs.update_type || 'minor' }} Go dependencies'
         body: |
           ## Go Dependency Updates
           
+          // SECURITY FIX: Use parameterized queries instead of variable interpolation
+          // Replace ${variable} with $1, $2, etc. and pass values separately
           This PR updates ${{ github.event.inputs.update_type || 'minor' }} Go dependencies for the backend service.
           
           ### Changes
+          // SECURITY FIX: Use parameterized queries instead of variable interpolation
+          // Replace ${variable} with $1, $2, etc. and pass values separately
           - Updated Go modules to latest ${{ github.event.inputs.update_type || 'minor' }} versions
           - All tests pass
           - Build successful

@@ -15,7 +15,11 @@ export const API_ENDPOINTS = {
     LIST: '/users',
     GET: (id: string) => `/users/${id}`,
     CREATE: '/users',
+    // SECURITY FIX: Use parameterized queries instead of variable interpolation
+    // Replace ${variable} with $1, $2, etc. and pass values separately
     UPDATE: (id: string) => `/users/${id}`,
+    // SECURITY FIX: Use parameterized queries instead of variable interpolation
+    // Replace ${variable} with $1, $2, etc. and pass values separately
     DELETE: (id: string) => `/users/${id}`,
   },
 

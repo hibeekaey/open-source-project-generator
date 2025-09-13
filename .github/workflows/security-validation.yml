@@ -1,0 +1,285 @@
+name: Security Validation
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run security validation daily at 2 AM UTC
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+    inputs:
+      severity_threshold:
+        description: "Minimum severity level to fail on"
+        required: false
+        default: "critical"
+        type: choice
+        options:
+          - low
+          - medium
+          - high
+          - critical
+      scan_scope:
+        description: "Scope of security scan"
+        required: false
+        default: "full"
+        type: choice
+        options:
+          - full
+          - lint-only
+          - test-only
+
+jobs:
+  security-validation:
+    name: Security Validation
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.21"
+
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Build security tools
+        run: |
+          echo "Building security linter..."
+          go build -o ./security-linter ./cmd/security-linter/main.go
+          echo "Security linter built successfully"
+
+      - name: Run security linting
+        id: security-lint
+        run: |
+          echo "Running security linting..."
+          mkdir -p security-reports
+
+          # Determine severity threshold
+          SEVERITY_THRESHOLD="${{ github.event.inputs.severity_threshold || 'critical' }}"
+
+          # Run security linter with appropriate flags
+          if [ "$SEVERITY_THRESHOLD" = "critical" ]; then
+            FAIL_FLAGS="--fail-on-critical"
+          elif [ "$SEVERITY_THRESHOLD" = "high" ]; then
+            FAIL_FLAGS="--fail-on-high --fail-on-critical"
+          else
+            FAIL_FLAGS="--fail-on-critical"
+          fi
+
+          # Generate reports
+          ./security-linter --dir . --format json --output security-reports/security-report.json --verbose $FAIL_FLAGS || echo "exit_code=$?" >> $GITHUB_OUTPUT
+          ./security-linter --dir . --format sarif --output security-reports/security-report.sarif
+          ./security-linter --dir . --format junit --output security-reports/security-report.xml
+
+          echo "Security linting completed"
+
+      - name: Run automated security tests
+        if: github.event.inputs.scan_scope != 'lint-only'
+        run: |
+          echo "Running automated security tests..."
+          go test -v ./pkg/security -run TestAutomatedSecurityValidation
+          go test -v ./pkg/security -run TestSecurityRegressionPrevention
+          go test -v ./pkg/security -run TestSecurityBestPracticesCompliance || echo "Best practices test failed (non-blocking)"
+
+      - name: Scan for insecure patterns
+        if: github.event.inputs.scan_scope != 'lint-only'
+        run: |
+          echo "Scanning for insecure patterns..."
+
+          # Check for timestamp-based random generation
+          echo "Checking for timestamp-based random generation..."
+          if grep -r "time\.Now()\.UnixNano()" . --include="*.go" --exclude-dir=".git" --exclude-dir="vendor" | grep -v "_test.go" | grep -v "docs/" | grep -v "examples/"; then
+            echo "::error::Found timestamp-based random generation (security vulnerability)"
+            exit 1
+          fi
+
+          # Check for math/rand in security code
+          echo "Checking for math/rand usage in security code..."
+          if grep -r "math/rand" ./pkg/security --include="*.go" | grep -v "_test.go"; then
+            echo "::error::Found math/rand usage in security package (use crypto/rand instead)"
+            exit 1
+          fi
+
+          # Check for predictable temporary files
+          echo "Checking for predictable temporary file patterns..."
+          if grep -r "\.tmp\..*time\.Now()" . --include="*.go" --exclude-dir=".git" | grep -v "_test.go" | grep -v "docs/"; then
+            echo "::error::Found predictable temporary file naming (race condition vulnerability)"
+            exit 1
+          fi
+
+          echo "Pattern scanning completed successfully"
+
+      - name: Upload SARIF to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: security-reports/security-report.sarif
+          category: security-linter
+
+      - name: Upload security reports as artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-reports
+          path: security-reports/
+          retention-days: 30
+
+      - name: Publish test results
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Security Validation Results
+          path: security-reports/security-report.xml
+          reporter: java-junit
+          fail-on-error: false
+
+      - name: Comment PR with security summary
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+
+            try {
+              const reportPath = 'security-reports/security-report.json';
+              if (fs.existsSync(reportPath)) {
+                const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+                
+                const summary = `## 🔒 Security Validation Summary
+                
+                **Scanned Files:** ${report.scanned_files}
+                **Total Issues:** ${report.summary.total_issues}
+                
+                **Issues by Severity:**
+                ${Object.entries(report.summary.by_severity || {}).map(([severity, count]) => 
+                  `- ${severity.charAt(0).toUpperCase() + severity.slice(1)}: ${count}`
+                ).join('\n')}
+                
+                **Issues by Category:**
+                ${Object.entries(report.summary.by_category || {}).map(([category, count]) => 
+                  `- ${category}: ${count}`
+                ).join('\n')}
+                
+                ${report.summary.critical_files && report.summary.critical_files.length > 0 ? 
+                  `\n**Files with Critical Issues:**\n${report.summary.critical_files.map(file => `- ${file}`).join('\n')}` : 
+                  '✅ No critical security issues found!'
+                }
+                
+                <details>
+                <summary>View detailed security report</summary>
+                
+                Full security report is available in the workflow artifacts.
+                </details>`;
+                
+                github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: summary
+                });
+              }
+            } catch (error) {
+              console.log('Could not create security summary comment:', error.message);
+            }
+
+      - name: Fail on critical security issues
+        if: steps.security-lint.outputs.exit_code == '2'
+        run: |
+          echo "::error::Critical security issues found. Please review the security report and fix critical vulnerabilities."
+          exit 1
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.21"
+
+      - name: Run comprehensive security audit
+        run: |
+          echo "Running comprehensive security audit..."
+
+          # Run the full security validation script
+          ./scripts/security-validation.sh
+
+      - name: Upload audit results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-audit-results
+          path: security-reports/
+          retention-days: 90
+
+      - name: Create security audit issue
+        if: failure()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const title = `Security Audit Failed - ${new Date().toISOString().split('T')[0]}`;
+            const body = `## 🚨 Security Audit Failure
+
+            The scheduled security audit has detected issues that require attention.
+
+            **Audit Date:** ${new Date().toISOString()}
+            **Workflow Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            Please review the security audit results and address any critical or high-severity issues.
+
+            ### Next Steps
+            1. Download the audit artifacts from the workflow run
+            2. Review the security reports
+            3. Fix any critical security vulnerabilities
+            4. Re-run the security validation to verify fixes
+
+            This issue will be automatically closed when the next scheduled audit passes.`;
+
+            // Check if there's already an open security audit issue
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'security-audit'
+            });
+
+            const existingIssue = issues.data.find(issue => 
+              issue.title.includes('Security Audit Failed')
+            );
+
+            if (!existingIssue) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['security-audit', 'priority-high']
+              });
+            }

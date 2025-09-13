@@ -3,6 +3,8 @@ package middleware
 import (
 	"net/http"
 	"strings"
+	"sync"
+	"time"
 
 	"{{.Name}}/internal/config"
 	"{{.Name}}/internal/models"
@@ -14,16 +16,19 @@ import (
 // AuthMiddleware creates a middleware for JWT authentication with enhanced security
 func AuthMiddleware(cfg *config.Config, userService services.UserService) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Generic error response to prevent information leakage
+		unauthorizedResponse := gin.H{"error": "Authentication required"}
+		
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
+			c.JSON(http.StatusUnauthorized, unauthorizedResponse)
 			c.Abort()
 			return
 		}
 
 		// Check if the header starts with "Bearer "
 		if !strings.HasPrefix(authHeader, "Bearer ") {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization header format"})
+			c.JSON(http.StatusUnauthorized, unauthorizedResponse)
 			c.Abort()
 			return
 		}
@@ -31,119 +36,272 @@ func AuthMiddleware(cfg *config.Config, userService services.UserService) gin.Ha
 		// Extract the token
 		token := strings.TrimPrefix(authHeader, "Bearer ")
 		if token == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token required"})
+			c.JSON(http.StatusUnauthorized, unauthorizedResponse)
 			c.Abort()
 			return
 		}
 
-		// Additional token length validation for security
-		if len(token) < 10 || len(token) > 2048 {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token format"})
+		// Enhanced token length validation for security
+		// JWT tokens typically range from 100-2048 characters
+		if len(token) < 50 || len(token) > 2048 {
+			c.JSON(http.StatusUnauthorized, unauthorizedResponse)
 			c.Abort()
 			return
 		}
 
-		// Validate the token
+		// Validate token format (basic JWT structure check)
+		tokenParts := strings.Split(token, ".")
+		if len(tokenParts) != 3 {
+			c.JSON(http.StatusUnauthorized, unauthorizedResponse)
+			c.Abort()
+			return
+		}
+
+		// Validate the token with enhanced security
 		claims, err := utils.ValidateJWT(token, cfg.JWT.Secret)
 		if err != nil {
-			// Log potential security incident (token tampering)
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			// Log security incident without exposing details
+			// In production, this should log to security monitoring system
+			c.JSON(http.StatusUnauthorized, unauthorizedResponse)
 			c.Abort()
 			return
 		}
 
-		// Check token expiration with additional buffer for security
-		if claims.ExpiresAt != nil && time.Now().Unix() > claims.ExpiresAt.Unix() {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token expired"})
+		// Additional expiration check (redundant but defensive)
+		if claims.ExpiresAt != nil && time.Now().After(claims.ExpiresAt.Time) {
+			c.JSON(http.StatusUnauthorized, unauthorizedResponse)
 			c.Abort()
 			return
 		}
 
-		// Get user from database
+		// Validate token issuer and subject for additional security
+		if claims.Issuer != "{{.Name}}" {
+			c.JSON(http.StatusUnauthorized, unauthorizedResponse)
+			c.Abort()
+			return
+		}
+
+		if claims.Subject != "user-auth" {
+			c.JSON(http.StatusUnauthorized, unauthorizedResponse)
+			c.Abort()
+			return
+		}
+
+		// Get user from database with error handling
 		user, err := userService.GetByID(claims.UserID)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+			// Don't reveal whether user exists or not
+			c.JSON(http.StatusUnauthorized, unauthorizedResponse)
 			c.Abort()
 			return
 		}
 
+		// Check user account status
 		if !user.IsActive {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "User account is inactive"})
+			c.JSON(http.StatusUnauthorized, unauthorizedResponse)
 			c.Abort()
 			return
 		}
 
-		// Additional security check: verify user hasn't been locked or suspended
+		// Enhanced security checks
 		if user.LockedAt != nil && time.Now().Before(*user.LockedAt) {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "User account is locked"})
+			c.JSON(http.StatusUnauthorized, unauthorizedResponse)
 			c.Abort()
 			return
 		}
 
-		// Set user in context with additional security metadata
+		// Check if user account has been compromised or requires re-authentication
+		if user.LastPasswordChange != nil && claims.IssuedAt != nil && 
+		   user.LastPasswordChange.After(claims.IssuedAt.Time) {
+			// Token issued before password change - force re-authentication
+			c.JSON(http.StatusUnauthorized, unauthorizedResponse)
+			c.Abort()
+			return
+		}
+
+		// Set user in context with security metadata
 		c.Set("user", user)
 		c.Set("user_id", user.ID)
 		c.Set("auth_time", time.Now())
+		c.Set("token_issued_at", claims.IssuedAt.Time)
+		
+		// Add security headers
+		c.Header("X-Content-Type-Options", "nosniff")
+		// SECURITY: Added comprehensive security headers
+		c.Header("X-Content-Type-Options", "nosniff")
+		c.Header("X-Frame-Options", "DENY")
+		c.Header("X-XSS-Protection", "1; mode=block")
+		c.Header("X-Frame-Options", "DENY")
+		
 		c.Next()
 	}
 }
 
-// AdminMiddleware creates a middleware for admin-only routes
+// RefreshTokenMiddleware validates refresh tokens for token renewal
+func RefreshTokenMiddleware(cfg *config.Config, userService services.UserService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		unauthorizedResponse := gin.H{"error": "Invalid refresh token"}
+		
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.JSON(http.StatusUnauthorized, unauthorizedResponse)
+			c.Abort()
+			return
+		}
+
+		if !strings.HasPrefix(authHeader, "Bearer ") {
+			c.JSON(http.StatusUnauthorized, unauthorizedResponse)
+			c.Abort()
+			return
+		}
+
+		token := strings.TrimPrefix(authHeader, "Bearer ")
+		if token == "" {
+			c.JSON(http.StatusUnauthorized, unauthorizedResponse)
+			c.Abort()
+			return
+		}
+
+		// Validate refresh token
+		claims, err := utils.ValidateJWT(token, cfg.JWT.RefreshSecret)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, unauthorizedResponse)
+			c.Abort()
+			return
+		}
+
+		// Ensure this is actually a refresh token
+		if claims.Subject != "refresh-token" {
+			c.JSON(http.StatusUnauthorized, unauthorizedResponse)
+			c.Abort()
+			return
+		}
+
+		// Verify user still exists and is active
+		user, err := userService.GetByID(claims.UserID)
+		if err != nil || !user.IsActive {
+			c.JSON(http.StatusUnauthorized, unauthorizedResponse)
+			c.Abort()
+			return
+		}
+
+		c.Set("user", user)
+		c.Set("user_id", user.ID)
+		c.Next()
+	}
+}
+
+// AdminMiddleware creates a middleware for admin-only routes with enhanced security
 func AdminMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Generic error responses to prevent information leakage
+		unauthorizedResponse := gin.H{"error": "Authentication required"}
+		forbiddenResponse := gin.H{"error": "Access denied"}
+		
 		user, exists := c.Get("user")
 		if !exists {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found in context"})
+			c.JSON(http.StatusUnauthorized, unauthorizedResponse)
 			c.Abort()
 			return
 		}
 
 		userModel, ok := user.(*models.User)
 		if !ok {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user type"})
+			c.JSON(http.StatusUnauthorized, unauthorizedResponse)
 			c.Abort()
 			return
 		}
 
+		// Enhanced admin validation
 		if !userModel.IsAdmin {
-			c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+			c.JSON(http.StatusForbidden, forbiddenResponse)
 			c.Abort()
 			return
 		}
 
+		// Additional security: check if admin privileges are still valid
+		if userModel.AdminExpiresAt != nil && time.Now().After(*userModel.AdminExpiresAt) {
+			c.JSON(http.StatusForbidden, forbiddenResponse)
+			c.Abort()
+			return
+		}
+
+		// Log admin access for security auditing
+		// In production, this should log to security monitoring system
+		c.Set("admin_access", true)
+		c.Set("admin_access_time", time.Now())
+		
 		c.Next()
 	}
 }
 
-// PermissionMiddleware creates a middleware for permission-based access control
+// PermissionMiddleware creates a middleware for permission-based access control with enhanced security
 func PermissionMiddleware(resource, action string) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Generic error responses
+		unauthorizedResponse := gin.H{"error": "Authentication required"}
+		forbiddenResponse := gin.H{"error": "Access denied"}
+		
+		// Validate input parameters
+		if resource == "" || action == "" {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+			c.Abort()
+			return
+		}
+
 		user, exists := c.Get("user")
 		if !exists {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found in context"})
+			c.JSON(http.StatusUnauthorized, unauthorizedResponse)
 			c.Abort()
 			return
 		}
 
 		userModel, ok := user.(*models.User)
 		if !ok {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user type"})
+			c.JSON(http.StatusUnauthorized, unauthorizedResponse)
 			c.Abort()
 			return
 		}
 
-		// Admin users have all permissions
+		// Enhanced admin check with expiration validation
 		if userModel.IsAdmin {
+			if userModel.AdminExpiresAt != nil && time.Now().After(*userModel.AdminExpiresAt) {
+				c.JSON(http.StatusForbidden, forbiddenResponse)
+				c.Abort()
+				return
+			}
+			c.Set("permission_granted", "admin")
 			c.Next()
 			return
 		}
 
-		// Check if user has the required permission
+		// Check if user has the required permission with enhanced validation
 		hasPermission := false
+		grantedRole := ""
+		
 		for _, role := range userModel.Roles {
+			// Check if role is still active and not expired
+			if role.ExpiresAt != nil && time.Now().After(*role.ExpiresAt) {
+				continue
+			}
+			
+			if !role.IsActive {
+				continue
+			}
+			
 			for _, permission := range role.Permissions {
 				if permission.Resource == resource && permission.Action == action {
+					// Additional permission validation
+					if permission.ExpiresAt != nil && time.Now().After(*permission.ExpiresAt) {
+						continue
+					}
+					
+					if !permission.IsActive {
+						continue
+					}
+					
 					hasPermission = true
+					grantedRole = role.Name
 					break
 				}
 			}
@@ -153,11 +311,117 @@ func PermissionMiddleware(resource, action string) gin.HandlerFunc {
 		}
 
 		if !hasPermission {
-			c.JSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
+			// Log access denial for security monitoring
+			c.JSON(http.StatusForbidden, forbiddenResponse)
 			c.Abort()
 			return
 		}
 
+		// Set permission context for auditing
+		c.Set("permission_granted", grantedRole)
+		c.Set("permission_resource", resource)
+		c.Set("permission_action", action)
+		
+		c.Next()
+	}
+}
+//
+ RateLimitEntry represents a rate limit entry for a client
+type RateLimitEntry struct {
+	Count     int
+	ResetTime time.Time
+	Mutex     sync.Mutex
+}
+
+// Simple in-memory rate limiter (in production, use Redis or similar)
+var rateLimitMap = make(map[string]*RateLimitEntry)
+var rateLimitMutex sync.RWMutex
+
+// AuthRateLimitMiddleware provides rate limiting for authentication endpoints
+func AuthRateLimitMiddleware(maxAttempts int, windowDuration time.Duration) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		clientIP := c.ClientIP()
+		
+		rateLimitMutex.RLock()
+		entry, exists := rateLimitMap[clientIP]
+		rateLimitMutex.RUnlock()
+		
+		if !exists {
+			rateLimitMutex.Lock()
+			rateLimitMap[clientIP] = &RateLimitEntry{
+				Count:     1,
+				ResetTime: time.Now().Add(windowDuration),
+			}
+			rateLimitMutex.Unlock()
+			c.Next()
+			return
+		}
+		
+		entry.Mutex.Lock()
+		defer entry.Mutex.Unlock()
+		
+		// Reset counter if window has expired
+		if time.Now().After(entry.ResetTime) {
+			entry.Count = 1
+			entry.ResetTime = time.Now().Add(windowDuration)
+			c.Next()
+			return
+		}
+		
+		// Check if limit exceeded
+		if entry.Count >= maxAttempts {
+			c.JSON(http.StatusTooManyRequests, gin.H{
+				"error": "Too many authentication attempts",
+				"retry_after": entry.ResetTime.Sub(time.Now()).Seconds(),
+			})
+			c.Abort()
+			return
+		}
+		
+		entry.Count++
+		c.Next()
+	}
+}
+
+// OptionalAuthMiddleware provides optional authentication (doesn't fail if no token)
+func OptionalAuthMiddleware(cfg *config.Config, userService services.UserService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.Next()
+			return
+		}
+
+		if !strings.HasPrefix(authHeader, "Bearer ") {
+			c.Next()
+			return
+		}
+
+		token := strings.TrimPrefix(authHeader, "Bearer ")
+		if token == "" {
+			c.Next()
+			return
+		}
+
+		// Validate the token
+		claims, err := utils.ValidateJWT(token, cfg.JWT.Secret)
+		if err != nil {
+			c.Next()
+			return
+		}
+
+		// Get user from database
+		user, err := userService.GetByID(claims.UserID)
+		if err != nil || !user.IsActive {
+			c.Next()
+			return
+		}
+
+		// Set user in context if valid
+		c.Set("user", user)
+		c.Set("user_id", user.ID)
+		c.Set("auth_time", time.Now())
+		
 		c.Next()
 	}
 }

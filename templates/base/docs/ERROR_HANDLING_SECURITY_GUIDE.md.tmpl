@@ -1,0 +1,384 @@
+# Error Handling Security Guide
+
+This guide explains the secure error handling practices implemented in {{.Name}} and how to maintain security while providing useful error information.
+
+## Overview
+
+Secure error handling is crucial for preventing information leakage that could be exploited by attackers. This implementation provides:
+
+- Generic error messages in production to prevent information disclosure
+- Comprehensive security event logging for monitoring and debugging
+- Secure error pages that don't expose sensitive system information
+- Proper error categorization and handling for different scenarios
+
+## Security Principles
+
+### 1. Information Disclosure Prevention
+
+**Problem**: Detailed error messages can reveal sensitive information about your system architecture, database structure, file paths, or internal logic.
+
+**Solution**: Use generic error messages in production while logging detailed information securely.
+
+```go
+// ❌ Bad - Exposes internal details
+return fmt.Errorf("failed to connect to database server db.internal.company.com:5432: connection refused")
+
+// ✅ Good - Generic message with secure logging
+utils.LogSecurityEvent(c, "database_connection_failed", "Database connection error")
+return errors.New("service temporarily unavailable")
+```
+
+### 2. Consistent Error Responses
+
+All error responses follow a consistent structure:
+
+```json
+{
+  "success": false,
+  "message": "Generic error message",
+  "request_id": "abc123...",
+  "timestamp": "2023-12-07T10:30:00Z"
+}
+```
+
+### 3. Security Event Logging
+
+Security events are logged with context but without sensitive data:
+
+```go
+utils.LogSecurityEvent(c, "auth_failure", "Invalid credentials provided")
+```
+
+## Error Categories and Handling
+
+### Authentication Errors (401)
+
+**When to use**: User authentication fails or token is invalid.
+
+```go
+// Use this for all authentication failures
+utils.UnauthorizedResponse(ctx, "Authentication failed")
+```
+
+**Generic message**: "Authentication required"
+
+**Security considerations**:
+- Never indicate whether a username exists or not
+- Don't reveal token validation details
+- Log all authentication failures for monitoring
+
+### Authorization Errors (403)
+
+**When to use**: User is authenticated but lacks permission.
+
+```go
+utils.ForbiddenResponse(ctx, "Insufficient permissions for resource")
+```
+
+**Generic message**: "Access denied"
+
+**Security considerations**:
+- Don't reveal what permissions are required
+- Don't indicate whether the resource exists
+- Log authorization failures for audit trails
+
+### Validation Errors (400)
+
+**When to use**: Input validation fails.
+
+```go
+utils.ValidationErrorResponse(ctx, validationError)
+```
+
+**Behavior**:
+- Provides specific field-level validation errors
+- Sanitizes error messages to prevent XSS
+- Logs suspicious validation patterns
+
+### Not Found Errors (404)
+
+**When to use**: Resource doesn't exist.
+
+```go
+utils.NotFoundResponse(ctx, "user")
+```
+
+**Security considerations**:
+- Logs suspicious 404 patterns (potential scanning)
+- Same response whether resource doesn't exist or user lacks access
+- Prevents resource enumeration attacks
+
+### Internal Server Errors (500)
+
+**When to use**: Unexpected errors or system failures.
+
+```go
+utils.InternalServerErrorResponse(ctx, err)
+```
+
+**Behavior**:
+- Never exposes internal error details to clients
+- Logs full error details with stack traces for debugging
+- Provides generic "Internal server error" message
+
+## Secure Error Pages
+
+### HTML Error Pages
+
+For web requests, secure error pages are rendered:
+
+```go
+utils.RenderErrorPage(ctx, http.StatusNotFound, 
+    "Page Not Found", 
+    "The page you're looking for doesn't exist.")
+```
+
+**Features**:
+- Clean, professional appearance
+- No sensitive system information
+- Request ID for support correlation
+- Security headers to prevent clickjacking
+
+### Error Page Templates
+
+Three main error page templates are provided:
+
+1. **Generic Error Page** (`error.html.tmpl`): For any HTTP error
+2. **404 Page** (`404.html.tmpl`): Specific to not found errors
+3. **500 Page** (`500.html.tmpl`): For server errors with status checking
+
+## Security Event Logging
+
+### Event Types
+
+The system logs various security events:
+
+- `auth_failure`: Authentication attempts that fail
+- `unauthorized_access`: Access to protected resources without authentication
+- `forbidden_access`: Access denied due to insufficient permissions
+- `suspicious_404`: 404 requests that might indicate scanning
+- `rate_limit_exceeded`: Rate limiting violations
+- `csrf_error`: CSRF token validation failures
+- `panic_recovered`: Application panics that were recovered
+- `internal_server_error`: Unexpected server errors
+- `database_error`: Database operation failures
+
+### Log Format
+
+Security events are logged in a structured format:
+
+```json
+{
+  "type": "auth_failure",
+  "user_id": 123,
+  "ip": "192.168.1.100",
+  "user_agent": "Mozilla/5.0...",
+  "request_id": "abc123...",
+  "details": "Invalid credentials provided",
+  "timestamp": "2023-12-07T10:30:00Z"
+}
+```
+
+### Data Sanitization
+
+Logs are automatically sanitized to remove sensitive information:
+
+- Passwords, tokens, and secrets are redacted
+- Long messages are truncated to prevent log flooding
+- Sensitive patterns are replaced with `[REDACTED]`
+
+## Implementation Guidelines
+
+### 1. Controller Error Handling
+
+```go
+func (c *UserController) GetUser(ctx *gin.Context) {
+    user, err := c.userService.GetByID(userID)
+    if err != nil {
+        if errors.Is(err, ErrUserNotFound) {
+            utils.NotFoundResponse(ctx, "user")
+        } else {
+            utils.InternalServerErrorResponse(ctx, err)
+        }
+        return
+    }
+    // ... success response
+}
+```
+
+### 2. Service Layer Error Handling
+
+```go
+func (s *UserService) GetByID(id uint) (*User, error) {
+    user := &User{}
+    err := s.db.First(user, id).Error
+    if err != nil {
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            return nil, ErrUserNotFound
+        }
+        // Log the actual database error
+        utils.LogSecurityEvent(nil, "database_error", 
+            fmt.Sprintf("Failed to get user %d: %v", id, err))
+        return nil, errors.New("database operation failed")
+    }
+    return user, nil
+}
+```
+
+### 3. Middleware Error Handling
+
+```go
+func AuthMiddleware() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        token := extractToken(c)
+        if token == "" {
+            utils.UnauthorizedResponse(c, "Missing authentication token")
+            c.Abort()
+            return
+        }
+        
+        claims, err := validateToken(token)
+        if err != nil {
+            utils.UnauthorizedResponse(c, "Invalid authentication token")
+            c.Abort()
+            return
+        }
+        
+        c.Set("user_id", claims.UserID)
+        c.Next()
+    }
+}
+```
+
+## Environment-Specific Behavior
+
+### Development Environment
+
+- Detailed error messages are shown to developers
+- Stack traces are included in responses
+- All request details are logged
+- Error pages show technical information
+
+### Production Environment
+
+- Generic error messages only
+- No stack traces in responses
+- Minimal request logging
+- Clean error pages without technical details
+
+## Monitoring and Alerting
+
+### Security Metrics
+
+Monitor these metrics for security incidents:
+
+- Authentication failure rate
+- 404 error patterns (potential scanning)
+- Rate limit violations
+- Internal server error frequency
+- Suspicious validation errors
+
+### Alert Thresholds
+
+Configure alerts for:
+
+- More than 10 authentication failures per minute
+- More than 50 404 errors per minute from a single IP
+- More than 5 internal server errors per minute
+- Any CSRF token validation failures
+
+### Log Analysis
+
+Use log aggregation tools to analyze security events:
+
+```bash
+# Find potential brute force attacks
+grep "auth_failure" security.log | jq -r '.ip' | sort | uniq -c | sort -nr
+
+# Identify scanning attempts
+grep "suspicious_404" security.log | jq -r '.details'
+
+# Monitor error rates
+grep "internal_server_error" app.log | wc -l
+```
+
+## Best Practices
+
+### 1. Error Message Design
+
+- Use consistent, generic messages in production
+- Provide helpful information without revealing system details
+- Include request IDs for support correlation
+- Avoid technical jargon in user-facing messages
+
+### 2. Logging Strategy
+
+- Log all security-relevant events
+- Include sufficient context for investigation
+- Sanitize sensitive data before logging
+- Use structured logging formats (JSON)
+- Implement log rotation and retention policies
+
+### 3. Error Page Security
+
+- Include security headers to prevent clickjacking
+- Don't expose server versions or technology stack
+- Provide clear next steps for users
+- Include contact information for support
+
+### 4. Testing Error Handling
+
+```go
+func TestSecureErrorHandling(t *testing.T) {
+    // Test that internal errors don't leak information
+    response := makeRequest("/api/users/999999")
+    assert.Equal(t, 404, response.StatusCode)
+    assert.NotContains(t, response.Body, "database")
+    assert.NotContains(t, response.Body, "internal")
+    
+    // Test that request ID is included
+    assert.Contains(t, response.Body, "request_id")
+}
+```
+
+## Compliance Considerations
+
+### GDPR and Privacy
+
+- Don't log personal data in error messages
+- Implement data retention policies for logs
+- Provide mechanisms to purge user data from logs
+
+### SOC 2 and Security Audits
+
+- Maintain audit trails of all security events
+- Implement log integrity verification if required
+- Document error handling procedures
+- Regular security testing of error scenarios
+
+### Industry Standards
+
+- Follow OWASP guidelines for error handling
+- Implement proper error handling in security controls
+- Regular penetration testing of error scenarios
+- Security code reviews focusing on error paths
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Error messages too generic**: Balance security with usability
+2. **Missing request IDs**: Ensure middleware is properly configured
+3. **Sensitive data in logs**: Review sanitization rules
+4. **Performance impact**: Optimize logging for high-traffic scenarios
+
+### Debugging in Production
+
+1. Use request IDs to correlate logs
+2. Check security event logs for context
+3. Monitor error rates and patterns
+4. Use structured logging for easier analysis
+
+This secure error handling implementation provides a robust foundation for maintaining security while ensuring good user experience and operational visibility.
+</content>
+</invoke>

@@ -1,0 +1,301 @@
+/**
+ * Content Security Policy Configuration for {{.Name}}
+ * Environment-specific CSP policies with restrictive defaults
+ */
+
+// Nonce generation for inline scripts and styles
+const generateNonce = () => {
+  return Buffer.from(crypto.randomUUID()).toString('base64');
+};
+
+// Base CSP configuration
+const baseCSP = {
+  'default-src': ["'self'"],
+  'base-uri': ["'self'"],
+  'form-action': ["'self'"],
+  'frame-ancestors': ["'none'"],
+  'object-src': ["'none'"],
+  'script-src-elem': ["'self'"],
+  'style-src-elem': ["'self'"],
+  'worker-src': ["'self'", "blob:"],
+  'child-src': ["'self'"],
+  'frame-src': ["'none'"],
+  'manifest-src': ["'self'"],
+  'media-src': ["'self'"]
+};
+
+// Development CSP - More permissive for development tools
+const developmentCSP = {
+  ...baseCSP,
+  'script-src': [
+    "'self'",
+    "'unsafe-eval'", // Required for Next.js development
+    "'unsafe-inline'", // Required for development tools
+    "webpack://*", // Webpack dev server
+    "http://localhost:*",
+    "https://localhost:*"
+  ],
+  'style-src': [
+    "'self'",
+    "'unsafe-inline'", // Required for CSS-in-JS and development
+    "http://localhost:*",
+    "https://localhost:*"
+  ],
+  'img-src': [
+    "'self'",
+    "data:",
+    "blob:",
+    "http://localhost:*",
+    "https://localhost:*",
+    "https://*.vercel.app", // Vercel preview deployments
+    "https://*.netlify.app" // Netlify preview deployments
+  ],
+  'font-src': [
+    "'self'",
+    "data:",
+    "https://fonts.gstatic.com",
+    "https://fonts.googleapis.com"
+  ],
+  'connect-src': [
+    "'self'",
+    "ws:", // WebSocket for hot reload
+    "wss:",
+    "http://localhost:*",
+    "https://localhost:*",
+    "https://vitals.vercel-insights.com", // Vercel Analytics
+    "https://api.vercel.com" // Vercel API
+  ],
+  // Don't upgrade insecure requests in development
+  // 'upgrade-insecure-requests': [] - commented out for development
+};
+
+// Staging CSP - Balanced security for testing
+const stagingCSP = {
+  ...baseCSP,
+  'script-src': [
+    "'self'",
+    "'nonce-{{nonce}}'", // Use nonce for inline scripts
+    "https://{{.StagingDomain}}"
+  ],
+  'style-src': [
+    "'self'",
+    "'unsafe-inline'", // Still allow for CSS-in-JS libraries
+    "https://fonts.googleapis.com"
+  ],
+  'img-src': [
+    "'self'",
+    "data:",
+    "https:",
+    "https://{{.StagingDomain}}",
+    "https://*.{{.StagingDomain}}"
+  ],
+  'font-src': [
+    "'self'",
+    "https://fonts.gstatic.com",
+    "https://fonts.googleapis.com"
+  ],
+  'connect-src': [
+    "'self'",
+    "https:",
+    "https://{{.StagingDomain}}",
+    "https://api.{{.StagingDomain}}",
+    "wss://{{.StagingDomain}}" // WebSocket connections
+  ],
+  'upgrade-insecure-requests': []
+};
+
+// Production CSP - Most restrictive for security
+const productionCSP = {
+  ...baseCSP,
+  'script-src': [
+    "'self'",
+    "'nonce-{{nonce}}'" // Only allow nonce-based inline scripts
+  ],
+  'style-src': [
+    "'self'",
+    "'nonce-{{nonce}}'", // Use nonce for inline styles when possible
+    "https://fonts.googleapis.com" // Allow Google Fonts
+  ],
+  'img-src': [
+    "'self'",
+    "data:", // Allow data URLs for small images
+    "https://{{.Domain}}",
+    "https://*.{{.Domain}}",
+    "https://cdn.{{.Domain}}" // CDN for images
+  ],
+  'font-src': [
+    "'self'",
+    "https://fonts.gstatic.com"
+  ],
+  'connect-src': [
+    "'self'",
+    "https://{{.Domain}}",
+    "https://api.{{.Domain}}",
+    "https://analytics.{{.Domain}}", // Analytics endpoint
+    "wss://{{.Domain}}" // Secure WebSocket only
+  ],
+  'upgrade-insecure-requests': [],
+  // Report violations in production
+  'report-uri': ['/api/security/csp-report'],
+  'report-to': ['csp-endpoint']
+};
+
+// CSP for specific page types
+const pageSpecificCSP = {
+  // Admin pages - Extra restrictive
+  admin: {
+    'script-src': ["'self'"],
+    'style-src': ["'self'"],
+    'img-src': ["'self'", "data:"],
+    'connect-src': ["'self'", "https://api.{{.Domain}}"],
+    'frame-ancestors': ["'none'"],
+    'form-action': ["'self'"]
+  },
+  
+  // Public pages - Allow some external resources
+  public: {
+    'script-src': ["'self'", "'nonce-{{nonce}}'"],
+    'style-src': ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+    'img-src': ["'self'", "data:", "https:", "https://cdn.{{.Domain}}"],
+    'connect-src': ["'self'", "https://api.{{.Domain}}", "https://analytics.{{.Domain}}"],
+    'font-src': ["'self'", "https://fonts.gstatic.com"]
+  },
+  
+  // API documentation pages
+  docs: {
+    'script-src': ["'self'", "'unsafe-inline'"], // Swagger UI requires unsafe-inline
+    'style-src': ["'self'", "'unsafe-inline'"],
+    'img-src': ["'self'", "data:", "https:"],
+    'connect-src': ["'self'", "https://api.{{.Domain}}"]
+  }
+};
+
+// CSP violation reporting configuration
+const cspReporting = {
+  'report-to': 'csp-endpoint',
+  endpoints: [{
+    group: 'csp-endpoint',
+    max_age: 86400, // 24 hours
+    endpoints: [{
+      url: '/api/security/csp-report',
+      priority: 1,
+      weight: 1
+    }]
+  }]
+};
+
+// Helper function to convert CSP object to string
+const cspToString = (csp) => {
+  return Object.entries(csp)
+    .map(([directive, sources]) => {
+      if (Array.isArray(sources) && sources.length === 0) {
+        return directive; // Directives without sources (like upgrade-insecure-requests)
+      }
+      if (Array.isArray(sources)) {
+        return `${directive} ${sources.join(' ')}`;
+      }
+      return `${directive} ${sources}`;
+    })
+    .join('; ');
+};
+
+// Get CSP based on environment and page type
+const getCSP = (environment = 'production', pageType = 'public', nonce = null) => {
+  let baseCsp;
+  
+  switch (environment) {
+    case 'development':
+      baseCsp = developmentCSP;
+      break;
+    case 'staging':
+      baseCsp = stagingCSP;
+      break;
+    case 'production':
+    default:
+      baseCsp = productionCSP;
+      break;
+  }
+  
+  // Merge with page-specific CSP if specified
+  let finalCsp = { ...baseCsp };
+  if (pageSpecificCSP[pageType]) {
+    finalCsp = {
+      ...finalCsp,
+      ...pageSpecificCSP[pageType]
+    };
+  }
+  
+  // Replace nonce placeholder if provided
+  if (nonce) {
+    Object.keys(finalCsp).forEach(directive => {
+      if (Array.isArray(finalCsp[directive])) {
+        finalCsp[directive] = finalCsp[directive].map(source => 
+          source.replace('{{nonce}}', nonce)
+        );
+      }
+    });
+  }
+  
+  return cspToString(finalCsp);
+};
+
+// Middleware to add CSP headers
+const cspMiddleware = (options = {}) => {
+  const {
+    environment = process.env.NODE_ENV || 'production',
+    pageType = 'public',
+    reportOnly = false
+  } = options;
+  
+  return (req, res, next) => {
+    // Generate nonce for this request
+    const nonce = generateNonce();
+    req.nonce = nonce;
+    
+    // Get CSP string
+    const cspString = getCSP(environment, pageType, nonce);
+    
+    // Set CSP header
+    const headerName = reportOnly ? 'Content-Security-Policy-Report-Only' : 'Content-Security-Policy';
+    res.setHeader(headerName, cspString);
+    
+    // Set Report-To header for violation reporting
+    if (environment === 'production' && !reportOnly) {
+      res.setHeader('Report-To', JSON.stringify(cspReporting.endpoints));
+    }
+    
+    next();
+  };
+};
+
+// CSP violation handler
+const handleCSPViolation = (req, res) => {
+  const violation = req.body;
+  
+  // Log the violation (implement your logging logic)
+  console.error('CSP Violation:', {
+    'document-uri': violation['document-uri'],
+    'violated-directive': violation['violated-directive'],
+    'blocked-uri': violation['blocked-uri'],
+    'source-file': violation['source-file'],
+    'line-number': violation['line-number'],
+    'column-number': violation['column-number'],
+    'user-agent': req.get('User-Agent'),
+    'ip': req.ip,
+    'timestamp': new Date().toISOString()
+  });
+  
+  // Send response
+  res.status(204).end();
+};
+
+module.exports = {
+  getCSP,
+  cspMiddleware,
+  handleCSPViolation,
+  generateNonce,
+  developmentCSP,
+  stagingCSP,
+  productionCSP,
+  pageSpecificCSP
+};

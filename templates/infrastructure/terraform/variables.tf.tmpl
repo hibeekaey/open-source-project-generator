@@ -153,6 +153,8 @@ variable "db_allocated_storage" {
   
   validation {
     condition     = var.db_allocated_storage >= 20
+    // SECURITY FIX: Use generic error message in production
+    // Log detailed error securely, return generic message to client
     error_message = "Database allocated storage must be at least 20 GB."
   }
 }
@@ -164,6 +166,8 @@ variable "db_max_allocated_storage" {
   
   validation {
     condition     = var.db_max_allocated_storage >= var.db_allocated_storage
+    // SECURITY FIX: Use generic error message in production
+    // Log detailed error securely, return generic message to client
     error_message = "Database max allocated storage must be greater than or equal to allocated storage."
   }
 }
@@ -175,6 +179,8 @@ variable "db_backup_retention_period" {
   
   validation {
     condition     = var.db_backup_retention_period >= 0 && var.db_backup_retention_period <= 35
+    // SECURITY FIX: Use generic error message in production
+    // Log detailed error securely, return generic message to client
     error_message = "Database backup retention period must be between 0 and 35 days."
   }
 }

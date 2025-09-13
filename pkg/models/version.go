@@ -243,3 +243,88 @@ type AuditSummary struct {
 	Actions     map[string]int `json:"actions"`
 	SuccessRate float64        `json:"success_rate"`
 }
+
+// NodeVersionConfig represents Node.js version configuration for templates
+type NodeVersionConfig struct {
+	// Runtime version requirement (e.g., ">=20.0.0")
+	Runtime string `yaml:"runtime" json:"runtime" validate:"required"`
+
+	// TypeScript Node.js types version (e.g., "^20.17.0")
+	TypesPackage string `yaml:"types" json:"types" validate:"required"`
+
+	// NPM version requirement (e.g., ">=10.0.0")
+	NPMVersion string `yaml:"npm" json:"npm" validate:"required"`
+
+	// Docker base image version (e.g., "node:20-alpine")
+	DockerImage string `yaml:"docker" json:"docker" validate:"required"`
+
+	// Additional metadata
+	LTSStatus   bool              `yaml:"lts_status" json:"lts_status"`
+	EOLDate     *time.Time        `yaml:"eol_date,omitempty" json:"eol_date,omitempty"`
+	Description string            `yaml:"description,omitempty" json:"description,omitempty"`
+	Metadata    map[string]string `yaml:"metadata,omitempty" json:"metadata,omitempty"`
+}
+
+// VersionCompatibilityMatrix defines compatibility rules between different version components
+type VersionCompatibilityMatrix struct {
+	NodeJS       NodeVersionConfig            `yaml:"nodejs" json:"nodejs"`
+	Frameworks   map[string]FrameworkVersion  `yaml:"frameworks,omitempty" json:"frameworks,omitempty"`
+	Dependencies map[string]DependencyVersion `yaml:"dependencies,omitempty" json:"dependencies,omitempty"`
+	UpdatedAt    time.Time                    `yaml:"updated_at" json:"updated_at"`
+}
+
+// FrameworkVersion represents version requirements for a specific framework
+type FrameworkVersion struct {
+	Name           string            `yaml:"name" json:"name" validate:"required"`
+	Version        string            `yaml:"version" json:"version" validate:"required"`
+	MinNodeVersion string            `yaml:"min_node_version" json:"min_node_version" validate:"required"`
+	MaxNodeVersion string            `yaml:"max_node_version,omitempty" json:"max_node_version,omitempty"`
+	TypesPackage   string            `yaml:"types_package,omitempty" json:"types_package,omitempty"`
+	Metadata       map[string]string `yaml:"metadata,omitempty" json:"metadata,omitempty"`
+}
+
+// DependencyVersion represents version requirements for a specific dependency
+type DependencyVersion struct {
+	Name           string            `yaml:"name" json:"name" validate:"required"`
+	Version        string            `yaml:"version" json:"version" validate:"required"`
+	MinNodeVersion string            `yaml:"min_node_version" json:"min_node_version" validate:"required"`
+	MaxNodeVersion string            `yaml:"max_node_version,omitempty" json:"max_node_version,omitempty"`
+	Metadata       map[string]string `yaml:"metadata,omitempty" json:"metadata,omitempty"`
+}
+
+// VersionValidationResult represents the result of version validation
+type VersionValidationResult struct {
+	Valid       bool                       `json:"valid"`
+	Errors      []VersionValidationError   `json:"errors,omitempty"`
+	Warnings    []VersionValidationWarning `json:"warnings,omitempty"`
+	Suggestions []VersionSuggestion        `json:"suggestions,omitempty"`
+	ValidatedAt time.Time                  `json:"validated_at"`
+}
+
+// VersionValidationError represents a version validation error
+type VersionValidationError struct {
+	Field    string `json:"field" validate:"required"`
+	Value    string `json:"value"`
+	Expected string `json:"expected,omitempty"`
+	Message  string `json:"message" validate:"required"`
+	Severity string `json:"severity" validate:"required,oneof=error critical"`
+	Code     string `json:"code,omitempty"`
+}
+
+// VersionValidationWarning represents a version validation warning
+type VersionValidationWarning struct {
+	Field   string `json:"field" validate:"required"`
+	Value   string `json:"value"`
+	Message string `json:"message" validate:"required"`
+	Code    string `json:"code,omitempty"`
+}
+
+// VersionSuggestion represents a suggested version fix
+type VersionSuggestion struct {
+	Field          string `json:"field" validate:"required"`
+	CurrentValue   string `json:"current_value"`
+	SuggestedValue string `json:"suggested_value" validate:"required"`
+	Reason         string `json:"reason" validate:"required"`
+	Priority       string `json:"priority" validate:"required,oneof=low medium high"`
+	BreakingChange bool   `json:"breaking_change"`
+}

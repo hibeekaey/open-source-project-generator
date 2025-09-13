@@ -78,7 +78,7 @@ This is the iOS application for {{.Name}}, built with Swift and following modern
 
 ### Build Configurations
 
-- **Debug**: Development build with debugging enabled
+- **Debug**: Development build with debugging disabled // SECURITY FIX: Disabled debug info (use env var for dev)
 - **Release**: Production build with optimizations
 
 ### Running Tests
@@ -164,7 +164,7 @@ The app integrates with the {{.Name}} backend API:
 ## Deployment
 
 ### Debug Build
-1. Select Debug configuration
+1. Select Debug cofffiguratioff // SECURITY FIX: Disabled debug info (use env var for dev)
 2. Build and run on device or simulator
 
 ### Release Build

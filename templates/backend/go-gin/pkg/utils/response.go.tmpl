@@ -1,7 +1,13 @@
 package utils
 
 import (
+	"fmt"
+	"log"
 	"net/http"
+	"os"
+	"runtime"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -16,9 +22,11 @@ type SuccessResponse struct {
 
 // ErrorResponse represents an error API response
 type ErrorResponse struct {
-	Success bool        `json:"success"`
-	Message string      `json:"message"`
-	Error   interface{} `json:"error,omitempty"`
+	Success   bool        `json:"success"`
+	Message   string      `json:"message"`
+	Error     interface{} `json:"error,omitempty"`
+	RequestID string      `json:"request_id,omitempty"`
+	Timestamp string      `json:"timestamp"`
 }
 
 // ValidationError represents a validation error
@@ -36,6 +44,17 @@ type PaginatedResponse struct {
 	TotalPages int64       `json:"total_pages"`
 }
 
+// SecurityEvent represents a security-related event for logging
+type SecurityEvent struct {
+	Type      string    `json:"type"`
+	UserID    uint      `json:"user_id,omitempty"`
+	IP        string    `json:"ip"`
+	UserAgent string    `json:"user_agent"`
+	RequestID string    `json:"request_id"`
+	Details   string    `json:"details"`
+	Timestamp time.Time `json:"timestamp"`
+}
+
 // SuccessResponse sends a successful response
 func SuccessResponse(c *gin.Context, statusCode int, message string, data interface{}) {
 	c.JSON(statusCode, SuccessResponse{
@@ -45,15 +64,64 @@ func SuccessResponse(c *gin.Context, statusCode int, message string, data interf
 	})
 }
 
-// ErrorResponse sends an error response
+// ErrorResponse sends a secure error response that prevents information leakage
 func ErrorResponse(c *gin.Context, statusCode int, message string, err error) {
-	response := ErrorResponse{
-		Success: false,
-		Message: message,
+	requestID, _ := c.Get("request_id")
+	requestIDStr := ""
+	if requestID != nil {
+		requestIDStr = requestID.(string)
 	}
 
-	if err != nil {
-		response.Error = err.Error()
+	response := ErrorResponse{
+		Success:   false,
+		Message:   message,
+		RequestID: requestIDStr,
+		Timestamp: time.Now().UTC().Format(time.RFC3339),
+	}
+
+	// In production, don't expose internal error details
+	if isProduction() {
+		// Log the actual error for debugging but don't expose it to the client
+		if err != nil {
+			LogSecurityEvent(c, "error_occurred", fmt.Sprintf("Internal error: %v", err))
+		}
+		
+		// Use generic error messages based on status code
+		response.Message = getGenericErrorMessage(statusCode)
+	} else {
+		// In development, include error details for debugging
+		if err != nil {
+			response.Error = err.Error()
+		}
+	}
+
+	c.JSON(statusCode, response)
+}
+
+// SecureErrorResponse sends a secure error response with security event logging
+func SecureErrorResponse(c *gin.Context, statusCode int, message string, err error, eventType string) {
+	requestID, _ := c.Get("request_id")
+	requestIDStr := ""
+	if requestID != nil {
+		requestIDStr = requestID.(string)
+	}
+
+	// Log security event
+	if eventType != "" {
+		LogSecurityEvent(c, eventType, message)
+	}
+
+	response := ErrorResponse{
+		Success:   false,
+		Message:   getGenericErrorMessage(statusCode),
+		RequestID: requestIDStr,
+		Timestamp: time.Now().UTC().Format(time.RFC3339),
+	}
+
+	// Never expose internal error details in security-related errors
+	if err != nil && !isProduction() {
+		// Only log the error, never expose it
+		LogSecurityEvent(c, "security_error_details", fmt.Sprintf("Error details: %v", err))
 	}
 
 	c.JSON(statusCode, response)
@@ -61,6 +129,12 @@ func ErrorResponse(c *gin.Context, statusCode int, message string, err error) {
 
 // ValidationErrorResponse sends a validation error response
 func ValidationErrorResponse(c *gin.Context, err error) {
+	requestID, _ := c.Get("request_id")
+	requestIDStr := ""
+	if requestID != nil {
+		requestIDStr = requestID.(string)
+	}
+
 	var validationErrors []ValidationError
 
 	if validationErr, ok := err.(validator.ValidationErrors); ok {
@@ -73,9 +147,11 @@ func ValidationErrorResponse(c *gin.Context, err error) {
 	}
 
 	c.JSON(http.StatusBadRequest, ErrorResponse{
-		Success: false,
-		Message: "Validation failed",
-		Error:   validationErrors,
+		Success:   false,
+		Message:   "Validation failed",
+		Error:     validationErrors,
+		RequestID: requestIDStr,
+		Timestamp: time.Now().UTC().Format(time.RFC3339),
 	})
 }
 
@@ -95,4 +171,183 @@ func getValidationErrorMessage(err validator.FieldError) string {
 	default:
 		return "Invalid value"
 	}
+}
+/
+/ getGenericErrorMessage returns generic error messages to prevent information leakage
+func getGenericErrorMessage(statusCode int) string {
+	switch statusCode {
+	case http.StatusBadRequest:
+		return "Invalid request"
+	case http.StatusUnauthorized:
+		return "Authentication required"
+	case http.StatusForbidden:
+		return "Access denied"
+	case http.StatusNotFound:
+		return "Resource not found"
+	case http.StatusMethodNotAllowed:
+		return "Method not allowed"
+	case http.StatusConflict:
+		return "Resource conflict"
+	case http.StatusTooManyRequests:
+		return "Too many requests"
+	case http.StatusInternalServerError:
+		return "Internal server error"
+	case http.StatusBadGateway:
+		return "Bad gateway"
+	case http.StatusServiceUnavailable:
+		return "Service unavailable"
+	case http.StatusGatewayTimeout:
+		return "Gateway timeout"
+	default:
+		return "An error occurred"
+	}
+}
+
+// isProduction checks if the application is running in production mode
+func isProduction() bool {
+	env := strings.ToLower(os.Getenv("GIN_MODE"))
+	return env == "release" || env == "production"
+}
+
+// LogSecurityEvent logs security-related events without exposing sensitive information
+func LogSecurityEvent(c *gin.Context, eventType, details string) {
+	requestID, _ := c.Get("request_id")
+	requestIDStr := ""
+	if requestID != nil {
+		requestIDStr = requestID.(string)
+	}
+
+	userID := uint(0)
+	if userIDInterface, exists := c.Get("user_id"); exists {
+		if uid, ok := userIDInterface.(uint); ok {
+			userID = uid
+		}
+	}
+
+	event := SecurityEvent{
+		Type:      eventType,
+		UserID:    userID,
+		IP:        getClientIP(c),
+		UserAgent: c.GetHeader("User-Agent"),
+		RequestID: requestIDStr,
+		Details:   details,
+		Timestamp: time.Now().UTC(),
+	}
+
+	// In production, this should be sent to a security monitoring system
+	// For now, we'll log it securely without exposing sensitive data
+	log.Printf("[SECURITY] Type: %s, UserID: %d, IP: %s, RequestID: %s, Details: %s",
+		event.Type, event.UserID, event.IP, event.RequestID, sanitizeLogDetails(event.Details))
+}
+
+// getClientIP safely extracts the client IP address
+func getClientIP(c *gin.Context) string {
+	// Check X-Forwarded-For header (but validate it)
+	if xff := c.GetHeader("X-Forwarded-For"); xff != "" {
+		// Take the first IP in the chain
+		ips := strings.Split(xff, ",")
+		if len(ips) > 0 {
+			return strings.TrimSpace(ips[0])
+		}
+	}
+
+	// Check X-Real-IP header
+	if xri := c.GetHeader("X-Real-IP"); xri != "" {
+		return xri
+	}
+
+	// Fall back to RemoteAddr
+	return c.ClientIP()
+}
+
+// sanitizeLogDetails removes sensitive information from log details
+func sanitizeLogDetails(details string) string {
+	// Remove potential sensitive patterns
+	details = strings.ReplaceAll(details, "password", "[REDACTED]")
+	details = strings.ReplaceAll(details, "token", "[REDACTED]")
+	details = strings.ReplaceAll(details, "secret", "[REDACTED]")
+	details = strings.ReplaceAll(details, "key", "[REDACTED]")
+	
+	// Limit length to prevent log flooding
+	if len(details) > 500 {
+		details = details[:500] + "..."
+	}
+	
+	return details
+}
+
+// InternalServerErrorResponse sends a secure 500 error response
+func InternalServerErrorResponse(c *gin.Context, err error) {
+	// Log the actual error for debugging
+	if err != nil {
+		// Get caller information for debugging
+		_, file, line, _ := runtime.Caller(1)
+		LogSecurityEvent(c, "internal_server_error", 
+			fmt.Sprintf("File: %s, Line: %d, Error: %v", file, line, err))
+	}
+
+	SecureErrorResponse(c, http.StatusInternalServerError, "Internal server error", err, "internal_error")
+}
+
+// UnauthorizedResponse sends a secure 401 error response
+func UnauthorizedResponse(c *gin.Context, reason string) {
+	LogSecurityEvent(c, "unauthorized_access", reason)
+	SecureErrorResponse(c, http.StatusUnauthorized, "Authentication required", nil, "auth_failure")
+}
+
+// ForbiddenResponse sends a secure 403 error response
+func ForbiddenResponse(c *gin.Context, reason string) {
+	LogSecurityEvent(c, "forbidden_access", reason)
+	SecureErrorResponse(c, http.StatusForbidden, "Access denied", nil, "access_denied")
+}
+
+// NotFoundResponse sends a secure 404 error response
+func NotFoundResponse(c *gin.Context, resource string) {
+	// Don't log every 404 as it might be normal, but log suspicious patterns
+	if isSuspicious404(c) {
+		LogSecurityEvent(c, "suspicious_404", fmt.Sprintf("Resource: %s, Path: %s", resource, c.Request.URL.Path))
+	}
+	SecureErrorResponse(c, http.StatusNotFound, "Resource not found", nil, "")
+}
+
+// isSuspicious404 checks if a 404 request might be suspicious (e.g., scanning)
+func isSuspicious404(c *gin.Context) bool {
+	path := strings.ToLower(c.Request.URL.Path)
+	
+	// Common attack patterns
+	suspiciousPatterns := []string{
+		"admin", "wp-admin", "phpmyadmin", "config", "backup",
+		".env", ".git", "sql", "dump", "shell", "cmd",
+	}
+	
+	for _, pattern := range suspiciousPatterns {
+		if strings.Contains(path, pattern) {
+			return true
+		}
+	}
+	
+	return false
+}
+
+// RenderErrorPage renders a secure HTML error page
+func RenderErrorPage(c *gin.Context, statusCode int, title, message string) {
+	requestID, _ := c.Get("request_id")
+	requestIDStr := ""
+	if requestID != nil {
+		requestIDStr = requestID.(string)
+	}
+
+	// Use generic messages in production
+	if isProduction() {
+		title = getGenericErrorMessage(statusCode)
+		message = "Please try again later or contact support if the problem persists."
+	}
+
+	c.HTML(statusCode, "error.html", gin.H{
+		"StatusCode": statusCode,
+		"Title":      title,
+		"Message":    message,
+		"RequestID":  requestIDStr,
+		"Timestamp":  time.Now().UTC().Format("2006-01-02 15:04:05 UTC"),
+	})
 }

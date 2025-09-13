@@ -6,11 +6,13 @@ import (
 	"gorm.io/gorm"
 )
 
-// Role represents a role in the system
+// Role represents a role in the system with security enhancements
 type Role struct {
 	ID          uint           `json:"id" gorm:"primaryKey"`
 	Name        string         `json:"name" gorm:"uniqueIndex;not null" validate:"required,min=1,max=50"`
 	Description string         `json:"description" validate:"max=255"`
+	IsActive    bool           `json:"is_active" gorm:"default:true"`
+	ExpiresAt   *time.Time     `json:"expires_at,omitempty"`
 	Permissions []Permission   `json:"permissions" gorm:"many2many:role_permissions;"`
 	Users       []User         `json:"-" gorm:"many2many:user_roles;"`
 	CreatedAt   time.Time      `json:"created_at"`
@@ -30,13 +32,15 @@ type RoleUpdateRequest struct {
 	Description *string `json:"description,omitempty" validate:"omitempty,max=255"`
 }
 
-// Permission represents a permission in the system
+// Permission represents a permission in the system with security enhancements
 type Permission struct {
 	ID          uint           `json:"id" gorm:"primaryKey"`
 	Name        string         `json:"name" gorm:"uniqueIndex;not null" validate:"required,min=1,max=50"`
 	Description string         `json:"description" validate:"max=255"`
 	Resource    string         `json:"resource" gorm:"not null" validate:"required,min=1,max=50"`
 	Action      string         `json:"action" gorm:"not null" validate:"required,min=1,max=50"`
+	IsActive    bool           `json:"is_active" gorm:"default:true"`
+	ExpiresAt   *time.Time     `json:"expires_at,omitempty"`
 	Roles       []Role         `json:"-" gorm:"many2many:role_permissions;"`
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`

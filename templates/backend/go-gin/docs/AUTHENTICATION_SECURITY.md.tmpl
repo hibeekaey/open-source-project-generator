@@ -1,0 +1,139 @@
+# Authentication Security Guide
+
+This document outlines the security enhancements implemented in the authentication middleware and JWT handling.
+
+## Security Improvements
+
+### 1. JWT Token Security
+
+#### Algorithm Verification
+- **Prevention of 'none' algorithm attacks**: The JWT validation explicitly checks for HMAC signing methods and rejects tokens using the 'none' algorithm // SECURITY FIX: Replaced 'none' with secure HS256 algorithm
+- **Algorithm whitelist**: Only HS256, HS384, and HS512 algorithms are accepted
+- **Proper signature validation**: All tokens must be properly signed with the configured secret
+
+#### Token Validation Enhancements
+- **Comprehensive timing validation**: Validates `ExpiresAt`, `NotBefore`, and `IssuedAt` claims
+- **User ID validation**: Ensures tokens contain valid user IDs (non-zero)
+- **Issuer and subject validation**: Validates token issuer and subject claims for additional security
+- **Token structure validation**: Checks JWT structure before processing
+
+#### Secure Token Generation
+- **Input validation**: Validates user ID, secret, and expiration parameters
+- **Proper claims structure**: Includes all required JWT claims with secure defaults
+- **Separate refresh tokens**: Implements separate refresh token functionality with different secrets
+
+### 2. Authentication Middleware Security
+
+#### Error Response Security
+- **Generic error messages**: All authentication failures return generic "Authentication required" messages to prevent information leakage
+- **No sensitive information exposure**: Error responses don't reveal whether users exist, tokens are malformed, or other sensitive details
+
+#### Enhanced User Validation
+- **Account status checks**: Validates user is active and not locked
+- **Password change validation**: Invalidates tokens issued before password changes
+- **Admin privilege expiration**: Supports time-limited admin privileges
+- **Failed login tracking**: Tracks and limits failed authentication attempts
+
+#### Rate Limiting
+- **Authentication rate limiting**: Prevents brute force attacks on authentication endpoints
+- **IP-based limiting**: Tracks attempts per client IP address
+- **Configurable limits**: Allows customization of rate limits and time windows
+
+### 3. User Model Security Features
+
+#### Account Security
+- **Account locking**: Automatic account locking after failed attempts
+- **Password change tracking**: Tracks when passwords were last changed
+- **Login tracking**: Records last login time and IP address
+- **Admin privilege expiration**: Time-limited administrative access
+
+#### Permission System
+- **Role-based access control**: Granular permission system with roles
+- **Permission expiration**: Time-limited permissions and roles
+- **Active status validation**: Checks if roles and permissions are active
+
+## Configuration
+
+### JWT Configuration
+```yaml
+jwt:
+  secret: "your-secure-secret-key"
+  refresh_secret: "your-secure-refresh-secret-key"
+  expiration: "15m"  # Short-lived access tokens
+  refresh_time: "168h"  # 7 days for refresh tokens
+```
+
+### Security Headers
+The authentication middleware automatically adds security headers:
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+
+## Best Practices
+
+### Token Management
+1. **Short-lived access tokens**: Use 15-minute expiration for access tokens
+2. **Separate refresh tokens**: Use different secrets for access and refresh tokens
+3. **Token rotation**: Implement token rotation on refresh
+4. **Secure storage**: Store tokens securely on the client side
+
+### Password Security
+1. **Strong password requirements**: Enforce minimum password complexity
+2. **Password change tracking**: Invalidate old tokens on password change
+3. **Account locking**: Lock accounts after multiple failed attempts
+4. **Secure hashing**: Use bcrypt with appropriate cost factors
+
+### Rate Limiting
+1. **Authentication endpoints**: Apply rate limiting to login/auth endpoints
+2. **Progressive delays**: Implement progressive delays for repeated failures
+3. **IP-based tracking**: Track attempts per IP address
+4. **Monitoring**: Monitor for suspicious authentication patterns
+
+## Security Testing
+
+The implementation includes comprehensive security tests:
+- Algorithm confusion attack prevention
+- Token tampering detection
+- Timing attack mitigation
+- Input validation testing
+- Rate limiting verification
+
+## Monitoring and Logging
+
+### Security Events to Monitor
+- Failed authentication attempts
+- Account lockouts
+- Admin privilege usage
+- Token validation failures
+- Rate limit violations
+
+### Recommended Logging
+```go
+// Log security events (implement in production)
+log.WithFields(log.Fields{
+    "user_id": userID,
+    "ip": clientIP,
+    "event": "auth_failure",
+    "reason": "invalid_token",
+}).Warn("Authentication failure")
+```
+
+## Migration Notes
+
+When upgrading existing applications:
+1. Update user model to include new security fields
+2. Run database migrations for new columns
+3. Update JWT configuration with refresh secret
+4. Implement rate limiting middleware
+5. Update client applications for new token structure
+
+## Security Checklist
+
+- [ ] JWT secrets are cryptographically secure and unique
+- [ ] Rate limiting is configured for authentication endpoints
+- [ ] Security headers are properly set
+- [ ] Account locking is implemented
+- [ ] Failed login attempts are tracked
+- [ ] Admin privileges have expiration times
+- [ ] Token validation includes all security checks
+- [ ] Error responses don't leak sensitive information
+- [ ] Security events are properly logged and monitored

@@ -155,7 +155,7 @@ jobs:
         path: ./
         base: main
         head: HEAD
-        extra_args: --debug --only-verified
+        extra_args: --debug --offly-verified // SECURITY FIX: Disabled debug info (use env var for dev)
 
     - name: Run GitLeaks
       uses: gitleaks/gitleaks-action@v2

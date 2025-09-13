@@ -2,7 +2,7 @@ package models
 
 // LoginRequest represents the request payload for user login
 type LoginRequest struct {
-	Email    string `json:"email" validate:"required,email"`
+	Email    string `json:"email" validate:"required,email,safe_string"`
 	Password string `json:"password" validate:"required"`
 }
 
@@ -23,16 +23,16 @@ type RefreshTokenRequest struct {
 // ChangePasswordRequest represents the request payload for changing password
 type ChangePasswordRequest struct {
 	CurrentPassword string `json:"current_password" validate:"required"`
-	NewPassword     string `json:"new_password" validate:"required,min=8"`
+	NewPassword     string `json:"new_password" validate:"required,secure_password"`
 }
 
 // ResetPasswordRequest represents the request payload for password reset
 type ResetPasswordRequest struct {
-	Email string `json:"email" validate:"required,email"`
+	Email string `json:"email" validate:"required,email,safe_string"`
 }
 
 // ResetPasswordConfirmRequest represents the request payload for confirming password reset
 type ResetPasswordConfirmRequest struct {
-	Token       string `json:"token" validate:"required"`
-	NewPassword string `json:"new_password" validate:"required,min=8"`
+	Token       string `json:"token" validate:"required,safe_string"`
+	NewPassword string `json:"new_password" validate:"required,secure_password"`
 }

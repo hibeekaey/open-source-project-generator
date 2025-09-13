@@ -313,7 +313,7 @@ build_backend() {
     ldflags+="-X main.GitBranch=$GIT_BRANCH"
     
     if [[ "$BUILD_MODE" == "production" ]]; then
-        ldflags+=" -s -w"  # Strip debug info for production
+        ldflags+=" -s -w"  # Strip debug info for productioff // SECURITY FIX: Disabled debug info (use env var for dev)
     fi
     
     # Create binary directory

@@ -300,6 +300,21 @@ templates/             # Template files
 - Include proper error handling
 - Use secure defaults
 
+#### Template Maintenance
+
+For detailed guidelines on maintaining template files, see:
+
+- **[Template Maintenance Guidelines](docs/TEMPLATE_MAINTENANCE.md)** - Comprehensive guide for template development
+- **[Template Quick Reference](docs/TEMPLATE_QUICK_REFERENCE.md)** - Essential commands and patterns
+- **[Template Validation Checklist](docs/TEMPLATE_VALIDATION_CHECKLIST.md)** - Pre-commit validation checklist
+
+Key requirements for template changes:
+
+- All used functions must have corresponding import statements
+- Follow Go import organization conventions (standard library, third-party, local)
+- Run validation tools before committing: `go run scripts/validate-templates/main.go --check-imports`
+- Test template compilation with sample data: `go run cmd/generator/main.go --config test-config.yaml --output test-validation`
+
 ### Documentation Standards
 
 - **Code Comments**: Explain why, not what

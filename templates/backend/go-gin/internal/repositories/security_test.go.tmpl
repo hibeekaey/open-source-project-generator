@@ -1,0 +1,231 @@
+package repositories
+
+import (
+	"testing"
+
+	"{{.Name}}/internal/models"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+)
+
+type SecurityTestSuite struct {
+	suite.Suite
+	db       *gorm.DB
+	userRepo UserRepository
+	roleRepo RoleRepository
+}
+
+func (suite *SecurityTestSuite) SetupSuite() {
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	suite.Require().NoError(err)
+
+	err = db.AutoMigrate(&models.User{}, &models.Role{}, &models.Permission{})
+	suite.Require().NoError(err)
+
+	suite.db = db
+	suite.userRepo = NewUserRepository(db)
+	suite.roleRepo = NewRoleRepository(db)
+}
+
+func (suite *SecurityTestSuite) SetupTest() {
+	// Clean up data before each test
+	suite.db.Exec("DELETE FROM user_roles")
+	suite.db.Exec("DELETE FROM role_permissions")
+	suite.db.Exec("DELETE FROM users")
+	suite.db.Exec("DELETE FROM roles")
+	suite.db.Exec("DELETE FROM permissions")
+}
+
+// Test input validation for user operations
+func (suite *SecurityTestSuite) TestUserRepository_InputValidation() {
+	// Test Create with nil user
+	_, err := suite.userRepo.Create(nil)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "user cannot be nil")
+
+	// Test Create with empty email
+	user := &models.User{
+		Username:  "testuser",
+		Password:  "password123",
+		FirstName: "Test",
+		LastName:  "User",
+	}
+	_, err = suite.userRepo.Create(user)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "email and username are required")
+
+	// Test GetByID with invalid ID
+	_, err = suite.userRepo.GetByID(0)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "invalid user ID")
+
+	// Test GetByEmail with empty email
+	_, err = suite.userRepo.GetByEmail("")
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "email cannot be empty")
+
+	// Test GetByUsername with empty username
+	_, err = suite.userRepo.GetByUsername("")
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "username cannot be empty")
+}
+
+func (suite *SecurityTestSuite) TestUserRepository_PaginationValidation() {
+	// Test List with negative offset
+	_, _, err := suite.userRepo.List(-1, 10)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "offset cannot be negative")
+
+	// Test List with invalid limit
+	_, _, err = suite.userRepo.List(0, 0)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "limit must be between 1 and 1000")
+
+	// Test List with limit too high
+	_, _, err = suite.userRepo.List(0, 1001)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "limit must be between 1 and 1000")
+}
+
+func (suite *SecurityTestSuite) TestUserRepository_RoleAssignmentValidation() {
+	// Test AssignRole with invalid user ID
+	err := suite.userRepo.AssignRole(0, 1)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "invalid user ID or role ID")
+
+	// Test AssignRole with invalid role ID
+	err = suite.userRepo.AssignRole(1, 0)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "invalid user ID or role ID")
+
+	// Test RemoveRole with invalid user ID
+	err = suite.userRepo.RemoveRole(0, 1)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "invalid user ID or role ID")
+
+	// Test RemoveRole with invalid role ID
+	err = suite.userRepo.RemoveRole(1, 0)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "invalid user ID or role ID")
+}
+
+// Test input validation for role operations
+func (suite *SecurityTestSuite) TestRoleRepository_InputValidation() {
+	// Test Create with nil role
+	_, err := suite.roleRepo.Create(nil)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "role cannot be nil")
+
+	// Test Create with empty name
+	role := &models.Role{
+		Description: "Test role",
+	}
+	_, err = suite.roleRepo.Create(role)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "role name is required")
+
+	// Test GetByID with invalid ID
+	_, err = suite.roleRepo.GetByID(0)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "invalid role ID")
+
+	// Test GetByName with empty name
+	_, err = suite.roleRepo.GetByName("")
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "role name cannot be empty")
+}
+
+func (suite *SecurityTestSuite) TestRoleRepository_PaginationValidation() {
+	// Test List with negative offset
+	_, _, err := suite.roleRepo.List(-1, 10)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "offset cannot be negative")
+
+	// Test List with invalid limit
+	_, _, err = suite.roleRepo.List(0, 0)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "limit must be between 1 and 1000")
+
+	// Test List with limit too high
+	_, _, err = suite.roleRepo.List(0, 1001)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "limit must be between 1 and 1000")
+}
+
+func (suite *SecurityTestSuite) TestRoleRepository_PermissionAssignmentValidation() {
+	// Test AssignPermission with invalid role ID
+	err := suite.roleRepo.AssignPermission(0, 1)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "invalid role ID or permission ID")
+
+	// Test AssignPermission with invalid permission ID
+	err = suite.roleRepo.AssignPermission(1, 0)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "invalid role ID or permission ID")
+
+	// Test RemovePermission with invalid role ID
+	err = suite.roleRepo.RemovePermission(0, 1)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "invalid role ID or permission ID")
+
+	// Test RemovePermission with invalid permission ID
+	err = suite.roleRepo.RemovePermission(1, 0)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "invalid role ID or permission ID")
+}
+
+// Test that transactions work properly for data consistency
+func (suite *SecurityTestSuite) TestTransactionConsistency() {
+	// Create a user first
+	user := &models.User{
+		Email:     "test@example.com",
+		Username:  "testuser",
+		Password:  "password123",
+		FirstName: "Test",
+		LastName:  "User",
+		IsActive:  true,
+	}
+	
+	createdUser, err := suite.userRepo.Create(user)
+	assert.NoError(suite.T(), err)
+	assert.NotNil(suite.T(), createdUser)
+
+	// Create a role
+	role := &models.Role{
+		Name:        "testrole",
+		Description: "Test role",
+	}
+	
+	createdRole, err := suite.roleRepo.Create(role)
+	assert.NoError(suite.T(), err)
+	assert.NotNil(suite.T(), createdRole)
+
+	// Test successful role assignment
+	err = suite.userRepo.AssignRole(createdUser.ID, createdRole.ID)
+	assert.NoError(suite.T(), err)
+
+	// Verify the assignment worked
+	updatedUser, err := suite.userRepo.GetByID(createdUser.ID)
+	assert.NoError(suite.T(), err)
+	assert.Len(suite.T(), updatedUser.Roles, 1)
+	assert.Equal(suite.T(), createdRole.ID, updatedUser.Roles[0].ID)
+}
+
+// Test error handling doesn't leak sensitive information
+func (suite *SecurityTestSuite) TestSecureErrorHandling() {
+	// Test that database errors are generic
+	_, err := suite.userRepo.GetByID(999999) // Non-existent ID
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "user not found")
+	
+	// Error should not contain SQL details or internal information
+	assert.NotContains(suite.T(), err.Error(), "sql")
+	assert.NotContains(suite.T(), err.Error(), "database")
+	assert.NotContains(suite.T(), err.Error(), "gorm")
+}
+
+func TestSecurityTestSuite(t *testing.T) {
+	suite.Run(t, new(SecurityTestSuite))
+}

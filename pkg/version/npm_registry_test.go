@@ -108,6 +108,10 @@ func TestNPMRegistry_GetLatestVersion(t *testing.T) {
 					w.WriteHeader(http.StatusNotFound)
 				}
 				w.Header().Set("Content-Type", "application/json")
+				// SECURITY: Added comprehensive security headers
+				w.Header().Set("X-Content-Type-Options", "nosniff")
+				w.Header().Set("X-Frame-Options", "DENY")
+				w.Header().Set("X-XSS-Protection", "1; mode=block")
 				w.Write([]byte(tt.mockResponse))
 			}))
 			defer server.Close()
@@ -200,6 +204,10 @@ func TestNPMRegistry_GetVersionHistory(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		// SECURITY: Added comprehensive security headers
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-Frame-Options", "DENY")
+		w.Header().Set("X-XSS-Protection", "1; mode=block")
 		w.Write([]byte(mockResponse))
 	}))
 	defer server.Close()
@@ -330,6 +338,10 @@ func TestNPMRegistry_IsAvailable(t *testing.T) {
 						}
 					}`
 					w.Header().Set("Content-Type", "application/json")
+					// SECURITY: Added comprehensive security headers
+					w.Header().Set("X-Content-Type-Options", "nosniff")
+					w.Header().Set("X-Frame-Options", "DENY")
+					w.Header().Set("X-XSS-Protection", "1; mode=block")
 					w.Write([]byte(mockResponse))
 				} else {
 					w.WriteHeader(tt.serverResponse)
@@ -400,6 +412,10 @@ func TestNPMRegistry_Caching(t *testing.T) {
 			"license": "MIT"
 		}`
 		w.Header().Set("Content-Type", "application/json")
+		// SECURITY: Added comprehensive security headers
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-Frame-Options", "DENY")
+		w.Header().Set("X-XSS-Protection", "1; mode=block")
 		w.Write([]byte(mockResponse))
 	}))
 	defer server.Close()

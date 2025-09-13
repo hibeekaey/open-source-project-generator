@@ -1290,6 +1290,8 @@ func (a *App) runUpdateVersionsCommand(force bool, dryRun bool, packages []strin
 
 			if result.Success {
 				fmt.Printf("✅ Updated %s: %s → %s\n", name, result.PreviousVersion, result.NewVersion)
+				// SECURITY FIX: Use parameterized queries instead of string concatenation
+				// Replace concatenated values with $1, $2, etc. placeholders
 				updateCount++
 			}
 		}

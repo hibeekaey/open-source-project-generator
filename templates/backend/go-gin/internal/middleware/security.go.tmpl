@@ -17,6 +17,10 @@ func SecurityHeadersMiddleware() gin.HandlerFunc {
 		
 		// Prevent MIME sniffing
 		c.Header("X-Content-Type-Options", "nosniff")
+		// SECURITY: Added comprehensive security headers
+		c.Header("X-Content-Type-Options", "nosniff")
+		c.Header("X-Frame-Options", "DENY")
+		c.Header("X-XSS-Protection", "1; mode=block")
 		
 		// Enable XSS protection (deprecated but still useful for older browsers)
 		c.Header("X-XSS-Protection", "1; mode=block")
@@ -52,6 +56,10 @@ func SecurityHeadersMiddleware() gin.HandlerFunc {
 		// Add security headers for JSON responses
 		if c.GetHeader("Content-Type") == "application/json" {
 			c.Header("X-Content-Type-Options", "nosniff")
+			// SECURITY: Added comprehensive security headers
+			c.Header("X-Content-Type-Options", "nosniff")
+			c.Header("X-Frame-Options", "DENY")
+			c.Header("X-XSS-Protection", "1; mode=block")
 		}
 		
 		c.Next()

@@ -1,11 +1,17 @@
 CREATE TABLE IF NOT EXISTS user_roles (
-    user_id INTEGER NOT NULL,
-    role_id INTEGER NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    user_id INTEGER NOT NULL CHECK (user_id > 0),
+    role_id INTEGER NOT NULL CHECK (role_id > 0),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
     PRIMARY KEY (user_id, role_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
 );
 
+-- Create secure indexes
 CREATE INDEX IF NOT EXISTS idx_user_roles_user_id ON user_roles(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_roles_role_id ON user_roles(role_id);
+CREATE INDEX IF NOT EXISTS idx_user_roles_created_at ON user_roles(created_at);
+
+-- Add constraint to prevent duplicate assignments
+-- (This is already handled by the PRIMARY KEY, but making it explicit)
+ALTER TABLE user_roles ADD CONSTRAINT unique_user_role UNIQUE (user_id, role_id);

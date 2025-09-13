@@ -8,23 +8,40 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// isOriginAllowed validates if the given origin is in the allowed origins list
+// Uses exact string matching for security - no wildcards or pattern matching
+func isOriginAllowed(origin string, allowedOrigins []string) bool {
+	if origin == "" {
+		return false
+	}
+	
+	for _, allowedOrigin := range allowedOrigins {
+		if origin == allowedOrigin {
+			return true
+		}
+	}
+	return false
+}
+
 // CORSMiddleware creates a middleware for handling CORS with enhanced security
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")
 		
-		// Get allowed origins from environment variables for better security
+		// Get allowed origins from environment variables for security
+		// In production, always set CORS_ALLOWED_ORIGINS environment variable
 		allowedOriginsEnv := os.Getenv("CORS_ALLOWED_ORIGINS")
 		var allowedOrigins []string
 		
 		if allowedOriginsEnv != "" {
 			allowedOrigins = strings.Split(allowedOriginsEnv, ",")
-			// Trim whitespace from each origin
+			// Trim whitespace and validate each origin
 			for i, origin := range allowedOrigins {
 				allowedOrigins[i] = strings.TrimSpace(origin)
 			}
 		} else {
-			// Default allowed origins for development
+			// Default allowed origins for development only
+			// WARNING: These defaults should not be used in production
 			allowedOrigins = []string{
 				"http://localhost:3000",
 				"http://localhost:3001", 
@@ -32,31 +49,32 @@ func CORSMiddleware() gin.HandlerFunc {
 			}
 		}
 		
-		// Check if origin is allowed
-		allowed := false
-		for _, allowedOrigin := range allowedOrigins {
-			if origin == allowedOrigin {
-				allowed = true
-				break
-			}
-		}
+		// Check if origin is allowed using secure validation
+		allowed := isOriginAllowed(origin, allowedOrigins)
 		
-		// Only set CORS headers if origin is allowed
+		// Only set CORS headers if origin is explicitly allowed
+		// SECURITY FIX: Removed Access-Control-Allow-Origin: null header
+		// For disallowed origins, omit the header entirely
 		if allowed {
 			c.Header("Access-Control-Allow-Origin", origin)
 			c.Header("Access-Control-Allow-Credentials", "true")
-		} else if origin != "" {
-			// Log potential CORS violation for security monitoring
-			// In production, consider logging this to security monitoring system
-			c.Header("Access-Control-Allow-Origin", "null")
+		}
+		// For disallowed origins, we omit the Access-Control-Allow-Origin header entirely
+		// This ensures the browser enforces CORS policy without potential bypass vulnerabilities
+		
+		// Set CORS headers only for preflight requests or when origin is allowed
+		if c.Request.Method == "OPTIONS" || allowed {
+			// Restrict allowed headers to prevent potential security issues
+			c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, X-Request-ID")
+			// SECURITY: Added comprehensive security headers
+			c.Header("X-Content-Type-Options", "nosniff")
+			c.Header("X-Frame-Options", "DENY")
+			c.Header("X-XSS-Protection", "1; mode=block")
+			c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+			c.Header("Access-Control-Max-Age", "3600") // 1 hour for security
 		}
 		
-		// Restrict allowed headers to prevent potential security issues
-		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, X-Request-ID")
-		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Header("Access-Control-Max-Age", "3600") // 1 hour (reduced from 24 hours)
-		
-		// Add security headers to prevent common attacks
+		// Always add Vary header for proper caching behavior
 		c.Header("Vary", "Origin, Access-Control-Request-Method, Access-Control-Request-Headers")
 
 		if c.Request.Method == "OPTIONS" {

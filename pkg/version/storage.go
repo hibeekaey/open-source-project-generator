@@ -13,16 +13,18 @@ import (
 
 	"github.com/open-source-template-generator/pkg/interfaces"
 	"github.com/open-source-template-generator/pkg/models"
+	"github.com/open-source-template-generator/pkg/security"
 )
 
 // FileStorage implements VersionStorage interface using file system
 type FileStorage struct {
-	filePath   string
-	backupDir  string
-	format     string // "yaml" or "json"
-	store      *models.VersionStore
-	lastLoaded time.Time
-	mu         sync.RWMutex // Mutex for concurrent access
+	filePath      string
+	backupDir     string
+	format        string // "yaml" or "json"
+	store         *models.VersionStore
+	lastLoaded    time.Time
+	mu            sync.RWMutex // Mutex for concurrent access
+	secureFileOps security.SecureFileOperations
 }
 
 // NewFileStorage creates a new file-based version storage
@@ -37,9 +39,10 @@ func NewFileStorage(filePath string, format string) (*FileStorage, error) {
 	}
 
 	storage := &FileStorage{
-		filePath:  filePath,
-		backupDir: backupDir,
-		format:    format,
+		filePath:      filePath,
+		backupDir:     backupDir,
+		format:        format,
+		secureFileOps: security.NewSecureFileOperations(),
 	}
 
 	// Initialize with empty store if file doesn't exist
@@ -128,20 +131,9 @@ func (fs *FileStorage) Save(store *models.VersionStore) error {
 		}
 	}
 
-	// Ensure directory exists
-	if err := os.MkdirAll(filepath.Dir(fs.filePath), 0755); err != nil {
-		return fmt.Errorf("failed to create directory: %w", err)
-	}
-
-	// Write to temporary file first, then rename for atomic operation
-	tempFile := fmt.Sprintf("%s.tmp.%d", fs.filePath, time.Now().UnixNano())
-	if err := os.WriteFile(tempFile, data, 0644); err != nil {
-		return fmt.Errorf("failed to write temporary file: %w", err)
-	}
-
-	if err := os.Rename(tempFile, fs.filePath); err != nil {
-		os.Remove(tempFile) // Clean up temp file
-		return fmt.Errorf("failed to rename temporary file: %w", err)
+	// Use secure atomic write operation instead of predictable temp files
+	if err := fs.secureFileOps.WriteFileAtomic(fs.filePath, data, 0644); err != nil {
+		return fmt.Errorf("failed to write file atomically: %w", err)
 	}
 
 	fs.store = store

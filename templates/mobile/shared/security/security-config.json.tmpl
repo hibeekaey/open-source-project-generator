@@ -1,0 +1,358 @@
+{
+  "security": {
+    "app_info": {
+      "name": "{{.Name}}",
+      "version": "{{.Version}}",
+      "bundle_id": "{{.BundleId}}",
+      "environment": "{{.Environment}}"
+    },
+    
+    "network_security": {
+      "certificate_pinning": {
+        "enabled": true,
+        "pins": [
+          {
+            "hostname": "api.{{.Domain}}",
+            "pin_type": "sha256",
+            "pins": [
+              "{{.ApiCertificatePin}}",
+              "{{.BackupCertificatePin}}"
+            ]
+          }
+        ],
+        "pin_validation_timeout": 30,
+        "fallback_enabled": false
+      },
+      
+      "network_security_config": {
+        "cleartextTrafficPermitted": false,
+        "hstsEnforced": true,
+        "certificateTransparencyRequired": true,
+        "domain_config": [
+          {
+            "domain": "{{.Domain}}",
+            "includeSubdomains": true,
+            "cleartextTrafficPermitted": false,
+            "hstsEnforced": true,
+            "pins": [
+              "{{.ApiCertificatePin}}"
+            ]
+          }
+        ]
+      },
+      
+      "api_security": {
+        "base_url": "https://api.{{.Domain}}",
+        "timeout": 30,
+        "retry_attempts": 3,
+        "rate_limiting": {
+          "enabled": true,
+          "requests_per_minute": 60,
+          "burst_limit": 10
+        },
+        "request_signing": {
+          "enabled": true,
+          "algorithm": "HMAC-SHA256",
+          "key_rotation_interval": 86400
+        }
+      }
+    },
+    
+    "authentication": {
+      "biometric": {
+        "enabled": true,
+        "fallback_to_passcode": true,
+        "invalidation_timeout": 300,
+        "max_attempts": 3,
+        "supported_types": [
+          "fingerprint",
+          "face_id",
+          "voice_recognition"
+        ]
+      },
+      
+      "session_management": {
+        "session_timeout": 1800,
+        "absolute_timeout": 28800,
+        "refresh_token_rotation": true,
+        "concurrent_sessions_limit": 3,
+        "session_validation": {
+          "device_binding": true,
+          "ip_validation": false,
+          "jailbreak_detection": true
+        }
+      },
+      
+      "token_security": {
+        "access_token_expiry": 900,
+        "refresh_token_expiry": 604800,
+        "token_encryption": {
+          "enabled": true,
+          "algorithm": "AES-256-GCM",
+          "key_derivation": "PBKDF2"
+        },
+        "secure_storage": {
+          "use_keychain": true,
+          "accessibility": "kSecAttrAccessibleWhenUnlockedThisDeviceOnly",
+          "synchronizable": false
+        }
+      }
+    },
+    
+    "data_protection": {
+      "encryption": {
+        "database_encryption": {
+          "enabled": true,
+          "algorithm": "AES-256",
+          "key_management": "hardware_backed"
+        },
+        "file_encryption": {
+          "enabled": true,
+          "sensitive_files_only": false,
+          "encryption_level": "strong"
+        },
+        "memory_protection": {
+          "enabled": true,
+          "clear_sensitive_data": true,
+          "anti_debugging": true
+        }
+      },
+      
+      "secure_storage": {
+        "keychain_service": "{{.BundleId}}.keychain",
+        "access_group": "{{.TeamId}}.{{.BundleId}}",
+        "items": {
+          "user_credentials": {
+            "accessibility": "kSecAttrAccessibleWhenUnlockedThisDeviceOnly",
+            "synchronizable": false,
+            "encryption": true
+          },
+          "api_tokens": {
+            "accessibility": "kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly",
+            "synchronizable": false,
+            "encryption": true
+          },
+          "biometric_data": {
+            "accessibility": "kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly",
+            "synchronizable": false,
+            "encryption": true,
+            "require_biometry": true
+          }
+        }
+      },
+      
+      "data_loss_prevention": {
+        "screenshot_prevention": true,
+        "screen_recording_detection": true,
+        "copy_paste_restrictions": {
+          "sensitive_fields": true,
+          "timeout": 60
+        },
+        "app_backgrounding": {
+          "blur_content": true,
+          "hide_sensitive_data": true
+        }
+      }
+    },
+    
+    "application_security": {
+      "code_protection": {
+        "obfuscation": {
+          "enabled": true,
+          "level": "aggressive",
+          "string_encryption": true,
+          "control_flow_obfuscation": true
+        },
+        "anti_tampering": {
+          "enabled": true,
+          "integrity_checks": true,
+          "runtime_protection": true,
+          "certificate_validation": true
+        },
+        "anti_debugging": {
+          "enabled": true,
+          "debugger_detection": true,
+          "emulator_detection": true,
+          "hook_detection": true
+        }
+      },
+      
+      "runtime_security": {
+        "jailbreak_detection": {
+          "enabled": true,
+          "strict_mode": true,
+          "action_on_detection": "exit_app",
+          "checks": [
+            "cydia_detection",
+            "suspicious_files",
+            "suspicious_processes",
+            "system_modifications"
+          ]
+        },
+        "root_detection": {
+          "enabled": true,
+          "strict_mode": true,
+          "action_on_detection": "exit_app",
+          "checks": [
+            "su_binary",
+            "superuser_app",
+            "build_tags",
+            "system_properties"
+          ]
+        },
+        "hooking_detection": {
+          "enabled": true,
+          "frida_detection": true,
+          "xposed_detection": true,
+          "substrate_detection": true
+        }
+      },
+      
+      "input_validation": {
+        "enabled": true,
+        "sanitization": {
+          "html_encoding": true,
+          "sql_injection_prevention": true,
+          "xss_prevention": true,
+          "path_traversal_prevention": true
+        },
+        "validation_rules": {
+          "email": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+          "phone": "^\\+?[1-9]\\d{1,14}$",
+          "password": "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{12,}$"
+        }
+      }
+    },
+    
+    "logging_and_monitoring": {
+      "security_logging": {
+        "enabled": true,
+        "log_level": "info",
+        "events": {
+          "authentication_events": true,
+          "authorization_failures": true,
+          "security_violations": true,
+          "suspicious_activities": true,
+          "data_access_events": true
+        },
+        "data_sanitization": {
+          "enabled": true,
+          "redacted_fields": [
+            "password",
+            "token",
+            "secret",
+            "credit_card",
+            "ssn",
+            "biometric_data"
+          ]
+        }
+      },
+      
+      "crash_reporting": {
+        "enabled": true,
+        "service": "crashlytics",
+        "sanitize_sensitive_data": true,
+        "include_user_id": false,
+        "include_device_info": true
+      },
+      
+      "analytics": {
+        "enabled": true,
+        "privacy_compliant": true,
+        "anonymize_ip": true,
+        "opt_out_available": true,
+        "data_retention_days": 365
+      }
+    },
+    
+    "compliance": {
+      "privacy_regulations": {
+        "gdpr": {
+          "enabled": true,
+          "consent_management": true,
+          "data_portability": true,
+          "right_to_erasure": true,
+          "privacy_by_design": true
+        },
+        "ccpa": {
+          "enabled": true,
+          "do_not_sell": true,
+          "opt_out_mechanism": true
+        },
+        "coppa": {
+          "enabled": false,
+          "age_verification": false,
+          "parental_consent": false
+        }
+      },
+      
+      "security_standards": {
+        "owasp_masvs": {
+          "level": "L2",
+          "categories": {
+            "architecture": true,
+            "data_storage": true,
+            "cryptography": true,
+            "authentication": true,
+            "network_communication": true,
+            "platform_interaction": true,
+            "code_quality": true,
+            "resilience": true
+          }
+        }
+      }
+    },
+    
+    "incident_response": {
+      "security_incidents": {
+        "detection": {
+          "automated_monitoring": true,
+          "anomaly_detection": true,
+          "threat_intelligence": true
+        },
+        "response": {
+          "incident_classification": true,
+          "automated_containment": true,
+          "notification_system": true,
+          "forensic_logging": true
+        }
+      },
+      
+      "breach_notification": {
+        "enabled": true,
+        "notification_timeline": 72,
+        "stakeholders": [
+          "security_team",
+          "legal_team",
+          "users",
+          "regulators"
+        ]
+      }
+    },
+    
+    "security_testing": {
+      "penetration_testing": {
+        "frequency": "quarterly",
+        "scope": [
+          "authentication",
+          "authorization",
+          "data_protection",
+          "network_security",
+          "application_security"
+        ]
+      },
+      
+      "vulnerability_scanning": {
+        "enabled": true,
+        "frequency": "weekly",
+        "automated_remediation": false,
+        "severity_thresholds": {
+          "critical": 0,
+          "high": 5,
+          "medium": 20,
+          "low": 50
+        }
+      }
+    }
+  }
+}

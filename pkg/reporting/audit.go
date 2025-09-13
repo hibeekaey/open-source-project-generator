@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/open-source-template-generator/pkg/models"
+	"github.com/open-source-template-generator/pkg/security"
 )
 
 // AuditEvent represents a single audit log entry
@@ -28,13 +29,23 @@ type AuditEvent struct {
 
 // AuditTrail manages audit logging for version management operations
 type AuditTrail struct {
-	logFile string
+	logFile      string
+	secureRandom security.SecureRandom
 }
 
 // NewAuditTrail creates a new audit trail logger
 func NewAuditTrail(logFile string) *AuditTrail {
 	return &AuditTrail{
-		logFile: logFile,
+		logFile:      logFile,
+		secureRandom: security.NewSecureRandom(),
+	}
+}
+
+// NewAuditTrailWithSecureRandom creates a new audit trail logger with custom secure random generator
+func NewAuditTrailWithSecureRandom(logFile string, secureRandom security.SecureRandom) *AuditTrail {
+	return &AuditTrail{
+		logFile:      logFile,
+		secureRandom: secureRandom,
 	}
 }
 
@@ -287,9 +298,16 @@ func (a *AuditTrail) writeEvent(event AuditEvent) error {
 	return nil
 }
 
-// generateEventID creates a unique event identifier
+// generateEventID creates a cryptographically secure unique event identifier
 func (a *AuditTrail) generateEventID() string {
-	return fmt.Sprintf("audit_%d", time.Now().UnixNano())
+	// Use secure random ID generation instead of predictable timestamps
+	secureID, err := a.secureRandom.GenerateSecureID("audit")
+	if err != nil {
+		// Fallback to a less secure but still functional ID if secure generation fails
+		// This should be logged as a security concern in production
+		return fmt.Sprintf("audit_fallback_%d", time.Now().UnixNano())
+	}
+	return secureID
 }
 
 // RotateLog rotates the audit log file if it exceeds size limit

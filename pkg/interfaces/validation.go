@@ -42,4 +42,19 @@ type ValidationEngine interface {
 
 	// ValidateSecurityVulnerabilities validates packages for security vulnerabilities
 	ValidateSecurityVulnerabilities(projectPath string) (*models.ValidationResult, error)
+
+	// ValidatePreGeneration performs comprehensive pre-generation validation for a single template
+	ValidatePreGeneration(config *models.ProjectConfig, templatePath string) (*models.ValidationResult, error)
+
+	// ValidatePreGenerationDirectory performs pre-generation validation for an entire template directory
+	ValidatePreGenerationDirectory(config *models.ProjectConfig, templateDir string) (*models.ValidationResult, error)
+
+	// ValidateNodeJSVersionCompatibility validates Node.js version compatibility across templates
+	ValidateNodeJSVersionCompatibility(projectPath string) (*models.ValidationResult, error)
+
+	// ValidateCrossTemplateVersionConsistency validates version consistency across different template types
+	ValidateCrossTemplateVersionConsistency(templatesPath string) (*models.ValidationResult, error)
+
+	// ValidateNodeJSVersionConfiguration validates a Node.js version configuration
+	ValidateNodeJSVersionConfiguration(config *models.NodeVersionConfig) (*models.ValidationResult, error)
 }

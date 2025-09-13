@@ -1,0 +1,251 @@
+# Session Security Configuration for {{.Name}}
+# Comprehensive session management with security best practices
+
+session:
+  # Session store configuration
+  store:
+    # Store type: memory, redis, database, file
+    type: "${SESSION_STORE_TYPE:-redis}"
+    
+    # Redis configuration (recommended for production)
+    redis:
+      host: "${REDIS_HOST:-localhost}"
+      port: "${REDIS_PORT:-6379}"
+      password: "${REDIS_PASSWORD}"
+      database: "${REDIS_SESSION_DB:-1}"
+      pool_size: 50
+      min_idle_conns: 10
+      max_retries: 3
+      dial_timeout: 5 # seconds
+      read_timeout: 3 # seconds
+      write_timeout: 3 # seconds
+      # Redis key prefix for sessions
+      key_prefix: "{{.Name}}:session:"
+      # Enable Redis clustering
+      cluster_enabled: "${REDIS_CLUSTER_ENABLED:-false}"
+      cluster_addrs: "${REDIS_CLUSTER_ADDRS}" # comma-separated list
+      
+    # Database configuration (alternative to Redis)
+    database:
+      table_name: "user_sessions"
+      cleanup_interval: 3600 # seconds (1 hour)
+      max_lifetime: 86400 # seconds (24 hours)
+      
+    # File store configuration (not recommended for production)
+    file:
+      directory: "${SESSION_FILE_DIR:-/tmp/sessions}"
+      file_mode: 0600 # Read/write for owner only
+      
+  # Session cookie configuration
+  cookie:
+    # Cookie name
+    name: "${SESSION_COOKIE_NAME:-{{.Name}}_session}"
+    
+    # Security flags
+    secure: "${SESSION_COOKIE_SECURE:-true}" # Only send over HTTPS
+    http_only: true # Prevent XSS access to cookies
+    same_site: "${SESSION_COOKIE_SAMESITE:-Strict}" # CSRF protection: Strict, Lax, None
+    
+    # Cookie domain and path
+    domain: "${SESSION_COOKIE_DOMAIN}" # Leave empty for current domain
+    path: "${SESSION_COOKIE_PATH:-/}"
+    
+    # Cookie expiration
+    max_age: "${SESSION_COOKIE_MAX_AGE:-1800}" # 30 minutes in seconds
+    
+    # Cookie encryption
+    encrypt: true
+    encryption_key: "${SESSION_ENCRYPTION_KEY}" # 32-byte key for AES-256
+    signing_key: "${SESSION_SIGNING_KEY}" # HMAC signing key
+    
+  # Session security settings
+  security:
+    # Session timeout settings
+    timeout:
+      # Idle timeout (session expires after inactivity)
+      idle: "${SESSION_IDLE_TIMEOUT:-1800}" # 30 minutes
+      # Absolute timeout (session expires regardless of activity)
+      absolute: "${SESSION_ABSOLUTE_TIMEOUT:-28800}" # 8 hours
+      # Warning before expiration
+      warning_time: "${SESSION_WARNING_TIME:-300}" # 5 minutes
+      
+    # Session regeneration
+    regeneration:
+      # Regenerate session ID on login to prevent session fixation
+      on_login: true
+      # Regenerate session ID periodically
+      periodic: true
+      periodic_interval: "${SESSION_REGENERATE_INTERVAL:-900}" # 15 minutes
+      # Regenerate on privilege escalation
+      on_privilege_change: true
+      
+    # Session validation
+    validation:
+      # Validate IP address (prevents session hijacking)
+      ip_validation: "${SESSION_IP_VALIDATION:-true}"
+      # Allow IP changes (for mobile users)
+      allow_ip_change: "${SESSION_ALLOW_IP_CHANGE:-false}"
+      # Validate User-Agent (additional security)
+      user_agent_validation: "${SESSION_USER_AGENT_VALIDATION:-true}"
+      # Allow User-Agent changes
+      allow_user_agent_change: "${SESSION_ALLOW_UA_CHANGE:-false}"
+      
+    # Concurrent session limits
+    concurrent_sessions:
+      # Enable concurrent session limiting
+      enabled: "${SESSION_CONCURRENT_LIMIT_ENABLED:-true}"
+      # Maximum concurrent sessions per user
+      max_sessions: "${SESSION_MAX_CONCURRENT:-3}"
+      # Action when limit exceeded: reject_new, terminate_oldest
+      limit_action: "${SESSION_LIMIT_ACTION:-terminate_oldest}"
+      
+    # Session data encryption
+    data_encryption:
+      # Encrypt session data at rest
+      enabled: true
+      # Encryption algorithm
+      algorithm: "AES-256-GCM"
+      # Key rotation
+      key_rotation_enabled: true
+      key_rotation_interval: 86400 # 24 hours
+      
+  # Session monitoring and logging
+  monitoring:
+    # Session events to log
+    events:
+      session_created:
+        enabled: true
+        log_level: "info"
+        include_fields: ["user_id", "ip_address", "user_agent", "timestamp"]
+      session_destroyed:
+        enabled: true
+        log_level: "info"
+        include_fields: ["user_id", "session_duration", "termination_reason", "timestamp"]
+      session_regenerated:
+        enabled: true
+        log_level: "info"
+        include_fields: ["user_id", "regeneration_reason", "timestamp"]
+      session_expired:
+        enabled: true
+        log_level: "warn"
+        include_fields: ["user_id", "expiration_type", "last_activity", "timestamp"]
+      session_hijack_attempt:
+        enabled: true
+        log_level: "error"
+        include_fields: ["user_id", "original_ip", "new_ip", "user_agent", "timestamp"]
+      concurrent_limit_exceeded:
+        enabled: true
+        log_level: "warn"
+        include_fields: ["user_id", "session_count", "action_taken", "timestamp"]
+        
+    # Session metrics
+    metrics:
+      enabled: true
+      # Track session duration statistics
+      duration_stats: true
+      # Track concurrent session counts
+      concurrent_stats: true
+      # Track session creation/destruction rates
+      rate_stats: true
+      
+  # Session cleanup and maintenance
+  cleanup:
+    # Automatic cleanup of expired sessions
+    enabled: true
+    # Cleanup interval
+    interval: "${SESSION_CLEANUP_INTERVAL:-3600}" # 1 hour
+    # Batch size for cleanup operations
+    batch_size: 1000
+    # Grace period before deleting expired sessions
+    grace_period: 300 # 5 minutes
+    
+  # Development vs Production settings
+  environment_overrides:
+    development:
+      cookie:
+        secure: false # Allow HTTP in development
+        same_site: "Lax" # More permissive for development
+      security:
+        timeout:
+          idle: 7200 # 2 hours for development convenience
+          absolute: 86400 # 24 hours
+        validation:
+          ip_validation: false # Disable for development
+          user_agent_validation: false
+        concurrent_sessions:
+          max_sessions: 10 # More sessions for testing
+          
+    staging:
+      cookie:
+        secure: true
+        same_site: "Strict"
+      security:
+        timeout:
+          idle: 3600 # 1 hour
+          absolute: 21600 # 6 hours
+        validation:
+          ip_validation: true
+          user_agent_validation: true
+        concurrent_sessions:
+          max_sessions: 5
+          
+    production:
+      cookie:
+        secure: true
+        same_site: "Strict"
+      security:
+        timeout:
+          idle: 1800 # 30 minutes
+          absolute: 14400 # 4 hours
+        validation:
+          ip_validation: true
+          user_agent_validation: true
+        concurrent_sessions:
+          max_sessions: 3
+          
+  # Compliance settings
+  compliance:
+    # GDPR compliance
+    gdpr:
+      enabled: "${GDPR_COMPLIANCE:-false}"
+      # Anonymize session data
+      anonymize_data: true
+      # Data retention period
+      retention_days: 30
+      # Right to erasure
+      allow_erasure: true
+      
+    # HIPAA compliance
+    hipaa:
+      enabled: "${HIPAA_COMPLIANCE:-false}"
+      # Enhanced encryption for PHI
+      enhanced_encryption: true
+      # Audit all session access
+      audit_access: true
+      
+  # Session security headers
+  security_headers:
+    # Add security headers to session-related responses
+    enabled: true
+    headers:
+      # Prevent caching of session data
+      cache_control: "no-cache, no-store, must-revalidate"
+      pragma: "no-cache"
+      expires: "0"
+      # Additional security headers
+      x_content_type_options: "nosniff"
+      x_frame_options: "DENY"
+      x_xss_protection: "1; mode=block"
+      
+  # Session backup and recovery
+  backup:
+    # Enable session backup for disaster recovery
+    enabled: "${SESSION_BACKUP_ENABLED:-false}"
+    # Backup interval
+    interval: 3600 # 1 hour
+    # Backup retention
+    retention_days: 7
+    # Backup encryption
+    encrypt_backups: true
+    # Backup location
+    location: "${SESSION_BACKUP_LOCATION:-/backup/sessions}"

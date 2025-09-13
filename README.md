@@ -171,6 +171,30 @@ This version includes a comprehensive codebase audit and cleanup with significan
 
 For detailed audit results, see [FINAL_AUDIT_REPORT.md](FINAL_AUDIT_REPORT.md).
 
+## Template Development
+
+### Template Maintenance
+
+For developers working with template files, comprehensive guidelines are available:
+
+- **[Template Maintenance Guidelines](docs/TEMPLATE_MAINTENANCE.md)** - Complete guide for maintaining Go template files
+- **[Quick Reference](docs/TEMPLATE_QUICK_REFERENCE.md)** - Essential commands and patterns for daily development
+
+Key points for template development:
+
+- All template files must have proper import statements for used packages
+- Follow Go import organization conventions (standard library, third-party, local)
+- Use validation tools before committing template changes
+- Test template compilation with sample data
+
+```bash
+# Validate templates before committing
+go run scripts/validate-templates/main.go --check-imports
+
+# Generate test project to verify templates
+go run cmd/generator/main.go --config test-config.yaml --output test-validation
+```
+
 ## Contributing
 
 Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.

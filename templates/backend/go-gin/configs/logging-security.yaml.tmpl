@@ -1,0 +1,253 @@
+# Security-focused logging configuration
+# This configuration ensures that logs capture security events without exposing sensitive data
+
+logging:
+  # Log level configuration
+  level: "info"  # Use "debug" only in development
+  
+  # Output configuration
+  output:
+    # Console output for development
+    console:
+      enabled: true
+      format: "json"  # Use JSON format for structured logging
+      timestamp: true
+      caller: false   # Don't expose file paths in production logs
+    
+    # File output for production
+    file:
+      enabled: true
+      path: "/var/log/{{.Name}}/app.log"
+      max_size: 100   # MB
+      max_backups: 10
+      max_age: 30     # days
+      compress: true
+      format: "json"
+  
+  # Security event logging
+  security:
+    enabled: true
+    # Separate file for security events
+    file: "/var/log/{{.Name}}/security.log"
+    # Include additional context for security events
+    include_request_id: true
+    include_user_id: true
+    include_ip: true
+    include_user_agent: true
+    
+    # Events to log
+    events:
+      - "auth_failure"
+      - "unauthorized_access"
+      - "forbidden_access"
+      - "suspicious_404"
+      - "rate_limit_exceeded"
+      - "csrf_error"
+      - "panic_recovered"
+      - "internal_server_error"
+      - "database_error"
+      - "suspicious_validation_error"
+      - "method_not_allowed"
+  
+  # Data sanitization rules
+  sanitization:
+    # Fields to redact in logs
+    redact_fields:
+      - "password"
+      - "token"
+      - "secret"
+      - "key"
+      - "authorization"
+      - "cookie"
+      - "session"
+    
+    # Patterns to redact (regex)
+    redact_patterns:
+      - "Bearer\\s+[A-Za-z0-9\\-_]+\\.[A-Za-z0-9\\-_]+\\.[A-Za-z0-9\\-_]+"  # JWT tokens
+      - "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}\\b"           # Email addresses
+      - "\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b"              # Credit card numbers
+      - "\\b\\d{3}-\\d{2}-\\d{4}\\b"                                        # SSN format
+    
+    # Maximum length for log fields to prevent log flooding
+    max_field_length: 1000
+    
+    # Truncate long messages
+    truncate_messages: true
+    max_message_length: 2000
+
+  # Request logging configuration
+  request:
+    enabled: true
+    # Include request details
+    include_method: true
+    include_path: true
+    include_query: false      # Don't log query parameters (may contain sensitive data)
+    include_headers: false    # Don't log headers (may contain tokens)
+    include_body: false       # Never log request bodies
+    include_response_time: true
+    include_status_code: true
+    
+    # Exclude certain paths from logging
+    exclude_paths:
+      - "/health"
+      - "/metrics"
+      - "/favicon.ico"
+    
+    # Exclude certain user agents (health checks, monitoring)
+    exclude_user_agents:
+      - "kube-probe"
+      - "Prometheus"
+      - "Grafana"
+
+  # Error logging configuration
+  error:
+    enabled: true
+    # Include stack traces only in development
+    include_stack_trace: false  # Set to true only in development
+    # Include caller information
+    include_caller: true
+    # Maximum stack trace depth
+    max_stack_depth: 10
+
+  # Performance logging
+  performance:
+    enabled: true
+    # Log slow requests
+    slow_request_threshold: "1s"
+    # Log database query performance
+    log_db_queries: false  # Enable only for debugging
+    # Log memory usage
+    log_memory_usage: false
+
+  # Compliance and audit logging
+  audit:
+    enabled: true
+    # Log all authentication events
+    log_auth_events: true
+    # Log all authorization failures
+    log_authz_failures: true
+    # Log data access events
+    log_data_access: true
+    # Log configuration changes
+    log_config_changes: true
+    
+    # Retention policy for audit logs
+    retention_days: 365
+    
+    # Audit log format (must be immutable)
+    format: "json"
+    signing: false  # Enable if you need log integrity verification
+
+# Environment-specific overrides
+environments:
+  development:
+    logging:
+      level: "debug"
+      output:
+        console:
+          caller: true
+      error:
+        include_stack_trace: true
+      request:
+        include_query: true
+        include_headers: true  # Only in development
+      performance:
+        log_db_queries: true
+        log_memory_usage: true
+  
+  staging:
+    logging:
+      level: "info"
+      output:
+        console:
+          enabled: false
+      error:
+        include_stack_trace: false
+  
+  production:
+    logging:
+      level: "warn"
+      output:
+        console:
+          enabled: false
+      error:
+        include_stack_trace: false
+        include_caller: false
+      request:
+        include_query: false
+        include_headers: false
+      performance:
+        log_db_queries: false
+        log_memory_usage: false
+
+# Integration with external logging systems
+integrations:
+  # Syslog integration
+  syslog:
+    enabled: false
+    network: "udp"
+    address: "localhost:514"
+    facility: "local0"
+    tag: "{{.Name}}"
+  
+  # ELK Stack integration
+  elasticsearch:
+    enabled: false
+    url: "http://localhost:9200"
+    index: "{{.Name}}-logs"
+    username: ""
+    password: ""
+  
+  # Splunk integration
+  splunk:
+    enabled: false
+    url: "https://splunk.example.com:8088"
+    token: ""
+    index: "{{.Name}}"
+  
+  # CloudWatch integration
+  cloudwatch:
+    enabled: false
+    region: "us-east-1"
+    log_group: "/aws/{{.Name}}"
+    log_stream: "{{.Name}}-{instance-id}"
+
+# Security monitoring alerts
+alerts:
+  enabled: true
+  
+  # Thresholds for security alerts
+  thresholds:
+    # Authentication failures per minute
+    auth_failures_per_minute: 10
+    # 404 errors per minute (potential scanning)
+    not_found_per_minute: 50
+    # Internal server errors per minute
+    server_errors_per_minute: 5
+    # Rate limit violations per minute
+    rate_limit_violations_per_minute: 20
+  
+  # Alert destinations
+  destinations:
+    # Email alerts
+    email:
+      enabled: false
+      smtp_host: "smtp.example.com"
+      smtp_port: 587
+      username: ""
+      password: ""
+      from: "alerts@{{.Name}}.com"
+      to: ["security@{{.Name}}.com"]
+    
+    # Slack alerts
+    slack:
+      enabled: false
+      webhook_url: ""
+      channel: "#security-alerts"
+    
+    # PagerDuty integration
+    pagerduty:
+      enabled: false
+      integration_key: ""
+</content>
+</invoke>

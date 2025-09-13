@@ -1,0 +1,162 @@
+# Production Security Configuration
+# Overrides base security.yaml with production-specific settings
+# This configuration prioritizes security over development convenience
+
+security:
+  # Strict CSP for production
+  content_security_policy:
+    enabled: true
+    # More restrictive CSP for production
+    default_src: "'self'"
+    script_src: "'self'"
+    style_src: "'self'"
+    img_src: "'self' data:"
+    font_src: "'self'"
+    connect_src: "'self'"
+    frame_ancestors: "'none'"
+    base_uri: "'self'"
+    form_action: "'self'"
+    upgrade_insecure_requests: true
+    # Enable CSP reporting in production
+    report_uri: "/api/v1/security/csp-report"
+    report_to: "csp-endpoint"
+    # Block all violations in production
+    enforce_mode: true
+
+  # Production session security
+  session:
+    cookie_secure: true # Always require HTTPS
+    cookie_same_site: "Strict"
+    session_timeout: 900 # 15 minutes for production
+    absolute_timeout: 14400 # 4 hours maximum
+    regenerate_interval: 600 # Every 10 minutes
+    
+  # Strict authentication for production
+  authentication:
+    password_policy:
+      min_length: 14 # Longer passwords in production
+      max_age_days: 60 # More frequent password changes
+    
+    lockout_policy:
+      max_attempts: 3 # Strict lockout
+      lockout_duration: 3600 # 1 hour lockout
+      progressive_delay: true
+      
+    jwt:
+      access_token_expiry: 600 # 10 minutes in production
+      refresh_token_expiry: 86400 # 1 day only
+      refresh_token_rotation: true # Always rotate in production
+
+  # Aggressive rate limiting for production
+  rate_limiting:
+    enabled: true
+    global:
+      requests_per_minute: 30 # More restrictive
+      burst: 5
+    endpoints:
+      "/api/v1/auth/login":
+        requests_per_minute: 3
+        burst: 1
+      "/api/v1/auth/register":
+        requests_per_minute: 1
+        burst: 1
+      "/api/v1/auth/password-reset":
+        requests_per_minute: 1
+        burst: 1
+    auto_ban_threshold: 50
+    auto_ban_duration: 7200 # 2 hours
+
+  # Production input validation
+  input_validation:
+    max_request_size: "5MB" # Smaller limits in production
+    max_json_size: "500KB"
+    max_form_size: "2MB"
+    max_multipart_size: "20MB"
+    
+    file_uploads:
+      max_file_size: "5MB"
+      scan_for_malware: true
+      quarantine_suspicious: true
+      virus_scan_timeout: 30
+
+  # Production database security
+  database:
+    ssl_mode: "require"
+    ssl_cert_verification: true
+    connection_encryption: true
+    query_timeout: 15 # Shorter timeout in production
+    audit_queries: true
+    encrypt_sensitive_fields: true
+
+  # Enhanced logging for production
+  logging:
+    security_events:
+      enabled: true
+      log_level: "warn" # Only warnings and errors
+      
+    sanitization:
+      enabled: true
+      # More aggressive redaction in production
+      redacted_fields:
+        - "password"
+        - "token"
+        - "secret"
+        - "key"
+        - "authorization"
+        - "cookie"
+        - "session"
+        - "credit_card"
+        - "ssn"
+        - "email"
+        - "phone"
+        - "ip_address"
+        - "user_agent"
+        - "referer"
+      
+    retention:
+      security_logs_days: 2555 # 7 years for compliance
+      application_logs_days: 365
+      debug_logs_days: 0 # No debug logs in production
+
+  # Production API security
+  api:
+    swagger_ui_enabled: false # Never enable in production
+    api_docs_auth_required: true
+    remove_server_header: true
+    remove_x_powered_by: true
+    
+  # Enhanced monitoring for production
+  monitoring:
+    security_monitoring:
+      enabled: true
+      alert_thresholds:
+        failed_logins_per_minute: 5 # Lower thresholds
+        rate_limit_violations_per_minute: 20
+        csp_violations_per_minute: 2
+        suspicious_requests_per_minute: 10
+      
+      # Real-time alerting in production
+      real_time_alerts: true
+      alert_severity: "high"
+      
+    health_checks:
+      include_security_status: true
+      check_certificate_expiry: true
+      check_dependency_vulnerabilities: true
+      vulnerability_scan_interval: 3600 # Every hour
+
+  # Production compliance
+  compliance:
+    audit_trail:
+      enabled: true
+      include_request_body: false
+      include_response_body: false
+      include_headers: false # Minimal logging for privacy
+      retention_days: 2555 # 7 years
+      
+    privacy:
+      data_minimization: true
+      purpose_limitation: true
+      consent_tracking: true
+      right_to_erasure: true
+      anonymization_enabled: true

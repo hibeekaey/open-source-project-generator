@@ -86,7 +86,7 @@ func (p *DirectoryProcessor) ProcessTemplateDirectory(templateDir, outputDir str
 }
 
 // processFileWithInheritance processes a file with template inheritance support
-func (p *DirectoryProcessor) processFileWithInheritance(srcPath, destPath string, config *models.ProjectConfig, metadata *TemplateMetadata) error {
+func (p *DirectoryProcessor) processFileWithInheritance(srcPath, destPath string, config *models.ProjectConfig, _ *TemplateMetadata) error {
 	// Check if file is a template
 	if strings.HasSuffix(srcPath, ".tmpl") {
 		// Remove .tmpl extension from destination
@@ -274,7 +274,7 @@ func (p *DirectoryProcessor) processTemplateExtends(content, templatePath string
 }
 
 // processTemplateIncludes handles partial template includes
-func (p *DirectoryProcessor) processTemplateIncludes(content, templatePath string, config *models.ProjectConfig) (string, error) {
+func (p *DirectoryProcessor) processTemplateIncludes(content, templatePath string, _ *models.ProjectConfig) (string, error) {
 	// Process include directives: {{/* include "partial.tmpl" */}}
 	for {
 		start := strings.Index(content, "{{/* include ")

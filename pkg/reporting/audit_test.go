@@ -353,3 +353,237 @@ func TestAuditTrail_NonExistentLogFile(t *testing.T) {
 		t.Errorf("Expected 0 events from non-existent log file, got %d", len(events))
 	}
 }
+
+func TestAuditTrail_SecureIDGeneration(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "test_audit")
+	if err != nil {
+		t.Fatalf("Failed to create temp directory: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	logFile := filepath.Join(tempDir, "audit.log")
+	audit := NewAuditTrail(logFile)
+
+	// Generate multiple audit events and collect their IDs
+	var eventIDs []string
+	for i := 0; i < 100; i++ {
+		err := audit.LogVersionUpdate("test-package", "1.0.0", "1.0.1", true, nil)
+		if err != nil {
+			t.Fatalf("Failed to log version update: %v", err)
+		}
+	}
+
+	// Retrieve all events and collect IDs
+	events, err := audit.GetAuditHistory(time.Now().Add(-1*time.Hour), time.Now().Add(1*time.Hour), "")
+	if err != nil {
+		t.Fatalf("Failed to get audit history: %v", err)
+	}
+
+	if len(events) != 100 {
+		t.Fatalf("Expected 100 events, got %d", len(events))
+	}
+
+	for _, event := range events {
+		eventIDs = append(eventIDs, event.ID)
+	}
+
+	// Test 1: All IDs should be unique (collision resistance)
+	idSet := make(map[string]bool)
+	for _, id := range eventIDs {
+		if idSet[id] {
+			t.Errorf("Duplicate ID found: %s", id)
+		}
+		idSet[id] = true
+	}
+
+	// Test 2: All IDs should have the "audit_" prefix
+	for _, id := range eventIDs {
+		if !strings.HasPrefix(id, "audit_") {
+			t.Errorf("ID does not have 'audit_' prefix: %s", id)
+		}
+	}
+
+	// Test 3: IDs should not be predictable (not timestamp-based)
+	// Check that IDs don't follow a sequential pattern
+	for i := 1; i < len(eventIDs); i++ {
+		// Extract the suffix after "audit_"
+		suffix1 := strings.TrimPrefix(eventIDs[i-1], "audit_")
+		suffix2 := strings.TrimPrefix(eventIDs[i], "audit_")
+
+		// If these were timestamp-based, they would be sequential numbers
+		// With secure random generation, they should be completely different
+		if suffix1 == suffix2 {
+			t.Errorf("Sequential IDs are identical, indicating predictable generation")
+		}
+
+		// Check that suffixes are not simple increments (would indicate timestamp-based)
+		if len(suffix1) > 0 && len(suffix2) > 0 {
+			// For hex strings, check if they're not sequential
+			if isSequentialHex(suffix1, suffix2) {
+				t.Errorf("IDs appear to be sequential, indicating predictable generation: %s -> %s", suffix1, suffix2)
+			}
+		}
+	}
+
+	// Test 4: IDs should have sufficient entropy (length check)
+	for _, id := range eventIDs {
+		suffix := strings.TrimPrefix(id, "audit_")
+		if len(suffix) < 16 { // Should have at least 16 characters of randomness
+			t.Errorf("ID suffix too short, may lack sufficient entropy: %s", suffix)
+		}
+	}
+}
+
+func TestAuditTrail_SecureIDGenerationWithCustomRandom(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "test_audit")
+	if err != nil {
+		t.Fatalf("Failed to create temp directory: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	logFile := filepath.Join(tempDir, "audit.log")
+
+	// Create audit trail with custom secure random generator
+	customRandom := &MockSecureRandom{}
+	audit := NewAuditTrailWithSecureRandom(logFile, customRandom)
+
+	// Log an event
+	err = audit.LogVersionUpdate("test-package", "1.0.0", "1.0.1", true, nil)
+	if err != nil {
+		t.Fatalf("Failed to log version update: %v", err)
+	}
+
+	// Verify that custom random generator was used
+	if !customRandom.GenerateSecureIDCalled {
+		t.Errorf("Custom secure random generator was not called")
+	}
+
+	// Retrieve event and check ID
+	events, err := audit.GetAuditHistory(time.Now().Add(-1*time.Hour), time.Now().Add(1*time.Hour), "")
+	if err != nil {
+		t.Fatalf("Failed to get audit history: %v", err)
+	}
+
+	if len(events) != 1 {
+		t.Fatalf("Expected 1 event, got %d", len(events))
+	}
+
+	expectedID := "audit_mock_secure_id"
+	if events[0].ID != expectedID {
+		t.Errorf("Expected ID '%s', got '%s'", expectedID, events[0].ID)
+	}
+}
+
+func TestAuditTrail_SecureIDGenerationFallback(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "test_audit")
+	if err != nil {
+		t.Fatalf("Failed to create temp directory: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	logFile := filepath.Join(tempDir, "audit.log")
+
+	// Create audit trail with failing secure random generator
+	failingRandom := &FailingSecureRandom{}
+	audit := NewAuditTrailWithSecureRandom(logFile, failingRandom)
+
+	// Log an event (should use fallback ID generation)
+	err = audit.LogVersionUpdate("test-package", "1.0.0", "1.0.1", true, nil)
+	if err != nil {
+		t.Fatalf("Failed to log version update: %v", err)
+	}
+
+	// Retrieve event and check that fallback ID was used
+	events, err := audit.GetAuditHistory(time.Now().Add(-1*time.Hour), time.Now().Add(1*time.Hour), "")
+	if err != nil {
+		t.Fatalf("Failed to get audit history: %v", err)
+	}
+
+	if len(events) != 1 {
+		t.Fatalf("Expected 1 event, got %d", len(events))
+	}
+
+	// Fallback ID should have "audit_fallback_" prefix
+	if !strings.HasPrefix(events[0].ID, "audit_fallback_") {
+		t.Errorf("Expected fallback ID with 'audit_fallback_' prefix, got '%s'", events[0].ID)
+	}
+}
+
+// Helper function to check if two hex strings are sequential
+func isSequentialHex(hex1, hex2 string) bool {
+	// This is a simple check - in practice, timestamp-based IDs would show
+	// very small differences between consecutive calls
+	if len(hex1) != len(hex2) {
+		return false
+	}
+
+	// Convert to integers and check if difference is small (indicating timestamp-based)
+	// This is a heuristic - real random hex strings should have large differences
+	var diff int
+	for i := 0; i < len(hex1) && i < len(hex2); i++ {
+		if hex1[i] != hex2[i] {
+			diff++
+		}
+	}
+
+	// If only a few characters differ, it might be sequential
+	// Random strings should differ in many positions
+	return diff < 3
+}
+
+// Mock implementations for testing
+
+type MockSecureRandom struct {
+	GenerateSecureIDCalled bool
+}
+
+func (m *MockSecureRandom) GenerateRandomSuffix(length int) (string, error) {
+	return "mock_suffix", nil
+}
+
+func (m *MockSecureRandom) GenerateSecureID(prefix string) (string, error) {
+	m.GenerateSecureIDCalled = true
+	return prefix + "_mock_secure_id", nil
+}
+
+func (m *MockSecureRandom) GenerateBytes(length int) ([]byte, error) {
+	return make([]byte, length), nil
+}
+
+func (m *MockSecureRandom) GenerateHexString(length int) (string, error) {
+	return strings.Repeat("a", length), nil
+}
+
+func (m *MockSecureRandom) GenerateBase64String(length int) (string, error) {
+	return strings.Repeat("A", length), nil
+}
+
+func (m *MockSecureRandom) GenerateAlphanumeric(length int) (string, error) {
+	return strings.Repeat("A", length), nil
+}
+
+type FailingSecureRandom struct{}
+
+func (f *FailingSecureRandom) GenerateRandomSuffix(length int) (string, error) {
+	return "", fmt.Errorf("random generation failed")
+}
+
+func (f *FailingSecureRandom) GenerateSecureID(prefix string) (string, error) {
+	return "", fmt.Errorf("secure ID generation failed")
+}
+
+func (f *FailingSecureRandom) GenerateBytes(length int) ([]byte, error) {
+	return nil, fmt.Errorf("byte generation failed")
+}
+
+func (f *FailingSecureRandom) GenerateHexString(length int) (string, error) {
+	return "", fmt.Errorf("hex generation failed")
+}
+
+func (f *FailingSecureRandom) GenerateBase64String(length int) (string, error) {
+	return "", fmt.Errorf("base64 generation failed")
+}
+
+func (f *FailingSecureRandom) GenerateAlphanumeric(length int) (string, error) {
+	return "", fmt.Errorf("alphanumeric generation failed")
+}

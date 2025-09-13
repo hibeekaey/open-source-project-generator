@@ -32,7 +32,9 @@ jwt:
 
 cors:
   allowed_origins:
-    - "*"
+    - "http://localhost:3000"
+    - "http://localhost:3001"
+    - "http://localhost:3002"
   allowed_methods:
     - "GET"
     - "POST"
@@ -40,7 +42,10 @@ cors:
     - "DELETE"
     - "OPTIONS"
   allowed_headers:
-    - "*"
+    - "Content-Type"
+    - "Authorization"
+    - "X-Requested-With"
+    - "X-Request-ID"
   allow_credentials: true
   max_age: 86400
 
