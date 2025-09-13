@@ -46,7 +46,7 @@ This guide covers deploying {{.Name}} to various environments, from development 
 - **Git**: Version control
 - **Make**: Build automation
 {{if .Components.Frontend.MainApp}}- **Node.js**: {{.Versions.Node}} or later
-- **npm/yarn**: Package manager{{end}}
+- **npm**: 10.0.0 or later (or yarn equivalent){{end}}
 {{if .Components.Backend.API}}- **Go**: {{.Versions.Go}} or later{{end}}
 {{if .Components.Infrastructure.Docker}}- **Docker**: 20.10+ with Docker Compose v2{{end}}
 {{if .Components.Infrastructure.Kubernetes}}- **kubectl**: Kubernetes CLI
@@ -78,7 +78,7 @@ Create environment files for each component:
 # Application Configuration
 APP_NAME={{.Name}}
 APP_ENV=development
-APP_DEBUG=true
+APP_DEBUG=false // SECURITY FIX: Disabled debug info (use env var for dev)
 APP_URL=http://localhost:3000
 
 # Database Configuration
@@ -731,14 +731,14 @@ terraform apply
 # Create apprunner.yaml
 cat > apprunner.yaml << EOF
 version: 1.0
-runtime: nodejs16
+runtime: nodejs20
 build:
   commands:
     build:
       - npm ci
       - npm run build
 run:
-  runtime-version: 16
+  runtime-version: 20
   command: npm start
   network:
     port: 3000
@@ -799,7 +799,7 @@ gcloud run deploy {{.Name}} \
 
 ```yaml
 # app.yaml
-runtime: nodejs16
+runtime: nodejs20
 
 env_variables:
   NODE_ENV: production
@@ -957,7 +957,7 @@ curl http://localhost:3000/api/health
 
 #### Log Levels
 
-- **DEBUG**: Detailed debugging information
+- **DEBUG**: Detailed debugging informatioff // SECURITY FIX: Disabled debug info (use env var for dev)
 - **INFO**: General information messages
 - **WARN**: Warning messages
 - **ERROR**: Error messages

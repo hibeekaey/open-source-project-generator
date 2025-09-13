@@ -5,58 +5,53 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/open-source-template-generator/pkg/models"
-	"github.com/open-source-template-generator/pkg/version"
 )
 
-func TestTemplateEngineWithVersionManager(t *testing.T) {
-	// Create temporary directory for test
+func TestVersionSubstitutionIntegration(t *testing.T) {
+	// Create a temporary directory for test templates
 	tempDir := t.TempDir()
 
-	// Create a simple template file
-	templateContent := `{
-  "name": "{{.Name}}",
-  "version": "1.0.0",
-  "dependencies": {
-    "next": "^{{nextjsVersion .}}",
-    "react": "^{{reactVersion .}}",
-    "typescript": "^{{packageVersion . "typescript"}}"
-  },
+	// Create test template content with version variables
+	testTemplate := `{
+  "name": "test-app",
   "engines": {
-    "node": ">=18.0.0"
+    "node": "{{nodeRuntime .}}",
+    "npm": "{{nodeNPMVersion .}}"
+  },
+  "dependencies": {
+    "@types/node": "{{nodeTypesVersion .}}",
+    "react": "{{.Versions.React}}"
   }
 }`
 
 	templatePath := filepath.Join(tempDir, "package.json.tmpl")
-	if err := os.WriteFile(templatePath, []byte(templateContent), 0644); err != nil {
-		t.Fatalf("Failed to write template file: %v", err)
+	err := os.WriteFile(templatePath, []byte(testTemplate), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create test template: %v", err)
 	}
 
-	// Create version cache and manager
-	cache := version.NewMemoryCache(time.Hour)
-	versionManager := version.NewManager(cache)
-
-	// Create template engine with version manager
-	engine := NewEngineWithVersionManager(versionManager)
-
-	// Create project config
+	// Create test configuration with Node.js version config
 	config := &models.ProjectConfig{
 		Name:         "test-project",
 		Organization: "test-org",
+		Description:  "Test project",
+		License:      "MIT",
 		Versions: &models.VersionConfig{
-			Node:   "20.11.0",
-			NextJS: "15.0.0",
-			React:  "18.2.0",
-			Packages: map[string]string{
-				"typescript": "5.3.0",
+			React: "18.2.0",
+			NodeJS: &models.NodeVersionConfig{
+				Runtime:      ">=20.0.0",
+				TypesPackage: "^20.17.0",
+				NPMVersion:   ">=10.0.0",
+				DockerImage:  "node:20-alpine",
+				LTSStatus:    true,
 			},
-			UpdatedAt: time.Now(),
 		},
 	}
 
-	// Process the template
+	// Create engine and process template
+	engine := NewEngine()
 	result, err := engine.ProcessTemplate(templatePath, config)
 	if err != nil {
 		t.Fatalf("Failed to process template: %v", err)
@@ -64,50 +59,273 @@ func TestTemplateEngineWithVersionManager(t *testing.T) {
 
 	resultStr := string(result)
 
-	// Verify that versions were correctly substituted
-	if !strings.Contains(resultStr, `"next": "^15.0.0"`) {
-		t.Errorf("Expected Next.js version 15.0.0, got: %s", resultStr)
+	// Verify version substitutions
+	tests := []struct {
+		name     string
+		expected string
+		message  string
+	}{
+		{
+			name:     "node runtime",
+			expected: `"node": ">=20.0.0"`,
+			message:  "Node.js runtime version should be substituted correctly",
+		},
+		{
+			name:     "npm version",
+			expected: `"npm": ">=10.0.0"`,
+			message:  "NPM version should be substituted correctly",
+		},
+		{
+			name:     "types node version",
+			expected: `"@types/node": "^20.17.0"`,
+			message:  "@types/node version should be substituted correctly",
+		},
+		{
+			name:     "react version",
+			expected: `"react": "18.2.0"`,
+			message:  "React version should be substituted correctly",
+		},
 	}
 
-	if !strings.Contains(resultStr, `"react": "^18.2.0"`) {
-		t.Errorf("Expected React version 18.2.0, got: %s", resultStr)
-	}
-
-	if !strings.Contains(resultStr, `"typescript": "^5.3.0"`) {
-		t.Errorf("Expected TypeScript version 5.3.0, got: %s", resultStr)
-	}
-
-	if !strings.Contains(resultStr, `"name": "test-project"`) {
-		t.Errorf("Expected project name to be preserved, got: %s", resultStr)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if !strings.Contains(resultStr, tt.expected) {
+				t.Errorf("%s\nExpected to find: %s\nIn result: %s", tt.message, tt.expected, resultStr)
+			}
+		})
 	}
 }
 
-func TestTemplateEngineVersionFallbacks(t *testing.T) {
-	// Create temporary directory for test
-	tempDir := t.TempDir()
-
-	// Create a template that uses version functions
-	templateContent := `Node: {{nodeVersion .}}
-Go: {{goVersion .}}
-Next.js: {{nextjsVersion .}}
-React: {{reactVersion .}}
-Unknown Package: {{packageVersion . "unknown-package"}}`
-
-	templatePath := filepath.Join(tempDir, "versions.txt.tmpl")
-	if err := os.WriteFile(templatePath, []byte(templateContent), 0644); err != nil {
-		t.Fatalf("Failed to write template file: %v", err)
+func TestVersionCompatibilityValidation(t *testing.T) {
+	tests := []struct {
+		name        string
+		config      *models.NodeVersionConfig
+		expectError bool
+		errorMsg    string
+	}{
+		{
+			name: "compatible versions",
+			config: &models.NodeVersionConfig{
+				Runtime:      ">=20.0.0",
+				TypesPackage: "^20.17.0",
+				NPMVersion:   ">=10.0.0",
+				DockerImage:  "node:20-alpine",
+			},
+			expectError: false,
+		},
+		{
+			name: "incompatible types version",
+			config: &models.NodeVersionConfig{
+				Runtime:      ">=20.0.0",
+				TypesPackage: "^18.0.0",
+				NPMVersion:   ">=10.0.0",
+				DockerImage:  "node:20-alpine",
+			},
+			expectError: true,
+			errorMsg:    "types version 18 is not compatible with runtime version 20",
+		},
+		{
+			name: "empty runtime version",
+			config: &models.NodeVersionConfig{
+				Runtime:      "",
+				TypesPackage: "^20.17.0",
+				NPMVersion:   ">=10.0.0",
+				DockerImage:  "node:20-alpine",
+			},
+			expectError: true,
+			errorMsg:    "Runtime version cannot be empty",
+		},
+		{
+			name: "empty types version",
+			config: &models.NodeVersionConfig{
+				Runtime:      ">=20.0.0",
+				TypesPackage: "",
+				NPMVersion:   ">=10.0.0",
+				DockerImage:  "node:20-alpine",
+			},
+			expectError: true,
+			errorMsg:    "Types package version cannot be empty",
+		},
 	}
 
-	// Create template engine without version manager
-	engine := NewEngine()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			validator := &VersionValidator{}
+			result := validator.ValidateNodeVersionConfig(tt.config)
 
-	// Create minimal project config without versions
+			if tt.expectError {
+				if result.Valid {
+					t.Errorf("Expected validation to fail, but it passed")
+				}
+
+				// Check if expected error message is found
+				found := false
+				for _, err := range result.Errors {
+					if strings.Contains(err.Message, tt.errorMsg) {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Errorf("Expected error message '%s' not found in validation errors: %v", tt.errorMsg, result.Errors)
+				}
+			} else {
+				if !result.Valid {
+					t.Errorf("Expected validation to pass, but it failed with errors: %v", result.Errors)
+				}
+			}
+		})
+	}
+}
+
+func TestMultipleTemplateVersionConsistency(t *testing.T) {
+	// Create temporary directory for multiple templates
+	tempDir := t.TempDir()
+
+	// Create multiple template files
+	templates := map[string]string{
+		"app/package.json.tmpl": `{
+  "name": "test-app",
+  "engines": {
+    "node": "{{nodeRuntime .}}",
+    "npm": "{{nodeNPMVersion .}}"
+  },
+  "dependencies": {
+    "@types/node": "{{nodeTypesVersion .}}"
+  }
+}`,
+		"admin/package.json.tmpl": `{
+  "name": "test-admin",
+  "engines": {
+    "node": "{{nodeRuntime .}}",
+    "npm": "{{nodeNPMVersion .}}"
+  },
+  "dependencies": {
+    "@types/node": "{{nodeTypesVersion .}}"
+  }
+}`,
+		"shared/package.json.tmpl": `{
+  "name": "test-shared",
+  "engines": {
+    "node": "{{nodeRuntime .}}",
+    "npm": "{{nodeNPMVersion .}}"
+  },
+  "devDependencies": {
+    "@types/node": "{{nodeTypesVersion .}}"
+  }
+}`,
+	}
+
+	// Create template files
+	for path, content := range templates {
+		fullPath := filepath.Join(tempDir, path)
+		err := os.MkdirAll(filepath.Dir(fullPath), 0755)
+		if err != nil {
+			t.Fatalf("Failed to create directory: %v", err)
+		}
+		err = os.WriteFile(fullPath, []byte(content), 0644)
+		if err != nil {
+			t.Fatalf("Failed to create template file %s: %v", path, err)
+		}
+	}
+
+	// Create test configuration
 	config := &models.ProjectConfig{
 		Name:         "test-project",
 		Organization: "test-org",
+		Description:  "Test project",
+		License:      "MIT",
+		Versions: &models.VersionConfig{
+			NodeJS: &models.NodeVersionConfig{
+				Runtime:      ">=20.0.0",
+				TypesPackage: "^20.17.0",
+				NPMVersion:   ">=10.0.0",
+				DockerImage:  "node:20-alpine",
+				LTSStatus:    true,
+			},
+		},
 	}
 
-	// Process the template
+	// Process all templates
+	engine := NewEngine()
+	results := make(map[string]string)
+
+	for path := range templates {
+		fullPath := filepath.Join(tempDir, path)
+		result, err := engine.ProcessTemplate(fullPath, config)
+		if err != nil {
+			t.Fatalf("Failed to process template %s: %v", path, err)
+		}
+		results[path] = string(result)
+	}
+
+	// Verify consistency across all templates
+	expectedVersions := map[string]string{
+		"node":        ">=20.0.0",
+		"npm":         ">=10.0.0",
+		"@types/node": "^20.17.0",
+	}
+
+	for templatePath, content := range results {
+		for versionKey, expectedVersion := range expectedVersions {
+			var expectedPattern string
+			switch versionKey {
+			case "node":
+				expectedPattern = `"node": "` + expectedVersion + `"`
+			case "npm":
+				expectedPattern = `"npm": "` + expectedVersion + `"`
+			case "@types/node":
+				expectedPattern = `"@types/node": "` + expectedVersion + `"`
+			}
+
+			if !strings.Contains(content, expectedPattern) {
+				t.Errorf("Template %s missing expected %s version %s\nContent: %s",
+					templatePath, versionKey, expectedVersion, content)
+			}
+		}
+	}
+}
+
+func TestDockerImageSubstitution(t *testing.T) {
+	// Create test template with Docker image variable
+	tempDir := t.TempDir()
+	templateContent := `FROM {{nodeDockerImage .}} AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+FROM {{nodeDockerImage .}} AS runner
+WORKDIR /app
+COPY --from=builder /app/dist ./dist
+CMD ["npm", "start"]`
+
+	templatePath := filepath.Join(tempDir, "Dockerfile.tmpl")
+	err := os.WriteFile(templatePath, []byte(templateContent), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create test template: %v", err)
+	}
+
+	// Create test configuration
+	config := &models.ProjectConfig{
+		Name:         "test-project",
+		Organization: "test-org",
+		Description:  "Test project",
+		License:      "MIT",
+		Versions: &models.VersionConfig{
+			NodeJS: &models.NodeVersionConfig{
+				Runtime:      ">=20.0.0",
+				TypesPackage: "^20.17.0",
+				NPMVersion:   ">=10.0.0",
+				DockerImage:  "node:20-alpine",
+				LTSStatus:    true,
+			},
+		},
+	}
+
+	// Process template
+	engine := NewEngine()
 	result, err := engine.ProcessTemplate(templatePath, config)
 	if err != nil {
 		t.Fatalf("Failed to process template: %v", err)
@@ -115,101 +333,108 @@ Unknown Package: {{packageVersion . "unknown-package"}}`
 
 	resultStr := string(result)
 
-	// Verify that fallback versions are used
-	if !strings.Contains(resultStr, "Node: 20.11.0") {
-		t.Errorf("Expected fallback Node version, got: %s", resultStr)
+	// Verify Docker image substitution
+	expectedImages := []string{
+		"FROM node:20-alpine AS builder",
+		"FROM node:20-alpine AS runner",
 	}
 
-	if !strings.Contains(resultStr, "Go: 1.22.0") {
-		t.Errorf("Expected fallback Go version, got: %s", resultStr)
-	}
-
-	if !strings.Contains(resultStr, "Next.js: 15.0.0") {
-		t.Errorf("Expected fallback Next.js version, got: %s", resultStr)
-	}
-
-	if !strings.Contains(resultStr, "React: 18.2.0") {
-		t.Errorf("Expected fallback React version, got: %s", resultStr)
-	}
-
-	if !strings.Contains(resultStr, "Unknown Package: latest") {
-		t.Errorf("Expected 'latest' for unknown package, got: %s", resultStr)
+	for _, expected := range expectedImages {
+		if !strings.Contains(resultStr, expected) {
+			t.Errorf("Expected Docker image substitution not found: %s\nResult: %s", expected, resultStr)
+		}
 	}
 }
 
-func TestTemplateEngineDirectoryProcessing(t *testing.T) {
-	// Create temporary directories
+func TestDefaultVersionConfiguration(t *testing.T) {
+	// Create test template
 	tempDir := t.TempDir()
-	templateDir := filepath.Join(tempDir, "templates")
-	outputDir := filepath.Join(tempDir, "output")
-
-	// Create template directory structure
-	if err := os.MkdirAll(templateDir, 0755); err != nil {
-		t.Fatalf("Failed to create template directory: %v", err)
-	}
-
-	// Create a package.json template
-	packageTemplate := `{
-  "name": "{{.Name}}",
+	templateContent := `{
+  "engines": {
+    "node": "{{nodeRuntime .}}",
+    "npm": "{{nodeNPMVersion .}}"
+  },
   "dependencies": {
-    "next": "^{{nextjsVersion .}}",
-    "react": "^{{reactVersion .}}"
+    "@types/node": "{{nodeTypesVersion .}}"
   }
 }`
 
-	packagePath := filepath.Join(templateDir, "package.json.tmpl")
-	if err := os.WriteFile(packagePath, []byte(packageTemplate), 0644); err != nil {
-		t.Fatalf("Failed to write package template: %v", err)
+	templatePath := filepath.Join(tempDir, "package.json.tmpl")
+	err := os.WriteFile(templatePath, []byte(templateContent), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create test template: %v", err)
 	}
 
-	// Create a non-template file
-	readmeContent := "# {{.Name}}\n\nThis is a test project."
-	readmePath := filepath.Join(templateDir, "README.md")
-	if err := os.WriteFile(readmePath, []byte(readmeContent), 0644); err != nil {
-		t.Fatalf("Failed to write README: %v", err)
-	}
-
-	// Create version manager and template engine
-	cache := version.NewMemoryCache(time.Hour)
-	versionManager := version.NewManager(cache)
-	engine := NewEngineWithVersionManager(versionManager)
-
-	// Create project config
+	// Create minimal configuration without NodeJS version config
 	config := &models.ProjectConfig{
 		Name:         "test-project",
 		Organization: "test-org",
+		Description:  "Test project",
+		License:      "MIT",
+		Versions:     &models.VersionConfig{},
+	}
+
+	// Process template - should use defaults
+	engine := NewEngine()
+	result, err := engine.ProcessTemplate(templatePath, config)
+	if err != nil {
+		t.Fatalf("Failed to process template: %v", err)
+	}
+
+	resultStr := string(result)
+
+	// Verify default values are used
+	expectedDefaults := []string{
+		`"node": ">=20.0.0"`,
+		`"npm": ">=10.0.0"`,
+		`"@types/node": "^20.17.0"`,
+	}
+
+	for _, expected := range expectedDefaults {
+		if !strings.Contains(resultStr, expected) {
+			t.Errorf("Expected default version not found: %s\nResult: %s", expected, resultStr)
+		}
+	}
+}
+
+func TestVersionUpdateTimestamp(t *testing.T) {
+	config := &models.ProjectConfig{
+		Name:         "test-project",
+		Organization: "test-org",
+		Description:  "Test project",
+		License:      "MIT",
 		Versions: &models.VersionConfig{
-			NextJS: "15.0.0",
-			React:  "18.2.0",
+			NodeJS: &models.NodeVersionConfig{
+				Runtime:      ">=20.0.0",
+				TypesPackage: "^20.17.0",
+				NPMVersion:   ">=10.0.0",
+				DockerImage:  "node:20-alpine",
+				LTSStatus:    true,
+			},
 		},
 	}
 
-	// Process the directory
-	err := engine.ProcessDirectory(templateDir, outputDir, config)
+	// Create a simple template to test version enhancement through ProcessTemplate
+	tempDir := t.TempDir()
+	templateContent := `{"node": "{{nodeRuntime .}}"}`
+	templatePath := filepath.Join(tempDir, "test.json.tmpl")
+	err := os.WriteFile(templatePath, []byte(templateContent), 0644)
 	if err != nil {
-		t.Fatalf("Failed to process directory: %v", err)
+		t.Fatalf("Failed to create test template: %v", err)
 	}
 
-	// Verify package.json was processed
-	packageOutput := filepath.Join(outputDir, "package.json")
-	packageContent, err := os.ReadFile(packageOutput)
+	engine := NewEngine()
+
+	// Process template which internally calls enhanceConfigWithVersions
+	result, err := engine.ProcessTemplate(templatePath, config)
 	if err != nil {
-		t.Fatalf("Failed to read processed package.json: %v", err)
+		t.Fatalf("Failed to process template: %v", err)
 	}
 
-	packageStr := string(packageContent)
-	if !strings.Contains(packageStr, `"next": "^15.0.0"`) {
-		t.Errorf("Expected processed Next.js version in package.json, got: %s", packageStr)
-	}
-
-	// Verify README.md was copied as-is (not processed as template)
-	readmeOutput := filepath.Join(outputDir, "README.md")
-	readmeOutputContent, err := os.ReadFile(readmeOutput)
-	if err != nil {
-		t.Fatalf("Failed to read copied README.md: %v", err)
-	}
-
-	if string(readmeOutputContent) != readmeContent {
-		t.Errorf("README.md should be copied as-is, got: %s", string(readmeOutputContent))
+	// Verify the template was processed correctly
+	resultStr := string(result)
+	expected := `{"node": ">=20.0.0"}`
+	if resultStr != expected {
+		t.Errorf("Expected %s, got %s", expected, resultStr)
 	}
 }

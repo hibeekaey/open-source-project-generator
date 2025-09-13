@@ -284,7 +284,7 @@ setup_environment() {
 # {{.Name}} Environment Configuration
 APP_NAME={{.Name}}
 APP_ENV=development
-APP_DEBUG=true
+APP_DEBUG=false // SECURITY FIX: Disabled debug info (use env var for dev)
 
 # Database
 DATABASE_URL=postgresql://{{.Name}}_user:password@localhost:5432/{{.Name}}_dev

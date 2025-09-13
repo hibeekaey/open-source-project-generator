@@ -1,6 +1,10 @@
 package utils
 
 import (
+	"fmt"
+	"regexp"
+	"strings"
+
 	"github.com/go-playground/validator/v10"
 )
 
@@ -8,9 +12,117 @@ var validate *validator.Validate
 
 func init() {
 	validate = validator.New()
+	
+	// Register custom validators for enhanced security
+	validate.RegisterValidation("secure_password", validateSecurePassword)
+	validate.RegisterValidation("safe_string", validateSafeString)
+	validate.RegisterValidation("no_sql_injection", validateNoSQLInjection)
 }
 
-// ValidateStruct validates a struct using the validator package
+// ValidateStruct validates a struct using the validator package with enhanced security checks
 func ValidateStruct(s interface{}) error {
 	return validate.Struct(s)
+}
+
+// validateSecurePassword validates that a password meets security requirements
+func validateSecurePassword(fl validator.FieldLevel) bool {
+	password := fl.Field().String()
+	
+	// Minimum length check
+	if len(password) < 8 {
+		return false
+	}
+	
+	// Check for at least one uppercase letter
+	hasUpper := regexp.MustCompile(`[A-Z]`).MatchString(password)
+	// Check for at least one lowercase letter
+	hasLower := regexp.MustCompile(`[a-z]`).MatchString(password)
+	// Check for at least one digit
+	hasDigit := regexp.MustCompile(`\d`).MatchString(password)
+	// Check for at least one special character
+	hasSpecial := regexp.MustCompile(`[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]`).MatchString(password)
+	
+	return hasUpper && hasLower && hasDigit && hasSpecial
+}
+
+// validateSafeString validates that a string doesn't contain potentially dangerous characters
+func validateSafeString(fl validator.FieldLevel) bool {
+	str := fl.Field().String()
+	
+	// Check for common injection patterns
+	dangerousPatterns := []string{
+		"<script", "</script>", "javascript:", "vbscript:", "onload=", "onerror=",
+		"eval(", "expression(", "url(", "import(", "document.cookie",
+	}
+	
+	lowerStr := strings.ToLower(str)
+	for _, pattern := range dangerousPatterns {
+		if strings.Contains(lowerStr, pattern) {
+			return false
+		}
+	}
+	
+	return true
+}
+
+// validateNoSQLInjection validates that a string doesn't contain SQL injection patterns
+func validateNoSQLInjection(fl validator.FieldLevel) bool {
+	str := fl.Field().String()
+	
+	// Check for common SQL injection patterns
+	sqlPatterns := []string{
+		"'", "\"", ";", "--", "/*", "*/", "xp_", "sp_", "union", "select",
+		"insert", "update", "delete", "drop", "create", "alter", "exec",
+		"execute", "declare", "cast", "convert", "char(", "ascii(",
+	}
+	
+	lowerStr := strings.ToLower(str)
+	for _, pattern := range sqlPatterns {
+		if strings.Contains(lowerStr, pattern) {
+			return false
+		}
+	}
+	
+	return true
+}
+
+// SanitizeInput sanitizes user input to prevent injection attacks
+func SanitizeInput(input string) string {
+	// Remove null bytes
+	input = strings.ReplaceAll(input, "\x00", "")
+	
+	// Trim whitespace
+	input = strings.TrimSpace(input)
+	
+	// Remove control characters except tab, newline, and carriage return
+	var result strings.Builder
+	for _, r := range input {
+		if r >= 32 || r == 9 || r == 10 || r == 13 {
+			result.WriteRune(r)
+		}
+	}
+	
+	return result.String()
+}
+
+// ValidateID validates that an ID is valid (positive integer)
+func ValidateID(id uint) error {
+	if id == 0 {
+		return fmt.Errorf("invalid ID: must be greater than 0")
+	}
+	return nil
+}
+
+// ValidatePaginationParams validates pagination parameters
+func ValidatePaginationParams(offset, limit int) error {
+	if offset < 0 {
+		return fmt.Errorf("offset cannot be negative")
+	}
+	if limit <= 0 {
+		return fmt.Errorf("limit must be greater than 0")
+	}
+	if limit > 1000 {
+		return fmt.Errorf("limit cannot exceed 1000")
+	}
+	return nil
 }

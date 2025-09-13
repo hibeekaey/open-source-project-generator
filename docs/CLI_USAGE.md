@@ -7,16 +7,32 @@ The Open Source Template Generator is a command-line tool that creates productio
 ## Installation
 
 ### From Source
+
 ```bash
-git clone <repository-url>
+git clone https://github.com/your-org/open-source-template-generator
 cd open-source-template-generator
+make setup
 make build
 ```
 
 ### Using Go Install
+
 ```bash
 go install github.com/open-source-template-generator/cmd/generator@latest
 ```
+
+### Using Installation Script
+
+```bash
+curl -sSL https://raw.githubusercontent.com/your-org/open-source-template-generator/main/scripts/install.sh | bash
+```
+
+### Requirements
+
+- **Go 1.23+** for building from source
+- **Git** for cloning repositories
+- **Make** for using the build system
+- **Docker** (optional) for containerized usage
 
 ## Basic Usage
 
@@ -29,6 +45,7 @@ generator generate
 ```
 
 This will:
+
 1. Prompt you for project details (name, organization, description, etc.)
 2. Let you select which components to include
 3. Show a configuration preview
@@ -57,11 +74,13 @@ generator generate --dry-run
 Generates a new project from templates.
 
 **Flags:**
+
 - `--config, -c <file>`: Path to configuration file (YAML or JSON)
 - `--output, -o <path>`: Output directory path
 - `--dry-run`: Preview generation without creating files
 
 **Examples:**
+
 ```bash
 # Interactive generation
 generator generate
@@ -76,44 +95,26 @@ generator generate --output /path/to/project
 generator generate --dry-run
 ```
 
-### `generator validate`
-
-Validates a generated project structure and configuration.
-
-**Usage:**
-```bash
-generator validate [project-path]
-```
-
-**Flags:**
-- `--verbose, -v`: Show detailed validation output
-
-**Examples:**
-```bash
-# Validate current directory
-generator validate
-
-# Validate specific project
-generator validate /path/to/project
-
-# Verbose validation
-generator validate --verbose /path/to/project
-```
-
 ### `generator version`
 
 Shows version information for the generator and available packages.
 
 **Flags:**
-- `--packages`: Show latest package versions
+
+- `--packages`: Show latest package versions for all supported technologies
+- `--check-updates`: Check for generator updates
 
 **Examples:**
+
 ```bash
 # Show generator version
 generator version
 
 # Show generator version and latest package versions
 generator version --packages
+
+# Check for updates
+generator version --check-updates
 ```
 
 ### `generator config`
@@ -161,6 +162,7 @@ These flags can be used with any command:
 Configuration files can be in YAML or JSON format:
 
 ### YAML Example
+
 ```yaml
 name: "my-awesome-project"
 organization: "myorg"
@@ -189,6 +191,7 @@ output_path: "./my-awesome-project"
 ```
 
 ### JSON Example
+
 ```json
 {
   "name": "my-awesome-project",
@@ -218,53 +221,84 @@ output_path: "./my-awesome-project"
 }
 ```
 
-## Project Structure
+## Generated Project Structure
 
-The generator creates a standardized project structure:
+The generator creates a standardized, modern project structure following best practices:
 
 ```
 my-awesome-project/
-├── App/                    # Frontend applications
-│   ├── main/              # Main Next.js application
-│   ├── home/              # Landing page
-│   └── admin/             # Admin dashboard
-├── CommonServer/          # Backend API server (Go)
+├── App/                    # Frontend applications (Next.js 15+, React 19+)
+│   ├── main/              # Main application with TypeScript and Tailwind CSS
+│   ├── home/              # Landing page optimized for performance
+│   ├── admin/             # Admin dashboard with comprehensive UI components
+│   └── shared-components/ # Reusable component library
+├── CommonServer/          # Backend API server (Go 1.23+)
+│   ├── cmd/               # Application entry points
+│   ├── internal/          # Private application code
+│   ├── pkg/               # Public interfaces and utilities
+│   ├── migrations/        # Database migrations
+│   └── docs/              # API documentation (Swagger/OpenAPI)
 ├── Mobile/                # Mobile applications
-│   ├── android/           # Android Kotlin app
-│   ├── ios/               # iOS Swift app
-│   └── shared/            # Shared mobile resources
-├── Deploy/                # Infrastructure configurations
-│   ├── docker/            # Docker configurations
-│   ├── k8s/               # Kubernetes manifests
-│   └── terraform/         # Terraform configurations
-├── Docs/                  # Documentation
-├── Scripts/               # Build and deployment scripts
-├── .github/               # CI/CD workflows
-├── Makefile               # Build system
+│   ├── android/           # Android Kotlin 2.0+ with Jetpack Compose
+│   ├── ios/               # iOS Swift 5.9+ with SwiftUI
+│   └── shared/            # Shared resources, API specs, design system
+├── Deploy/                # Infrastructure configurations (latest versions)
+│   ├── docker/            # Docker 24+ with multi-stage builds
+│   ├── k8s/               # Kubernetes 1.28+ with security policies
+│   ├── terraform/         # Terraform 1.6+ for infrastructure as code
+│   └── monitoring/        # Prometheus, Grafana configurations
+├── Docs/                  # Comprehensive documentation
+│   ├── API.md             # API documentation
+│   ├── DEPLOYMENT.md      # Deployment guide
+│   ├── SECURITY_GUIDE.md  # Security best practices
+│   └── USER_GUIDE.md      # User documentation
+├── Scripts/               # Build and deployment automation
+│   ├── build.sh           # Build scripts for all components
+│   ├── deploy.sh          # Deployment automation
+│   ├── test.sh            # Testing automation
+│   └── setup.sh           # Development environment setup
+├── .github/               # CI/CD workflows and templates
+│   ├── workflows/         # GitHub Actions workflows
+│   ├── ISSUE_TEMPLATE/    # Issue templates
+│   └── PULL_REQUEST_TEMPLATE.md
+├── Makefile               # Comprehensive build system
 ├── docker-compose.yml     # Development environment
 ├── README.md              # Project documentation
 ├── CONTRIBUTING.md        # Contribution guidelines
-└── LICENSE                # Project license
+├── SECURITY.md            # Security policy
+├── LICENSE                # Project license
+└── .gitignore             # Git ignore patterns
 ```
 
 ## Component Selection
 
-### Frontend Components
-- **Main App**: Core Next.js application with TypeScript and Tailwind CSS
-- **Home**: Landing page application optimized for marketing
-- **Admin**: Admin dashboard with forms, tables, and data management
+### Frontend Components (Node.js 20+, Next.js 15+, React 19+)
 
-### Backend Components
-- **API**: Go API server with Gin framework, GORM, JWT auth, and Redis
+- **Main App**: Core Next.js application with TypeScript 5.7+, Tailwind CSS 3.4+, and comprehensive testing
+- **Home**: Landing page optimized for performance and SEO with modern design patterns
+- **Admin**: Admin dashboard with forms, tables, data management, and advanced UI components
+- **Shared Components**: Reusable component library with proper TypeScript definitions
+
+### Backend Components (Go 1.23+)
+
+- **API Server**: Go API server with Gin framework, GORM, JWT authentication, Redis caching
+- **Database**: PostgreSQL integration with migrations and proper connection pooling
+- **Authentication**: JWT-based auth with refresh tokens and secure session management
+- **Documentation**: Automatic Swagger/OpenAPI 3.0 documentation generation
 
 ### Mobile Components
-- **Android**: Kotlin application with Jetpack Compose and Material Design 3
-- **iOS**: Swift application with SwiftUI and proper MVVM architecture
 
-### Infrastructure Components
-- **Docker**: Multi-stage Dockerfiles and Docker Compose configurations
-- **Kubernetes**: Complete K8s manifests with proper resource limits
-- **Terraform**: Infrastructure as code for multi-cloud deployment
+- **Android**: Kotlin 2.0+ with Jetpack Compose, Material Design 3, and modern architecture
+- **iOS**: Swift 5.9+ with SwiftUI, proper MVVM architecture, and iOS best practices
+- **Shared Resources**: Common API specifications, design system, and shared assets
+
+### Infrastructure Components (Latest Versions)
+
+- **Docker**: Multi-stage Dockerfiles with security scanning and non-root users (Docker 24+)
+- **Kubernetes**: Complete K8s manifests with resource limits, security policies, and health checks (K8s 1.28+)
+- **Terraform**: Infrastructure as code for multi-cloud deployment with proper state management (Terraform 1.6+)
+- **Monitoring**: Prometheus and Grafana configurations for comprehensive observability
+- **CI/CD**: GitHub Actions workflows with security scanning, testing, and automated deployment
 
 ## Build System
 
@@ -330,24 +364,28 @@ The generator creates log files in `~/.cache/template-generator/logs/` for debug
 ## Examples
 
 ### Generate a Full-Stack Project
+
 ```bash
 generator generate
 # Select: Frontend Main App, Backend API, Infrastructure Docker
 ```
 
 ### Generate a Mobile-First Project
+
 ```bash
 generator generate
 # Select: Mobile Android, Mobile iOS, Backend API, Infrastructure Docker + K8s
 ```
 
 ### Generate from Configuration
+
 ```bash
 # Create config.yaml with your preferences
 generator generate --config config.yaml --output ./my-project
 ```
 
 ### Validate Generated Project
+
 ```bash
 cd my-project
 generator validate --verbose

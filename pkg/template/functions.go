@@ -48,6 +48,18 @@ func (e *Engine) registerDefaultFunctions() {
 		"packageVersion": getPackageVersion,
 		"hasPackage":     hasPackage,
 
+		// GitHub Actions template helpers
+		"secrets": githubSecrets,
+		"matrix":  githubMatrix,
+		"github":  githubContext,
+
+		// Enhanced Node.js version functions
+		"nodeRuntime":      getNodeRuntime,
+		"nodeTypesVersion": getNodeTypesVersion,
+		"nodeNPMVersion":   getNodeNPMVersion,
+		"nodeDockerImage":  getNodeDockerImage,
+		"isNodeLTS":        isNodeLTS,
+
 		// Conditional functions
 		"if":       templateIf,
 		"ifnot":    templateIfNot,
@@ -84,6 +96,7 @@ func (e *Engine) registerDefaultFunctions() {
 		"squote":     singleQuote,
 		"indent":     indent,
 		"nindent":    nindent,
+		"env":        getEnvVar,
 	}
 }
 
@@ -530,4 +543,66 @@ func indent(spaces int, text string) string {
 
 func nindent(spaces int, text string) string {
 	return "\n" + indent(spaces, text)
+}
+
+// Enhanced Node.js version functions
+
+func getNodeRuntime(config *models.ProjectConfig) string {
+	if config.Versions != nil && config.Versions.NodeJS != nil && config.Versions.NodeJS.Runtime != "" {
+		return config.Versions.NodeJS.Runtime
+	}
+	return ">=20.0.0" // Default fallback
+}
+
+func getNodeTypesVersion(config *models.ProjectConfig) string {
+	if config.Versions != nil && config.Versions.NodeJS != nil && config.Versions.NodeJS.TypesPackage != "" {
+		return config.Versions.NodeJS.TypesPackage
+	}
+	return "^20.17.0" // Default fallback
+}
+
+func getNodeNPMVersion(config *models.ProjectConfig) string {
+	if config.Versions != nil && config.Versions.NodeJS != nil && config.Versions.NodeJS.NPMVersion != "" {
+		return config.Versions.NodeJS.NPMVersion
+	}
+	return ">=10.0.0" // Default fallback
+}
+
+func getNodeDockerImage(config *models.ProjectConfig) string {
+	if config.Versions != nil && config.Versions.NodeJS != nil && config.Versions.NodeJS.DockerImage != "" {
+		return config.Versions.NodeJS.DockerImage
+	}
+	return "node:20-alpine" // Default fallback
+}
+
+func isNodeLTS(config *models.ProjectConfig) bool {
+	if config.Versions != nil && config.Versions.NodeJS != nil {
+		return config.Versions.NodeJS.LTSStatus
+	}
+	return true // Default to LTS
+}
+
+// getEnvVar returns an environment variable value or a default
+func getEnvVar(key string, defaultValue ...string) string {
+	// For templates, we return a placeholder that will be replaced during CI/CD
+	// This allows the template to generate valid GitHub Actions syntax
+	if len(defaultValue) > 0 {
+		return "${{ env." + key + " || '" + defaultValue[0] + "' }}"
+	}
+	return "${{ env." + key + " }}"
+}
+
+// githubSecrets returns a GitHub Actions secrets expression
+func githubSecrets(secretName string) string {
+	return "${{ secrets." + secretName + " }}"
+}
+
+// githubMatrix returns a GitHub Actions matrix expression
+func githubMatrix(field string) string {
+	return "${{ matrix." + field + " }}"
+}
+
+// githubContext returns a GitHub Actions github context expression
+func githubContext(field string) string {
+	return "${{ github." + field + " }}"
 }

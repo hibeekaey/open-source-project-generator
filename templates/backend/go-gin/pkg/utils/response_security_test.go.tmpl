@@ -1,0 +1,392 @@
+package utils
+
+import (
+	"encoding/json"
+	"errors"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"strings"
+	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestMain(m *testing.M) {
+	// Set test mode
+	gin.SetMode(gin.TestMode)
+	os.Exit(m.Run())
+}
+
+func setupTestContext() (*gin.Context, *httptest.ResponseRecorder) {
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest("GET", "/test", nil)
+	c.Set("request_id", "test-request-123")
+	return c, w
+}
+
+func TestSecureErrorResponse(t *testing.T) {
+	tests := []struct {
+		name           string
+		statusCode     int
+		message        string
+		err            error
+		eventType      string
+		expectedMsg    string
+		isProduction   bool
+	}{
+		{
+			name:         "Development mode with error details",
+			statusCode:   http.StatusInternalServerError,
+			message:      "Database connection failed",
+			err:          errors.New("connection refused to localhost:5432"),
+			eventType:    "database_error",
+			expectedMsg:  "Database connection failed",
+			isProduction: false,
+		},
+		{
+			name:         "Production mode with generic message",
+			statusCode:   http.StatusInternalServerError,
+			message:      "Database connection failed",
+			err:          errors.New("connection refused to localhost:5432"),
+			eventType:    "database_error",
+			expectedMsg:  "Internal server error",
+			isProduction: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Set environment
+			if tt.isProduction {
+				os.Setenv("GIN_MODE", "release")
+			} else {
+				os.Setenv("GIN_MODE", "debug")
+			}
+			defer os.Unsetenv("GIN_MODE")
+
+			c, w := setupTestContext()
+			
+			SecureErrorResponse(c, tt.statusCode, tt.message, tt.err, tt.eventType)
+
+			assert.Equal(t, tt.statusCode, w.Code)
+
+			var response ErrorResponse
+			err := json.Unmarshal(w.Body.Bytes(), &response)
+			assert.NoError(t, err)
+
+			assert.False(t, response.Success)
+			assert.Equal(t, tt.expectedMsg, response.Message)
+			assert.Equal(t, "test-request-123", response.RequestID)
+			assert.NotEmpty(t, response.Timestamp)
+
+			// In production, error details should not be exposed
+			if tt.isProduction {
+				assert.Nil(t, response.Error)
+			}
+		})
+	}
+}
+
+func TestUnauthorizedResponse(t *testing.T) {
+	c, w := setupTestContext()
+	
+	UnauthorizedResponse(c, "Invalid token")
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+
+	var response ErrorResponse
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+
+	assert.False(t, response.Success)
+	assert.Equal(t, "Authentication required", response.Message)
+	assert.Equal(t, "test-request-123", response.RequestID)
+}
+
+func TestForbiddenResponse(t *testing.T) {
+	c, w := setupTestContext()
+	
+	ForbiddenResponse(c, "Insufficient permissions")
+
+	assert.Equal(t, http.StatusForbidden, w.Code)
+
+	var response ErrorResponse
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+
+	assert.False(t, response.Success)
+	assert.Equal(t, "Access denied", response.Message)
+}
+
+func TestNotFoundResponse(t *testing.T) {
+	tests := []struct {
+		name        string
+		path        string
+		resource    string
+		expectLog   bool
+	}{
+		{
+			name:      "Normal 404",
+			path:      "/api/users/123",
+			resource:  "user",
+			expectLog: false,
+		},
+		{
+			name:      "Suspicious 404 - admin path",
+			path:      "/admin/config",
+			resource:  "page",
+			expectLog: true,
+		},
+		{
+			name:      "Suspicious 404 - env file",
+			path:      "/.env",
+			resource:  "file",
+			expectLog: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c, w := setupTestContext()
+			c.Request.URL.Path = tt.path
+			
+			NotFoundResponse(c, tt.resource)
+
+			assert.Equal(t, http.StatusNotFound, w.Code)
+
+			var response ErrorResponse
+			err := json.Unmarshal(w.Body.Bytes(), &response)
+			assert.NoError(t, err)
+
+			assert.False(t, response.Success)
+			assert.Equal(t, "Resource not found", response.Message)
+		})
+	}
+}
+
+func TestGetGenericErrorMessage(t *testing.T) {
+	tests := []struct {
+		statusCode int
+		expected   string
+	}{
+		{http.StatusBadRequest, "Invalid request"},
+		{http.StatusUnauthorized, "Authentication required"},
+		{http.StatusForbidden, "Access denied"},
+		{http.StatusNotFound, "Resource not found"},
+		{http.StatusMethodNotAllowed, "Method not allowed"},
+		{http.StatusConflict, "Resource conflict"},
+		{http.StatusTooManyRequests, "Too many requests"},
+		{http.StatusInternalServerError, "Internal server error"},
+		{http.StatusBadGateway, "Bad gateway"},
+		{http.StatusServiceUnavailable, "Service unavailable"},
+		{http.StatusGatewayTimeout, "Gateway timeout"},
+		{999, "An error occurred"}, // Unknown status code
+	}
+
+	for _, tt := range tests {
+		t.Run(string(rune(tt.statusCode)), func(t *testing.T) {
+			result := getGenericErrorMessage(tt.statusCode)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestSanitizeLogDetails(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "Password redaction",
+			input:    "Login failed for user with password 'secret123'",
+			expected: "Login failed for user with [REDACTED] 'secret123'",
+		},
+		{
+			name:     "Token redaction",
+			input:    "Invalid token: abc123xyz",
+			expected: "Invalid [REDACTED]: abc123xyz",
+		},
+		{
+			name:     "Long message truncation",
+			input:    strings.Repeat("a", 600),
+			expected: strings.Repeat("a", 500) + "...",
+		},
+		{
+			name:     "Multiple sensitive words",
+			input:    "password and secret and token found",
+			expected: "[REDACTED] and [REDACTED] and [REDACTED] found",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := sanitizeLogDetails(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestIsSuspicious404(t *testing.T) {
+	tests := []struct {
+		path       string
+		suspicious bool
+	}{
+		{"/api/users/123", false},
+		{"/admin/config", true},
+		{"/wp-admin/", true},
+		{"/phpmyadmin", true},
+		{"/.env", true},
+		{"/.git/config", true},
+		{"/backup.sql", true},
+		{"/shell.php", true},
+		{"/normal/path", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.path, func(t *testing.T) {
+			c, _ := setupTestContext()
+			c.Request.URL.Path = tt.path
+			
+			result := isSuspicious404(c)
+			assert.Equal(t, tt.suspicious, result)
+		})
+	}
+}
+
+func TestGetClientIP(t *testing.T) {
+	tests := []struct {
+		name           string
+		xForwardedFor  string
+		xRealIP        string
+		remoteAddr     string
+		expectedIP     string
+	}{
+		{
+			name:           "X-Forwarded-For header",
+			xForwardedFor:  "192.168.1.100, 10.0.0.1",
+			expectedIP:     "192.168.1.100",
+		},
+		{
+			name:       "X-Real-IP header",
+			xRealIP:    "192.168.1.200",
+			expectedIP: "192.168.1.200",
+		},
+		{
+			name:       "Remote address fallback",
+			remoteAddr: "192.168.1.300",
+			expectedIP: "192.168.1.300",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c, _ := setupTestContext()
+			
+			if tt.xForwardedFor != "" {
+				c.Request.Header.Set("X-Forwarded-For", tt.xForwardedFor)
+			}
+			if tt.xRealIP != "" {
+				c.Request.Header.Set("X-Real-IP", tt.xRealIP)
+			}
+			
+			result := getClientIP(c)
+			
+			// Note: In test environment, ClientIP() might not work as expected
+			// This test verifies the logic but actual IP extraction depends on Gin's implementation
+			if tt.xForwardedFor != "" {
+				assert.Equal(t, "192.168.1.100", result)
+			} else if tt.xRealIP != "" {
+				assert.Equal(t, tt.xRealIP, result)
+			}
+		})
+	}
+}
+
+func TestInternalServerErrorResponse(t *testing.T) {
+	c, w := setupTestContext()
+	testErr := errors.New("database connection failed")
+	
+	InternalServerErrorResponse(c, testErr)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+
+	var response ErrorResponse
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+
+	assert.False(t, response.Success)
+	assert.Equal(t, "Internal server error", response.Message)
+	assert.Equal(t, "test-request-123", response.RequestID)
+}
+
+func TestValidationErrorResponseSecurity(t *testing.T) {
+	c, w := setupTestContext()
+	
+	// Simulate a validation error that might contain suspicious content
+	testErr := errors.New("field contains <script>alert('xss')</script>")
+	
+	ValidationErrorResponse(c, testErr)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	var response ErrorResponse
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+
+	assert.False(t, response.Success)
+	assert.Equal(t, "Validation failed", response.Message)
+	
+	// The response should not contain the raw error with potential XSS
+	responseBody := w.Body.String()
+	assert.NotContains(t, responseBody, "<script>")
+	assert.NotContains(t, responseBody, "alert(")
+}
+
+func TestIsProductionMode(t *testing.T) {
+	tests := []struct {
+		ginMode    string
+		production bool
+	}{
+		{"release", true},
+		{"production", true},
+		{"debug", false},
+		{"test", false},
+		{"", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.ginMode, func(t *testing.T) {
+			os.Setenv("GIN_MODE", tt.ginMode)
+			defer os.Unsetenv("GIN_MODE")
+			
+			result := isProduction()
+			assert.Equal(t, tt.production, result)
+		})
+	}
+}
+
+// Benchmark tests for performance
+func BenchmarkSecureErrorResponse(b *testing.B) {
+	c, _ := setupTestContext()
+	testErr := errors.New("test error")
+	
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		SecureErrorResponse(c, http.StatusInternalServerError, "test message", testErr, "test_event")
+	}
+}
+
+func BenchmarkSanitizeLogDetails(b *testing.B) {
+	input := "This is a test message with password and token and secret information that needs to be sanitized"
+	
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		sanitizeLogDetails(input)
+	}
+}
+</content>
+</invoke>

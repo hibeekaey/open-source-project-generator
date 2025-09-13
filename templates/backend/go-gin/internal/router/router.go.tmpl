@@ -22,11 +22,13 @@ func Initialize(db *gorm.DB, redis *redis.Client, cfg *config.Config) *gin.Engin
 
 	r := gin.New()
 
-	// Global middleware
+	// Global middleware (order matters for security)
+	r.Use(middleware.SecurityHeadersMiddleware()) // Apply security headers first
 	r.Use(middleware.LoggingMiddleware())
 	r.Use(middleware.RequestIDMiddleware())
 	r.Use(gin.Recovery())
 	r.Use(middleware.CORSMiddleware())
+	r.Use(middleware.RateLimitMiddleware()) // Apply rate limiting
 
 	// Initialize repositories
 	userRepo := repositories.NewUserRepository(db)

@@ -256,9 +256,12 @@ func TestErrorHandlingIntegration(t *testing.T) {
 
 	// Test validation with non-existent path
 	t.Log("Testing validation with non-existent path")
-	_, err = validator.ValidateProject("/non/existent/path/12345")
-	if err == nil {
-		t.Error("Expected error validating non-existent path, got nil")
+	result, err := validator.ValidateProject("/non/existent/path/12345")
+	if err != nil {
+		t.Errorf("Unexpected error validating non-existent path: %v", err)
+	}
+	if result.Valid {
+		t.Error("Expected validation to fail for non-existent path, but it passed")
 	}
 
 	// Test template processing with invalid template

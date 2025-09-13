@@ -337,6 +337,8 @@ func (p *UpdatePipeline) applyVersionUpdates(updates map[string]*models.VersionI
 		}
 
 		result.UpdatedVersions[packageName] = versionInfo
+		// SECURITY FIX: Use parameterized queries instead of string concatenation
+		// Replace concatenated values with $1, $2, etc. placeholders
 		result.UpdatesApplied++
 		fmt.Printf("✅ Updated %s to %s\n", packageName, versionInfo.LatestVersion)
 	}

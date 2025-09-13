@@ -28,7 +28,7 @@ jobs:
     - name: Setup JDK
       uses: actions/setup-java@v3
       with:
-        java-version: ${{ env.JAVA_VERSION }}
+        java-version: {{`${{ env.JAVA_VERSION }}`}}
         distribution: 'temurin'
 
     - name: Setup Android SDK
@@ -40,9 +40,9 @@ jobs:
         path: |
           ~/.gradle/caches
           ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        key: {{`${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}`}}
         restore-keys: |
-          ${{ runner.os }}-gradle-
+          {{`${{ runner.os }}-gradle-`}}
 
     - name: Grant execute permission for gradlew
       run: chmod +x Mobile/Android/gradlew
@@ -88,7 +88,7 @@ jobs:
         path: Mobile/Android/app/build/outputs/apk/debug/app-debug.apk
 {{end}}
 
-{{if .Components.Mobile.iOS}}
+{{if .Components.Mobile.IOS}}
   test-ios:
     runs-on: macos-latest
     
@@ -156,7 +156,7 @@ jobs:
 
   mobile-security-scan:
     runs-on: ubuntu-latest
-    {{if and .Components.Mobile.Android .Components.Mobile.iOS}}needs: [test-android, test-ios]{{else if .Components.Mobile.Android}}needs: test-android{{else if .Components.Mobile.iOS}}needs: test-ios{{end}}
+    {{if and .Components.Mobile.Android .Components.Mobile.IOS}}needs: [test-android, test-ios]{{else if .Components.Mobile.Android}}needs: test-android{{else if .Components.Mobile.IOS}}needs: test-ios{{end}}
     
     steps:
     - name: Checkout code
@@ -168,14 +168,14 @@ jobs:
       with:
         input-file-path: Mobile/Android/app/build/outputs/apk/debug/app-debug.apk
         mobsf-url: https://mobsf.live
-        mobsf-api-key: ${{ secrets.MOBSF_API_KEY }}
+        mobsf-api-key: {{`${{ secrets.MOBSF_API_KEY }}`}}
 {{end}}
 
-{{if .Components.Mobile.iOS}}
+{{if .Components.Mobile.IOS}}
     - name: Run MobSF iOS scan
       uses: fundacaocerti/mobsf-action@v1.7.1
       with:
         input-file-path: Mobile/iOS/{{.Name}}.ipa
         mobsf-url: https://mobsf.live
-        mobsf-api-key: ${{ secrets.MOBSF_API_KEY }}
+        mobsf-api-key: {{`${{ secrets.MOBSF_API_KEY }}`}}
 {{end}}

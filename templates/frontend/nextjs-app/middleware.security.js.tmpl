@@ -1,0 +1,233 @@
+/**
+ * Security Middleware for {{.Name}}
+ * Implements comprehensive security measures including CSP, rate limiting, and request validation
+ */
+
+import { NextResponse } from 'next/server';
+
+// Security configuration based on environment
+const getSecurityConfig = () => {
+  const isDev = process.env.NODE_ENV === 'development';
+  const isStaging = process.env.NODE_ENV === 'staging';
+  
+  return {
+    // Content Security Policy
+    csp: {
+      'default-src': ["'self'"],
+      'script-src': isDev 
+        ? ["'self'", "'unsafe-eval'", "'unsafe-inline'"] 
+        : ["'self'"],
+      'style-src': ["'self'", "'unsafe-inline'"],
+      'img-src': ["'self'", "data:", "https:"],
+      'font-src': ["'self'", "https:"],
+      'connect-src': isDev 
+        ? ["'self'", "ws:", "wss:", "http://localhost:*"]
+        : ["'self'", "https:"],
+      'frame-ancestors': ["'none'"],
+      'base-uri': ["'self'"],
+      'form-action': ["'self'"],
+      'object-src': ["'none'"],
+      ...(isDev ? {} : { 'upgrade-insecure-requests': [] })
+    },
+    
+    // Rate limiting
+    rateLimit: {
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      maxRequests: isDev ? 1000 : 100,
+      skipSuccessfulRequests: false,
+      skipFailedRequests: false
+    },
+    
+    // Request validation
+    validation: {
+      maxRequestSize: isDev ? 50 * 1024 * 1024 : 10 * 1024 * 1024, // 50MB dev, 10MB prod
+      allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'],
+      blockedUserAgents: [
+        /bot/i,
+        /crawler/i,
+        /spider/i,
+        /scraper/i
+      ].filter(() => !isDev) // Allow bots in development
+    }
+  };
+};
+
+// Generate CSP header value
+const generateCSPHeader = (csp) => {
+  return Object.entries(csp)
+    .map(([directive, sources]) => {
+      if (sources.length === 0) return directive;
+      return `${directive} ${sources.join(' ')}`;
+    })
+    .join('; ');
+};
+
+// Rate limiting store (in-memory for demo, use Redis in production)
+const rateLimitStore = new Map();
+
+// Check rate limit
+const checkRateLimit = (ip, config) => {
+  const now = Date.now();
+  const windowStart = now - config.windowMs;
+  
+  // Clean old entries
+  for (const [key, data] of rateLimitStore.entries()) {
+    if (data.resetTime < now) {
+      rateLimitStore.delete(key);
+    }
+  }
+  
+  const current = rateLimitStore.get(ip) || { count: 0, resetTime: now + config.windowMs };
+  
+  if (current.resetTime < now) {
+    current.count = 0;
+    current.resetTime = now + config.windowMs;
+  }
+  
+  current.count++;
+  rateLimitStore.set(ip, current);
+  
+  return {
+    allowed: current.count <= config.maxRequests,
+    count: current.count,
+    remaining: Math.max(0, config.maxRequests - current.count),
+    resetTime: current.resetTime
+  };
+};
+
+// Security headers
+const getSecurityHeaders = (isDev = false) => ({
+  'X-DNS-Prefetch-Control': 'on',
+  'X-XSS-Protection': '1; mode=block',
+  'X-Frame-Options': 'DENY',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': [
+    'camera=()',
+    'microphone=()',
+    'geolocation=()',
+    'payment=()',
+    'usb=()',
+    'magnetometer=()',
+    'gyroscope=()',
+    'accelerometer=()',
+    'fullscreen=(self)',
+    'display-capture=()'
+  ].join(', '),
+  ...(isDev ? {} : {
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload'
+  }),
+  'Cross-Origin-Embedder-Policy': 'require-corp',
+  'Cross-Origin-Opener-Policy': 'same-origin',
+  'Cross-Origin-Resource-Policy': 'same-origin'
+});
+
+// Main middleware function
+export function middleware(request) {
+  const config = getSecurityConfig();
+  const isDev = process.env.NODE_ENV === 'development';
+  const response = NextResponse.next();
+  
+  // Get client IP
+  const ip = request.ip || 
+    request.headers.get('x-forwarded-for')?.split(',')[0] || 
+    request.headers.get('x-real-ip') || 
+    'unknown';
+  
+  // Rate limiting
+  if (!isDev) {
+    const rateLimit = checkRateLimit(ip, config.rateLimit);
+    
+    if (!rateLimit.allowed) {
+      return new NextResponse(
+        JSON.stringify({
+          error: 'Too Many Requests',
+          message: 'Rate limit exceeded. Please try again later.',
+          retryAfter: Math.ceil((rateLimit.resetTime - Date.now()) / 1000)
+        }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'Retry-After': Math.ceil((rateLimit.resetTime - Date.now()) / 1000).toString(),
+            'X-RateLimit-Limit': config.rateLimit.maxRequests.toString(),
+            'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+            'X-RateLimit-Reset': rateLimit.resetTime.toString()
+          }
+        }
+      );
+    }
+    
+    // Add rate limit headers
+    response.headers.set('X-RateLimit-Limit', config.rateLimit.maxRequests.toString());
+    response.headers.set('X-RateLimit-Remaining', rateLimit.remaining.toString());
+    response.headers.set('X-RateLimit-Reset', rateLimit.resetTime.toString());
+  }
+  
+  // Method validation
+  if (!config.validation.allowedMethods.includes(request.method)) {
+    return new NextResponse(
+      JSON.stringify({
+        error: 'Method Not Allowed',
+        message: `Method ${request.method} is not allowed`
+      }),
+      {
+        status: 405,
+        headers: {
+          'Content-Type': 'application/json',
+          'Allow': config.validation.allowedMethods.join(', ')
+        }
+      }
+    );
+  }
+  
+  // User agent validation (block known bots in production)
+  const userAgent = request.headers.get('user-agent') || '';
+  if (!isDev && config.validation.blockedUserAgents.some(pattern => pattern.test(userAgent))) {
+    return new NextResponse(
+      JSON.stringify({
+        error: 'Forbidden',
+        message: 'Access denied'
+      }),
+      {
+        status: 403,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+  }
+  
+  // Set security headers
+  const securityHeaders = getSecurityHeaders(isDev);
+  Object.entries(securityHeaders).forEach(([key, value]) => {
+    response.headers.set(key, value);
+  });
+  
+  // Set CSP header
+  response.headers.set('Content-Security-Policy', generateCSPHeader(config.csp));
+  
+  // Add request ID for tracking
+  const requestId = crypto.randomUUID();
+  response.headers.set('X-Request-ID', requestId);
+  
+  // Add response time header
+  const startTime = Date.now();
+  response.headers.set('X-Response-Time', `${Date.now() - startTime}ms`);
+  
+  return response;
+}
+
+// Configure which paths the middleware runs on
+export const config = {
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ],
+};

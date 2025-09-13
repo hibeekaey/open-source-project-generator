@@ -1,0 +1,325 @@
+# {{.Name}} - Infrastructure as Code
+
+{{.Description}}
+
+## Overview
+
+This directory contains the Terraform infrastructure configuration for {{.Name}}, following best practices for cloud infrastructure management.
+
+## Tech Stack
+
+- **Terraform**: {{.Versions.Terraform}} or later
+- **Provider**: AWS (configurable for other cloud providers)
+- **State Management**: Remote state with S3 backend
+- **Security**: IAM roles and policies with least privilege
+- **Monitoring**: CloudWatch integration
+
+## Project Structure
+
+```
+terraform/
+├── environments/
+│   ├── dev/                    # Development environment
+│   ├── staging/                # Staging environment
+│   └── prod/                   # Production environment
+├── modules/                    # Reusable Terraform modules
+│   ├── networking/             # VPC, subnets, security groups
+│   ├── compute/                # EC2, ECS, Lambda resources
+│   ├── database/               # RDS, DynamoDB resources
+│   ├── storage/                # S3, EFS resources
+│   └── monitoring/             # CloudWatch, alerting
+├── scripts/                    # Deployment and utility scripts
+├── main.tf                     # Main configuration
+├── variables.tf                # Input variables
+├── outputs.tf                  # Output values
+├── versions.tf                 # Provider version constraints
+└── terraform.tfvars.example   # Example variables file
+```
+
+## Getting Started
+
+### Prerequisites
+
+- **Terraform**: {{.Versions.Terraform}} or later
+- **AWS CLI**: Configured with appropriate credentials
+- **Access**: AWS account with necessary permissions
+
+### Setup
+
+1. **Install Terraform**
+   ```bash
+   # macOS
+   brew install terraform
+   
+   # Linux
+   wget https://releases.hashicorp.com/terraform/{{.Versions.Terraform}}/terraform_{{.Versions.Terraform}}_linux_amd64.zip
+   unzip terraform_{{.Versions.Terraform}}_linux_amd64.zip
+   sudo mv terraform /usr/local/bin/
+   ```
+
+2. **Configure AWS credentials**
+   ```bash
+   aws configure
+   # Enter your AWS Access Key ID, Secret Access Key, and default region
+   ```
+
+3. **Initialize Terraform**
+   ```bash
+   cd terraform/environments/dev
+   terraform init
+   ```
+
+4. **Create terraform.tfvars**
+   ```bash
+   cp terraform.tfvars.example terraform.tfvars
+   # Edit terraform.tfvars with your specific values
+   ```
+
+## Usage
+
+### Environment Management
+
+Each environment (dev, staging, prod) has its own configuration:
+
+```bash
+# Development environment
+cd environments/dev
+terraform plan
+terraform apply
+
+# Staging environment
+cd environments/staging
+terraform plan
+terraform apply
+
+# Production environment
+cd environments/prod
+terraform plan
+terraform apply
+```
+
+### Common Commands
+
+```bash
+# Initialize Terraform
+terraform init
+
+# Plan changes
+terraform plan
+
+# Apply changes
+terraform apply
+
+# Destroy infrastructure
+terraform destroy
+
+# Format code
+terraform fmt
+
+# Validate configuration
+terraform validate
+
+# Show current state
+terraform show
+
+# List resources
+terraform state list
+```
+
+## Configuration
+
+### Variables
+
+Key variables that need to be configured:
+
+```hcl
+# terraform.tfvars
+project_name = "{{.Name | kebabCase}}"
+environment  = "dev"
+region      = "us-west-2"
+
+# Networking
+vpc_cidr = "10.0.0.0/16"
+availability_zones = ["us-west-2a", "us-west-2b", "us-west-2c"]
+
+# Application
+app_port = 8080
+health_check_path = "/health"
+
+# Database
+db_instance_class = "db.t3.micro"
+db_allocated_storage = 20
+
+# Monitoring
+enable_monitoring = true
+log_retention_days = 30
+```
+
+### Environments
+
+#### Development
+- Minimal resources for cost optimization
+- Single AZ deployment
+- Smaller instance sizes
+- Basic monitoring
+
+#### Staging
+- Production-like setup
+- Multi-AZ for testing
+- Medium instance sizes
+- Enhanced monitoring
+
+#### Production
+- High availability setup
+- Multi-AZ deployment
+- Production instance sizes
+- Full monitoring and alerting
+
+## Infrastructure Components
+
+### Networking
+- **VPC**: Virtual Private Cloud with public and private subnets
+- **Security Groups**: Firewall rules for different tiers
+- **Load Balancer**: Application Load Balancer for high availability
+- **NAT Gateway**: Outbound internet access for private subnets
+
+### Compute
+- **ECS Cluster**: Container orchestration for applications
+- **Auto Scaling**: Automatic scaling based on demand
+- **Launch Templates**: Standardized instance configurations
+
+### Database
+- **RDS**: Managed PostgreSQL database
+- **ElastiCache**: Redis for caching and sessions
+- **Backup**: Automated backups and point-in-time recovery
+
+### Storage
+- **S3 Buckets**: Object storage for static assets
+- **EFS**: Shared file system for applications
+- **Encryption**: At-rest and in-transit encryption
+
+### Monitoring
+- **CloudWatch**: Metrics, logs, and alarms
+- **SNS**: Notification system for alerts
+- **CloudTrail**: API call logging and auditing
+
+## Security
+
+### Best Practices
+- **IAM Roles**: Service-specific roles with minimal permissions
+- **Encryption**: All data encrypted at rest and in transit
+- **Network Security**: Private subnets for sensitive resources
+- **Access Control**: Security groups with least privilege
+- **Secrets Management**: AWS Secrets Manager for sensitive data
+
+### Compliance
+- **Tagging**: Consistent resource tagging for governance
+- **Backup**: Regular automated backups
+- **Monitoring**: Comprehensive logging and alerting
+- **Access Logging**: All access attempts logged
+
+## Deployment
+
+### CI/CD Integration
+
+```yaml
+# Example GitHub Actions workflow
+name: Terraform Deploy
+on:
+  push:
+    branches: [main]
+    paths: ['terraform/**']
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: {{.Versions.Terraform}}
+      
+      - name: Terraform Init
+        run: terraform init
+        
+      - name: Terraform Plan
+        run: terraform plan
+        
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main'
+        run: terraform apply -auto-approve
+```
+
+### Manual Deployment
+
+```bash
+# 1. Plan the deployment
+terraform plan -out=tfplan
+
+# 2. Review the plan
+terraform show tfplan
+
+# 3. Apply the changes
+terraform apply tfplan
+
+# 4. Verify the deployment
+terraform output
+```
+
+## Monitoring and Maintenance
+
+### Health Checks
+- Application health endpoints
+- Database connectivity checks
+- Load balancer health checks
+- Auto-scaling metrics
+
+### Backup Strategy
+- **RDS**: Automated daily backups with 7-day retention
+- **S3**: Cross-region replication for critical data
+- **EFS**: Automatic backups with lifecycle policies
+
+### Cost Optimization
+- **Right-sizing**: Regular review of instance sizes
+- **Reserved Instances**: For predictable workloads
+- **Spot Instances**: For non-critical workloads
+- **Resource Cleanup**: Automated cleanup of unused resources
+
+## Troubleshooting
+
+### Common Issues
+
+1. **State Lock**: If Terraform state is locked
+   ```bash
+   terraform force-unlock <lock-id>
+   ```
+
+2. **Resource Conflicts**: If resources already exist
+   ```bash
+   terraform import <resource_type>.<resource_name> <resource_id>
+   ```
+
+3. **Permission Errors**: Check IAM policies and roles
+   ```bash
+   aws sts get-caller-identity
+   ```
+
+### Debugging
+- Enable detailed logging: `export TF_LOG=DEBUG`
+- Check AWS CloudTrail for API calls
+- Review CloudWatch logs for application errors
+
+## Contributing
+
+Please read [CONTRIBUTING.md](../../CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+
+## License
+
+This project is licensed under the {{.License}} License - see the [LICENSE](../../LICENSE) file for details.
+
+## Support
+
+For support and questions:
+- 📧 Email: support@{{.Organization | lower}}.com
+- 🐛 Issues: [GitHub Issues](https://github.com/{{.Organization}}/{{.Name}}/issues)
+- 📖 Documentation: [Project Wiki](https://github.com/{{.Organization}}/{{.Name}}/wiki)

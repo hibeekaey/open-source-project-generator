@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"strings"
 
 	"{{.Name}}/internal/models"
 	"{{.Name}}/internal/services"
@@ -48,7 +49,7 @@ func (c *AuthController) Login(ctx *gin.Context) {
 
 	response, err := c.authService.Login(&req)
 	if err != nil {
-		utils.ErrorResponse(ctx, http.StatusUnauthorized, err.Error(), nil)
+		utils.UnauthorizedResponse(ctx, "Login failed")
 		return
 	}
 
@@ -80,7 +81,12 @@ func (c *AuthController) Register(ctx *gin.Context) {
 
 	user, err := c.userService.Create(&req)
 	if err != nil {
-		utils.ErrorResponse(ctx, http.StatusConflict, err.Error(), nil)
+		// Check if it's a duplicate user error
+		if strings.Contains(err.Error(), "already exists") || strings.Contains(err.Error(), "duplicate") {
+			utils.SecureErrorResponse(ctx, http.StatusConflict, "User registration failed", err, "duplicate_user_registration")
+		} else {
+			utils.InternalServerErrorResponse(ctx, err)
+		}
 		return
 	}
 
@@ -112,7 +118,7 @@ func (c *AuthController) RefreshToken(ctx *gin.Context) {
 
 	response, err := c.authService.RefreshToken(&req)
 	if err != nil {
-		utils.ErrorResponse(ctx, http.StatusUnauthorized, err.Error(), nil)
+		utils.UnauthorizedResponse(ctx, "Token refresh failed")
 		return
 	}
 
@@ -132,7 +138,7 @@ func (c *AuthController) RefreshToken(ctx *gin.Context) {
 func (c *AuthController) Logout(ctx *gin.Context) {
 	userID, exists := ctx.Get("user_id")
 	if !exists {
-		utils.ErrorResponse(ctx, http.StatusUnauthorized, "User not authenticated", nil)
+		utils.UnauthorizedResponse(ctx, "User not authenticated")
 		return
 	}
 
@@ -144,7 +150,7 @@ func (c *AuthController) Logout(ctx *gin.Context) {
 
 	err := c.authService.Logout(userID.(uint), token)
 	if err != nil {
-		utils.ErrorResponse(ctx, http.StatusInternalServerError, "Failed to logout", err)
+		utils.InternalServerErrorResponse(ctx, err)
 		return
 	}
 

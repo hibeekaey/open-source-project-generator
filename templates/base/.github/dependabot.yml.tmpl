@@ -139,7 +139,7 @@ updates:
         update-types: ["version-update:semver-major"]
   {{end}}
 
-  {{if .Components.Mobile.iOS}}
+  {{if .Components.Mobile.IOS}}
   # Enable version updates for CocoaPods (iOS)
   - package-ecosystem: "cocoapods"
     directory: "/Mobile/iOS"

@@ -17,6 +17,12 @@ test: ## Run all tests
 	@echo "Running tests..."
 	go test -v ./...
 
+# Run CI-friendly tests
+test-ci: ## Run tests suitable for CI/CD pipelines
+	@echo "Running CI test suite..."
+	@echo "ℹ️  Excluding resource-intensive and flaky tests"
+	go test -tags=ci -timeout=5m ./...
+
 # Run tests with coverage
 test-coverage: ## Run tests with coverage report
 	@echo "Running tests with coverage..."
@@ -44,9 +50,23 @@ dev: ## Run in development mode
 	@echo "Starting development mode..."
 	go run ./cmd/generator
 
+# Install golangci-lint
+install-lint: ## Install golangci-lint
+	@echo "Installing golangci-lint..."
+	@if ! command -v golangci-lint >/dev/null 2>&1; then \
+		echo "Installing golangci-lint..."; \
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.55.2; \
+	else \
+		echo "golangci-lint already installed"; \
+	fi
+
 # Lint the code
 lint: ## Run golangci-lint
 	@echo "Running linter..."
+	@if ! command -v golangci-lint >/dev/null 2>&1; then \
+		echo "golangci-lint not found. Installing..."; \
+		$(MAKE) install-lint; \
+	fi
 	golangci-lint run
 
 # Format the code
@@ -112,6 +132,11 @@ test-install: ## Test installation script
 	bash -n scripts/install.sh
 	@echo "Installation script syntax is valid"
 
+# Template validation
+validate-templates: ## Validate template files
+	@echo "Validating template files..."
+	cd scripts/validate-templates && go run . ../../templates
+
 # Docker targets
 docker-build: ## Build Docker image
 	@echo "Building Docker image..."
@@ -119,4 +144,4 @@ docker-build: ## Build Docker image
 
 docker-test: ## Test Docker image
 	@echo "Testing Docker image..."
-	docker run --rm generator:latest --version
+	docker run --rm generator:latest version

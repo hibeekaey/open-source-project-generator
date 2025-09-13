@@ -1,6 +1,8 @@
 package repositories
 
 import (
+	"fmt"
+
 	"{{.Name}}/internal/models"
 	"gorm.io/gorm"
 )
@@ -27,72 +29,201 @@ func NewRoleRepository(db *gorm.DB) RoleRepository {
 	return &roleRepository{db: db}
 }
 
-// Create creates a new role
+// Create creates a new role with input validation and secure error handling
 func (r *roleRepository) Create(role *models.Role) (*models.Role, error) {
-	if err := r.db.Create(role).Error; err != nil {
-		return nil, err
+	// Input validation
+	if role == nil {
+		return nil, fmt.Errorf("role cannot be nil")
 	}
+	if role.Name == "" {
+		return nil, fmt.Errorf("role name is required")
+	}
+
+	// Use transaction for data consistency
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		return tx.Create(role).Error
+	})
+	
+	if err != nil {
+		// Return generic error to avoid information leakage
+		return nil, fmt.Errorf("failed to create role")
+	}
+	
 	return r.GetByID(role.ID)
 }
 
-// GetByID gets a role by ID with permissions
+// GetByID gets a role by ID with permissions using parameterized queries
 func (r *roleRepository) GetByID(id uint) (*models.Role, error) {
+	// Input validation
+	if id == 0 {
+		return nil, fmt.Errorf("invalid role ID")
+	}
+
 	var role models.Role
 	err := r.db.Preload("Permissions").First(&role, id).Error
 	if err != nil {
-		return nil, err
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("role not found")
+		}
+		// Return generic error to avoid information leakage
+		return nil, fmt.Errorf("database error occurred")
 	}
 	return &role, nil
 }
 
-// GetByName gets a role by name with permissions
+// GetByName gets a role by name with permissions using parameterized queries
 func (r *roleRepository) GetByName(name string) (*models.Role, error) {
+	// Input validation
+	if name == "" {
+		return nil, fmt.Errorf("role name cannot be empty")
+	}
+
 	var role models.Role
 	err := r.db.Preload("Permissions").Where("name = ?", name).First(&role).Error
 	if err != nil {
-		return nil, err
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("role not found")
+		}
+		// Return generic error to avoid information leakage
+		return nil, fmt.Errorf("database error occurred")
 	}
 	return &role, nil
 }
 
-// Update updates a role
+// Update updates a role with input validation and secure error handling
 func (r *roleRepository) Update(role *models.Role) (*models.Role, error) {
-	if err := r.db.Save(role).Error; err != nil {
-		return nil, err
+	// Input validation
+	if role == nil {
+		return nil, fmt.Errorf("role cannot be nil")
 	}
+	if role.ID == 0 {
+		return nil, fmt.Errorf("invalid role ID")
+	}
+
+	// Use transaction for data consistency
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		return tx.Save(role).Error
+	})
+	
+	if err != nil {
+		// Return generic error to avoid information leakage
+		return nil, fmt.Errorf("failed to update role")
+	}
+	
 	return r.GetByID(role.ID)
 }
 
-// Delete soft deletes a role
+// Delete soft deletes a role with input validation and secure error handling
 func (r *roleRepository) Delete(id uint) error {
-	return r.db.Delete(&models.Role{}, id).Error
+	// Input validation
+	if id == 0 {
+		return fmt.Errorf("invalid role ID")
+	}
+
+	// Use transaction for data consistency
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		// Verify role exists before deletion
+		var role models.Role
+		if err := tx.First(&role, id).Error; err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return fmt.Errorf("role not found")
+			}
+			return err
+		}
+		
+		return tx.Delete(&models.Role{}, id).Error
+	})
+	
+	if err != nil {
+		if err.Error() == "role not found" {
+			return err
+		}
+		// Return generic error to avoid information leakage
+		return fmt.Errorf("failed to delete role")
+	}
+	
+	return nil
 }
 
-// List lists roles with pagination
+// List lists roles with pagination and input validation
 func (r *roleRepository) List(offset, limit int) ([]*models.Role, int64, error) {
+	// Input validation
+	if offset < 0 {
+		return nil, 0, fmt.Errorf("offset cannot be negative")
+	}
+	if limit <= 0 || limit > 1000 {
+		return nil, 0, fmt.Errorf("limit must be between 1 and 1000")
+	}
+
 	var roles []*models.Role
 	var total int64
 
-	// Count total roles
+	// Count total roles with error handling
 	if err := r.db.Model(&models.Role{}).Count(&total).Error; err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("failed to count roles")
 	}
 
-	// Get roles with pagination
+	// Get roles with pagination and secure error handling
 	err := r.db.Preload("Permissions").
 		Offset(offset).
 		Limit(limit).
 		Find(&roles).Error
 
-	return roles, total, err
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to retrieve roles")
+	}
+
+	return roles, total, nil
 }
 
-// AssignPermission assigns a permission to a role
+// AssignPermission assigns a permission to a role using GORM associations for security
 func (r *roleRepository) AssignPermission(roleID, permissionID uint) error {
-	return r.db.Exec("INSERT INTO role_permissions (role_id, permission_id) VALUES (?, ?)", roleID, permissionID).Error
+	// Input validation
+	if roleID == 0 || permissionID == 0 {
+		return fmt.Errorf("invalid role ID or permission ID")
+	}
+
+	// Use transaction for data consistency
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		// Verify role exists
+		var role models.Role
+		if err := tx.First(&role, roleID).Error; err != nil {
+			return fmt.Errorf("role not found")
+		}
+
+		// Verify permission exists
+		var permission models.Permission
+		if err := tx.First(&permission, permissionID).Error; err != nil {
+			return fmt.Errorf("permission not found")
+		}
+
+		// Use GORM association to safely add permission
+		return tx.Model(&role).Association("Permissions").Append(&permission)
+	})
 }
 
-// RemovePermission removes a permission from a role
+// RemovePermission removes a permission from a role using GORM associations for security
 func (r *roleRepository) RemovePermission(roleID, permissionID uint) error {
-	return r.db.Exec("DELETE FROM role_permissions WHERE role_id = ? AND permission_id = ?", roleID, permissionID).Error
+	// Input validation
+	if roleID == 0 || permissionID == 0 {
+		return fmt.Errorf("invalid role ID or permission ID")
+	}
+
+	// Use transaction for data consistency
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		// Verify role exists
+		var role models.Role
+		if err := tx.First(&role, roleID).Error; err != nil {
+			return fmt.Errorf("role not found")
+		}
+
+		// Verify permission exists and role has it
+		var permission models.Permission
+		if err := tx.First(&permission, permissionID).Error; err != nil {
+			return fmt.Errorf("permission not found")
+		}
+
+		// Use GORM association to safely remove permission
+		return tx.Model(&role).Association("Permissions").Delete(&permission)
+	})
 }

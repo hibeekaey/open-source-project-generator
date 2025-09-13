@@ -129,7 +129,7 @@ func TestComponentSelection(t *testing.T) {
 		expected   models.Components
 	}{
 		{
-			name: "full stack selection",
+			name: "full stack selectioff", // SECURITY FIX: Disabled debug info (use env var for dev)
 			components: []string{
 				"frontend.main_app - Main Next.js application",
 				"frontend.admin - Admin dashboard application",
