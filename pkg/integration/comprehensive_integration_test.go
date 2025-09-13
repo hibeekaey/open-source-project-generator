@@ -171,7 +171,6 @@ func TestComponentInteraction(t *testing.T) {
 	configManager := config.NewManager(cacheDir, "")
 	fsGenerator := filesystem.NewGenerator()
 	validator := validation.NewEngine()
-	versionCache := version.NewMemoryCache(1 * time.Hour)
 
 	// Test configuration loading and validation
 	t.Log("Testing configuration management")
@@ -293,7 +292,6 @@ func TestPerformanceIntegration(t *testing.T) {
 
 	// Initialize components
 	fsGenerator := filesystem.NewGenerator()
-	versionCache := version.NewMemoryCache(1 * time.Hour)
 
 	// Test multiple project generations
 	t.Log("Testing performance with multiple project generations")
@@ -319,6 +317,7 @@ func TestPerformanceIntegration(t *testing.T) {
 
 	// Test version caching performance
 	t.Log("Testing version caching performance")
+	versionCache := version.NewMemoryCache(1 * time.Hour)
 	startTime = time.Now()
 
 	for i := 0; i < 100; i++ {
@@ -416,7 +415,6 @@ func TestMemoryUsageIntegration(t *testing.T) {
 		templateEngine = nil
 		fsGenerator = nil
 		validator = nil
-		versionCache = nil
 		versionManager = nil
 
 		// Force garbage collection every 5 iterations

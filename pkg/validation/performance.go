@@ -185,11 +185,11 @@ func (pt *PerformanceTester) MeasureScalabilityPerformance(baseProjectPath strin
 		if err != nil {
 			return nil, fmt.Errorf("failed to create temp directory: %w", err)
 		}
-		defer os.RemoveAll(tempDir)
+		defer func() { _ = os.RemoveAll(tempDir) }()
 
 		// Generate test files
-		if err := pt.generateTestFiles(tempDir, fileCount); err != nil {
-			return nil, fmt.Errorf("failed to generate test files: %w", err)
+		if generateErr := pt.generateTestFiles(tempDir, fileCount); generateErr != nil {
+			return nil, fmt.Errorf("failed to generate test files: %w", generateErr)
 		}
 
 		var memStats runtime.MemStats

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/open-source-template-generator/pkg/constants"
 	"github.com/open-source-template-generator/pkg/interfaces"
 	"github.com/open-source-template-generator/pkg/models"
 )
@@ -33,13 +34,13 @@ func (r *NPMRegistry) GetLatestVersion(packageName string) (*models.VersionInfo,
 
 	info := &models.VersionInfo{
 		Name:           packageName,
-		Language:       "javascript",
-		Type:           "package",
+		Language:       constants.LanguageJavaScript,
+		Type:           constants.FileTypePackage,
 		LatestVersion:  version,
 		IsSecure:       true, // Will be updated by security check
 		UpdatedAt:      time.Now(),
 		CheckedAt:      time.Now(),
-		UpdateSource:   "npm",
+		UpdateSource:   constants.PackageManagerNPM,
 		RegistryURL:    fmt.Sprintf("https://registry.npmjs.org/%s", packageName),
 		SecurityIssues: make([]models.SecurityIssue, 0),
 		Metadata:       make(map[string]string),
@@ -122,7 +123,7 @@ func (r *NPMRegistry) performNPMAudit(packageName, version string) ([]models.Sec
 	if err != nil {
 		return nil, fmt.Errorf("failed to perform npm audit: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// If audit API is unavailable, return empty result rather than failing
 	if resp.StatusCode != http.StatusOK {
@@ -203,17 +204,17 @@ func (r *NPMRegistry) convertAuditToSecurityIssues(auditResponse NPMAuditRespons
 func (r *NPMRegistry) mapNPMSeverity(npmSeverity string) string {
 	switch strings.ToLower(npmSeverity) {
 	case "critical":
-		return "critical"
+		return constants.SeverityCritical
 	case "high":
-		return "high"
+		return constants.SeverityHigh
 	case "moderate":
-		return "medium"
+		return constants.SeverityMedium
 	case "low":
-		return "low"
+		return constants.SeverityLow
 	case "info":
-		return "low"
+		return constants.SeverityLow
 	default:
-		return "medium" // Default to medium for unknown severities
+		return constants.SeverityMedium // Default to medium for unknown severities
 	}
 }
 
@@ -222,9 +223,9 @@ func (r *NPMRegistry) GetRegistryInfo() interfaces.RegistryInfo {
 	return interfaces.RegistryInfo{
 		Name:        "NPM Registry",
 		URL:         "https://registry.npmjs.org",
-		Type:        "npm",
+		Type:        constants.PackageManagerNPM,
 		Description: "Official NPM package registry for JavaScript and TypeScript packages",
-		Supported:   []string{"javascript", "typescript", "nodejs"},
+		Supported:   []string{constants.LanguageJavaScript, constants.LanguageTypeScript, constants.LanguageNodeJS},
 	}
 }
 

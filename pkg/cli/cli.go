@@ -639,7 +639,7 @@ func (c *CLI) promptUserToContinue() error {
 	}
 
 	if !proceed {
-		return fmt.Errorf("component selection cancelled by user")
+		return fmt.Errorf("component selection canceled by user")
 	}
 
 	return nil
@@ -841,7 +841,7 @@ func (c *CLI) CheckOutputPath(path string) error {
 			}
 
 			if !overwrite {
-				return fmt.Errorf("generation cancelled by user")
+				return fmt.Errorf("generation canceled by user")
 			}
 		}
 	}

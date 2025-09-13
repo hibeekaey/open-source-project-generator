@@ -22,9 +22,9 @@ func TestTemplateFixesMinimal(t *testing.T) {
 	}
 	t.Log("✓ createCompilationTestData works")
 
-	// Test that verification constants are accessible
-	if VerificationSuccess == "" || VerificationFailed == "" || VerificationSkipped == "" {
-		t.Error("Verification status constants should be non-empty")
+	// Test that verification constants are accessible and distinct
+	if VerificationSuccess == VerificationFailed || VerificationSuccess == VerificationSkipped || VerificationFailed == VerificationSkipped {
+		t.Error("Verification status constants should be distinct")
 	}
 	t.Log("✓ Verification constants accessible")
 

@@ -20,6 +20,7 @@ import (
 	"github.com/open-source-template-generator/internal/config"
 	"github.com/open-source-template-generator/internal/container"
 	"github.com/open-source-template-generator/pkg/cli"
+	"github.com/open-source-template-generator/pkg/constants"
 	"github.com/open-source-template-generator/pkg/filesystem"
 	"github.com/open-source-template-generator/pkg/interfaces"
 	"github.com/open-source-template-generator/pkg/models"
@@ -28,8 +29,13 @@ import (
 	"github.com/open-source-template-generator/pkg/validation"
 	"github.com/open-source-template-generator/pkg/version"
 	"github.com/spf13/cobra"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	yaml "gopkg.in/yaml.v3"
 )
+
+// titleCaser creates a Title caser to replace deprecated strings.Title
+var titleCaser = cases.Title(language.English)
 
 // App represents the main application instance that orchestrates all CLI operations.
 // It manages the dependency injection container, CLI interface, logging, and error handling.
@@ -221,7 +227,7 @@ func (a *App) initializeComponents() {
 		}
 		storageFile := filepath.Join(storageDir, "versions.yaml")
 
-		versionStorage, storageErr := version.NewFileStorage(storageFile, "yaml")
+		versionStorage, storageErr := version.NewFileStorage(storageFile, constants.FormatYAML)
 		if storageErr != nil {
 			log.Printf("Warning: Could not create version storage: %v", storageErr)
 			// Use manager without storage as fallback
@@ -469,7 +475,7 @@ func (a *App) runGenerateCommand(dryRun bool, configFile, outputPath string) err
 
 	// Show configuration and get confirmation
 	if !a.cli.ConfirmGeneration(config) {
-		fmt.Println("Generation cancelled by user.")
+		fmt.Println("Generation canceled by user.")
 		return nil
 	}
 
@@ -772,7 +778,7 @@ func (a *App) runVersionCommand(showPackages bool) error {
 	}
 	fmt.Printf("Open Source Template Generator %s\n", version)
 	fmt.Println("Built with Go 1.23+")
-	
+
 	if a.gitCommit != "" && a.gitCommit != "unknown" {
 		fmt.Printf("Git commit: %s\n", a.gitCommit)
 	}
@@ -968,15 +974,6 @@ func (a *App) runUpdateTemplatesCommand(dryRun bool, backup bool, templatePaths 
 
 // Helper functions for version management
 
-func contains(slice []string, item string) bool {
-	for _, s := range slice {
-		if s == item {
-			return true
-		}
-	}
-	return false
-}
-
 func (a *App) displayVersionReportJSON(report *models.VersionReport, verbose bool) error {
 	data, err := json.MarshalIndent(report, "", "  ")
 	if err != nil {
@@ -1008,17 +1005,17 @@ func (a *App) displayVersionReportTable(report *models.VersionReport, verbose bo
 		fmt.Println("\n📋 Summary by Category:")
 		for category, summary := range report.Summary {
 			fmt.Printf("  %s: %d total, %d current, %d outdated, %d insecure\n",
-				strings.Title(category), summary.Total, summary.Current, summary.Outdated, summary.Insecure)
+				titleCaser.String(category), summary.Total, summary.Current, summary.Outdated, summary.Insecure)
 		}
 	}
 
 	if len(report.Recommendations) > 0 {
 		fmt.Println("\n🔄 Update Recommendations:")
 		for _, rec := range report.Recommendations {
-			priority := rec.Priority
-			if rec.Priority == "critical" {
+			var priority string
+			if rec.Priority == constants.PriorityCritical {
 				priority = "🔴 CRITICAL"
-			} else if rec.Priority == "high" {
+			} else if rec.Priority == constants.PriorityHigh {
 				priority = "🟠 HIGH"
 			} else if rec.Priority == "medium" {
 				priority = "🟡 MEDIUM"
@@ -1351,9 +1348,9 @@ func (a *App) runCheckVersionsCommand(verbose bool, format string) error {
 
 		// Display results based on format
 		switch format {
-		case "json":
+		case constants.FormatJSON:
 			return a.displayVersionReportJSON(report, verbose)
-		case "yaml":
+		case constants.FormatYAML:
 			return a.displayVersionReportYAML(report, verbose)
 		default:
 			return a.displayVersionReportTable(report, verbose)
@@ -1370,9 +1367,9 @@ func (a *App) runCheckVersionsCommand(verbose bool, format string) error {
 
 	// Display results based on format
 	switch format {
-	case "json":
+	case constants.FormatJSON:
 		return a.displayVersionsJSON(versions, verbose)
-	case "yaml":
+	case constants.FormatYAML:
 		return a.displayVersionsYAML(versions, verbose)
 	default:
 		return a.displayVersionsTable(versions, verbose)
@@ -1505,9 +1502,9 @@ func (a *App) runDashboardCommand(refresh bool, format string, showDetails bool)
 
 		// Display dashboard based on format
 		switch format {
-		case "json":
+		case constants.FormatJSON:
 			return a.displayDashboardJSON(dashboardData)
-		case "yaml":
+		case constants.FormatYAML:
 			return a.displayDashboardYAML(dashboardData)
 		default:
 			return a.displayDashboardTable(dashboardData, showDetails)
@@ -1570,7 +1567,7 @@ func (a *App) generateDashboardData(versionManager *version.Manager, refresh boo
 func (a *App) getTemplateConsistencyStatus() (*models.TemplateConsistencyStatus, error) {
 	status := &models.TemplateConsistencyStatus{
 		CheckedAt: time.Now(),
-		Status:    "consistent",
+		Status:    constants.ValidationConsistent,
 		Issues:    make([]models.ConsistencyIssue, 0),
 		Summary: models.ConsistencySummary{
 			TotalTemplates:      0,
@@ -1621,7 +1618,7 @@ func (a *App) getTemplateConsistencyStatus() (*models.TemplateConsistencyStatus,
 	// Determine overall status
 	if status.Summary.IssuesFound > 0 {
 		if status.Summary.IssuesFound > status.Summary.TotalTemplates/2 {
-			status.Status = "critical"
+			status.Status = constants.PriorityCritical
 		} else {
 			status.Status = "issues_found"
 		}
@@ -1648,7 +1645,7 @@ func (a *App) getValidationResults() (*models.ValidationResults, error) {
 	templateResult := a.validateTemplateStructure()
 	results.Results["template_structure"] = templateResult
 	results.Summary.TotalChecks++
-	if templateResult.Status == "passed" {
+	if templateResult.Status == constants.StatusPassed {
 		results.Summary.PassedChecks++
 	} else {
 		results.Summary.FailedChecks++
@@ -1679,7 +1676,7 @@ func (a *App) getValidationResults() (*models.ValidationResults, error) {
 
 	// Determine overall status
 	if results.Summary.FailedChecks > 0 {
-		results.Status = "failed"
+		results.Status = constants.StatusFailed
 	} else if results.Summary.Warnings > 0 {
 		results.Status = "warnings"
 	}
@@ -1700,7 +1697,7 @@ func (a *App) validateTemplateStructure() models.DetailedValidationResult {
 
 	// Check if templates directory exists
 	if _, err := os.Stat("templates"); os.IsNotExist(err) {
-		result.Status = "failed"
+		result.Status = constants.StatusFailed
 		result.Errors = append(result.Errors, "Templates directory does not exist")
 		return result
 	}
@@ -1712,7 +1709,7 @@ func (a *App) validateTemplateStructure() models.DetailedValidationResult {
 		if _, err := os.Stat(dirPath); os.IsNotExist(err) {
 			result.Warnings = append(result.Warnings, fmt.Sprintf("Missing template category: %s", dir))
 		} else {
-			result.Details[dir] = "present"
+			result.Details[dir] = constants.StatusPresent
 		}
 	}
 
@@ -1732,9 +1729,9 @@ func (a *App) validateVersionConsistency() models.DetailedValidationResult {
 
 	// This would check for version consistency across templates
 	// For now, we'll simulate some basic checks
-	result.Details["node_version_check"] = "consistent"
-	result.Details["react_version_check"] = "consistent"
-	result.Details["nextjs_version_check"] = "consistent"
+	result.Details["node_version_check"] = constants.ValidationConsistent
+	result.Details["react_version_check"] = constants.ValidationConsistent
+	result.Details["nextjs_version_check"] = constants.ValidationConsistent
 
 	// Add a sample warning
 	result.Warnings = append(result.Warnings, "Some templates may be using outdated TypeScript versions")
@@ -1856,37 +1853,6 @@ func (a *App) displayTemplateConsistency(status interface{}, showDetails bool) {
 	fmt.Printf("Issues Found: 0\n")
 }
 
-// displayTemplateIssues displays template issues
-func (a *App) displayTemplateIssues(issues interface{}, showDetails bool) {
-	// Placeholder implementation - would be implemented with proper types in later phases
-	fmt.Printf("\n🔍 Template Issues:\n")
-	fmt.Printf("  (No issues found)\n")
-}
-
-// getSeverityIcon returns the appropriate icon for severity level
-func (a *App) getSeverityIcon(severity string) string {
-	switch severity {
-	case "high":
-		return "🔴"
-	case "low":
-		return "🟡"
-	default:
-		return "⚠️"
-	}
-}
-
-// getStatusIcon returns the appropriate icon for status
-func (a *App) getStatusIcon(status string) string {
-	switch status {
-	case "issues_found":
-		return "⚠️"
-	case "critical":
-		return "❌"
-	default:
-		return "✅"
-	}
-}
-
 // displayValidationResults displays the validation results section
 func (a *App) displayValidationResults(results *models.ValidationResults, showDetails bool) {
 	fmt.Printf("\n✅ Validation Results\n")
@@ -1897,7 +1863,7 @@ func (a *App) displayValidationResults(results *models.ValidationResults, showDe
 	}
 
 	statusIcon := a.getValidationStatusIcon(results.Status)
-	fmt.Printf("Status: %s %s\n", statusIcon, strings.Title(results.Status))
+	fmt.Printf("Status: %s %s\n", statusIcon, titleCaser.String(results.Status))
 	fmt.Printf("Total Checks: %d\n", results.Summary.TotalChecks)
 	fmt.Printf("Passed: %d\n", results.Summary.PassedChecks)
 	fmt.Printf("Failed: %d\n", results.Summary.FailedChecks)
@@ -1912,11 +1878,11 @@ func (a *App) displayValidationResults(results *models.ValidationResults, showDe
 func (a *App) getValidationStatusIcon(status string) string {
 	switch status {
 	case "warnings":
-		return "⚠️"
-	case "failed":
-		return "❌"
+		return constants.SymbolWarning
+	case constants.StatusFailed:
+		return constants.SymbolFailure
 	default:
-		return "✅"
+		return constants.SymbolSuccess
 	}
 }
 
@@ -2067,7 +2033,7 @@ func (a *App) generateTemplateReport(format, outputDir string) error {
 
 	// Display summary
 	fmt.Printf("\nTemplate Report Summary:\n")
-	fmt.Printf("Status: %s\n", strings.Title(templateStatus.Status))
+	fmt.Printf("Status: %s\n", titleCaser.String(templateStatus.Status))
 	fmt.Printf("Templates Checked: %d\n", templateStatus.Summary.TotalTemplates)
 	fmt.Printf("Consistent: %d\n", templateStatus.Summary.ConsistentTemplates)
 	fmt.Printf("Issues Found: %d\n", templateStatus.Summary.IssuesFound)
@@ -2170,15 +2136,15 @@ func (a *App) runAuditCommand(since, eventType, format string) error {
 			continue
 		}
 
-		statusIcon := "✅"
+		statusIcon := constants.SymbolSuccess
 		if !event.success {
-			statusIcon = "❌"
+			statusIcon = constants.SymbolFailure
 		}
 
 		fmt.Printf("%s [%s] %s: %s -> %s\n",
 			statusIcon,
 			event.timestamp.Format("15:04:05"),
-			strings.Title(event.eventType),
+			titleCaser.String(event.eventType),
 			event.action,
 			event.resource)
 	}

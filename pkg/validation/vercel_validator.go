@@ -499,51 +499,11 @@ func (vv *VercelValidator) validateEnvVarsConsistency(templateDirs []string, res
 
 		// Check vercel.json for environment variables
 		vercelConfigPath := filepath.Join(dir, "vercel.json.tmpl")
-		if _, err := os.Stat(vercelConfigPath); err == nil {
-			if vars, err := vv.extractEnvVarsFromVercelConfig(vercelConfigPath); err == nil {
-				result.Warnings = append(result.Warnings, models.ValidationWarning{
-					Field:   "Debug",
-					Message: fmt.Sprintf("Found %d env vars in %s vercel.json: %v", len(vars), templateName, vars),
-				})
-				for _, envVar := range vars {
-					envVars[templateName][envVar] = true
-				}
-			} else {
-				result.Warnings = append(result.Warnings, models.ValidationWarning{
-					Field:   "Debug",
-					Message: fmt.Sprintf("Error extracting env vars from %s vercel.json: %v", templateName, err),
-				})
-			}
-		} else {
-			result.Warnings = append(result.Warnings, models.ValidationWarning{
-				Field:   "Debug",
-				Message: fmt.Sprintf("No vercel.json.tmpl found for %s", templateName),
-			})
-		}
+		vv.processEnvVarFile(vercelConfigPath, templateName, "vercel.json", envVars, result)
 
 		// Check .env.example files
 		envExamplePath := filepath.Join(dir, ".env.example.tmpl")
-		if _, err := os.Stat(envExamplePath); err == nil {
-			if vars, err := vv.extractEnvVarsFromEnvFile(envExamplePath); err == nil {
-				result.Warnings = append(result.Warnings, models.ValidationWarning{
-					Field:   "Debug",
-					Message: fmt.Sprintf("Found %d env vars in %s .env.example: %v", len(vars), templateName, vars),
-				})
-				for _, envVar := range vars {
-					envVars[templateName][envVar] = true
-				}
-			} else {
-				result.Warnings = append(result.Warnings, models.ValidationWarning{
-					Field:   "Debug",
-					Message: fmt.Sprintf("Error extracting env vars from %s .env.example: %v", templateName, err),
-				})
-			}
-		} else {
-			result.Warnings = append(result.Warnings, models.ValidationWarning{
-				Field:   "Debug",
-				Message: fmt.Sprintf("No .env.example.tmpl found for %s", templateName),
-			})
-		}
+		vv.processEnvVarFile(envExamplePath, templateName, ".env.example", envVars, result)
 	}
 
 	// Compare environment variables across templates
@@ -587,6 +547,40 @@ func (vv *VercelValidator) validateSecurityHeaders(headers []interface{}, result
 				Message: fmt.Sprintf("Missing recommended security header: %s", requiredHeader),
 			})
 		}
+	}
+}
+
+// processEnvVarFile processes a single environment variable file (vercel.json or .env.example)
+func (vv *VercelValidator) processEnvVarFile(filePath, templateName, fileType string, envVars map[string]map[string]bool, result *models.ValidationResult) {
+	if _, err := os.Stat(filePath); err == nil {
+		var vars []string
+		var extractErr error
+
+		if fileType == "vercel" {
+			vars, extractErr = vv.extractEnvVarsFromVercelConfig(filePath)
+		} else {
+			vars, extractErr = vv.extractEnvVarsFromEnvFile(filePath)
+		}
+
+		if extractErr == nil {
+			result.Warnings = append(result.Warnings, models.ValidationWarning{
+				Field:   "Debug",
+				Message: fmt.Sprintf("Found %d env vars in %s %s: %v", len(vars), templateName, fileType, vars),
+			})
+			for _, envVar := range vars {
+				envVars[templateName][envVar] = true
+			}
+		} else {
+			result.Warnings = append(result.Warnings, models.ValidationWarning{
+				Field:   "Debug",
+				Message: fmt.Sprintf("Error extracting env vars from %s %s: %v", templateName, fileType, extractErr),
+			})
+		}
+	} else {
+		result.Warnings = append(result.Warnings, models.ValidationWarning{
+			Field:   "Debug",
+			Message: fmt.Sprintf("No %s.tmpl found for %s", fileType, templateName),
+		})
 	}
 }
 

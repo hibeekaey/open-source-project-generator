@@ -251,7 +251,7 @@ terraform_destroy() {
         read -p "Are you sure you want to continue? Type 'yes' to confirm: " -r
         
         if [[ ! $REPLY =~ ^yes$ ]]; then
-            log_info "Destroy cancelled"
+            log_info "Destroy canceled"
             exit 0
         fi
     fi

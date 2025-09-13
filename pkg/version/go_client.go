@@ -59,7 +59,7 @@ func (c *GoClient) GetLatestVersion(moduleName string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to make request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		// If @latest fails, try to get the list of versions
@@ -89,7 +89,7 @@ func (c *GoClient) getLatestFromVersionList(encodedModule string) (string, error
 	if err != nil {
 		return "", fmt.Errorf("failed to make request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("go module proxy returned status %d for module %s", resp.StatusCode, encodedModule)
@@ -139,7 +139,7 @@ func (c *GoClient) GetVersionInfo(moduleName, version string) (*GoModuleInfo, er
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("go module proxy returned status %d for module %s@%s", resp.StatusCode, moduleName, version)

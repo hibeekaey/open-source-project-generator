@@ -62,7 +62,7 @@ func (bfw *BufferedFileWriter) Close() error {
 	defer bfw.mutex.Unlock()
 
 	if err := bfw.writer.Flush(); err != nil {
-		bfw.file.Close()
+		_ = bfw.file.Close() // Ignore close error when flush fails
 		return fmt.Errorf("failed to flush buffer: %w", err)
 	}
 
@@ -194,19 +194,19 @@ func (bfo *BatchFileOperations) executeCopy(op FileOperation) error {
 	if err != nil {
 		return fmt.Errorf("failed to open source file %s: %w", op.Source, err)
 	}
-	defer srcFile.Close()
+	defer func() { _ = srcFile.Close() }()
 
 	// Ensure parent directory exists
 	dir := filepath.Dir(op.Destination)
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return fmt.Errorf("failed to create parent directory for %s: %w", op.Destination, err)
+	if mkdirErr := os.MkdirAll(dir, 0755); mkdirErr != nil {
+		return fmt.Errorf("failed to create parent directory for %s: %w", op.Destination, mkdirErr)
 	}
 
 	destFile, err := os.OpenFile(op.Destination, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, op.Permissions)
 	if err != nil {
 		return fmt.Errorf("failed to create destination file %s: %w", op.Destination, err)
 	}
-	defer destFile.Close()
+	defer func() { _ = destFile.Close() }()
 
 	// Use buffered copy for better performance
 	_, err = io.CopyBuffer(destFile, srcFile, make([]byte, 64*1024))
@@ -237,7 +237,7 @@ func OptimizedCopy(src, dest string, perm os.FileMode) error {
 	if err != nil {
 		return fmt.Errorf("failed to open source file: %w", err)
 	}
-	defer srcFile.Close()
+	defer func() { _ = srcFile.Close() }()
 
 	// Get source file info for size optimization
 	srcInfo, err := srcFile.Stat()
@@ -247,15 +247,15 @@ func OptimizedCopy(src, dest string, perm os.FileMode) error {
 
 	// Ensure parent directory exists
 	dir := filepath.Dir(dest)
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return fmt.Errorf("failed to create parent directory: %w", err)
+	if mkdirErr := os.MkdirAll(dir, 0755); mkdirErr != nil {
+		return fmt.Errorf("failed to create parent directory: %w", mkdirErr)
 	}
 
 	destFile, err := os.OpenFile(dest, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, perm)
 	if err != nil {
 		return fmt.Errorf("failed to create destination file: %w", err)
 	}
-	defer destFile.Close()
+	defer func() { _ = destFile.Close() }()
 
 	// Use larger buffer for better performance on large files
 	bufferSize := 64 * 1024         // 64KB default

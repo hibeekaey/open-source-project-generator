@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/open-source-template-generator/pkg/constants"
 )
 
 // TestTemplateFixesComprehensive runs the complete test suite for template fixes
@@ -86,7 +88,7 @@ func testImportDetectionUtility(t *testing.T) {
 func testTemplateCompilationIntegration(t *testing.T) {
 	t.Log("Testing template compilation integration...")
 
-	templatesDir := "../../templates"
+	templatesDir := constants.TemplateRelativeBasePath
 	if _, err := os.Stat(templatesDir); os.IsNotExist(err) {
 		t.Skip("Templates directory not found, skipping integration tests")
 	}

@@ -114,21 +114,21 @@ func (h *ErrorHandler) handleAppError(err *AppError) {
 	// Log based on error type and severity
 	switch err.Type {
 	case ErrorTypeValidation, ErrorTypeConfiguration:
-		h.logger.Warn(logMsg)
+		h.logger.Warn("%s", logMsg)
 		h.logErrorDetails(err, LogLevelDebug)
 	case ErrorTypeNetwork:
-		h.logger.Warn(logMsg)
+		h.logger.Warn("%s", logMsg)
 		h.logErrorDetails(err, LogLevelDebug)
 	case ErrorTypeTemplate, ErrorTypeFileSystem, ErrorTypeGeneration:
-		h.logger.Error(logMsg)
+		h.logger.Error("%s", logMsg)
 		h.logErrorDetails(err, LogLevelInfo)
 	case ErrorTypeInternal:
-		h.logger.Error(logMsg)
+		h.logger.Error("%s", logMsg)
 		h.logErrorDetails(err, LogLevelError)
 		// Always log stack trace for internal errors
 		h.logger.Error("Stack trace: %s", err.Stack)
 	default:
-		h.logger.Error(logMsg)
+		h.logger.Error("%s", logMsg)
 		h.logErrorDetails(err, LogLevelInfo)
 	}
 }
@@ -291,7 +291,7 @@ func ChainErrors(errors []error, operation string) *AppError {
 
 	chainedMessage := fmt.Sprintf("multiple errors during %s: %s", operation, strings.Join(messages, "; "))
 	chainedErr := NewAppError(ErrorTypeInternal, chainedMessage, nil)
-	chainedErr.WithContext("error_count", len(errors))
+	_ = chainedErr.WithContext("error_count", len(errors))
 
 	return chainedErr
 }

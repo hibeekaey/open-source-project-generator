@@ -63,7 +63,7 @@ func (mp *MemoryPool) Put(buf []byte) {
 		for i := range buf[:cap(buf)] {
 			buf[i] = 0
 		}
-		pool.Put(buf[:cap(buf)])
+		pool.Put(&buf[:cap(buf)][0])
 	}
 }
 

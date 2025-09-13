@@ -630,6 +630,7 @@ func TestManager_EdgeCases(t *testing.T) {
 		}
 		if config == nil {
 			t.Error("Expected default config to be returned")
+			return
 		}
 		if config.License != "MIT" {
 			t.Error("Expected hardcoded default license")

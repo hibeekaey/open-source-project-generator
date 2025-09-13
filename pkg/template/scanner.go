@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/open-source-template-generator/pkg/constants"
 )
 
 // TemplateScanner analyzes template configurations and identifies inconsistencies
@@ -85,7 +87,7 @@ func (s *TemplateScanner) ScanFrontendTemplates() (*ConfigurationAnalysis, error
 		DependencyPatterns: make(map[string]DependencyInfo),
 	}
 
-	frontendDir := filepath.Join(s.templateDir, "frontend")
+	frontendDir := filepath.Join(s.templateDir, constants.TemplateFrontend)
 
 	// Scan each frontend template
 	templates := []string{"nextjs-app", "nextjs-home", "nextjs-admin"}
@@ -300,9 +302,9 @@ func (s *TemplateScanner) extractDependenciesFromTemplate(content string, packag
 					packageName := strings.Trim(strings.TrimSpace(parts[0]), `"`)
 					if packageName != "" {
 						if inDependencies {
-							packageInfo.Dependencies[packageName] = "template"
+							packageInfo.Dependencies[packageName] = constants.FileTypeTemplate
 						} else {
-							packageInfo.DevDependencies[packageName] = "template"
+							packageInfo.DevDependencies[packageName] = constants.FileTypeTemplate
 						}
 					}
 				}

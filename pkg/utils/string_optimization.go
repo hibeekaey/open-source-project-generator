@@ -29,7 +29,7 @@ func (sp *StringPool) Get() []string {
 // Put returns a string slice to the pool after clearing it
 func (sp *StringPool) Put(s []string) {
 	s = s[:0] // Clear the slice but keep capacity
-	sp.pool.Put(s)
+	sp.pool.Put(&s)
 }
 
 // StringBuilder provides efficient string building with pooled buffers

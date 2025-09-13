@@ -63,6 +63,6 @@ type CLIInterface interface {
 	//   - config: Complete project configuration to preview
 	//
 	// Returns:
-	//   - bool: true if user confirms generation, false if cancelled
+	//   - bool: true if user confirms generation, false if canceled
 	ConfirmGeneration(*models.ProjectConfig) bool
 }

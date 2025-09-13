@@ -99,8 +99,8 @@ func (e *Engine) ProcessTemplate(templatePath string, config *models.ProjectConf
 	}
 
 	// Perform pre-generation version validation
-	if err := e.validatePreGeneration(enhancedConfig, templatePath); err != nil {
-		return nil, fmt.Errorf("pre-generation validation failed for template %s: %w", templatePath, err)
+	if validationErr := e.validatePreGeneration(enhancedConfig, templatePath); validationErr != nil {
+		return nil, fmt.Errorf("pre-generation validation failed for template %s: %w", templatePath, validationErr)
 	}
 
 	// Load the template
@@ -195,9 +195,9 @@ func (e *Engine) RenderTemplate(tmpl *texttemplate.Template, data interface{}) (
 	if err != nil {
 		// If hashing fails, proceed without caching
 		var buf bytes.Buffer
-		err := tmpl.Execute(&buf, data)
-		if err != nil {
-			return nil, fmt.Errorf("failed to execute template: %w", err)
+		executeErr := tmpl.Execute(&buf, data)
+		if executeErr != nil {
+			return nil, fmt.Errorf("failed to execute template: %w", executeErr)
 		}
 		return buf.Bytes(), nil
 	}
@@ -251,19 +251,19 @@ func (e *Engine) copyFile(src, dest string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open source file: %w", err)
 	}
-	defer srcFile.Close()
+	defer func() { _ = srcFile.Close() }()
 
 	// Create destination directory if it doesn't exist
 	destDir := filepath.Dir(dest)
-	if err := os.MkdirAll(destDir, 0755); err != nil {
-		return fmt.Errorf("failed to create destination directory: %w", err)
+	if mkdirErr := os.MkdirAll(destDir, 0755); mkdirErr != nil {
+		return fmt.Errorf("failed to create destination directory: %w", mkdirErr)
 	}
 
 	destFile, err := os.Create(dest)
 	if err != nil {
 		return fmt.Errorf("failed to create destination file: %w", err)
 	}
-	defer destFile.Close()
+	defer func() { _ = destFile.Close() }()
 
 	// Copy file content
 	_, err = srcFile.WriteTo(destFile)

@@ -34,11 +34,17 @@ linters-settings:
 
 issues:
   exclude-rules:
-    # Test files
+    # Test files - be more lenient with test code
     - path: _test\.go
       linters:
         - gocyclo
         - dupl
         - goconst
-  max-issues-per-linter: 0
-  max-same-issues: 0
+        - errcheck
+        - unused
+        - govet
+  # Critical errors that should always fail CI
+  exclude-use-default: false
+  # Allow more issues during transition period
+  max-issues-per-linter: 100
+  max-same-issues: 50

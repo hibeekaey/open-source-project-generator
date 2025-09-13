@@ -220,11 +220,3 @@ func (c *CLI) SaveAnalysisReportCommand(args []string) error {
 	fmt.Printf("Analysis report saved to: %s\n", outputFile)
 	return nil
 }
-
-// min returns the minimum of two integers
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
