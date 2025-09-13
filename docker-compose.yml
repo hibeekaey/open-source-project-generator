@@ -4,7 +4,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: generator:latest
+    image: ${DOCKER_REGISTRY:-ghcr.io}/${GITHUB_REPOSITORY_OWNER:-cuesoftinc}/open-source-project-generator:latest
     container_name: generator
     volumes:
       - ./output:/workspace
@@ -22,7 +22,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    image: generator:dev
+    image: ${DOCKER_REGISTRY:-ghcr.io}/${GITHUB_REPOSITORY_OWNER:-cuesoftinc}/open-source-project-generator:dev
     container_name: generator-dev
     volumes:
       - .:/app
@@ -41,7 +41,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    image: generator:dev
+    image: ${DOCKER_REGISTRY:-ghcr.io}/${GITHUB_REPOSITORY_OWNER:-cuesoftinc}/open-source-project-generator:dev
     container_name: generator-test
     volumes:
       - .:/app
@@ -58,7 +58,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.build
-    image: generator:build
+    image: ${DOCKER_REGISTRY:-ghcr.io}/${GITHUB_REPOSITORY_OWNER:-cuesoftinc}/open-source-project-generator:build
     container_name: generator-build
     volumes:
       - .:/app

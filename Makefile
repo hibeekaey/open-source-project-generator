@@ -1,5 +1,11 @@
 # Open Source Template Generator Makefile
 
+# Configuration
+GITHUB_ACTOR ?= $(shell git config user.name || echo "unknown")
+GITHUB_REPOSITORY_OWNER ?= $(shell git remote get-url origin | sed 's/.*[:/]\([^/]*\)\/[^/]*$$/\1/' || echo "cuesoftinc")
+DOCKER_REGISTRY ?= ghcr.io
+IMAGE_NAME ?= $(DOCKER_REGISTRY)/$(GITHUB_REPOSITORY_OWNER)/open-source-project-generator
+
 .PHONY: help build test test-coverage clean run install dev lint fmt vet
 
 # Default target
@@ -133,9 +139,24 @@ validate-templates: ## Validate template files
 
 # Docker targets
 docker-build: ## Build Docker image
-	@echo "Building Docker image..."
-	docker build -t generator:latest .
+	@echo "Building Docker image: $(IMAGE_NAME):latest"
+	docker build -t $(IMAGE_NAME):latest .
 
 docker-test: ## Test Docker image
-	@echo "Testing Docker image..."
-	docker run --rm generator:latest version
+	@echo "Testing Docker image: $(IMAGE_NAME):latest"
+	docker run --rm $(IMAGE_NAME):latest version
+
+docker-push: ## Push Docker image to registry
+	@echo "Pushing Docker image: $(IMAGE_NAME):latest"
+	docker push $(IMAGE_NAME):latest
+
+docker-login: ## Login to GitHub Container Registry
+	@echo "Logging in to GitHub Container Registry as $(GITHUB_ACTOR)..."
+	echo $(GITHUB_TOKEN) | docker login $(DOCKER_REGISTRY) -u $(GITHUB_ACTOR) --password-stdin
+
+docker-info: ## Show Docker configuration
+	@echo "Docker Configuration:"
+	@echo "  Registry: $(DOCKER_REGISTRY)"
+	@echo "  Repository Owner: $(GITHUB_REPOSITORY_OWNER)"
+	@echo "  Image Name: $(IMAGE_NAME)"
+	@echo "  GitHub Actor: $(GITHUB_ACTOR)"

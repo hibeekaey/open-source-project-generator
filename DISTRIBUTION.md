@@ -136,22 +136,32 @@ yay -S generator
 
 ### Container Registry
 
-#### Docker Hub
+#### GitHub Container Registry (Primary)
+
+The Docker images use dynamic organization names based on the repository owner.
+
+**Official Images (cuesoftinc):**
 
 ```bash
 # Pull latest image
-docker pull generator/generator:latest
+docker pull ghcr.io/cuesoftinc/open-source-project-generator:latest
 
 # Pull specific version
-docker pull generator/generator:v1.0.0
+docker pull ghcr.io/cuesoftinc/open-source-project-generator:v1.0.0
 ```
 
-#### GitHub Container Registry
+**Fork Images (automatically adapts to your GitHub username):**
 
 ```bash
-# Pull from GHCR
-docker pull ghcr.io/open-source-template-generator/generator:latest
+# Pull from your fork (replace 'yourusername')
+docker pull ghcr.io/yourusername/open-source-project-generator:latest
+
+# Pull specific version from your fork
+docker pull ghcr.io/yourusername/open-source-project-generator:v1.0.0
 ```
+
+**Dynamic Configuration:**
+The build system automatically detects the repository owner and builds images accordingly. When you fork the repository and run GitHub Actions, images will be published to your own container registry namespace.
 
 ### Package Managers
 
