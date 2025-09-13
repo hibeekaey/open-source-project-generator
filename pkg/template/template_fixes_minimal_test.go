@@ -23,9 +23,9 @@ func TestTemplateFixesMinimal(t *testing.T) {
 	t.Log("✓ createCompilationTestData works")
 
 	// Test that verification constants are accessible
-	_ = VerificationSuccess
-	_ = VerificationFailed
-	_ = VerificationSkipped
+	if VerificationSuccess == "" || VerificationFailed == "" || VerificationSkipped == "" {
+		t.Error("Verification status constants should be non-empty")
+	}
 	t.Log("✓ Verification constants accessible")
 
 	// Test that verifyTemplateCompilation works (with a non-existent file to test error handling)

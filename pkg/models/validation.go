@@ -17,8 +17,12 @@ func NewConfigValidator() *ConfigValidator {
 	v := validator.New()
 
 	// Register custom validation functions
-	v.RegisterValidation("semver", validateSemVer)
-	v.RegisterValidation("alphanum", validateAlphaNum)
+	if err := v.RegisterValidation("semver", validateSemVer); err != nil {
+		panic(fmt.Sprintf("failed to register semver validation: %v", err))
+	}
+	if err := v.RegisterValidation("alphanum", validateAlphaNum); err != nil {
+		panic(fmt.Sprintf("failed to register alphanum validation: %v", err))
+	}
 
 	return &ConfigValidator{
 		validator: v,

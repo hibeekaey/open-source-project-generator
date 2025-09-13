@@ -36,8 +36,9 @@ import (
 // It integrates with the configuration manager for defaults and version
 // information, and the validation engine for input validation.
 type CLI struct {
-	configManager interfaces.ConfigManager    // Manages configuration and defaults
-	validator     interfaces.ValidationEngine // Validates user input and project structure
+	configManager    interfaces.ConfigManager    // Manages configuration and defaults
+	validator        interfaces.ValidationEngine // Validates user input and project structure
+	generatorVersion string                      // Generator version for project metadata
 }
 
 // NewCLI creates a new CLI instance with the provided dependencies.
@@ -50,8 +51,26 @@ type CLI struct {
 //   - *CLI: Initialized CLI instance ready for interactive operations
 func NewCLI(configManager interfaces.ConfigManager, validator interfaces.ValidationEngine) *CLI {
 	return &CLI{
-		configManager: configManager,
-		validator:     validator,
+		configManager:    configManager,
+		validator:        validator,
+		generatorVersion: "1.0.0", // default fallback
+	}
+}
+
+// NewCLIWithVersion creates a new CLI instance with custom version information.
+//
+// Parameters:
+//   - configManager: Handles configuration loading, validation, and version management
+//   - validator: Provides input validation and project structure validation
+//   - version: Generator version to use in project metadata
+//
+// Returns:
+//   - *CLI: Initialized CLI instance with custom version
+func NewCLIWithVersion(configManager interfaces.ConfigManager, validator interfaces.ValidationEngine, version string) *CLI {
+	return &CLI{
+		configManager:    configManager,
+		validator:        validator,
+		generatorVersion: version,
 	}
 }
 
@@ -84,7 +103,7 @@ func (c *CLI) PromptProjectDetails() (*models.ProjectConfig, error) {
 	config := &models.ProjectConfig{
 		CustomVars:       make(map[string]string),
 		GeneratedAt:      time.Now(),
-		GeneratorVersion: "1.0.0",
+		GeneratorVersion: c.generatorVersion,
 	}
 
 	// Basic project information
@@ -93,9 +112,9 @@ func (c *CLI) PromptProjectDetails() (*models.ProjectConfig, error) {
 	}
 
 	// Component selection
-	components, err := c.SelectComponents()
-	if err != nil {
-		return nil, fmt.Errorf("failed to select components: %w", err)
+	components, componentErr := c.SelectComponents()
+	if componentErr != nil {
+		return nil, fmt.Errorf("failed to select components: %w", componentErr)
 	}
 
 	if err := c.setSelectedComponents(config, components); err != nil {
@@ -108,9 +127,9 @@ func (c *CLI) PromptProjectDetails() (*models.ProjectConfig, error) {
 	}
 
 	// Load latest versions
-	versions, err := c.configManager.GetLatestVersions()
-	if err != nil {
-		fmt.Printf("⚠️  Warning: Could not fetch latest versions, using defaults: %v\n", err)
+	versions, versionErr := c.configManager.GetLatestVersions()
+	if versionErr != nil {
+		fmt.Printf("⚠️  Warning: Could not fetch latest versions, using defaults: %v\n", versionErr)
 		// Use default versions if fetching fails
 		versions = c.getDefaultVersions()
 	}
@@ -420,45 +439,70 @@ func (c *CLI) ConfirmGeneration(config *models.ProjectConfig) bool {
 
 // printSelectedComponents displays the selected components in a readable format
 func (c *CLI) printSelectedComponents(components models.Components) {
-	if components.Frontend.MainApp || components.Frontend.Home || components.Frontend.Admin {
-		fmt.Println("  Frontend:")
-		if components.Frontend.MainApp {
-			fmt.Println("    ✓ Main Application (Next.js)")
-		}
-		if components.Frontend.Home {
-			fmt.Println("    ✓ Landing Page")
-		}
-		if components.Frontend.Admin {
-			fmt.Println("    ✓ Admin Dashboard")
-		}
+	c.printFrontendComponents(components.Frontend)
+	c.printBackendComponents(components.Backend)
+	c.printMobileComponents(components.Mobile)
+	c.printInfrastructureComponents(components.Infrastructure)
+}
+
+// printFrontendComponents displays selected frontend components
+func (c *CLI) printFrontendComponents(frontend models.FrontendComponents) {
+	if !frontend.MainApp && !frontend.Home && !frontend.Admin {
+		return
 	}
 
-	if components.Backend.API {
-		fmt.Println("  Backend:")
-		fmt.Println("    ✓ API Server (Go + Gin)")
+	fmt.Println("  Frontend:")
+	if frontend.MainApp {
+		fmt.Println("    ✓ Main Application (Next.js)")
+	}
+	if frontend.Home {
+		fmt.Println("    ✓ Landing Page")
+	}
+	if frontend.Admin {
+		fmt.Println("    ✓ Admin Dashboard")
+	}
+}
+
+// printBackendComponents displays selected backend components
+func (c *CLI) printBackendComponents(backend models.BackendComponents) {
+	if !backend.API {
+		return
 	}
 
-	if components.Mobile.Android || components.Mobile.IOS {
-		fmt.Println("  Mobile:")
-		if components.Mobile.Android {
-			fmt.Println("    ✓ Android App (Kotlin)")
-		}
-		if components.Mobile.IOS {
-			fmt.Println("    ✓ iOS App (Swift)")
-		}
+	fmt.Println("  Backend:")
+	fmt.Println("    ✓ API Server (Go + Gin)")
+}
+
+// printMobileComponents displays selected mobile components
+func (c *CLI) printMobileComponents(mobile models.MobileComponents) {
+	if !mobile.Android && !mobile.IOS {
+		return
 	}
 
-	if components.Infrastructure.Docker || components.Infrastructure.Kubernetes || components.Infrastructure.Terraform {
-		fmt.Println("  Infrastructure:")
-		if components.Infrastructure.Docker {
-			fmt.Println("    ✓ Docker Configurations")
-		}
-		if components.Infrastructure.Kubernetes {
-			fmt.Println("    ✓ Kubernetes Manifests")
-		}
-		if components.Infrastructure.Terraform {
-			fmt.Println("    ✓ Terraform Configurations")
-		}
+	fmt.Println("  Mobile:")
+	if mobile.Android {
+		fmt.Println("    ✓ Android App (Kotlin)")
+	}
+	if mobile.IOS {
+		fmt.Println("    ✓ iOS App (Swift)")
+	}
+}
+
+// printInfrastructureComponents displays selected infrastructure components
+func (c *CLI) printInfrastructureComponents(infra models.InfrastructureComponents) {
+	if !infra.Docker && !infra.Kubernetes && !infra.Terraform {
+		return
+	}
+
+	fmt.Println("  Infrastructure:")
+	if infra.Docker {
+		fmt.Println("    ✓ Docker Configurations")
+	}
+	if infra.Kubernetes {
+		fmt.Println("    ✓ Kubernetes Manifests")
+	}
+	if infra.Terraform {
+		fmt.Println("    ✓ Terraform Configurations")
 	}
 }
 
@@ -503,6 +547,19 @@ func (c *CLI) validateComponentDependencies(selectedComponents []string) error {
 
 // validateComponentDependenciesWithPrompt allows controlling whether to prompt for warnings
 func (c *CLI) validateComponentDependenciesWithPrompt(selectedComponents []string, promptForWarnings bool) error {
+	componentMap := c.buildComponentMap(selectedComponents)
+	warnings := c.checkDependencyWarnings(componentMap)
+	errors := c.checkDependencyErrors(componentMap)
+
+	if err := c.handleValidationWarnings(warnings, promptForWarnings); err != nil {
+		return err
+	}
+
+	return c.handleValidationErrors(errors)
+}
+
+// buildComponentMap creates a map of selected components for easier lookup
+func (c *CLI) buildComponentMap(selectedComponents []string) map[string]bool {
 	componentMap := make(map[string]bool)
 	for _, comp := range selectedComponents {
 		parts := strings.Split(comp, " - ")
@@ -510,9 +567,12 @@ func (c *CLI) validateComponentDependenciesWithPrompt(selectedComponents []strin
 			componentMap[parts[0]] = true
 		}
 	}
+	return componentMap
+}
 
+// checkDependencyWarnings checks for dependency warnings
+func (c *CLI) checkDependencyWarnings(componentMap map[string]bool) []string {
 	var warnings []string
-	var errors []string
 
 	// Check mobile app dependencies
 	if (componentMap["mobile.android"] || componentMap["mobile.ios"]) && !componentMap["backend.api"] {
@@ -524,6 +584,13 @@ func (c *CLI) validateComponentDependenciesWithPrompt(selectedComponents []strin
 		warnings = append(warnings, "Kubernetes deployments typically require Docker containers")
 	}
 
+	return warnings
+}
+
+// checkDependencyErrors checks for dependency errors
+func (c *CLI) checkDependencyErrors(componentMap map[string]bool) []string {
+	var errors []string
+
 	// Check if no main components are selected
 	hasMainComponent := componentMap["frontend.main_app"] || componentMap["backend.api"] ||
 		componentMap["mobile.android"] || componentMap["mobile.ios"]
@@ -532,42 +599,64 @@ func (c *CLI) validateComponentDependenciesWithPrompt(selectedComponents []strin
 		errors = append(errors, "At least one main component (frontend app, backend API, or mobile app) must be selected")
 	}
 
-	// Display warnings
-	if len(warnings) > 0 {
-		fmt.Println()
-		fmt.Println("⚠️  Dependency Warnings:")
-		for _, warning := range warnings {
-			fmt.Printf("  • %s\n", warning)
-		}
+	return errors
+}
 
-		if promptForWarnings {
-			var proceed bool
-			proceedPrompt := &survey.Confirm{
-				Message: "Continue with these warnings?",
-				Default: true,
-			}
-
-			if err := survey.AskOne(proceedPrompt, &proceed); err != nil {
-				return fmt.Errorf("failed to get proceed confirmation: %w", err)
-			}
-
-			if !proceed {
-				return fmt.Errorf("component selection cancelled by user")
-			}
-		}
+// handleValidationWarnings displays warnings and prompts user if needed
+func (c *CLI) handleValidationWarnings(warnings []string, promptForWarnings bool) error {
+	if len(warnings) == 0 {
+		return nil
 	}
 
-	// Display errors
-	if len(errors) > 0 {
-		fmt.Println()
-		fmt.Println("❌ Dependency Errors:")
-		for _, err := range errors {
-			fmt.Printf("  • %s\n", err)
-		}
-		return fmt.Errorf("component dependency validation failed")
+	c.displayWarnings(warnings)
+
+	if promptForWarnings {
+		return c.promptUserToContinue()
 	}
 
 	return nil
+}
+
+// displayWarnings displays dependency warnings to the user
+func (c *CLI) displayWarnings(warnings []string) {
+	fmt.Println()
+	fmt.Println("⚠️  Dependency Warnings:")
+	for _, warning := range warnings {
+		fmt.Printf("  • %s\n", warning)
+	}
+}
+
+// promptUserToContinue prompts the user to continue despite warnings
+func (c *CLI) promptUserToContinue() error {
+	var proceed bool
+	proceedPrompt := &survey.Confirm{
+		Message: "Continue with these warnings?",
+		Default: true,
+	}
+
+	if err := survey.AskOne(proceedPrompt, &proceed); err != nil {
+		return fmt.Errorf("failed to get proceed confirmation: %w", err)
+	}
+
+	if !proceed {
+		return fmt.Errorf("component selection cancelled by user")
+	}
+
+	return nil
+}
+
+// handleValidationErrors displays errors and returns failure if any exist
+func (c *CLI) handleValidationErrors(errors []string) error {
+	if len(errors) == 0 {
+		return nil
+	}
+
+	fmt.Println()
+	fmt.Println("❌ Dependency Errors:")
+	for _, err := range errors {
+		fmt.Printf("  • %s\n", err)
+	}
+	return fmt.Errorf("component dependency validation failed")
 }
 
 // PreviewConfiguration shows a detailed preview of what will be generated
@@ -592,49 +681,78 @@ func (c *CLI) PreviewConfiguration(config *models.ProjectConfig) {
 func (c *CLI) showDirectoryStructure(components models.Components) {
 	fmt.Printf("  %s/\n", "project-root")
 
-	if components.Frontend.MainApp || components.Frontend.Home || components.Frontend.Admin {
-		fmt.Println("  ├── App/")
-		if components.Frontend.MainApp {
-			fmt.Println("  │   ├── main/          # Main Next.js application")
-		}
-		if components.Frontend.Home {
-			fmt.Println("  │   ├── home/          # Landing page")
-		}
-		if components.Frontend.Admin {
-			fmt.Println("  │   └── admin/         # Admin dashboard")
-		}
+	c.showFrontendDirectories(components.Frontend)
+	c.showBackendDirectories(components.Backend)
+	c.showMobileDirectories(components.Mobile)
+	c.showInfrastructureDirectories(components.Infrastructure)
+	c.showCommonDirectories()
+}
+
+// showFrontendDirectories displays frontend directory structure
+func (c *CLI) showFrontendDirectories(frontend models.FrontendComponents) {
+	if !frontend.MainApp && !frontend.Home && !frontend.Admin {
+		return
 	}
 
-	if components.Backend.API {
-		fmt.Println("  ├── CommonServer/      # Go API server")
-		fmt.Println("  │   ├── cmd/")
-		fmt.Println("  │   ├── internal/")
-		fmt.Println("  │   └── pkg/")
+	fmt.Println("  ├── App/")
+	if frontend.MainApp {
+		fmt.Println("  │   ├── main/          # Main Next.js application")
+	}
+	if frontend.Home {
+		fmt.Println("  │   ├── home/          # Landing page")
+	}
+	if frontend.Admin {
+		fmt.Println("  │   └── admin/         # Admin dashboard")
+	}
+}
+
+// showBackendDirectories displays backend directory structure
+func (c *CLI) showBackendDirectories(backend models.BackendComponents) {
+	if !backend.API {
+		return
 	}
 
-	if components.Mobile.Android || components.Mobile.IOS {
-		fmt.Println("  ├── Mobile/")
-		if components.Mobile.Android {
-			fmt.Println("  │   ├── android/       # Kotlin Android app")
-		}
-		if components.Mobile.IOS {
-			fmt.Println("  │   └── ios/           # Swift iOS app")
-		}
+	fmt.Println("  ├── CommonServer/      # Go API server")
+	fmt.Println("  │   ├── cmd/")
+	fmt.Println("  │   ├── internal/")
+	fmt.Println("  │   └── pkg/")
+}
+
+// showMobileDirectories displays mobile directory structure
+func (c *CLI) showMobileDirectories(mobile models.MobileComponents) {
+	if !mobile.Android && !mobile.IOS {
+		return
 	}
 
-	if components.Infrastructure.Docker || components.Infrastructure.Kubernetes || components.Infrastructure.Terraform {
-		fmt.Println("  ├── Deploy/")
-		if components.Infrastructure.Docker {
-			fmt.Println("  │   ├── docker/        # Docker configurations")
-		}
-		if components.Infrastructure.Kubernetes {
-			fmt.Println("  │   ├── k8s/           # Kubernetes manifests")
-		}
-		if components.Infrastructure.Terraform {
-			fmt.Println("  │   └── terraform/     # Infrastructure as code")
-		}
+	fmt.Println("  ├── Mobile/")
+	if mobile.Android {
+		fmt.Println("  │   ├── android/       # Kotlin Android app")
+	}
+	if mobile.IOS {
+		fmt.Println("  │   └── ios/           # Swift iOS app")
+	}
+}
+
+// showInfrastructureDirectories displays infrastructure directory structure
+func (c *CLI) showInfrastructureDirectories(infra models.InfrastructureComponents) {
+	if !infra.Docker && !infra.Kubernetes && !infra.Terraform {
+		return
 	}
 
+	fmt.Println("  ├── Deploy/")
+	if infra.Docker {
+		fmt.Println("  │   ├── docker/        # Docker configurations")
+	}
+	if infra.Kubernetes {
+		fmt.Println("  │   ├── k8s/           # Kubernetes manifests")
+	}
+	if infra.Terraform {
+		fmt.Println("  │   └── terraform/     # Infrastructure as code")
+	}
+}
+
+// showCommonDirectories displays common directories that are always present
+func (c *CLI) showCommonDirectories() {
 	fmt.Println("  ├── Docs/              # Documentation")
 	fmt.Println("  ├── Scripts/           # Build and deployment scripts")
 	fmt.Println("  ├── .github/           # CI/CD workflows")

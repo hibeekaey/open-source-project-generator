@@ -169,11 +169,9 @@ func TestComponentInteraction(t *testing.T) {
 	// Initialize components
 	cacheDir := filepath.Join(tempDir, "cache")
 	configManager := config.NewManager(cacheDir, "")
-	_ = template.NewEngine() // templateEngine not used in this test
 	fsGenerator := filesystem.NewGenerator()
 	validator := validation.NewEngine()
 	versionCache := version.NewMemoryCache(1 * time.Hour)
-	_ = version.NewManager(versionCache) // versionManager not used in this test
 
 	// Test configuration loading and validation
 	t.Log("Testing configuration management")
@@ -294,11 +292,8 @@ func TestPerformanceIntegration(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	// Initialize components
-	_ = template.NewEngine() // templateEngine not used in this test
 	fsGenerator := filesystem.NewGenerator()
-	_ = validation.NewEngine() // validator not used in this test
 	versionCache := version.NewMemoryCache(1 * time.Hour)
-	_ = version.NewManager(versionCache) // versionManager not used in this test
 
 	// Test multiple project generations
 	t.Log("Testing performance with multiple project generations")

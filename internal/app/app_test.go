@@ -53,7 +53,10 @@ func TestAppClose(t *testing.T) {
 
 func TestAppInitializeComponents(t *testing.T) {
 	c := container.NewContainer()
-	_ = NewApp(c)
+	app := NewApp(c)
+	if app == nil {
+		t.Fatal("NewApp returned nil")
+	}
 
 	// Check that all components are initialized
 	if c.GetConfigManager() == nil {

@@ -175,7 +175,9 @@ func TestFileCache(t *testing.T) {
 	t.Run("invalid cache directory", func(t *testing.T) {
 		// Try to create cache in a file (should fail)
 		invalidPath := filepath.Join(tempDir, "file.txt")
-		os.WriteFile(invalidPath, []byte("test"), 0644)
+		if err := os.WriteFile(invalidPath, []byte("test"), 0644); err != nil {
+			t.Fatalf("Failed to create test file: %v", err)
+		}
 
 		_, err := NewFileCache(invalidPath, 1*time.Hour)
 		if err == nil {
@@ -207,7 +209,9 @@ func TestFileCacheLoad(t *testing.T) {
 	t.Run("load invalid JSON", func(t *testing.T) {
 		// Create invalid JSON file
 		cacheFile := filepath.Join(tempDir, "version_cache.json")
-		os.WriteFile(cacheFile, []byte("invalid json"), 0644)
+		if err := os.WriteFile(cacheFile, []byte("invalid json"), 0644); err != nil {
+			t.Fatalf("Failed to create invalid JSON file: %v", err)
+		}
 
 		// Should not fail but should start with empty cache
 		cache, err := NewFileCache(tempDir, 1*time.Hour)
@@ -289,7 +293,9 @@ func TestCacheEdgeCases(t *testing.T) {
 		defer os.RemoveAll(tempDir)
 
 		// Make directory read-only
-		os.Chmod(tempDir, 0444)
+		if err := os.Chmod(tempDir, 0444); err != nil {
+			t.Fatalf("Failed to change directory permissions: %v", err)
+		}
 		defer os.Chmod(tempDir, 0755) // Restore for cleanup
 
 		_, err = NewFileCache(tempDir, 1*time.Hour)

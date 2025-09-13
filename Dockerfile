@@ -19,8 +19,12 @@ RUN go mod download
 COPY . .
 
 # Build the binary
+ARG VERSION="dev"
+ARG GIT_COMMIT="unknown"
+ARG BUILD_TIME="unknown"
+
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
-    -ldflags='-w -s -extldflags "-static"' \
+    -ldflags="-w -s -extldflags '-static' -X main.Version=${VERSION} -X main.GitCommit=${GIT_COMMIT} -X main.BuildTime=${BUILD_TIME}" \
     -a -installsuffix cgo \
     -o generator ./cmd/generator
 
@@ -76,7 +80,8 @@ CMD ["--help"]
 # Labels for metadata
 LABEL maintainer="Open Source Template Generator Team <team@example.com>"
 LABEL description="Open Source Template Generator - Create production-ready project structures"
-LABEL version="1.0.0"
+ARG VERSION="dev"
+LABEL version="${VERSION}"
 LABEL org.opencontainers.image.title="Open Source Template Generator"
 LABEL org.opencontainers.image.description="Create production-ready project structures with modern best practices"
 LABEL org.opencontainers.image.url="https://github.com/cuesoftinc/open-source-project-generator"

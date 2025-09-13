@@ -163,8 +163,12 @@ func NewSecurityValidatorWithFS(fs FileSystemInterface) *SecurityValidator {
 	v := validator.New()
 
 	// Register custom validation functions for security
-	v.RegisterValidation("secure_path", validateSecurePath)
-	v.RegisterValidation("secure_permissions", validateSecurePermissions)
+	if err := v.RegisterValidation("secure_path", validateSecurePath); err != nil {
+		panic(fmt.Sprintf("failed to register secure_path validation: %v", err))
+	}
+	if err := v.RegisterValidation("secure_permissions", validateSecurePermissions); err != nil {
+		panic(fmt.Sprintf("failed to register secure_permissions validation: %v", err))
+	}
 
 	return &SecurityValidator{
 		validator: v,

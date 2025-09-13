@@ -4,7 +4,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: ${DOCKER_REGISTRY:-ghcr.io}/${GITHUB_REPOSITORY_OWNER:-cuesoftinc}/open-source-project-generator:latest
+    image: ${DOCKER_REGISTRY:-ghcr.io}/${GITHUB_REPOSITORY_OWNER:-cuesoftinc}/open-source-project-generator:${VERSION:-latest}
     container_name: generator
     volumes:
       - ./output:/workspace

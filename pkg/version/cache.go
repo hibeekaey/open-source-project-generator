@@ -68,7 +68,11 @@ func (c *FileCache) Get(key string) (string, bool) {
 		// Entry expired, remove it
 		delete(c.cache, key)
 		// Save updated cache asynchronously
-		go c.save()
+		go func() {
+			if err := c.save(); err != nil {
+				fmt.Printf("Warning: failed to save cache after expiry cleanup: %v\n", err)
+			}
+		}()
 		return "", false
 	}
 
@@ -86,7 +90,11 @@ func (c *FileCache) Set(key, version string) error {
 	}
 
 	// Save to file asynchronously
-	go c.save()
+	go func() {
+		if err := c.save(); err != nil {
+			fmt.Printf("Warning: failed to save cache: %v\n", err)
+		}
+	}()
 
 	return nil
 }
@@ -99,7 +107,11 @@ func (c *FileCache) Delete(key string) error {
 	delete(c.cache, key)
 
 	// Save to file asynchronously
-	go c.save()
+	go func() {
+		if err := c.save(); err != nil {
+			fmt.Printf("Warning: failed to save cache: %v\n", err)
+		}
+	}()
 
 	return nil
 }
@@ -112,7 +124,11 @@ func (c *FileCache) Clear() error {
 	c.cache = make(map[string]CacheEntry)
 
 	// Save to file asynchronously
-	go c.save()
+	go func() {
+		if err := c.save(); err != nil {
+			fmt.Printf("Warning: failed to save cache: %v\n", err)
+		}
+	}()
 
 	return nil
 }
@@ -152,7 +168,11 @@ func (c *FileCache) CleanExpired() int {
 
 	if removed > 0 {
 		// Save to file asynchronously
-		go c.save()
+		go func() {
+			if err := c.save(); err != nil {
+				fmt.Printf("Warning: failed to save cache after cleanup: %v\n", err)
+			}
+		}()
 	}
 
 	return removed
