@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/open-source-template-generator/pkg/constants"
 	"github.com/open-source-template-generator/pkg/models"
 	yaml "gopkg.in/yaml.v3"
 )
@@ -118,11 +119,11 @@ func (p *MetadataParser) ValidateMetadata(metadata *TemplateMetadata) error {
 		}
 
 		if variable.Type == "" {
-			metadata.Variables[i].Type = "string" // Default type
+			metadata.Variables[i].Type = constants.StringType // Default type
 		}
 
-		// Validate variable type
-		validTypes := []string{"string", "int", "bool", "array", "object"}
+		// Validate variable type (support both short and long forms)
+		validTypes := []string{constants.StringType, constants.NumberType, constants.BooleanType, constants.ArrayType, constants.ObjectType, "bool", "int"}
 		isValidType := false
 		for _, validType := range validTypes {
 			if metadata.Variables[i].Type == validType {
@@ -243,11 +244,11 @@ func (p *MetadataParser) evaluateComponentCondition(condition TemplateCondition,
 
 	// Extract component value based on component type
 	switch condition.Component {
-	case "frontend":
+	case constants.TemplateFrontend:
 		actualValue = projectConfig.Components.Frontend.MainApp ||
 			projectConfig.Components.Frontend.Home ||
 			projectConfig.Components.Frontend.Admin
-	case "backend":
+	case constants.TemplateBackend:
 		actualValue = projectConfig.Components.Backend.API
 	case "mobile":
 		actualValue = projectConfig.Components.Mobile.Android ||

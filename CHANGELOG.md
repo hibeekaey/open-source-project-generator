@@ -5,6 +5,46 @@ All notable changes to the Open Source Template Generator will be documented in 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-09-13 - Code Quality and Linting Improvements
+
+### Added
+
+- New centralized constants package (`pkg/constants`) for improved maintainability
+- Enhanced golangci-lint configuration with comprehensive rule coverage
+- Modern text casing support using `golang.org/x/text/cases`
+- Improved type safety with custom context key types
+
+### Changed
+
+- Replaced hardcoded strings with centralized constants throughout codebase
+- Updated deprecated `strings.Title` usage to modern `cases.Title` implementation
+- Improved CI/CD pipeline configuration to include golangci-lint compliance checks
+- Enhanced error handling patterns with proper format string usage
+
+### Fixed
+
+- Fixed 172+ golangci-lint issues across the entire codebase including:
+  - Code complexity reduction in high-complexity functions
+  - Duplicate code elimination in validation and version management
+  - Fixed ineffectual assignments and unused variables
+  - Resolved variable shadowing issues in multiple packages
+  - Fixed non-constant format string issues in logging and error handling
+  - Corrected type mismatches in test assertions
+  - Fixed potential nil pointer dereferences
+- Standardized American English spelling ("canceled" vs "cancelled")
+- Fixed template metadata validation to support both short and long type forms
+- Improved format consistency across YAML/JSON handling
+
+### Security
+
+- Enhanced context key type safety to prevent context collisions
+- Improved error message handling to prevent format string vulnerabilities
+
+### Documentation
+
+- Updated .golangci.yml configuration with comprehensive linting rules
+- Improved code documentation following Go best practices
+
 ## [1.1.0] - 2025-09-12 - Comprehensive Audit and Cleanup
 
 ### Added

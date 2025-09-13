@@ -195,7 +195,7 @@ func (p *DirectoryProcessor) processTemplateExtends(content, templatePath string
 							endIdx := strings.Index(lines[j], blockEndMarker)
 							blockContent.WriteString(lines[j][:endIdx])
 							blocks[blockName] = blockContent.String()
-							i = j // Skip processed lines
+							// Note: i will be updated by the loop to continue processing
 							break
 						} else {
 							blockContent.WriteString(lines[j])
@@ -344,14 +344,14 @@ func (p *DirectoryProcessor) copyAsset(srcPath, destPath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open source file: %w", err)
 	}
-	defer srcFile.Close()
+	defer func() { _ = srcFile.Close() }()
 
 	// Create destination file
 	destFile, err := os.Create(destPath)
 	if err != nil {
 		return fmt.Errorf("failed to create destination file: %w", err)
 	}
-	defer destFile.Close()
+	defer func() { _ = destFile.Close() }()
 
 	// Copy file content
 	_, err = srcFile.WriteTo(destFile)

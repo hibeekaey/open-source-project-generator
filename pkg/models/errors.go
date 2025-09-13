@@ -123,7 +123,7 @@ func (e *SecurityOperationError) IsCritical() bool {
 
 // WithContext adds context information to the security error
 func (e *SecurityOperationError) WithContext(key string, value interface{}) *SecurityOperationError {
-	e.GeneratorError.WithContext(key, value)
+	_ = e.GeneratorError.WithContext(key, value)
 	return e
 }
 

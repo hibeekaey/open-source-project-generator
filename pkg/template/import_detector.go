@@ -221,10 +221,10 @@ func (id *ImportDetector) AnalyzeTemplateFile(filePath string) (*MissingImportRe
 	}
 
 	// Read and preprocess template content
-	content, err := id.readAndPreprocessTemplate(filePath)
-	if err != nil {
-		report.Errors = append(report.Errors, fmt.Sprintf("Failed to read file: %v", err))
-		return report, err
+	content, readErr := id.readAndPreprocessTemplate(filePath)
+	if readErr != nil {
+		report.Errors = append(report.Errors, fmt.Sprintf("Failed to read file: %v", readErr))
+		return report, readErr
 	}
 
 	// Parse the Go code
@@ -308,7 +308,7 @@ func (id *ImportDetector) replaceTemplateExpressions(content string) string {
 	inString := false
 	escapeNext := false
 	i := 0
-	
+
 	for i < len(content) {
 		if escapeNext {
 			result += string(content[i])
@@ -316,21 +316,21 @@ func (id *ImportDetector) replaceTemplateExpressions(content string) string {
 			i++
 			continue
 		}
-		
+
 		if content[i] == '\\' {
 			result += string(content[i])
 			escapeNext = true
 			i++
 			continue
 		}
-		
+
 		if content[i] == '"' {
 			inString = !inString
 			result += string(content[i])
 			i++
 			continue
 		}
-		
+
 		// Check for template expression start
 		if i < len(content)-1 && content[i:i+2] == "{{" {
 			// Find the end of the template expression
@@ -340,7 +340,7 @@ func (id *ImportDetector) replaceTemplateExpressions(content string) string {
 			}
 			if end < len(content)-1 {
 				end += 2 // Include the closing }}
-				
+
 				// Replace based on context
 				if inString {
 					result += "template_value"
@@ -351,11 +351,11 @@ func (id *ImportDetector) replaceTemplateExpressions(content string) string {
 				continue
 			}
 		}
-		
+
 		result += string(content[i])
 		i++
 	}
-	
+
 	return result
 }
 

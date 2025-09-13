@@ -464,7 +464,7 @@ func main() {
     
     // Confirm generation
     if !cliInterface.ConfirmGeneration(projectConfig) {
-        fmt.Println("Generation cancelled by user")
+        fmt.Println("Generation canceled by user")
         return
     }
     

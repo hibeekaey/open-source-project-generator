@@ -677,7 +677,7 @@ func TestTemplateEngineMemoryUsage(t *testing.T) {
 			}
 
 			// Clear result to help GC
-			result = nil
+			_ = result
 		}
 	})
 }

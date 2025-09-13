@@ -55,6 +55,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/open-source-template-generator/pkg/constants"
 	"github.com/open-source-template-generator/pkg/interfaces"
 	"github.com/open-source-template-generator/pkg/models"
 )
@@ -92,7 +93,7 @@ func NewManagerWithStorage(cache interfaces.VersionCache, storage interfaces.Ver
 	manager.storage = storage
 
 	// Initialize registries
-	manager.registries["npm"] = NewNPMRegistry(manager.npmClient)
+	manager.registries[constants.PackageManagerNPM] = NewNPMRegistry(manager.npmClient)
 	manager.registries["go"] = NewGoRegistry(manager.goClient)
 	manager.registries["github"] = NewGitHubRegistry(manager.githubClient)
 
@@ -310,101 +311,17 @@ func (m *Manager) CheckLatestVersions() (*models.VersionReport, error) {
 
 	// Check languages
 	languageSummary := models.VersionSummary{}
-	for name, info := range store.Languages {
-		languageSummary.Total++
-		report.Details[name] = info
-
-		latestInfo, err := m.getLatestVersionInfo(name, info)
-		if err != nil {
-			fmt.Printf("Warning: failed to check latest version for %s: %v\n", name, err)
-			continue
-		}
-
-		if m.isVersionOutdated(info.CurrentVersion, latestInfo.LatestVersion) {
-			languageSummary.Outdated++
-			report.Recommendations = append(report.Recommendations, models.UpdateRecommendation{
-				Name:               name,
-				CurrentVersion:     info.CurrentVersion,
-				RecommendedVersion: latestInfo.LatestVersion,
-				Priority:           m.determinePriority(info, latestInfo),
-				Reason:             m.generateUpdateReason(info, latestInfo),
-				BreakingChange:     m.isBreakingChange(info.CurrentVersion, latestInfo.LatestVersion),
-			})
-		} else {
-			languageSummary.Current++
-		}
-
-		if !latestInfo.IsSecure {
-			languageSummary.Insecure++
-			report.SecurityIssues++
-		}
-	}
+	m.processVersionCategory(store.Languages, &languageSummary, report)
 	report.Summary["languages"] = languageSummary
 
 	// Check frameworks
 	frameworkSummary := models.VersionSummary{}
-	for name, info := range store.Frameworks {
-		frameworkSummary.Total++
-		report.Details[name] = info
-
-		latestInfo, err := m.getLatestVersionInfo(name, info)
-		if err != nil {
-			fmt.Printf("Warning: failed to check latest version for %s: %v\n", name, err)
-			continue
-		}
-
-		if m.isVersionOutdated(info.CurrentVersion, latestInfo.LatestVersion) {
-			frameworkSummary.Outdated++
-			report.Recommendations = append(report.Recommendations, models.UpdateRecommendation{
-				Name:               name,
-				CurrentVersion:     info.CurrentVersion,
-				RecommendedVersion: latestInfo.LatestVersion,
-				Priority:           m.determinePriority(info, latestInfo),
-				Reason:             m.generateUpdateReason(info, latestInfo),
-				BreakingChange:     m.isBreakingChange(info.CurrentVersion, latestInfo.LatestVersion),
-			})
-		} else {
-			frameworkSummary.Current++
-		}
-
-		if !latestInfo.IsSecure {
-			frameworkSummary.Insecure++
-			report.SecurityIssues++
-		}
-	}
+	m.processVersionCategory(store.Frameworks, &frameworkSummary, report)
 	report.Summary["frameworks"] = frameworkSummary
 
 	// Check packages
 	packageSummary := models.VersionSummary{}
-	for name, info := range store.Packages {
-		packageSummary.Total++
-		report.Details[name] = info
-
-		latestInfo, err := m.getLatestVersionInfo(name, info)
-		if err != nil {
-			fmt.Printf("Warning: failed to check latest version for %s: %v\n", name, err)
-			continue
-		}
-
-		if m.isVersionOutdated(info.CurrentVersion, latestInfo.LatestVersion) {
-			packageSummary.Outdated++
-			report.Recommendations = append(report.Recommendations, models.UpdateRecommendation{
-				Name:               name,
-				CurrentVersion:     info.CurrentVersion,
-				RecommendedVersion: latestInfo.LatestVersion,
-				Priority:           m.determinePriority(info, latestInfo),
-				Reason:             m.generateUpdateReason(info, latestInfo),
-				BreakingChange:     m.isBreakingChange(info.CurrentVersion, latestInfo.LatestVersion),
-			})
-		} else {
-			packageSummary.Current++
-		}
-
-		if !latestInfo.IsSecure {
-			packageSummary.Insecure++
-			report.SecurityIssues++
-		}
-	}
+	m.processVersionCategory(store.Packages, &packageSummary, report)
 	report.Summary["packages"] = packageSummary
 
 	report.TotalPackages = languageSummary.Total + frameworkSummary.Total + packageSummary.Total
@@ -539,8 +456,8 @@ func (m *Manager) getLatestVersionInfo(name string, currentInfo *models.VersionI
 func (m *Manager) getRegistryForPackage(name string, info *models.VersionInfo) string {
 	// Determine registry based on package name and type
 	switch info.Language {
-	case "javascript", "typescript", "nodejs":
-		return "npm"
+	case constants.LanguageJavaScript, constants.LanguageTypeScript, constants.LanguageNodeJS:
+		return constants.PackageManagerNPM
 	case "go":
 		return "go"
 	default:
@@ -548,7 +465,7 @@ func (m *Manager) getRegistryForPackage(name string, info *models.VersionInfo) s
 		if strings.Contains(name, "/") {
 			return "github"
 		}
-		return "npm" // Default to npm
+		return constants.PackageManagerNPM // Default to npm
 	}
 }
 
@@ -579,19 +496,19 @@ func (m *Manager) determinePriority(current, latest *models.VersionInfo) string 
 	// Security issues get highest priority
 	if len(latest.SecurityIssues) > 0 {
 		for _, issue := range latest.SecurityIssues {
-			if issue.Severity == "critical" {
-				return "critical"
+			if issue.Severity == constants.SeverityCritical {
+				return constants.SeverityCritical
 			}
 		}
-		return "high"
+		return constants.SeverityHigh
 	}
 
 	// Breaking changes get medium priority
 	if m.isBreakingChange(current.CurrentVersion, latest.LatestVersion) {
-		return "medium"
+		return constants.SeverityMedium
 	}
 
-	return "low"
+	return constants.SeverityLow
 }
 
 func (m *Manager) generateUpdateReason(current, latest *models.VersionInfo) string {
@@ -604,6 +521,39 @@ func (m *Manager) generateUpdateReason(current, latest *models.VersionInfo) stri
 	}
 
 	return "Newer version available"
+}
+
+// processVersionCategory processes a category of versions and updates the summary and report
+func (m *Manager) processVersionCategory(versionMap map[string]*models.VersionInfo, summary *models.VersionSummary, report *models.VersionReport) {
+	for name, info := range versionMap {
+		summary.Total++
+		report.Details[name] = info
+
+		latestInfo, err := m.getLatestVersionInfo(name, info)
+		if err != nil {
+			fmt.Printf("Warning: failed to check latest version for %s: %v\n", name, err)
+			continue
+		}
+
+		if m.isVersionOutdated(info.CurrentVersion, latestInfo.LatestVersion) {
+			summary.Outdated++
+			report.Recommendations = append(report.Recommendations, models.UpdateRecommendation{
+				Name:               name,
+				CurrentVersion:     info.CurrentVersion,
+				RecommendedVersion: latestInfo.LatestVersion,
+				Priority:           m.determinePriority(info, latestInfo),
+				Reason:             m.generateUpdateReason(info, latestInfo),
+				BreakingChange:     m.isBreakingChange(info.CurrentVersion, latestInfo.LatestVersion),
+			})
+		} else {
+			summary.Current++
+		}
+
+		if !latestInfo.IsSecure {
+			summary.Insecure++
+			report.SecurityIssues++
+		}
+	}
 }
 
 // GetVersionStore returns the current version store

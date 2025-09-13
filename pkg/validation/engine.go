@@ -52,6 +52,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/open-source-template-generator/pkg/constants"
 	"github.com/open-source-template-generator/pkg/interfaces"
 	"github.com/open-source-template-generator/pkg/models"
 	"github.com/open-source-template-generator/pkg/utils"
@@ -206,20 +207,6 @@ func (e *Engine) validatePackageJSONStructure(packageJSON map[string]interface{}
 
 	if validator.HasErrors() {
 		return fmt.Errorf("package.json validation failed: %s", utils.FormatValidationErrors(validator.GetErrors()))
-	}
-
-	return nil
-	if name, ok := packageJSON["name"].(string); ok {
-		if strings.Contains(name, " ") || strings.Contains(name, "_") {
-			return fmt.Errorf("package name should use kebab-case format")
-		}
-	}
-
-	// Validate version format
-	if version, ok := packageJSON["version"].(string); ok {
-		if !e.isValidSemVer(version) {
-			return fmt.Errorf("invalid semantic version format: %s", version)
-		}
 	}
 
 	return nil
@@ -517,7 +504,7 @@ func (e *Engine) validateConfigurationFiles(projectPath string, result *models.V
 
 		// Validate specific file types
 		switch fileName {
-		case "package.json":
+		case constants.FilePackageJSON:
 			if err := e.ValidatePackageJSON(path); err != nil {
 				result.Valid = false
 				result.Errors = append(result.Errors, models.ValidationError{
@@ -527,7 +514,7 @@ func (e *Engine) validateConfigurationFiles(projectPath string, result *models.V
 					Message: fmt.Sprintf("Package.json validation failed: %s", err.Error()),
 				})
 			}
-		case "go.mod":
+		case constants.FileGoMod:
 			if err := e.ValidateGoMod(path); err != nil {
 				result.Valid = false
 				result.Errors = append(result.Errors, models.ValidationError{
@@ -547,7 +534,7 @@ func (e *Engine) validateConfigurationFiles(projectPath string, result *models.V
 					Message: fmt.Sprintf("Docker Compose validation failed: %s", err.Error()),
 				})
 			}
-		case "Dockerfile":
+		case constants.FileDockerfile:
 			if err := e.ValidateDockerfile(path); err != nil {
 				result.Valid = false
 				result.Errors = append(result.Errors, models.ValidationError{
@@ -592,7 +579,7 @@ func (e *Engine) validateDockerFiles(projectPath string, result *models.Validati
 		fileName := filepath.Base(path)
 		relativePath, _ := filepath.Rel(projectPath, path)
 
-		if fileName == "Dockerfile" || strings.HasSuffix(fileName, ".Dockerfile") {
+		if fileName == constants.FileDockerfile || strings.HasSuffix(fileName, ".Dockerfile") {
 			if err := e.ValidateDockerfile(path); err != nil {
 				result.Valid = false
 				result.Errors = append(result.Errors, models.ValidationError{
@@ -627,7 +614,7 @@ func (e *Engine) validateDependencyCompatibility(projectPath string, result *mod
 			return err
 		}
 
-		if !info.IsDir() && filepath.Base(path) == "package.json" {
+		if !info.IsDir() && filepath.Base(path) == constants.FilePackageJSON {
 			packageJSONFiles = append(packageJSONFiles, path)
 		}
 
@@ -766,14 +753,14 @@ func (e *Engine) ValidatePreGeneration(config *models.ProjectConfig, templatePat
 	// Validate Node.js versions for frontend templates
 	if e.isFrontendTemplate(templatePath) {
 		if err := e.validateNodeJSPreGeneration(config, result); err != nil {
-			return nil, fmt.Errorf("Node.js pre-generation validation failed: %w", err)
+			return nil, fmt.Errorf("node.js pre-generation validation failed: %w", err)
 		}
 	}
 
 	// Validate Go versions for backend templates
 	if e.isBackendTemplate(templatePath) {
 		if err := e.validateGoPreGeneration(config, result); err != nil {
-			return nil, fmt.Errorf("Go pre-generation validation failed: %w", err)
+			return nil, fmt.Errorf("go pre-generation validation failed: %w", err)
 		}
 	}
 
@@ -833,14 +820,14 @@ func (e *Engine) ValidatePreGenerationDirectory(config *models.ProjectConfig, te
 	// Validate Node.js versions if frontend templates are present
 	if e.hasFrontendTemplates(templateFiles) {
 		if err := e.validateNodeJSPreGeneration(config, result); err != nil {
-			return nil, fmt.Errorf("Node.js pre-generation validation failed: %w", err)
+			return nil, fmt.Errorf("node.js pre-generation validation failed: %w", err)
 		}
 	}
 
 	// Validate Go versions if backend templates are present
 	if e.hasBackendTemplates(templateFiles) {
 		if err := e.validateGoPreGeneration(config, result); err != nil {
-			return nil, fmt.Errorf("Go pre-generation validation failed: %w", err)
+			return nil, fmt.Errorf("go pre-generation validation failed: %w", err)
 		}
 	}
 
@@ -1391,7 +1378,7 @@ func (e *Engine) collectPackageJSONFiles(projectPath string) ([]string, error) {
 			return err
 		}
 
-		if !info.IsDir() && filepath.Base(path) == "package.json" {
+		if !info.IsDir() && filepath.Base(path) == constants.FilePackageJSON {
 			packageJSONFiles = append(packageJSONFiles, path)
 		}
 

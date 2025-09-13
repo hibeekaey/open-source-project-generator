@@ -1,6 +1,20 @@
 # Open Source Template Generator Makefile
 
-.PHONY: help build test clean run install dev lint fmt vet
+# Configuration
+GITHUB_ACTOR ?= $(shell git config user.name || echo "unknown")
+GITHUB_REPOSITORY_OWNER ?= $(shell git remote get-url origin | sed 's/.*[:/]\([^/]*\)\/[^/]*$$/\1/' || echo "cuesoftinc")
+DOCKER_REGISTRY ?= ghcr.io
+IMAGE_NAME ?= $(DOCKER_REGISTRY)/$(GITHUB_REPOSITORY_OWNER)/open-source-project-generator
+
+# Version information
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
+GIT_COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+BUILD_TIME ?= $(shell date -u '+%Y-%m-%d_%H:%M:%S')
+
+# Clean version for Docker tags (replace / with -)
+DOCKER_VERSION := $(shell echo $(VERSION) | sed 's/\//-/g')
+
+.PHONY: help build test test-coverage clean run install dev lint fmt vet
 
 # Default target
 help: ## Show this help message
@@ -10,18 +24,15 @@ help: ## Show this help message
 # Build the application
 build: ## Build the generator binary
 	@echo "Building generator..."
-	go build -o bin/generator ./cmd/generator
+	@echo "Version: $(VERSION)"
+	@echo "Git Commit: $(GIT_COMMIT)"
+	@echo "Build Time: $(BUILD_TIME)"
+	go build -ldflags "-X main.Version=$(VERSION) -X main.GitCommit=$(GIT_COMMIT) -X main.BuildTime=$(BUILD_TIME)" -o bin/generator ./cmd/generator
 
 # Run tests
 test: ## Run all tests
 	@echo "Running tests..."
 	go test -v ./...
-
-# Run CI-friendly tests
-test-ci: ## Run tests suitable for CI/CD pipelines
-	@echo "Running CI test suite..."
-	@echo "ℹ️  Excluding resource-intensive and flaky tests"
-	go test -tags=ci -timeout=5m ./...
 
 # Run tests with coverage
 test-coverage: ## Run tests with coverage report
@@ -55,7 +66,7 @@ install-lint: ## Install golangci-lint
 	@echo "Installing golangci-lint..."
 	@if ! command -v golangci-lint >/dev/null 2>&1; then \
 		echo "Installing golangci-lint..."; \
-		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.55.2; \
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.64.2; \
 	else \
 		echo "golangci-lint already installed"; \
 	fi
@@ -139,9 +150,35 @@ validate-templates: ## Validate template files
 
 # Docker targets
 docker-build: ## Build Docker image
-	@echo "Building Docker image..."
-	docker build -t generator:latest .
+	@echo "Building Docker image: $(IMAGE_NAME):$(DOCKER_VERSION)"
+	docker build \
+		--build-arg VERSION=$(VERSION) \
+		--build-arg GIT_COMMIT=$(GIT_COMMIT) \
+		--build-arg BUILD_TIME=$(BUILD_TIME) \
+		-t $(IMAGE_NAME):$(DOCKER_VERSION) \
+		-t $(IMAGE_NAME):latest .
 
 docker-test: ## Test Docker image
-	@echo "Testing Docker image..."
-	docker run --rm generator:latest version
+	@echo "Testing Docker image: $(IMAGE_NAME):$(DOCKER_VERSION)"
+	docker run --rm $(IMAGE_NAME):$(DOCKER_VERSION) version
+
+docker-push: ## Push Docker image to registry
+	@echo "Pushing Docker image: $(IMAGE_NAME):$(DOCKER_VERSION)"
+	docker push $(IMAGE_NAME):$(DOCKER_VERSION)
+	@echo "Pushing Docker image: $(IMAGE_NAME):latest"
+	docker push $(IMAGE_NAME):latest
+
+docker-login: ## Login to GitHub Container Registry
+	@echo "Logging in to GitHub Container Registry as $(GITHUB_ACTOR)..."
+	echo $(GITHUB_TOKEN) | docker login $(DOCKER_REGISTRY) -u $(GITHUB_ACTOR) --password-stdin
+
+docker-info: ## Show Docker configuration
+	@echo "Docker Configuration:"
+	@echo "  Registry: $(DOCKER_REGISTRY)"
+	@echo "  Repository Owner: $(GITHUB_REPOSITORY_OWNER)"
+	@echo "  Image Name: $(IMAGE_NAME)"
+	@echo "  Version: $(VERSION)"
+	@echo "  Docker Version: $(DOCKER_VERSION)"
+	@echo "  Git Commit: $(GIT_COMMIT)"
+	@echo "  Build Time: $(BUILD_TIME)"
+	@echo "  GitHub Actor: $(GITHUB_ACTOR)"

@@ -39,7 +39,9 @@ func (mov *MemoryOptimizedValidator) ValidateFileStreaming(path string, validato
 	if err != nil {
 		return fmt.Errorf("failed to open file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close() // Ignore close error
+	}()
 
 	// Get a reader from the pool
 	reader := mov.readerPool.Get().(*bufio.Reader)
@@ -59,8 +61,8 @@ func (mov *MemoryOptimizedValidator) ValidateFileStreaming(path string, validato
 			line = strings.TrimSuffix(line, "\n")
 			line = strings.TrimSuffix(line, "\r")
 
-			if err := validator(line, lineNum); err != nil {
-				return fmt.Errorf("validation failed at line %d: %w", lineNum, err)
+			if validationErr := validator(line, lineNum); validationErr != nil {
+				return fmt.Errorf("validation failed at line %d: %w", lineNum, validationErr)
 			}
 		}
 
@@ -95,7 +97,9 @@ func (mov *MemoryOptimizedValidator) ValidatePackageJSONStreaming(path string) (
 		})
 		return result, nil
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close() // Ignore close error
+	}()
 
 	// Read file in chunks to avoid loading entire file into memory
 	var jsonContent strings.Builder

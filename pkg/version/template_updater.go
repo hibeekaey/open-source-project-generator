@@ -10,6 +10,8 @@ import (
 
 	"github.com/open-source-template-generator/pkg/interfaces"
 	"github.com/open-source-template-generator/pkg/models"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // TemplateUpdater implements the TemplateUpdater interface
@@ -326,7 +328,7 @@ func (tu *TemplateUpdater) updateGenericVersions(content string, versions map[st
 	// Generic version replacement for template variables
 	for name, versionInfo := range versions {
 		// Replace template variables like {{.NodeVersion}}, {{.GoVersion}}, etc.
-		templateVarRegex := regexp.MustCompile(fmt.Sprintf(`\{\{\s*\.%sVersion\s*\}\}`, strings.Title(name)))
+		templateVarRegex := regexp.MustCompile(fmt.Sprintf(`\{\{\s*\.%sVersion\s*\}\}`, cases.Title(language.English).String(name)))
 		content = templateVarRegex.ReplaceAllString(content, versionInfo.LatestVersion)
 
 		// Replace version references in comments and documentation
@@ -362,7 +364,7 @@ func (tu *TemplateUpdater) isTemplateAffected(templatePath string, versions map[
 				patterns := []string{
 					fmt.Sprintf(`"%s":\s*"[^"]*"`, name),
 					fmt.Sprintf(`%s:\s*\d+\.\d+`, name),
-					fmt.Sprintf(`\{\{\s*\.%sVersion\s*\}\}`, strings.Title(name)),
+					fmt.Sprintf(`\{\{\s*\.%sVersion\s*\}\}`, cases.Title(language.English).String(name)),
 					fmt.Sprintf(`FROM\s+%s:\d+`, name),
 				}
 

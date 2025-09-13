@@ -32,7 +32,7 @@ func ExampleSecureFileOperation(filePath string, data []byte) error {
 			"secure_temp_creation",
 		).WithRemediation("Ensure directory is writable and has sufficient space")
 	}
-	defer os.Remove(tempFile.Name())
+	defer func() { _ = os.Remove(tempFile.Name()) }()
 
 	// Write data atomically
 	if err := writeDataSecurely(tempFile, data); err != nil {

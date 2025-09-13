@@ -580,11 +580,15 @@ func TestManager_EdgeCases(t *testing.T) {
 
 	t.Run("corrupted cache file", func(t *testing.T) {
 		cacheDir := filepath.Join(tempDir, "corrupted")
-		os.MkdirAll(cacheDir, 0755)
+		if err := os.MkdirAll(cacheDir, 0755); err != nil {
+			t.Fatalf("Failed to create cache directory: %v", err)
+		}
 
 		// Create corrupted cache file
 		cacheFile := filepath.Join(cacheDir, "versions.json")
-		os.WriteFile(cacheFile, []byte("corrupted json {"), 0644)
+		if err := os.WriteFile(cacheFile, []byte("corrupted json {"), 0644); err != nil {
+			t.Fatalf("Failed to create corrupted cache file: %v", err)
+		}
 
 		manager := NewManager(cacheDir, "")
 
@@ -600,7 +604,9 @@ func TestManager_EdgeCases(t *testing.T) {
 
 	t.Run("empty cache directory", func(t *testing.T) {
 		emptyDir := filepath.Join(tempDir, "empty")
-		os.MkdirAll(emptyDir, 0755)
+		if err := os.MkdirAll(emptyDir, 0755); err != nil {
+			t.Fatalf("Failed to create empty directory: %v", err)
+		}
 
 		manager := NewManager(emptyDir, "")
 
@@ -624,6 +630,7 @@ func TestManager_EdgeCases(t *testing.T) {
 		}
 		if config == nil {
 			t.Error("Expected default config to be returned")
+			return
 		}
 		if config.License != "MIT" {
 			t.Error("Expected hardcoded default license")
@@ -632,7 +639,9 @@ func TestManager_EdgeCases(t *testing.T) {
 
 	t.Run("malformed defaults file", func(t *testing.T) {
 		defaultsFile := filepath.Join(tempDir, "malformed.yaml")
-		os.WriteFile(defaultsFile, []byte("invalid: yaml: content: ["), 0644)
+		if err := os.WriteFile(defaultsFile, []byte("invalid: yaml: content: ["), 0644); err != nil {
+			t.Fatalf("Failed to create malformed defaults file: %v", err)
+		}
 
 		manager := NewManager(tempDir, defaultsFile)
 

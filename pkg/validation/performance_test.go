@@ -295,7 +295,7 @@ func createSimpleTestProject(projectPath string) error {
 		}`,
 		"backend/go.mod": `module test-backend
 
-go 1.21`,
+go 1.24`,
 		"backend/main.go": `package main
 
 import "fmt"

@@ -1,12 +1,13 @@
 module github.com/open-source-template-generator
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
 	github.com/go-playground/validator/v10 v10.27.0
 	github.com/spf13/cobra v1.10.1
 	github.com/stretchr/testify v1.8.4
+	golang.org/x/text v0.29.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -27,5 +28,4 @@ require (
 	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/term v0.30.0 // indirect
-	golang.org/x/text v0.23.0 // indirect
 )

@@ -87,6 +87,13 @@ module.exports = nextConfig`
 		t.Fatalf("Failed to create app directory: %v", err)
 	}
 
+	// Create public directory (required by Dockerfile)
+	publicDir := filepath.Join(projectDir, "public")
+	err = os.MkdirAll(publicDir, 0755)
+	if err != nil {
+		t.Fatalf("Failed to create public directory: %v", err)
+	}
+
 	// Create layout.tsx
 	layout := `import type { Metadata } from 'next'
 
@@ -247,7 +254,12 @@ yarn-error.log*`
 
 	// Verify the build was successful
 	outputStr := string(output)
-	if !strings.Contains(outputStr, "Successfully built") && !strings.Contains(outputStr, "Successfully tagged") {
+	// Check for success indicators in modern Docker buildx output
+	hasSuccess := strings.Contains(outputStr, "Successfully built") ||
+		strings.Contains(outputStr, "Successfully tagged") ||
+		(strings.Contains(outputStr, "exporting to image") && strings.Contains(outputStr, "DONE"))
+
+	if !hasSuccess {
 		t.Errorf("Docker build did not complete successfully. Output: %s", outputStr)
 	}
 

@@ -154,10 +154,10 @@ func ValidateAndWrapError(err error, ctx *ErrorContext) error {
 	if genErr, ok := err.(*models.GeneratorError); ok {
 		// Add additional context if available
 		if ctx.Component != "" {
-			genErr.WithContext("component", ctx.Component)
+			genErr = genErr.WithContext("component", ctx.Component)
 		}
 		if ctx.Operation != "" {
-			genErr.WithContext("operation", ctx.Operation)
+			genErr = genErr.WithContext("operation", ctx.Operation)
 		}
 		return genErr
 	}
@@ -166,10 +166,10 @@ func ValidateAndWrapError(err error, ctx *ErrorContext) error {
 	if secErr, ok := err.(*models.SecurityOperationError); ok {
 		// Add additional context if available
 		if ctx.Component != "" {
-			secErr.WithContext("component", ctx.Component)
+			secErr = secErr.WithContext("component", ctx.Component)
 		}
 		if ctx.Operation != "" {
-			secErr.WithContext("operation", ctx.Operation)
+			secErr = secErr.WithContext("operation", ctx.Operation)
 		}
 		return secErr
 	}

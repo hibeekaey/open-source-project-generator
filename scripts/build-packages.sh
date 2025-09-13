@@ -8,7 +8,7 @@ set -e
 # Configuration
 APP_NAME="generator"
 APP_DESCRIPTION="Open Source Template Generator - Create production-ready project structures"
-APP_URL="https://github.com/open-source-template-generator/generator"
+APP_URL="https://github.com/cuesoftinc/open-source-project-generator"
 MAINTAINER="Open Source Template Generator Team <team@example.com>"
 LICENSE="MIT"
 VERSION=${VERSION:-"1.0.0"}
@@ -377,7 +377,7 @@ Cache directory for package versions
 .SH AUTHOR
 Open Source Template Generator Team
 .SH REPORTING BUGS
-Report bugs at: https://github.com/open-source-template-generator/generator/issues
+Report bugs at: https://github.com/cuesoftinc/open-source-project-generator/issues
 .SH COPYRIGHT
 This is free software; see the source for copying conditions.
 EOF

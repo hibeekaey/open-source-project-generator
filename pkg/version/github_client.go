@@ -66,7 +66,7 @@ func (c *GitHubClient) GetLatestRelease(owner, repo string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to make request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return "", fmt.Errorf("repository %s/%s not found or has no releases", owner, repo)
@@ -112,7 +112,7 @@ func (c *GitHubClient) GetReleases(owner, repo string, limit int) ([]GitHubRelea
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, fmt.Errorf("repository %s/%s not found", owner, repo)

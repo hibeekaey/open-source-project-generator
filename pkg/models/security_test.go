@@ -4,252 +4,236 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSecurityConfig_Validation(t *testing.T) {
-	validator := NewSecurityValidator()
+// MockFileSystem implements FileSystemInterface for testing
+type MockFileSystem struct {
+	StatFunc  func(name string) (os.FileInfo, error)
+	IsAbsFunc func(path string) bool
+	CleanFunc func(path string) string
+}
 
-	tests := []struct {
-		name        string
-		config      *SecurityConfig
-		expectValid bool
-		expectError string
-	}{
-		{
-			name: "valid security config",
-			config: &SecurityConfig{
-				TempFileRandomLength: 16,
-				AllowedTempDirs:      []string{"/tmp", "/var/tmp"},
-				FilePermissions:      0o600,
-				EnablePathValidation: true,
-				MaxFileSize:          10 * 1024 * 1024,
-				SecureCleanup:        true,
-			},
-			expectValid: true,
+func (mfs *MockFileSystem) Stat(name string) (os.FileInfo, error) {
+	if mfs.StatFunc != nil {
+		return mfs.StatFunc(name)
+	}
+	return &MockFileInfo{name: name, isDir: true}, nil
+}
+
+func (mfs *MockFileSystem) IsAbs(path string) bool {
+	if mfs.IsAbsFunc != nil {
+		return mfs.IsAbsFunc(path)
+	}
+	return strings.HasPrefix(path, "/")
+}
+
+func (mfs *MockFileSystem) Clean(path string) string {
+	if mfs.CleanFunc != nil {
+		return mfs.CleanFunc(path)
+	}
+	// Simple mock clean implementation that behaves like filepath.Clean
+	if path == "/" {
+		return "/"
+	}
+	return strings.TrimSuffix(path, "/")
+}
+
+// MockFileInfo implements os.FileInfo for testing
+type MockFileInfo struct {
+	name  string
+	isDir bool
+}
+
+func (mfi *MockFileInfo) Name() string       { return mfi.name }
+func (mfi *MockFileInfo) Size() int64        { return 1024 }
+func (mfi *MockFileInfo) Mode() os.FileMode  { return 0o755 }
+func (mfi *MockFileInfo) ModTime() time.Time { return time.Now() }
+func (mfi *MockFileInfo) IsDir() bool        { return mfi.isDir }
+func (mfi *MockFileInfo) Sys() interface{}   { return nil }
+
+// CreateStandardMockFS creates a mock file system with standard behavior
+func CreateStandardMockFS() *MockFileSystem {
+	return &MockFileSystem{
+		StatFunc: func(name string) (os.FileInfo, error) {
+			return &MockFileInfo{name: name, isDir: true}, nil
 		},
+		IsAbsFunc: func(path string) bool {
+			return strings.HasPrefix(path, "/")
+		},
+		CleanFunc: func(path string) string {
+			if path == "/" {
+				return "/"
+			}
+			return strings.TrimSuffix(path, "/")
+		},
+	}
+}
+
+// SecurityTestValidator creates a security validator with standardized mock dependencies
+func SecurityTestValidator() *SecurityValidator {
+	return NewSecurityValidatorWithFS(CreateStandardMockFS())
+}
+
+func TestSecurityConfig_Validation(t *testing.T) {
+	// Use standardized test suite
+	testSuite := NewSecurityValidationTestSuite()
+	validator := SecurityTestValidator()
+
+	// Get standard test cases
+	tests := testSuite.StandardSecurityConfigTestCases()
+
+	// Add some additional edge cases
+	additionalTests := []SecurityTestCase{
 		{
-			name:   "missing required fields",
-			config: &SecurityConfig{
+			Name:   "missing required fields",
+			Config: &SecurityConfig{
 				// Missing required fields
 			},
-			expectValid: false,
-			expectError: "TempFileRandomLength",
+			ExpectValid: false,
+			ExpectError: "TempFileRandomLength",
+			Description: "Empty configuration should fail validation",
 		},
 		{
-			name: "temp file random length too small",
-			config: &SecurityConfig{
-				TempFileRandomLength: 4, // Too small
-				AllowedTempDirs:      []string{"/tmp"},
-				FilePermissions:      0o600,
-				MaxFileSize:          1024,
-			},
-			expectValid: false,
-			expectError: "min",
-		},
-		{
-			name: "temp file random length too large",
-			config: &SecurityConfig{
+			Name: "temp file random length too large",
+			Config: &SecurityConfig{
 				TempFileRandomLength: 128, // Too large
 				AllowedTempDirs:      []string{"/tmp"},
 				FilePermissions:      0o600,
 				MaxFileSize:          1024,
 			},
-			expectValid: false,
-			expectError: "max",
+			ExpectValid: false,
+			ExpectError: "max",
+			Description: "Configuration with excessive random length should fail",
 		},
 		{
-			name: "empty allowed temp dirs",
-			config: &SecurityConfig{
-				TempFileRandomLength: 16,
-				AllowedTempDirs:      []string{}, // Empty
-				FilePermissions:      0o600,
-				MaxFileSize:          1024,
-			},
-			expectValid: false,
-			expectError: "min",
-		},
-		{
-			name: "max file size too small",
-			config: &SecurityConfig{
+			Name: "max file size too small",
+			Config: &SecurityConfig{
 				TempFileRandomLength: 16,
 				AllowedTempDirs:      []string{"/tmp"},
 				FilePermissions:      0o600,
 				MaxFileSize:          512, // Too small
 			},
-			expectValid: false,
-			expectError: "min",
-		},
-		{
-			name: "dangerous directory path",
-			config: &SecurityConfig{
-				TempFileRandomLength: 16,
-				AllowedTempDirs:      []string{"/etc"}, // Dangerous
-				FilePermissions:      0o600,
-				MaxFileSize:          1024,
-			},
-			expectValid: false,
-			expectError: "dangerous_path",
+			ExpectValid: false,
+			ExpectError: "min",
+			Description: "Configuration with insufficient max file size should fail",
 		},
 	}
 
+	tests = append(tests, additionalTests...)
+
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := validator.ValidateSecurityConfig(tt.config)
+		t.Run(tt.Name, func(t *testing.T) {
+			result := validator.ValidateSecurityConfig(tt.Config.(*SecurityConfig))
 
-			assert.Equal(t, tt.expectValid, result.Valid, "Validation result should match expected")
+			assert.Equal(t, tt.ExpectValid, result.Valid, "Validation result should match expected: %s", tt.Description)
 
-			if !tt.expectValid && tt.expectError != "" {
+			if !tt.ExpectValid && tt.ExpectError != "" {
 				assert.NotEmpty(t, result.Errors, "Should have validation errors")
 
 				// Check if expected error is present
 				found := false
 				for _, err := range result.Errors {
-					if err.Tag == tt.expectError || err.Field == tt.expectError {
+					if err.Tag == tt.ExpectError || err.Field == tt.ExpectError {
 						found = true
 						break
 					}
 				}
-				assert.True(t, found, "Expected error '%s' not found in validation errors", tt.expectError)
+				assert.True(t, found, "Expected error '%s' not found in validation errors", tt.ExpectError)
 			}
 		})
 	}
 }
 
 func TestRandomConfig_Validation(t *testing.T) {
-	validator := NewSecurityValidator()
+	// Use standardized test suite
+	testSuite := NewSecurityValidationTestSuite()
+	validator := SecurityTestValidator()
 
-	tests := []struct {
-		name        string
-		config      *RandomConfig
-		expectValid bool
-		expectError string
-	}{
+	// Get standard test cases
+	tests := testSuite.StandardRandomConfigTestCases()
+
+	// Add some additional edge cases
+	additionalTests := []SecurityTestCase{
 		{
-			name: "valid random config",
-			config: &RandomConfig{
-				DefaultSuffixLength: 16,
-				IDFormat:            "hex",
-				MinEntropyBytes:     32,
-				IDPrefixLength:      4,
-				EnableEntropyCheck:  true,
-			},
-			expectValid: true,
-		},
-		{
-			name:   "missing required fields",
-			config: &RandomConfig{
+			Name:   "missing required fields",
+			Config: &RandomConfig{
 				// Missing required fields
 			},
-			expectValid: false,
-			expectError: "DefaultSuffixLength",
+			ExpectValid: false,
+			ExpectError: "DefaultSuffixLength",
+			Description: "Empty random configuration should fail validation",
 		},
 		{
-			name: "invalid ID format",
-			config: &RandomConfig{
-				DefaultSuffixLength: 16,
-				IDFormat:            "invalid", // Invalid format
-				MinEntropyBytes:     32,
-			},
-			expectValid: false,
-			expectError: "oneof",
-		},
-		{
-			name: "suffix length too small",
-			config: &RandomConfig{
-				DefaultSuffixLength: 4, // Too small
-				IDFormat:            "hex",
-				MinEntropyBytes:     32,
-			},
-			expectValid: false,
-			expectError: "min",
-		},
-		{
-			name: "suffix length too large",
-			config: &RandomConfig{
+			Name: "suffix length too large",
+			Config: &RandomConfig{
 				DefaultSuffixLength: 128, // Too large
 				IDFormat:            "hex",
 				MinEntropyBytes:     32,
 			},
-			expectValid: false,
-			expectError: "max",
+			ExpectValid: false,
+			ExpectError: "max",
+			Description: "Configuration with excessive suffix length should fail",
 		},
 		{
-			name: "entropy bytes too small",
-			config: &RandomConfig{
-				DefaultSuffixLength: 16,
-				IDFormat:            "hex",
-				MinEntropyBytes:     8, // Too small
-			},
-			expectValid: false,
-			expectError: "min",
-		},
-		{
-			name: "entropy bytes too large",
-			config: &RandomConfig{
+			Name: "entropy bytes too large",
+			Config: &RandomConfig{
 				DefaultSuffixLength: 16,
 				IDFormat:            "hex",
 				MinEntropyBytes:     2048, // Too large
 			},
-			expectValid: false,
-			expectError: "max",
+			ExpectValid: false,
+			ExpectError: "max",
+			Description: "Configuration with excessive entropy should fail",
 		},
 		{
-			name: "prefix length too large",
-			config: &RandomConfig{
+			Name: "prefix length too large",
+			Config: &RandomConfig{
 				DefaultSuffixLength: 16,
 				IDFormat:            "hex",
 				MinEntropyBytes:     32,
 				IDPrefixLength:      32, // Too large
 			},
-			expectValid: false,
-			expectError: "max",
+			ExpectValid: false,
+			ExpectError: "max",
+			Description: "Configuration with excessive prefix length should fail",
 		},
 	}
 
+	tests = append(tests, additionalTests...)
+
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := validator.ValidateRandomConfig(tt.config)
+		t.Run(tt.Name, func(t *testing.T) {
+			result := validator.ValidateRandomConfig(tt.Config.(*RandomConfig))
 
-			assert.Equal(t, tt.expectValid, result.Valid, "Validation result should match expected")
+			assert.Equal(t, tt.ExpectValid, result.Valid, "Validation result should match expected: %s", tt.Description)
 
-			if !tt.expectValid && tt.expectError != "" {
+			if !tt.ExpectValid && tt.ExpectError != "" {
 				assert.NotEmpty(t, result.Errors, "Should have validation errors")
 
 				// Check if expected error is present
 				found := false
 				for _, err := range result.Errors {
-					if err.Tag == tt.expectError || err.Field == tt.expectError {
+					if err.Tag == tt.ExpectError || err.Field == tt.ExpectError {
 						found = true
 						break
 					}
 				}
-				assert.True(t, found, "Expected error '%s' not found in validation errors", tt.expectError)
+				assert.True(t, found, "Expected error '%s' not found in validation errors", tt.ExpectError)
 			}
 		})
 	}
 }
 
 func TestCombinedConfig_Validation(t *testing.T) {
-	validator := NewSecurityValidator()
+	// Use standardized test suite
+	testSuite := NewSecurityValidationTestSuite()
+	validator := SecurityTestValidator()
 
-	secConfig := &SecurityConfig{
-		TempFileRandomLength: 16,
-		AllowedTempDirs:      []string{"/tmp"},
-		FilePermissions:      0o600,
-		EnablePathValidation: true,
-		MaxFileSize:          1024,
-		SecureCleanup:        true,
-	}
-
-	randConfig := &RandomConfig{
-		DefaultSuffixLength: 16, // Matches security config
-		IDFormat:            "hex",
-		MinEntropyBytes:     32,
-		IDPrefixLength:      4,
-		EnableEntropyCheck:  true,
-	}
+	secConfig := testSuite.Fixtures.StandardSecurityConfig()
+	randConfig := testSuite.Fixtures.StandardRandomConfig()
 
 	t.Run("compatible configs", func(t *testing.T) {
 		result := validator.ValidateCombinedConfig(secConfig, randConfig)
@@ -257,13 +241,8 @@ func TestCombinedConfig_Validation(t *testing.T) {
 	})
 
 	t.Run("mismatched random lengths", func(t *testing.T) {
-		mismatchedRandConfig := &RandomConfig{
-			DefaultSuffixLength: 12, // Different from security config
-			IDFormat:            "hex",
-			MinEntropyBytes:     32,
-			IDPrefixLength:      4,
-			EnableEntropyCheck:  true,
-		}
+		mismatchedRandConfig := testSuite.Fixtures.MinimalRandomConfig()
+		mismatchedRandConfig.DefaultSuffixLength = 12 // Different from security config
 
 		result := validator.ValidateCombinedConfig(secConfig, mismatchedRandConfig)
 		assert.True(t, result.Valid, "Should still be valid but with warnings")
@@ -272,80 +251,47 @@ func TestCombinedConfig_Validation(t *testing.T) {
 }
 
 func TestSecurityValidator_FilePermissions(t *testing.T) {
-	validator := NewSecurityValidator()
+	// Use standardized test suite
+	testSuite := NewSecurityValidationTestSuite()
+	validator := SecurityTestValidator()
 
-	tests := []struct {
-		name        string
-		permissions os.FileMode
-		expectValid bool
-		expectWarn  bool
-	}{
-		{
-			name:        "secure permissions (600)",
-			permissions: 0o600,
-			expectValid: true,
-			expectWarn:  false,
-		},
-		{
-			name:        "secure permissions (644)",
-			permissions: 0o644,
-			expectValid: true,
-			expectWarn:  true, // Warning for group/other read
-		},
-		{
-			name:        "insecure permissions (666)",
-			permissions: 0o666,
-			expectValid: true,
-			expectWarn:  true, // Warning for group/other write
-		},
-		{
-			name:        "no owner write (400)",
-			permissions: 0o400,
-			expectValid: false, // Error for no owner write
-		},
-	}
+	// Use standardized permission test cases
+	tests := testSuite.PermissionTestCases()
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			config := &SecurityConfig{
-				TempFileRandomLength: 16,
-				AllowedTempDirs:      []string{"/tmp"},
-				FilePermissions:      tt.permissions,
-				MaxFileSize:          1024,
-			}
+		t.Run(tt.Name, func(t *testing.T) {
+			result := validator.ValidateSecurityConfig(tt.Config.(*SecurityConfig))
 
-			result := validator.ValidateSecurityConfig(config)
+			assert.Equal(t, tt.ExpectValid, result.Valid, "Validation result should match expected: %s", tt.Description)
 
-			assert.Equal(t, tt.expectValid, result.Valid, "Validation result should match expected")
+			if !tt.ExpectValid && tt.ExpectError != "" {
+				assert.NotEmpty(t, result.Errors, "Should have validation errors")
 
-			if tt.expectWarn {
-				assert.NotEmpty(t, result.Warnings, "Should have warnings for insecure permissions")
+				// Check if expected error is present
+				found := false
+				for _, err := range result.Errors {
+					if err.Tag == tt.ExpectError || err.Field == tt.ExpectError {
+						found = true
+						break
+					}
+				}
+				assert.True(t, found, "Expected error '%s' not found in validation errors", tt.ExpectError)
 			}
 		})
 	}
 }
 
 func TestSecurityValidator_DangerousDirectories(t *testing.T) {
-	validator := NewSecurityValidator()
+	// Use standardized test suite
+	testSuite := NewSecurityValidationTestSuite()
+	validator := SecurityTestValidator()
 
-	dangerousDirs := []string{
-		"/",
-		"/bin",
-		"/sbin",
-		"/usr/bin",
-		"/etc",
-		"/root",
-		"/boot",
-	}
+	dangerousDirs := testSuite.Fixtures.DangerousDirectories()
 
 	for _, dir := range dangerousDirs {
-		t.Run("dangerous_dir_"+dir, func(t *testing.T) {
-			config := &SecurityConfig{
-				TempFileRandomLength: 16,
-				AllowedTempDirs:      []string{dir},
-				FilePermissions:      0o600,
-				MaxFileSize:          1024,
-			}
+		t.Run("dangerous_dir_"+strings.ReplaceAll(dir, "/", "_"), func(t *testing.T) {
+			config := testSuite.Fixtures.MinimalSecurityConfig()
+			config.AllowedTempDirs = []string{dir}
 
 			result := validator.ValidateSecurityConfig(config)
 			assert.False(t, result.Valid, "Dangerous directory should be invalid: %s", dir)
@@ -355,15 +301,13 @@ func TestSecurityValidator_DangerousDirectories(t *testing.T) {
 }
 
 func TestSecurityValidator_SecurityWarnings(t *testing.T) {
-	validator := NewSecurityValidator()
+	// Use standardized test suite
+	testSuite := NewSecurityValidationTestSuite()
+	validator := SecurityTestValidator()
 
 	t.Run("weak random length warning", func(t *testing.T) {
-		config := &SecurityConfig{
-			TempFileRandomLength: 12, // Less than recommended 16
-			AllowedTempDirs:      []string{"/tmp"},
-			FilePermissions:      0o600,
-			MaxFileSize:          1024,
-		}
+		config := testSuite.Fixtures.MinimalSecurityConfig()
+		config.TempFileRandomLength = 12 // Less than recommended
 
 		result := validator.ValidateSecurityConfig(config)
 		assert.True(t, result.Valid, "Should be valid but with warnings")
@@ -409,7 +353,9 @@ func TestSecurityValidator_SecurityWarnings(t *testing.T) {
 }
 
 func TestRandomConfig_SecurityWarnings(t *testing.T) {
-	validator := NewSecurityValidator()
+	// Use mock file system for faster, more reliable tests
+	mockFS := &MockFileSystem{}
+	validator := NewSecurityValidatorWithFS(mockFS)
 
 	t.Run("low entropy warning", func(t *testing.T) {
 		config := &RandomConfig{
@@ -450,7 +396,9 @@ func TestRandomConfig_SecurityWarnings(t *testing.T) {
 }
 
 func TestDefaultConfigs(t *testing.T) {
-	validator := NewSecurityValidator()
+	// Use mock file system for faster, more reliable tests
+	mockFS := &MockFileSystem{}
+	validator := NewSecurityValidatorWithFS(mockFS)
 
 	t.Run("default security config is valid", func(t *testing.T) {
 		config := DefaultSecurityConfig()

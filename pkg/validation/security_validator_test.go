@@ -185,7 +185,7 @@ func TestValidateSecurityVulnerabilities(t *testing.T) {
 			setupProject: func(projectPath string) error {
 				goMod := `module test-app
 
-go 1.21
+go 1.24
 
 require github.com/gin-gonic/gin v1.6.0
 `

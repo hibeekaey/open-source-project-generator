@@ -4,8 +4,8 @@ A focused CLI tool for generating production-ready, enterprise-grade open source
 
 ## Features
 
-- **Multi-Platform Support**: Generate projects for frontend (Next.js 15+), backend (Go 1.23+), mobile (Android Kotlin 2.0+/iOS Swift 5.9+), and infrastructure
-- **Latest Technology Stack**: Uses the most current stable versions - Go 1.23, Node.js 20+, Next.js 15+, React 19+, Kotlin 2.0+, Swift 5.9+
+- **Multi-Platform Support**: Generate projects for frontend (Next.js 15+), backend (Go 1.24+), mobile (Android Kotlin 2.0+/iOS Swift 5.9+), and infrastructure
+- **Latest Technology Stack**: Uses the most current stable versions - Go 1.24, Node.js 20+, Next.js 15+, React 19+, Kotlin 2.0+, Swift 5.9+
 - **Complete CI/CD**: Includes GitHub Actions workflows, security scanning, automated testing, and deployment configurations
 - **Infrastructure as Code**: Terraform 1.6+, Kubernetes 1.28+, and Docker 24+ configurations included
 - **Comprehensive Documentation**: Generates README, CONTRIBUTING, SECURITY, API documentation, and troubleshooting guides
@@ -79,7 +79,7 @@ make build
 
 ### Prerequisites
 
-- Go 1.23 or later
+- Go 1.24 or later
 - Make
 - Git
 
@@ -92,11 +92,8 @@ make setup
 # Run in development mode
 make dev
 
-# Run tests (full suite)
+# Run tests (unified test suite)
 make test
-
-# Run CI-friendly tests (recommended for pipelines)
-make test-ci
 
 # Run tests with coverage
 make test-coverage
@@ -139,7 +136,7 @@ The generator follows a clean architecture pattern with dependency injection and
 
 ### Backend
 
-- **Go 1.23+** with latest language features
+- **Go 1.24+** with latest language features
 - **Gin Framework** for high-performance APIs
 - **GORM** for database operations
 - **JWT Authentication** with secure defaults

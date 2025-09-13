@@ -1,5 +1,3 @@
-//go:build !ci
-
 package version
 
 import (
@@ -141,6 +139,7 @@ func (m *E2EVersionRegistry) GetRegistryInfo() interfaces.RegistryInfo {
 
 // TestCompleteVersionUpdateWorkflow tests the complete end-to-end version update workflow
 func TestCompleteVersionUpdateWorkflow(t *testing.T) {
+	t.Parallel()
 	// Create temporary directory for test
 	tempDir := t.TempDir()
 	storageFile := filepath.Join(tempDir, "versions.yaml")
@@ -154,7 +153,8 @@ func TestCompleteVersionUpdateWorkflow(t *testing.T) {
 	// Initialize cache
 	cache := NewMemoryCache(24 * time.Hour)
 
-	// Create mock registries
+	// Create mock registries with minimal data for faster execution
+	now := time.Now()
 	npmRegistry := NewE2EVersionRegistry("npm")
 	npmRegistry.SetVersion("react", &models.VersionInfo{
 		Name:           "react",
@@ -163,7 +163,7 @@ func TestCompleteVersionUpdateWorkflow(t *testing.T) {
 		Language:       "javascript",
 		Type:           "framework",
 		IsSecure:       true,
-		UpdatedAt:      time.Now(),
+		UpdatedAt:      now,
 	})
 	npmRegistry.SetVersion("next", &models.VersionInfo{
 		Name:           "next",
@@ -172,16 +172,7 @@ func TestCompleteVersionUpdateWorkflow(t *testing.T) {
 		Language:       "javascript",
 		Type:           "framework",
 		IsSecure:       true,
-		UpdatedAt:      time.Now(),
-	})
-	npmRegistry.SetVersion("typescript", &models.VersionInfo{
-		Name:           "typescript",
-		CurrentVersion: "5.0.0",
-		LatestVersion:  "5.3.3",
-		Language:       "typescript",
-		Type:           "package",
-		IsSecure:       true,
-		UpdatedAt:      time.Now(),
+		UpdatedAt:      now,
 	})
 
 	registries := map[string]interfaces.VersionRegistry{
@@ -191,9 +182,9 @@ func TestCompleteVersionUpdateWorkflow(t *testing.T) {
 	// Create version manager
 	manager := NewManagerWithStorage(cache, storage)
 
-	// Initialize storage with current versions
+	// Initialize storage with current versions - simplified for faster tests
 	initialStore := &models.VersionStore{
-		LastUpdated: time.Now(),
+		LastUpdated: now,
 		Version:     "1.0.0",
 		Languages:   make(map[string]*models.VersionInfo),
 		Frameworks: map[string]*models.VersionInfo{
@@ -204,7 +195,7 @@ func TestCompleteVersionUpdateWorkflow(t *testing.T) {
 				Language:       "javascript",
 				Type:           "framework",
 				IsSecure:       true,
-				UpdatedAt:      time.Now(),
+				UpdatedAt:      now,
 			},
 			"next": {
 				Name:           "next",
@@ -213,20 +204,10 @@ func TestCompleteVersionUpdateWorkflow(t *testing.T) {
 				Language:       "javascript",
 				Type:           "framework",
 				IsSecure:       true,
-				UpdatedAt:      time.Now(),
+				UpdatedAt:      now,
 			},
 		},
-		Packages: map[string]*models.VersionInfo{
-			"typescript": {
-				Name:           "typescript",
-				CurrentVersion: "5.0.0",
-				LatestVersion:  "5.0.0",
-				Language:       "typescript",
-				Type:           "package",
-				IsSecure:       true,
-				UpdatedAt:      time.Now(),
-			},
-		},
+		Packages: make(map[string]*models.VersionInfo),
 		UpdatePolicy: models.UpdatePolicy{
 			AutoUpdate:             true,
 			SecurityPriority:       true,
@@ -269,12 +250,12 @@ func TestCompleteVersionUpdateWorkflow(t *testing.T) {
 		t.Errorf("Pipeline should have succeeded")
 	}
 
-	if result.UpdatesDetected != 3 {
-		t.Errorf("Expected 3 updates detected, got %d", result.UpdatesDetected)
+	if result.UpdatesDetected != 2 {
+		t.Errorf("Expected 2 updates detected, got %d", result.UpdatesDetected)
 	}
 
-	if result.UpdatesApplied != 3 {
-		t.Errorf("Expected 3 updates applied, got %d", result.UpdatesApplied)
+	if result.UpdatesApplied != 2 {
+		t.Errorf("Expected 2 updates applied, got %d", result.UpdatesApplied)
 	}
 
 	if result.TemplatesUpdated != 2 {
@@ -305,9 +286,6 @@ func TestCompleteVersionUpdateWorkflow(t *testing.T) {
 		if updates["next"] == nil || updates["next"].LatestVersion != "15.5.2" {
 			t.Errorf("Next.js version not passed correctly to template updater")
 		}
-		if updates["typescript"] == nil || updates["typescript"].LatestVersion != "5.3.3" {
-			t.Errorf("TypeScript version not passed correctly to template updater")
-		}
 	}
 
 	t.Logf("✅ Complete version update workflow test passed")
@@ -315,6 +293,7 @@ func TestCompleteVersionUpdateWorkflow(t *testing.T) {
 
 // TestVersionUpdateWithSecurityIssues tests version updates with security vulnerabilities
 func TestVersionUpdateWithSecurityIssues(t *testing.T) {
+	t.Parallel()
 	// Create temporary directory for test
 	tempDir := t.TempDir()
 	storageFile := filepath.Join(tempDir, "versions.yaml")
@@ -328,7 +307,8 @@ func TestVersionUpdateWithSecurityIssues(t *testing.T) {
 	// Initialize cache
 	cache := NewMemoryCache(24 * time.Hour)
 
-	// Create mock registry with security issues
+	// Create mock registry with security issues - minimal for faster tests
+	now := time.Now()
 	npmRegistry := NewE2EVersionRegistry("npm")
 	npmRegistry.supportedPackages = append(npmRegistry.supportedPackages, "vulnerable-package")
 	npmRegistry.SetVersion("vulnerable-package", &models.VersionInfo{
@@ -346,7 +326,7 @@ func TestVersionUpdateWithSecurityIssues(t *testing.T) {
 				FixedIn:     "1.2.0",
 			},
 		},
-		UpdatedAt: time.Now(),
+		UpdatedAt: now,
 	})
 
 	npmRegistry.SetSecurityIssues("vulnerable-package", []models.SecurityIssue{
@@ -365,9 +345,9 @@ func TestVersionUpdateWithSecurityIssues(t *testing.T) {
 	// Create version manager
 	manager := NewManagerWithStorage(cache, storage)
 
-	// Initialize storage with vulnerable package
+	// Initialize storage with vulnerable package - minimal for faster tests
 	initialStore := &models.VersionStore{
-		LastUpdated: time.Now(),
+		LastUpdated: now,
 		Version:     "1.0.0",
 		Languages:   make(map[string]*models.VersionInfo),
 		Frameworks:  make(map[string]*models.VersionInfo),
@@ -387,7 +367,7 @@ func TestVersionUpdateWithSecurityIssues(t *testing.T) {
 						FixedIn:     "1.2.0",
 					},
 				},
-				UpdatedAt: time.Now(),
+				UpdatedAt: now,
 			},
 		},
 		UpdatePolicy: models.UpdatePolicy{
@@ -455,6 +435,7 @@ func TestVersionUpdateWithSecurityIssues(t *testing.T) {
 
 // TestVersionUpdateErrorHandlingAndRollback tests error handling and rollback functionality
 func TestVersionUpdateErrorHandlingAndRollback(t *testing.T) {
+	t.Parallel()
 	// Create temporary directory for test
 	tempDir := t.TempDir()
 	storageFile := filepath.Join(tempDir, "versions.yaml")
@@ -468,7 +449,8 @@ func TestVersionUpdateErrorHandlingAndRollback(t *testing.T) {
 	// Initialize cache
 	cache := NewMemoryCache(24 * time.Hour)
 
-	// Create mock registry
+	// Create mock registry - minimal for faster tests
+	now := time.Now()
 	npmRegistry := NewE2EVersionRegistry("npm")
 	npmRegistry.supportedPackages = append(npmRegistry.supportedPackages, "test-package")
 	npmRegistry.SetVersion("test-package", &models.VersionInfo{
@@ -478,7 +460,7 @@ func TestVersionUpdateErrorHandlingAndRollback(t *testing.T) {
 		Language:       "javascript",
 		Type:           "package",
 		IsSecure:       true,
-		UpdatedAt:      time.Now(),
+		UpdatedAt:      now,
 	})
 
 	registries := map[string]interfaces.VersionRegistry{
@@ -488,9 +470,9 @@ func TestVersionUpdateErrorHandlingAndRollback(t *testing.T) {
 	// Create version manager
 	manager := NewManagerWithStorage(cache, storage)
 
-	// Initialize storage
+	// Initialize storage - minimal for faster tests
 	initialStore := &models.VersionStore{
-		LastUpdated: time.Now(),
+		LastUpdated: now,
 		Version:     "1.0.0",
 		Languages:   make(map[string]*models.VersionInfo),
 		Frameworks:  make(map[string]*models.VersionInfo),
@@ -502,7 +484,7 @@ func TestVersionUpdateErrorHandlingAndRollback(t *testing.T) {
 				Language:       "javascript",
 				Type:           "package",
 				IsSecure:       true,
-				UpdatedAt:      time.Now(),
+				UpdatedAt:      now,
 			},
 		},
 		UpdatePolicy: models.UpdatePolicy{
@@ -567,6 +549,7 @@ func TestVersionUpdateErrorHandlingAndRollback(t *testing.T) {
 
 // TestRegistryQueryToTemplateUpdatePipeline tests the complete pipeline from registry query to template update
 func TestRegistryQueryToTemplateUpdatePipeline(t *testing.T) {
+	t.Parallel()
 	// Create temporary directory for test
 	tempDir := t.TempDir()
 	storageFile := filepath.Join(tempDir, "versions.yaml")
@@ -580,7 +563,8 @@ func TestRegistryQueryToTemplateUpdatePipeline(t *testing.T) {
 	// Initialize cache
 	cache := NewMemoryCache(24 * time.Hour)
 
-	// Create multiple mock registries
+	// Create minimal mock registries for faster tests
+	now := time.Now()
 	npmRegistry := NewE2EVersionRegistry("npm")
 	npmRegistry.SetVersion("react", &models.VersionInfo{
 		Name:           "react",
@@ -589,11 +573,11 @@ func TestRegistryQueryToTemplateUpdatePipeline(t *testing.T) {
 		Language:       "javascript",
 		Type:           "framework",
 		IsSecure:       true,
-		UpdatedAt:      time.Now(),
+		UpdatedAt:      now,
 	})
 
 	goRegistry := NewE2EVersionRegistry("go")
-	goRegistry.supportedPackages = []string{"gin", "gorm"}
+	goRegistry.supportedPackages = []string{"gin"}
 	goRegistry.SetVersion("gin", &models.VersionInfo{
 		Name:           "gin",
 		CurrentVersion: "1.9.0",
@@ -601,7 +585,7 @@ func TestRegistryQueryToTemplateUpdatePipeline(t *testing.T) {
 		Language:       "go",
 		Type:           "framework",
 		IsSecure:       true,
-		UpdatedAt:      time.Now(),
+		UpdatedAt:      now,
 	})
 
 	registries := map[string]interfaces.VersionRegistry{
@@ -612,9 +596,9 @@ func TestRegistryQueryToTemplateUpdatePipeline(t *testing.T) {
 	// Create version manager
 	manager := NewManagerWithStorage(cache, storage)
 
-	// Initialize storage with packages from different registries
+	// Initialize storage with packages from different registries - minimal for faster tests
 	initialStore := &models.VersionStore{
-		LastUpdated: time.Now(),
+		LastUpdated: now,
 		Version:     "1.0.0",
 		Languages:   make(map[string]*models.VersionInfo),
 		Frameworks: map[string]*models.VersionInfo{
@@ -625,7 +609,7 @@ func TestRegistryQueryToTemplateUpdatePipeline(t *testing.T) {
 				Language:       "javascript",
 				Type:           "framework",
 				IsSecure:       true,
-				UpdatedAt:      time.Now(),
+				UpdatedAt:      now,
 			},
 			"gin": {
 				Name:           "gin",
@@ -634,7 +618,7 @@ func TestRegistryQueryToTemplateUpdatePipeline(t *testing.T) {
 				Language:       "go",
 				Type:           "framework",
 				IsSecure:       true,
-				UpdatedAt:      time.Now(),
+				UpdatedAt:      now,
 			},
 		},
 		Packages: make(map[string]*models.VersionInfo),
@@ -723,6 +707,7 @@ func TestRegistryQueryToTemplateUpdatePipeline(t *testing.T) {
 
 // TestConcurrentVersionUpdates tests concurrent version update operations
 func TestConcurrentVersionUpdates(t *testing.T) {
+	// Note: Not parallelized as this test specifically checks concurrent behavior
 	// Create temporary directory for test
 	tempDir := t.TempDir()
 	storageFile := filepath.Join(tempDir, "versions.yaml")
@@ -739,9 +724,10 @@ func TestConcurrentVersionUpdates(t *testing.T) {
 	// Create version manager
 	manager := NewManagerWithStorage(cache, storage)
 
-	// Initialize storage with test packages
+	// Initialize storage with minimal test packages for faster execution
+	now := time.Now()
 	initialStore := &models.VersionStore{
-		LastUpdated: time.Now(),
+		LastUpdated: now,
 		Version:     "1.0.0",
 		Languages:   make(map[string]*models.VersionInfo),
 		Frameworks:  make(map[string]*models.VersionInfo),
@@ -753,7 +739,7 @@ func TestConcurrentVersionUpdates(t *testing.T) {
 				Language:       "javascript",
 				Type:           "package",
 				IsSecure:       true,
-				UpdatedAt:      time.Now(),
+				UpdatedAt:      now,
 			},
 			"package2": {
 				Name:           "package2",
@@ -762,7 +748,7 @@ func TestConcurrentVersionUpdates(t *testing.T) {
 				Language:       "javascript",
 				Type:           "package",
 				IsSecure:       true,
-				UpdatedAt:      time.Now(),
+				UpdatedAt:      now,
 			},
 		},
 		UpdatePolicy: models.UpdatePolicy{

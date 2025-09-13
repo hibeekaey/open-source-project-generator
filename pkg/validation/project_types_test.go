@@ -201,7 +201,7 @@ func TestProjectTypeValidator_ValidateBackendProject(t *testing.T) {
 				files := map[string]string{
 					"go.mod": `module github.com/example/test-backend
 
-go 1.21
+go 1.24
 
 require (
 	github.com/gin-gonic/gin v1.9.1
@@ -229,7 +229,7 @@ func main() {
 	fmt.Println("Server starting on :8080")
 	log.Fatal(r.Run(":8080"))
 }`,
-					"Dockerfile": `FROM golang:1.21-alpine AS builder
+					"Dockerfile": `FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
@@ -272,7 +272,7 @@ CMD ["./main"]`,
 				// Only create go.mod
 				goMod := `module test
 
-go 1.21`
+go 1.24`
 				return os.WriteFile(filepath.Join(projectPath, "go.mod"), []byte(goMod), 0644)
 			},
 			expectedValid:  false,
@@ -284,13 +284,13 @@ go 1.21`
 				files := map[string]string{
 					"go.mod": `module test
 
-go 1.21`,
+go 1.24`,
 					"main.go": `package notmain
 
 func notmain() {
 	println("hello")
 }`,
-					"Dockerfile": `FROM golang:1.21-alpine
+					"Dockerfile": `FROM golang:1.24-alpine
 WORKDIR /app
 COPY . .
 CMD ["go", "run", "main.go"]`,
