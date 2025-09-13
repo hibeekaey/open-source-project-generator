@@ -4,18 +4,72 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
+	"{{.Name}}/internal/config"
+	"{{.Name}}/internal/models"
+	"{{.Name}}/internal/services"
 	"{{.Name}}/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
+
+// MockUserService for testing
+type MockUserService struct {
+	mock.Mock
+}
+
+func (m *MockUserService) GetByID(id uint) (*models.User, error) {
+	args := m.Called(id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.User), args.Error(1)
+}
+
+func (m *MockUserService) Create(user *models.User) error {
+	args := m.Called(user)
+	return args.Error(0)
+}
+
+func (m *MockUserService) Update(user *models.User) error {
+	args := m.Called(user)
+	return args.Error(0)
+}
+
+func (m *MockUserService) Delete(id uint) error {
+	args := m.Called(id)
+	return args.Error(0)
+}
+
+func (m *MockUserService) GetByEmail(email string) (*models.User, error) {
+	args := m.Called(email)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.User), args.Error(1)
+}
 
 func TestAuthMiddleware(t *testing.T) {
 	gin.SetMode(gin.TestMode)
+	
+	cfg := &config.Config{
+		JWT: config.JWTConfig{
+			Secret: "test-secret-key",
+		},
+	}
 
-	t.Run("valid token", func(t *testing.T) {
+	t.Run("valid token with active user", func(t *testing.T) {
+		mockUserService := new(MockUserService)
+		user := &models.User{
+			ID:       1,
+			IsActive: true,
+		}
+		mockUserService.On("GetByID", uint(1)).Return(user, nil)
+
 		// Generate a valid token
-		token, err := utils.GenerateToken(1, "test@example.com")
+		token, err := utils.GenerateJWT(1, cfg.JWT.Secret, time.Hour)
 		assert.NoError(t, err)
 
 		req := httptest.NewRequest(http.MethodGet, "/protected", nil)
@@ -23,7 +77,7 @@ func TestAuthMiddleware(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		router := gin.New()
-		router.Use(AuthMiddleware())
+		router.Use(AuthMiddleware(cfg, mockUserService))
 		router.GET("/protected", func(c *gin.Context) {
 			userID, exists := c.Get("user_id")
 			assert.True(t, exists)
@@ -33,29 +87,97 @@ func TestAuthMiddleware(t *testing.T) {
 
 		router.ServeHTTP(w, req)
 		assert.Equal(t, http.StatusOK, w.Code)
+		mockUserService.AssertExpectations(t)
 	})
 
 	t.Run("missing authorization header", func(t *testing.T) {
+		mockUserService := new(MockUserService)
+		
 		req := httptest.NewRequest(http.MethodGet, "/protected", nil)
 		w := httptest.NewRecorder()
 
 		router := gin.New()
-		router.Use(AuthMiddleware())
+		router.Use(AuthMiddleware(cfg, mockUserService))
 		router.GET("/protected", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"message": "success"})
 		})
 
 		router.ServeHTTP(w, req)
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
+		assert.Contains(t, w.Body.String(), "Authentication required")
 	})
 
 	t.Run("invalid token format", func(t *testing.T) {
+		mockUserService := new(MockUserService)
+		
 		req := httptest.NewRequest(http.MethodGet, "/protected", nil)
 		req.Header.Set("Authorization", "InvalidFormat")
 		w := httptest.NewRecorder()
 
 		router := gin.New()
-		router.Use(AuthMiddleware())
+		router.Use(AuthMiddleware(cfg, mockUserService))
+		router.GET("/protected", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{"message": "success"})
+		})
+
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+		assert.Contains(t, w.Body.String(), "Authentication required")
+	})
+
+	t.Run("invalid token", func(t *testing.T) {
+		mockUserService := new(MockUserService)
+		
+		req := httptest.NewRequest(http.MethodGet, "/protected", nil)
+		req.Header.Set("Authorization", "Bearer invalid.token.here")
+		w := httptest.NewRecorder()
+
+		router := gin.New()
+		router.Use(AuthMiddleware(cfg, mockUserService))
+		router.GET("/protected", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{"message": "success"})
+		})
+
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+		assert.Contains(t, w.Body.String(), "Authentication required")
+	})
+
+	t.Run("inactive user", func(t *testing.T) {
+		mockUserService := new(MockUserService)
+		user := &models.User{
+			ID:       1,
+			IsActive: false,
+		}
+		mockUserService.On("GetByID", uint(1)).Return(user, nil)
+
+		token, err := utils.GenerateJWT(1, cfg.JWT.Secret, time.Hour)
+		assert.NoError(t, err)
+
+		req := httptest.NewRequest(http.MethodGet, "/protected", nil)
+		req.Header.Set("Authorization", "Bearer "+token)
+		w := httptest.NewRecorder()
+
+		router := gin.New()
+		router.Use(AuthMiddleware(cfg, mockUserService))
+		router.GET("/protected", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{"message": "success"})
+		})
+
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+		mockUserService.AssertExpectations(t)
+	})
+
+	t.Run("token too short", func(t *testing.T) {
+		mockUserService := new(MockUserService)
+		
+		req := httptest.NewRequest(http.MethodGet, "/protected", nil)
+		req.Header.Set("Authorization", "Bearer short")
+		w := httptest.NewRecorder()
+
+		router := gin.New()
+		router.Use(AuthMiddleware(cfg, mockUserService))
 		router.GET("/protected", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"message": "success"})
 		})
@@ -64,13 +186,15 @@ func TestAuthMiddleware(t *testing.T) {
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
 	})
 
-	t.Run("invalid token", func(t *testing.T) {
+	t.Run("malformed JWT structure", func(t *testing.T) {
+		mockUserService := new(MockUserService)
+		
 		req := httptest.NewRequest(http.MethodGet, "/protected", nil)
-		req.Header.Set("Authorization", "Bearer invalid.token.here")
+		req.Header.Set("Authorization", "Bearer not.a.valid.jwt.structure.with.too.many.parts")
 		w := httptest.NewRecorder()
 
 		router := gin.New()
-		router.Use(AuthMiddleware())
+		router.Use(AuthMiddleware(cfg, mockUserService))
 		router.GET("/protected", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"message": "success"})
 		})
@@ -82,10 +206,22 @@ func TestAuthMiddleware(t *testing.T) {
 
 func TestOptionalAuthMiddleware(t *testing.T) {
 	gin.SetMode(gin.TestMode)
+	
+	cfg := &config.Config{
+		JWT: config.JWTConfig{
+			Secret: "test-secret-key",
+		},
+	}
 
 	t.Run("valid token", func(t *testing.T) {
-		// Generate a valid token
-		token, err := utils.GenerateToken(1, "test@example.com")
+		mockUserService := new(MockUserService)
+		user := &models.User{
+			ID:       1,
+			IsActive: true,
+		}
+		mockUserService.On("GetByID", uint(1)).Return(user, nil)
+
+		token, err := utils.GenerateJWT(1, cfg.JWT.Secret, time.Hour)
 		assert.NoError(t, err)
 
 		req := httptest.NewRequest(http.MethodGet, "/optional", nil)
@@ -93,7 +229,7 @@ func TestOptionalAuthMiddleware(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		router := gin.New()
-		router.Use(OptionalAuthMiddleware())
+		router.Use(OptionalAuthMiddleware(cfg, mockUserService))
 		router.GET("/optional", func(c *gin.Context) {
 			userID, exists := c.Get("user_id")
 			assert.True(t, exists)
@@ -103,14 +239,17 @@ func TestOptionalAuthMiddleware(t *testing.T) {
 
 		router.ServeHTTP(w, req)
 		assert.Equal(t, http.StatusOK, w.Code)
+		mockUserService.AssertExpectations(t)
 	})
 
 	t.Run("no token provided", func(t *testing.T) {
+		mockUserService := new(MockUserService)
+		
 		req := httptest.NewRequest(http.MethodGet, "/optional", nil)
 		w := httptest.NewRecorder()
 
 		router := gin.New()
-		router.Use(OptionalAuthMiddleware())
+		router.Use(OptionalAuthMiddleware(cfg, mockUserService))
 		router.GET("/optional", func(c *gin.Context) {
 			_, exists := c.Get("user_id")
 			assert.False(t, exists)
@@ -119,5 +258,85 @@ func TestOptionalAuthMiddleware(t *testing.T) {
 
 		router.ServeHTTP(w, req)
 		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("invalid token - should continue without auth", func(t *testing.T) {
+		mockUserService := new(MockUserService)
+		
+		req := httptest.NewRequest(http.MethodGet, "/optional", nil)
+		req.Header.Set("Authorization", "Bearer invalid.token")
+		w := httptest.NewRecorder()
+
+		router := gin.New()
+		router.Use(OptionalAuthMiddleware(cfg, mockUserService))
+		router.GET("/optional", func(c *gin.Context) {
+			_, exists := c.Get("user_id")
+			assert.False(t, exists)
+			c.JSON(http.StatusOK, gin.H{"message": "success"})
+		})
+
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+}
+
+func TestAuthRateLimitMiddleware(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("allows requests under limit", func(t *testing.T) {
+		// Clear rate limit map
+		rateLimitMap = make(map[string]*RateLimitEntry)
+		
+		middleware := AuthRateLimitMiddleware(5, time.Minute)
+		
+		for i := 0; i < 5; i++ {
+			req := httptest.NewRequest(http.MethodPost, "/auth/login", nil)
+			w := httptest.NewRecorder()
+			
+			router := gin.New()
+			router.Use(middleware)
+			router.POST("/auth/login", func(c *gin.Context) {
+				c.JSON(http.StatusOK, gin.H{"message": "success"})
+			})
+			
+			router.ServeHTTP(w, req)
+			assert.Equal(t, http.StatusOK, w.Code)
+		}
+	})
+
+	t.Run("blocks requests over limit", func(t *testing.T) {
+		// Clear rate limit map
+		rateLimitMap = make(map[string]*RateLimitEntry)
+		
+		middleware := AuthRateLimitMiddleware(3, time.Minute)
+		
+		// Make 3 successful requests
+		for i := 0; i < 3; i++ {
+			req := httptest.NewRequest(http.MethodPost, "/auth/login", nil)
+			w := httptest.NewRecorder()
+			
+			router := gin.New()
+			router.Use(middleware)
+			router.POST("/auth/login", func(c *gin.Context) {
+				c.JSON(http.StatusOK, gin.H{"message": "success"})
+			})
+			
+			router.ServeHTTP(w, req)
+			assert.Equal(t, http.StatusOK, w.Code)
+		}
+		
+		// 4th request should be blocked
+		req := httptest.NewRequest(http.MethodPost, "/auth/login", nil)
+		w := httptest.NewRecorder()
+		
+		router := gin.New()
+		router.Use(middleware)
+		router.POST("/auth/login", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{"message": "success"})
+		})
+		
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusTooManyRequests, w.Code)
+		assert.Contains(t, w.Body.String(), "Too many authentication attempts")
 	})
 }

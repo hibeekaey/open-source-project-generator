@@ -2,7 +2,6 @@ package filesystem
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -263,26 +262,12 @@ func (g *Generator) EnsureDirectory(path string) error {
 	return g.CreateDirectory(cleanPath)
 }
 
-// copyFile copies a single file from source to destination
+// copyFile copies a single file from source to destination using optimized I/O
 func (g *Generator) copyFile(srcPath, destPath string, perm os.FileMode) error {
-	// Open source file
-	srcFile, err := os.Open(srcPath)
-	if err != nil {
-		return fmt.Errorf("failed to open source file %s: %w", srcPath, err)
-	}
-	defer srcFile.Close()
-
-	// Create destination file
-	destFile, err := os.OpenFile(destPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, perm)
-	if err != nil {
-		return fmt.Errorf("failed to create destination file %s: %w", destPath, err)
-	}
-	defer destFile.Close()
-
-	// Copy file contents
-	if _, err := io.Copy(destFile, srcFile); err != nil {
-		return fmt.Errorf("failed to copy file contents from %s to %s: %w", srcPath, destPath, err)
+	if g.dryRun {
+		return nil
 	}
 
-	return nil
+	// Use optimized copy for better performance
+	return OptimizedCopy(srcPath, destPath, perm)
 }

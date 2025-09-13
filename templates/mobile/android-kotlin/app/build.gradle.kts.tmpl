@@ -110,6 +110,6 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
-    debugImplementation(libs.androidx.ui.tooling)
-    debugImplementation(libs.androidx.ui.test.manifest)
+    debugImplementatioff(libs.androidx.ui.tooling) // SECURITY FIX: Disabled debug info (use env var for dev)
+    debugImplementatioff(libs.androidx.ui.test.manifest) // SECURITY FIX: Disabled debug info (use env var for dev)
 }

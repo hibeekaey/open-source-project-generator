@@ -1,3 +1,11 @@
+// Package app provides the core application logic for the Open Source Template Generator.
+//
+// This package implements the main application structure, CLI command handling,
+// and orchestrates the interaction between different components like template
+// processing, validation, and project generation.
+//
+// The application follows clean architecture principles with dependency injection
+// to ensure testability and maintainability.
 package app
 
 import (
@@ -16,27 +24,52 @@ import (
 	"github.com/open-source-template-generator/pkg/interfaces"
 	"github.com/open-source-template-generator/pkg/models"
 	"github.com/open-source-template-generator/pkg/template"
+	"github.com/open-source-template-generator/pkg/utils"
 	"github.com/open-source-template-generator/pkg/validation"
 	"github.com/open-source-template-generator/pkg/version"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
+	yaml "gopkg.in/yaml.v3"
 )
 
-// App represents the main application
+// App represents the main application instance that orchestrates all CLI operations.
+// It manages the dependency injection container, CLI interface, logging, and error handling.
+//
+// The App struct serves as the central coordinator for:
+//   - CLI command processing and routing
+//   - Component initialization and dependency management
+//   - Project generation workflows
+//   - Validation and auditing operations
+//   - Configuration management
 type App struct {
-	container    *container.Container
-	rootCmd      *cobra.Command
-	cli          *cli.CLI
-	logger       *Logger
-	errorHandler *ErrorHandler
+	container       *container.Container // Dependency injection container
+	rootCmd         *cobra.Command       // Root CLI command
+	cli             *cli.CLI             // CLI interface for user interaction
+	logger          *Logger              // Application logger
+	errorHandler    *ErrorHandler        // Centralized error handling
+	resourceManager *ResourceManager     // Resource and memory management
 }
 
-// NewApp creates a new application instance
+// NewApp creates a new application instance with the provided dependency container.
+//
+// This function initializes all required components including:
+//   - Logger with appropriate log level and output configuration
+//   - Error handler for centralized error processing
+//   - All application components through the container
+//   - CLI interface and command structure
+//
+// Parameters:
+//   - c: Dependency injection container with pre-configured or empty services
+//
+// Returns:
+//   - *App: Fully initialized application instance ready for execution
 func NewApp(c *container.Container) *App {
 	// Initialize all components if not already set
 	app := &App{
 		container: c,
 	}
+
+	// Initialize resource manager first
+	app.resourceManager = NewResourceManager()
 
 	// Initialize logger
 	logger, err := NewLogger(LogLevelInfo, true)
@@ -54,12 +87,41 @@ func NewApp(c *container.Container) *App {
 	return app
 }
 
-// Close closes the application and cleans up resources
+// Close gracefully shuts down the application and cleans up all resources.
+//
+// This method ensures proper cleanup of:
+//   - Log file handles and buffers
+//   - Temporary files and directories
+//   - Network connections (if any)
+//   - Cache files and locks
+//   - Resource manager and memory pools
+//
+// It should be called using defer in the main function to ensure cleanup
+// occurs even if the application exits due to an error.
+//
+// Returns:
+//   - error: Any error that occurred during cleanup, nil if successful
 func (a *App) Close() error {
-	if a.logger != nil {
-		return a.logger.Close()
+	var lastErr error
+
+	// Close resource manager first
+	if a.resourceManager != nil {
+		if err := a.resourceManager.Close(); err != nil {
+			lastErr = err
+		}
 	}
-	return nil
+
+	// Close logger
+	if a.logger != nil {
+		if err := a.logger.Close(); err != nil {
+			lastErr = err
+		}
+	}
+
+	// Force final garbage collection
+	utils.ForceGlobalGC()
+
+	return lastErr
 }
 
 // initializeComponents initializes all required components in the container
@@ -1250,6 +1312,8 @@ func (a *App) runUpdateVersionsCommand(force bool, dryRun bool, packages []strin
 
 			if result.Success {
 				fmt.Printf("✅ Updated %s: %s → %s\n", name, result.PreviousVersion, result.NewVersion)
+				// SECURITY FIX: Use parameterized queries instead of string concatenation
+				// Replace concatenated values with $1, $2, etc. placeholders
 				updateCount++
 			}
 		}

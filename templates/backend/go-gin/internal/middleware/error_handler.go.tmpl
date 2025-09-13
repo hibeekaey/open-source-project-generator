@@ -1,0 +1,236 @@
+package middleware
+
+import (
+	"fmt"
+	"net/http"
+	"runtime/debug"
+	"strings"
+
+	"{{.Name}}/pkg/utils"
+	"github.com/gin-gonic/gin"
+)
+
+// ErrorHandlerMiddleware provides centralized error handling with security considerations
+func ErrorHandlerMiddleware() gin.HandlerFunc {
+	return gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
+		// Log the panic with stack trace for debugging (but don't expose it)
+		if recovered != nil {
+			stack := debug.Stack()
+			utils.LogSecurityEvent(c, "panic_recovered", 
+				fmt.Sprintf("Panic recovered: %v\nStack: %s", recovered, string(stack)))
+		}
+
+		// Determine if client expects JSON or HTML
+		if isJSONRequest(c) {
+			utils.InternalServerErrorResponse(c, fmt.Errorf("panic recovered: %v", recovered))
+		} else {
+			utils.RenderErrorPage(c, http.StatusInternalServerError, 
+				"Internal Server Error", 
+				"We're experiencing technical difficulties. Please try again later.")
+		}
+	})
+}
+
+// NotFoundHandler handles 404 errors securely
+func NotFoundHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Check if this might be a suspicious request
+		if isSuspiciousPath(c.Request.URL.Path) {
+			utils.LogSecurityEvent(c, "suspicious_404_attempt", 
+				fmt.Sprintf("Suspicious path accessed: %s", c.Request.URL.Path))
+		}
+
+		if isJSONRequest(c) {
+			utils.NotFoundResponse(c, "endpoint")
+		} else {
+			utils.RenderErrorPage(c, http.StatusNotFound, 
+				"Page Not Found", 
+				"The page you're looking for doesn't exist or has been moved.")
+		}
+	}
+}
+
+// MethodNotAllowedHandler handles 405 errors securely
+func MethodNotAllowedHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		utils.LogSecurityEvent(c, "method_not_allowed", 
+			fmt.Sprintf("Method %s not allowed for path %s", c.Request.Method, c.Request.URL.Path))
+
+		if isJSONRequest(c) {
+			utils.SecureErrorResponse(c, http.StatusMethodNotAllowed, 
+				"Method not allowed", nil, "method_not_allowed")
+		} else {
+			utils.RenderErrorPage(c, http.StatusMethodNotAllowed, 
+				"Method Not Allowed", 
+				"The requested method is not allowed for this resource.")
+		}
+	}
+}
+
+// SecurityErrorHandler handles security-related errors
+func SecurityErrorHandler(c *gin.Context, errorType, message string, statusCode int) {
+	utils.LogSecurityEvent(c, errorType, message)
+
+	if isJSONRequest(c) {
+		utils.SecureErrorResponse(c, statusCode, message, nil, errorType)
+	} else {
+		var title, pageMessage string
+		switch statusCode {
+		case http.StatusUnauthorized:
+			title = "Authentication Required"
+			pageMessage = "You need to sign in to access this resource."
+		case http.StatusForbidden:
+			title = "Access Denied"
+			pageMessage = "You don't have permission to access this resource."
+		case http.StatusTooManyRequests:
+			title = "Too Many Requests"
+			pageMessage = "You've made too many requests. Please wait before trying again."
+		default:
+			title = "Security Error"
+			pageMessage = "A security error occurred. Please try again later."
+		}
+		
+		utils.RenderErrorPage(c, statusCode, title, pageMessage)
+	}
+}
+
+// ValidationErrorHandler handles validation errors securely
+func ValidationErrorHandler(c *gin.Context, err error) {
+	// Don't log validation errors as security events unless they're suspicious
+	if isSuspiciousValidationError(err) {
+		utils.LogSecurityEvent(c, "suspicious_validation_error", 
+			fmt.Sprintf("Suspicious validation error: %v", err))
+	}
+
+	if isJSONRequest(c) {
+		utils.ValidationErrorResponse(c, err)
+	} else {
+		utils.RenderErrorPage(c, http.StatusBadRequest, 
+			"Invalid Request", 
+			"The submitted data is invalid. Please check your input and try again.")
+	}
+}
+
+// DatabaseErrorHandler handles database errors securely
+func DatabaseErrorHandler(c *gin.Context, err error, operation string) {
+	// Log database errors for monitoring but don't expose details
+	utils.LogSecurityEvent(c, "database_error", 
+		fmt.Sprintf("Database operation failed: %s", operation))
+
+	if isJSONRequest(c) {
+		utils.InternalServerErrorResponse(c, err)
+	} else {
+		utils.RenderErrorPage(c, http.StatusInternalServerError, 
+			"Service Unavailable", 
+			"We're experiencing database issues. Please try again later.")
+	}
+}
+
+// isJSONRequest determines if the client expects a JSON response
+func isJSONRequest(c *gin.Context) bool {
+	accept := c.GetHeader("Accept")
+	contentType := c.GetHeader("Content-Type")
+	
+	// Check if client explicitly requests JSON
+	if strings.Contains(accept, "application/json") {
+		return true
+	}
+	
+	// Check if request was sent as JSON
+	if strings.Contains(contentType, "application/json") {
+		return true
+	}
+	
+	// Check if it's an API endpoint
+	if strings.HasPrefix(c.Request.URL.Path, "/api/") {
+		return true
+	}
+	
+	return false
+}
+
+// isSuspiciousPath checks if a path might be part of an attack
+func isSuspiciousPath(path string) bool {
+	path = strings.ToLower(path)
+	
+	suspiciousPatterns := []string{
+		// Admin interfaces
+		"admin", "wp-admin", "phpmyadmin", "adminer",
+		// Configuration files
+		".env", ".git", "config", "settings",
+		// Backup files
+		"backup", "dump", "sql", "bak",
+		// Shell access attempts
+		"shell", "cmd", "exec", "system",
+		// Common vulnerabilities
+		"xmlrpc", "wp-content", "wp-includes",
+		// Directory traversal
+		"../", "..\\", "%2e%2e",
+		// Script injection
+		"<script", "javascript:", "vbscript:",
+	}
+	
+	for _, pattern := range suspiciousPatterns {
+		if strings.Contains(path, pattern) {
+			return true
+		}
+	}
+	
+	return false
+}
+
+// isSuspiciousValidationError checks if a validation error might be suspicious
+func isSuspiciousValidationError(err error) bool {
+	if err == nil {
+		return false
+	}
+	
+	errorStr := strings.ToLower(err.Error())
+	
+	suspiciousPatterns := []string{
+		"script", "javascript", "vbscript", "onload", "onerror",
+		"<", ">", "alert(", "eval(", "document.",
+		"union", "select", "insert", "delete", "drop",
+		"../", "..\\", "%2e%2e",
+	}
+	
+	for _, pattern := range suspiciousPatterns {
+		if strings.Contains(errorStr, pattern) {
+			return true
+		}
+	}
+	
+	return false
+}
+
+// RateLimitErrorHandler handles rate limiting errors
+func RateLimitErrorHandler(c *gin.Context, limit, window string) {
+	utils.LogSecurityEvent(c, "rate_limit_exceeded", 
+		fmt.Sprintf("Rate limit exceeded: %s requests per %s", limit, window))
+
+	if isJSONRequest(c) {
+		utils.SecureErrorResponse(c, http.StatusTooManyRequests, 
+			"Too many requests", nil, "rate_limit_exceeded")
+	} else {
+		utils.RenderErrorPage(c, http.StatusTooManyRequests, 
+			"Too Many Requests", 
+			fmt.Sprintf("You've exceeded the rate limit of %s requests per %s. Please wait before trying again.", limit, window))
+	}
+}
+
+// CSRFErrorHandler handles CSRF token errors
+func CSRFErrorHandler(c *gin.Context) {
+	utils.LogSecurityEvent(c, "csrf_token_invalid", 
+		"CSRF token validation failed")
+
+	if isJSONRequest(c) {
+		utils.SecureErrorResponse(c, http.StatusForbidden, 
+			"CSRF token invalid", nil, "csrf_error")
+	} else {
+		utils.RenderErrorPage(c, http.StatusForbidden, 
+			"Security Error", 
+			"Your session has expired or the security token is invalid. Please refresh the page and try again.")
+	}
+}
+</content>
+</invoke>

@@ -39,6 +39,9 @@ spec:
         runAsUser: 1001
         runAsGroup: 1001
         fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+        supplementalGroups: [1001]
       initContainers:
       - name: migrate
         image: {{.Organization}}/{{.Name}}-api:latest
@@ -138,13 +141,16 @@ spec:
           limits:
             cpu: 1000m
             memory: 1Gi
+            ephemeral-storage: 1Gi
           requests:
             cpu: 200m
             memory: 512Mi
+            ephemeral-storage: 512Mi
         livenessProbe:
           httpGet:
             path: /health
             port: http
+            scheme: HTTP
           initialDelaySeconds: 30
           periodSeconds: 10
           timeoutSeconds: 5
@@ -153,6 +159,7 @@ spec:
           httpGet:
             path: /ready
             port: http
+            scheme: HTTP
           initialDelaySeconds: 5
           periodSeconds: 5
           timeoutSeconds: 3
@@ -162,9 +169,13 @@ spec:
           readOnlyRootFilesystem: true
           runAsNonRoot: true
           runAsUser: 1001
+          runAsGroup: 1001
+          seccompProfile:
+            type: RuntimeDefault
           capabilities:
             drop:
             - ALL
+            add: []
         volumeMounts:
         - name: tmp
           mountPath: /tmp

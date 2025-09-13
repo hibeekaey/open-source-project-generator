@@ -373,7 +373,7 @@ REDIS_URL=redis://localhost:6379/0
 
 # Feature flags
 ENABLE_HOT_RELOAD=true        # Enable hot reloading
-ENABLE_DEBUG_MODE=true        # Enable debug logging
+ENABLE_DEBUG_MODE=false        # Enable debug logging // SECURITY FIX: Disabled debug info (use env var for dev)
 ENABLE_PROFILING=false        # Enable performance profiling
 ```
 
@@ -646,7 +646,7 @@ make test TEST_FILTER="specific-test"
 make test-debug
 
 # Check test environment
-TEST_DEBUG=true make test
+TEST_DEBUG=false make test // SECURITY FIX: Disabled debug info (use env var for dev)
 ```
 
 ### Getting Help

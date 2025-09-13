@@ -105,7 +105,6 @@ func TestMemoryCache(t *testing.T) {
 }
 
 func TestFileCache(t *testing.T) {
-	// Create temporary directory for testing
 	tempDir, err := os.MkdirTemp("", "version-cache-test")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)

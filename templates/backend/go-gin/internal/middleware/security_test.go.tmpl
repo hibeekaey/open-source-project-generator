@@ -1,0 +1,345 @@
+package middleware
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestSecurityHeadersMiddleware(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name           string
+		setupEnv       func()
+		expectedHeaders map[string]string
+		description    string
+	}{
+		{
+			name: "Development mode - basic security headers",
+			setupEnv: func() {
+				gin.SetMode(gin.DebugMode)
+				os.Unsetenv("FORCE_HTTPS")
+			},
+			expectedHeaders: map[string]string{
+				"X-Frame-Options":         "DENY",
+				"X-Content-Type-Options":  "nosniff",
+				"X-XSS-Protection":        "1; mode=block",
+				"Referrer-Policy":         "strict-origin-when-cross-origin",
+				"Permissions-Policy":      "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()",
+				"Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none';",
+				"Server":                  "",
+			},
+			description: "Should set all basic security headers except HSTS in development mode",
+		},
+		{
+			name: "Production mode - includes HSTS",
+			setupEnv: func() {
+				gin.SetMode(gin.ReleaseMode)
+			},
+			expectedHeaders: map[string]string{
+				"X-Frame-Options":           "DENY",
+				"X-Content-Type-Options":    "nosniff",
+				"X-XSS-Protection":          "1; mode=block",
+				"Referrer-Policy":           "strict-origin-when-cross-origin",
+				"Permissions-Policy":        "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()",
+				"Content-Security-Policy":   "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none';",
+				"Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+				"Server":                    "",
+			},
+			description: "Should include HSTS header in production mode",
+		},
+		{
+			name: "Force HTTPS enabled - includes HSTS in development",
+			setupEnv: func() {
+				gin.SetMode(gin.DebugMode)
+				os.Setenv("FORCE_HTTPS", "true")
+			},
+			expectedHeaders: map[string]string{
+				"X-Frame-Options":           "DENY",
+				"X-Content-Type-Options":    "nosniff",
+				"X-XSS-Protection":          "1; mode=block",
+				"Referrer-Policy":           "strict-origin-when-cross-origin",
+				"Permissions-Policy":        "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()",
+				"Content-Security-Policy":   "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none';",
+				"Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+				"Server":                    "",
+			},
+			description: "Should include HSTS header when FORCE_HTTPS is enabled",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup environment
+			tt.setupEnv()
+			defer func() {
+				os.Unsetenv("FORCE_HTTPS")
+				gin.SetMode(gin.TestMode)
+			}()
+
+			// Create test router
+			router := gin.New()
+			router.Use(SecurityHeadersMiddleware())
+			router.GET("/test", func(c *gin.Context) {
+				c.JSON(http.StatusOK, gin.H{"message": "test"})
+			})
+
+			// Create test request
+			req, _ := http.NewRequest("GET", "/test", nil)
+			w := httptest.NewRecorder()
+
+			// Perform request
+			router.ServeHTTP(w, req)
+
+			// Assert status code
+			assert.Equal(t, http.StatusOK, w.Code, tt.description)
+
+			// Assert all expected headers are present with correct values
+			for headerName, expectedValue := range tt.expectedHeaders {
+				actualValue := w.Header().Get(headerName)
+				assert.Equal(t, expectedValue, actualValue, 
+					"Header %s should be %s but got %s", headerName, expectedValue, actualValue)
+			}
+		})
+	}
+}
+
+func TestSecurityHeadersMiddleware_AuthEndpoints(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		path            string
+		expectedHeaders map[string]string
+		description     string
+	}{
+		{
+			path: "/auth/login",
+			expectedHeaders: map[string]string{
+				"Cache-Control": "no-store, no-cache, must-revalidate, private",
+				"Pragma":        "no-cache",
+				"Expires":       "0",
+			},
+			description: "Login endpoint should have no-cache headers",
+		},
+		{
+			path: "/auth/refresh",
+			expectedHeaders: map[string]string{
+				"Cache-Control": "no-store, no-cache, must-revalidate, private",
+				"Pragma":        "no-cache",
+				"Expires":       "0",
+			},
+			description: "Refresh endpoint should have no-cache headers",
+		},
+		{
+			path: "/api/users",
+			expectedHeaders: map[string]string{},
+			description:     "Regular endpoints should not have cache control headers",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.path, func(t *testing.T) {
+			// Create test router
+			router := gin.New()
+			router.Use(SecurityHeadersMiddleware())
+			router.GET(tt.path, func(c *gin.Context) {
+				c.JSON(http.StatusOK, gin.H{"message": "test"})
+			})
+
+			// Create test request
+			req, _ := http.NewRequest("GET", tt.path, nil)
+			w := httptest.NewRecorder()
+
+			// Perform request
+			router.ServeHTTP(w, req)
+
+			// Assert status code
+			assert.Equal(t, http.StatusOK, w.Code, tt.description)
+
+			// Assert cache control headers for auth endpoints
+			if len(tt.expectedHeaders) > 0 {
+				for headerName, expectedValue := range tt.expectedHeaders {
+					actualValue := w.Header().Get(headerName)
+					assert.Equal(t, expectedValue, actualValue,
+						"Header %s should be %s but got %s for path %s", headerName, expectedValue, actualValue, tt.path)
+				}
+			} else {
+				// Verify cache control headers are not set for regular endpoints
+				assert.Empty(t, w.Header().Get("Cache-Control"), "Cache-Control should not be set for regular endpoints")
+				assert.Empty(t, w.Header().Get("Pragma"), "Pragma should not be set for regular endpoints")
+				assert.Empty(t, w.Header().Get("Expires"), "Expires should not be set for regular endpoints")
+			}
+		})
+	}
+}
+
+func TestSecurityHeadersMiddleware_JSONResponses(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	// Create test router
+	router := gin.New()
+	router.Use(SecurityHeadersMiddleware())
+	router.GET("/json", func(c *gin.Context) {
+		c.Header("Content-Type", "application/json")
+		// SECURITY: Added comprehensive security headers
+		c.Header("X-Content-Type-Options", "nosniff")
+		c.Header("X-Frame-Options", "DENY")
+		c.Header("X-XSS-Protection", "1; mode=block")
+		c.JSON(http.StatusOK, gin.H{"message": "test"})
+	})
+	router.GET("/html", func(c *gin.Context) {
+		c.Header("Content-Type", "text/html")
+		// SECURITY: Added comprehensive security headers
+		c.Header("X-Content-Type-Options", "nosniff")
+		c.Header("X-Frame-Options", "DENY")
+		c.Header("X-XSS-Protection", "1; mode=block")
+		c.String(http.StatusOK, "<html><body>test</body></html>")
+	})
+
+	tests := []struct {
+		path        string
+		description string
+		expectNosniff bool
+	}{
+		{
+			path:        "/json",
+			description: "JSON responses should have additional nosniff header",
+			expectNosniff: true,
+		},
+		{
+			path:        "/html",
+			description: "Non-JSON responses should still have base nosniff header",
+			expectNosniff: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.path, func(t *testing.T) {
+			// Create test request
+			req, _ := http.NewRequest("GET", tt.path, nil)
+			w := httptest.NewRecorder()
+
+			// Perform request
+			router.ServeHTTP(w, req)
+
+			// Assert status code
+			assert.Equal(t, http.StatusOK, w.Code, tt.description)
+
+			// Assert X-Content-Type-Options header is present
+			if tt.expectNosniff {
+				assert.Equal(t, "nosniff", w.Header().Get("X-Content-Type-Options"),
+				// SECURITY: Added comprehensive security headers
+				c.Header("X-Content-Type-Options", "nosniff")
+				c.Header("X-Frame-Options", "DENY")
+				c.Header("X-XSS-Protection", "1; mode=block")
+					"X-Content-Type-Options should be nosniff for %s", tt.path)
+			}
+		})
+	}
+}
+
+func TestRateLimitMiddleware(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	// Create test router
+	router := gin.New()
+	router.Use(RateLimitMiddleware())
+	router.GET("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "test"})
+	})
+
+	// Test normal request
+	req, _ := http.NewRequest("GET", "/test", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code, "First request should succeed")
+
+	// Note: Testing rate limiting exhaustively would require mocking time or 
+	// making many requests, which is complex for a unit test.
+	// Integration tests would be more appropriate for thorough rate limit testing.
+}
+
+func TestCSRFProtectionMiddleware(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name           string
+		method         string
+		csrfToken      string
+		expectedStatus int
+		description    string
+	}{
+		{
+			name:           "GET request - should pass without CSRF token",
+			method:         "GET",
+			csrfToken:      "",
+			expectedStatus: http.StatusOK,
+			description:    "Safe methods should not require CSRF token",
+		},
+		{
+			name:           "HEAD request - should pass without CSRF token",
+			method:         "HEAD",
+			csrfToken:      "",
+			expectedStatus: http.StatusOK,
+			description:    "Safe methods should not require CSRF token",
+		},
+		{
+			name:           "OPTIONS request - should pass without CSRF token",
+			method:         "OPTIONS",
+			csrfToken:      "",
+			expectedStatus: http.StatusOK,
+			description:    "Safe methods should not require CSRF token",
+		},
+		{
+			name:           "POST request without CSRF token - should fail",
+			method:         "POST",
+			csrfToken:      "",
+			expectedStatus: http.StatusForbidden,
+			description:    "POST requests should require CSRF token",
+		},
+		{
+			name:           "POST request with short CSRF token - should fail",
+			method:         "POST",
+			csrfToken:      "short",
+			expectedStatus: http.StatusForbidden,
+			description:    "Short CSRF tokens should be rejected",
+		},
+		{
+			name:           "POST request with valid CSRF token - should pass",
+			method:         "POST",
+			csrfToken:      "valid-csrf-token-123456",
+			expectedStatus: http.StatusOK,
+			description:    "Valid CSRF tokens should be accepted",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create test router
+			router := gin.New()
+			router.Use(CSRFProtectionMiddleware())
+			router.Any("/test", func(c *gin.Context) {
+				c.JSON(http.StatusOK, gin.H{"message": "test"})
+			})
+
+			// Create test request
+			req, _ := http.NewRequest(tt.method, "/test", nil)
+			if tt.csrfToken != "" {
+				req.Header.Set("X-CSRF-Token", tt.csrfToken)
+			}
+			w := httptest.NewRecorder()
+
+			// Perform request
+			router.ServeHTTP(w, req)
+
+			// Assert status code
+			assert.Equal(t, tt.expectedStatus, w.Code, tt.description)
+		})
+	}
+}

@@ -75,6 +75,9 @@ type VersionConfig struct {
 	React     string            `yaml:"react" json:"react" validate:"omitempty,semver"`
 	Packages  map[string]string `yaml:"packages" json:"packages" validate:"omitempty,dive,keys,required,endkeys,required,semver"`
 	UpdatedAt time.Time         `yaml:"updated_at" json:"updated_at"`
+
+	// Enhanced Node.js version configuration
+	NodeJS *NodeVersionConfig `yaml:"nodejs,omitempty" json:"nodejs,omitempty"`
 }
 
 // ValidationResult represents the result of configuration validation

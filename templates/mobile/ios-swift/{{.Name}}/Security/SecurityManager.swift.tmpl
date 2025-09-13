@@ -1,0 +1,234 @@
+import Foundation
+import Security
+import CryptoKit
+{{if .UseKeychain}}import KeychainAccess{{end}}
+
+/// Security manager for handling app security features
+class SecurityManager {
+    static let shared = SecurityManager()
+    
+    {{if .UseKeychain}}
+    private let keychain = Keychain(service: "{{.BundleIdentifier}}")
+        .synchronizable(false)
+        .accessibility(.whenUnlockedThisDeviceOnly)
+    {{end}}
+    
+    private init() {}
+    
+    // MARK: - Keychain Operations
+    
+    {{if .UseKeychain}}
+    /// Store sensitive data in keychain
+    func store(key: String, value: String) throws {
+        try keychain.set(value, key: key)
+    }
+    
+    /// Retrieve sensitive data from keychain
+    func retrieve(key: String) throws -> String? {
+        return try keychain.get(key)
+    }
+    
+    /// Remove sensitive data from keychain
+    func remove(key: String) throws {
+        try keychain.remove(key)
+    }
+    
+    /// Clear all keychain data
+    func clearKeychain() throws {
+        try keychain.removeAll()
+    }
+    {{end}}
+    
+    // MARK: - Certificate Pinning
+    
+    /// Validate server certificate against pinned certificates
+    func validateCertificate(_ challenge: URLAuthenticationChallenge) -> Bool {
+        guard let serverTrust = challenge.protectionSpace.serverTrust else {
+            return false
+        }
+        
+        // Get server certificate
+        guard let serverCertificate = SecTrustGetCertificateAtIndex(serverTrust, 0) else {
+            return false
+        }
+        
+        // Get certificate data
+        let serverCertData = SecCertificateCopyData(serverCertificate)
+        let data = CFDataGetBytePtr(serverCertData)
+        let size = CFDataGetLength(serverCertData)
+        let serverCertDataBytes = Data(bytes: data!, count: size)
+        
+        // Compare with pinned certificates
+        let pinnedCertificates = getPinnedCertificates()
+        
+        for pinnedCert in pinnedCertificates {
+            if serverCertDataBytes == pinnedCert {
+                return true
+            }
+        }
+        
+        return false
+    }
+    
+    /// Get pinned certificates from bundle
+    private func getPinnedCertificates() -> [Data] {
+        var certificates: [Data] = []
+        
+        // Load pinned certificates from bundle
+        if let certPath = Bundle.main.path(forResource: "api-cert", ofType: "cer"),
+           let certData = NSData(contentsOfFile: certPath) as Data? {
+            certificates.append(certData)
+        }
+        
+        return certificates
+    }
+    
+    // MARK: - Data Encryption
+    
+    /// Encrypt sensitive data using AES-GCM
+    func encrypt(data: Data, key: SymmetricKey) throws -> Data {
+        let sealedBox = try AES.GCM.seal(data, using: key)
+        return sealedBox.combined!
+    }
+    
+    /// Decrypt sensitive data using AES-GCM
+    func decrypt(data: Data, key: SymmetricKey) throws -> Data {
+        let sealedBox = try AES.GCM.SealedBox(combined: data)
+        return try AES.GCM.open(sealedBox, using: key)
+    }
+    
+    /// Generate a new symmetric key
+    func generateSymmetricKey() -> SymmetricKey {
+        return SymmetricKey(size: .bits256)
+    }
+    
+    // MARK: - Biometric Authentication
+    
+    /// Check if biometric authentication is available
+    func isBiometricAuthenticationAvailable() -> Bool {
+        let context = LAContext()
+        var error: NSError?
+        
+        return context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error)
+    }
+    
+    /// Authenticate using biometrics
+    func authenticateWithBiometrics(reason: String, completion: @escaping (Bool, Error?) -> Void) {
+        let context = LAContext()
+        
+        context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, error in
+            DispatchQueue.main.async {
+                completion(success, error)
+            }
+        }
+    }
+    
+    // MARK: - App Security Checks
+    
+    /// Check if app is running on jailbroken device
+    func isJailbroken() -> Bool {
+        // Check for common jailbreak files and directories
+        let jailbreakPaths = [
+            "/Applications/Cydia.app",
+            "/Library/MobileSubstrate/MobileSubstrate.dylib",
+            "/bin/bash",
+            "/usr/sbin/sshd",
+            "/etc/apt",
+            "/private/var/lib/apt/",
+            "/private/var/lib/cydia",
+            "/private/var/mobile/Library/SBSettings/Themes",
+            "/Library/MobileSubstrate/DynamicLibraries/LiveClock.plist",
+            "/System/Library/LaunchDaemons/com.ikey.bbot.plist",
+            "/System/Library/LaunchDaemons/com.saurik.Cydia.Startup.plist",
+            "/var/cache/apt",
+            "/var/lib/apt",
+            "/var/lib/cydia",
+            "/usr/bin/sshd",
+            "/usr/libexec/sftp-server",
+            "/usr/libexec/ssh-keysign",
+            "/var/log/syslog"
+        ]
+        
+        for path in jailbreakPaths {
+            if FileManager.default.fileExists(atPath: path) {
+                return true
+            }
+        }
+        
+        // Check if we can write to system directories
+        do {
+            let testString = "jailbreak test"
+            try testString.write(toFile: "/private/test.txt", atomically: true, encoding: .utf8)
+            try FileManager.default.removeItem(atPath: "/private/test.txt")
+            return true
+        } catch {
+            // Cannot write to system directory - good sign
+        }
+        
+        return false
+    }
+    
+    /// Check if app is running in debugger
+    func isDebugging() -> Bool {
+        var info = kinfo_proc()
+        var mib: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, getpid()]
+        var size = MemoryLayout<kinfo_proc>.stride
+        
+        let result = sysctl(&mib, u_int(mib.count), &info, &size, nil, 0)
+        
+        return (result == 0) && (info.kp_proc.p_flag & P_TRACED) != 0
+    }
+}
+
+// MARK: - Extensions
+
+extension SecurityManager {
+    /// Security configuration for URLSession
+    func createSecureURLSession() -> URLSession {
+        let configuration = URLSessionConfiguration.default
+        
+        // Disable caching for sensitive requests
+        configuration.urlCache = nil
+        configuration.requestCachePolicy = .reloadIgnoringLocalAndRemoteCacheData
+        
+        // Set timeout intervals
+        configuration.timeoutIntervalForRequest = 30.0
+        configuration.timeoutIntervalForResource = 60.0
+        
+        // Create session with certificate pinning
+        let session = URLSession(
+            configuration: configuration,
+            delegate: SecureURLSessionDelegate(),
+            delegateQueue: nil
+        )
+        
+        return session
+    }
+}
+
+// MARK: - URLSessionDelegate for Certificate Pinning
+
+class SecureURLSessionDelegate: NSObject, URLSessionDelegate {
+    func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+        
+        // Only handle server trust challenges
+        guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust else {
+            completionHandler(.performDefaultHandling, nil)
+            return
+        }
+        
+        // Validate certificate
+        if SecurityManager.shared.validateCertificate(challenge) {
+            // Certificate is valid, create credential
+            if let serverTrust = challenge.protectionSpace.serverTrust {
+                let credential = URLCredential(trust: serverTrust)
+                completionHandler(.useCredential, credential)
+            } else {
+                completionHandler(.cancelAuthenticationChallenge, nil)
+            }
+        } else {
+            // Certificate validation failed
+            completionHandler(.cancelAuthenticationChallenge, nil)
+        }
+    }
+}

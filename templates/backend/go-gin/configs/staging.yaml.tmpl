@@ -67,6 +67,18 @@ rate_limiting:
 security:
   bcrypt_cost: 11
   session_timeout: 2700 # seconds (45 minutes)
+  max_login_attempts: 10
+  lockout_duration: 600 # seconds (10 minutes)
+  password_min_length: 10
+  password_require_special: true
+  password_require_numbers: true
+  password_require_uppercase: true
+  password_require_lowercase: true
+  jwt_refresh_rotation: true
+  csrf_protection: true
+  rate_limit_enabled: true
+  rate_limit_requests_per_minute: 100
+  secure_headers_enabled: true
   max_login_attempts: 4
   lockout_duration: 1200 # seconds (20 minutes)
 

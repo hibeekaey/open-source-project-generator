@@ -1,0 +1,166 @@
+# Development Security Configuration
+# Overrides base security.yaml with development-friendly settings
+# Maintains security while allowing for easier development and debugging
+
+security:
+  # Relaxed CSP for development
+  content_security_policy:
+    enabled: true
+    # Allow unsafe-eval and unsafe-inline for development tools
+    default_src: "'self'"
+    script_src: "'self' 'unsafe-eval' 'unsafe-inline'"
+    style_src: "'self' 'unsafe-inline'"
+    img_src: "'self' data: https:"
+    font_src: "'self'"
+    connect_src: "'self' ws: wss:" # Allow WebSocket for hot reload
+    frame_ancestors: "'none'"
+    base_uri: "'self'"
+    form_action: "'self'"
+    upgrade_insecure_requests: false # Allow HTTP in development
+    # Report-only mode for development
+    report_uri: "/api/v1/security/csp-report"
+    enforce_mode: false # Report violations but don't block
+
+  # Development session security
+  session:
+    cookie_secure: false # Allow HTTP cookies in development
+    cookie_same_site: "Lax" # More permissive for development
+    session_timeout: 3600 # 1 hour for development convenience
+    absolute_timeout: 28800 # 8 hours
+    regenerate_interval: 1800 # Every 30 minutes
+    
+  # Relaxed authentication for development
+  authentication:
+    password_policy:
+      min_length: 8 # Shorter passwords for development
+      require_uppercase: false
+      require_lowercase: true
+      require_numbers: true
+      require_special_chars: false
+      max_age_days: 365 # No forced password changes in dev
+    
+    lockout_policy:
+      max_attempts: 10 # More lenient in development
+      lockout_duration: 300 # 5 minutes only
+      progressive_delay: false
+      
+    jwt:
+      access_token_expiry: 3600 # 1 hour for development
+      refresh_token_expiry: 604800 # 7 days
+      refresh_token_rotation: false # Simpler for development
+
+  # Lenient rate limiting for development
+  rate_limiting:
+    enabled: true
+    global:
+      requests_per_minute: 200 # Very permissive
+      burst: 50
+    endpoints:
+      "/api/v1/auth/login":
+        requests_per_minute: 20
+        burst: 10
+      "/api/v1/auth/register":
+        requests_per_minute: 10
+        burst: 5
+      "/api/v1/auth/password-reset":
+        requests_per_minute: 5
+        burst: 2
+    auto_ban_threshold: 1000 # Very high threshold
+    auto_ban_duration: 300 # Short ban duration
+
+  # Development input validation
+  input_validation:
+    max_request_size: "50MB" # Larger limits for development
+    max_json_size: "10MB"
+    max_form_size: "20MB"
+    max_multipart_size: "100MB"
+    
+    file_uploads:
+      max_file_size: "50MB"
+      allowed_extensions:
+        - ".jpg"
+        - ".jpeg"
+        - ".png"
+        - ".gif"
+        - ".pdf"
+        - ".txt"
+        - ".csv"
+        - ".json"
+        - ".xml"
+        - ".log" # Allow log files in development
+      scan_for_malware: false # Skip scanning in development
+      quarantine_suspicious: false
+
+  # Development database security
+  database:
+    ssl_mode: "disable" # Allow unencrypted connections in development
+    ssl_cert_verification: false
+    connection_encryption: false
+    query_timeout: 60 # Longer timeout for debugging
+    audit_queries: false # Reduce noise in development
+    encrypt_sensitive_fields: false # Easier debugging
+
+  # Verbose logging for development
+  logging:
+    security_events:
+      enabled: true
+      log_level: "debug" # Verbose logging for development
+      
+    sanitization:
+      enabled: true
+      # Less aggressive redaction for debugging
+      redacted_fields:
+        - "password"
+        - "secret"
+        - "key"
+        - "credit_card"
+        - "ssn"
+      # Don't redact tokens and sessions for debugging
+      
+    retention:
+      security_logs_days: 30
+      application_logs_days: 30
+      debug_logs_days: 7
+
+  # Development API security
+  api:
+    swagger_ui_enabled: true # Enable for development
+    api_docs_auth_required: false # No auth required in development
+    remove_server_header: false # Keep headers for debugging
+    remove_x_powered_by: false
+    
+  # Development monitoring
+  monitoring:
+    security_monitoring:
+      enabled: true
+      alert_thresholds:
+        failed_logins_per_minute: 50 # Higher thresholds
+        rate_limit_violations_per_minute: 200
+        csp_violations_per_minute: 20
+        suspicious_requests_per_minute: 100
+      
+      # Less aggressive alerting in development
+      real_time_alerts: false
+      alert_severity: "low"
+      
+    health_checks:
+      include_security_status: true
+      check_certificate_expiry: false # Skip cert checks in development
+      check_dependency_vulnerabilities: true
+      vulnerability_scan_interval: 86400 # Once per day
+
+  # Development compliance
+  compliance:
+    audit_trail:
+      enabled: true
+      include_request_body: true # Include for debugging
+      include_response_body: true
+      include_headers: true
+      retention_days: 30
+      
+    privacy:
+      data_minimization: false # Allow more data for debugging
+      purpose_limitation: false
+      consent_tracking: false # Skip in development
+      right_to_erasure: false
+      anonymization_enabled: false

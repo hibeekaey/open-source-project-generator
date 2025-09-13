@@ -1,7 +1,7 @@
 # Multi-stage Dockerfile for Open Source Template Generator
 
 # Build stage
-FROM golang:1.22-alpine AS builder
+FROM golang:1.23-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache git ca-certificates tzdata
@@ -67,7 +67,7 @@ ENV GENERATOR_CACHE_DIR=/home/generator/.cache/generator
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD generator --version || exit 1
+    CMD generator version || exit 1
 
 # Default command
 ENTRYPOINT ["generator"]

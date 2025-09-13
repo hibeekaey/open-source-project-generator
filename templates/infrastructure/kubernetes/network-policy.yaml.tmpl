@@ -1,0 +1,187 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{.Name}}-network-policy
+  namespace: {{.Name}}
+  labels:
+    app.kubernetes.io/name: {{.Name}}-network-policy
+    app.kubernetes.io/instance: {{.Name}}
+    app.kubernetes.io/component: security
+    app.kubernetes.io/part-of: {{.Name}}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: {{.Name}}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow ingress from ingress controller
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 8080
+    - protocol: TCP
+      port: 3000
+  # Allow ingress from same namespace (inter-service communication)
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: {{.Name}}
+    ports:
+    - protocol: TCP
+      port: 8080
+    - protocol: TCP
+      port: 3000
+    - protocol: TCP
+      port: 5432  # PostgreSQL
+    - protocol: TCP
+      port: 6379  # Redis
+  egress:
+  # Allow DNS resolution
+  - to: []
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+  # Allow HTTPS to external services
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 443
+  # Allow database connections within namespace
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: {{.Name}}
+    ports:
+    - protocol: TCP
+      port: 5432  # PostgreSQL
+    - protocol: TCP
+      port: 6379  # Redis
+  # Allow inter-service communication within namespace
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: {{.Name}}
+    ports:
+    - protocol: TCP
+      port: 8080
+    - protocol: TCP
+      port: 3000
+---
+{{if .Components.Backend.API}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{.Name}}-api-network-policy
+  namespace: {{.Name}}
+  labels:
+    app.kubernetes.io/name: {{.Name}}-api-network-policy
+    app.kubernetes.io/instance: {{.Name}}
+    app.kubernetes.io/component: backend-security
+    app.kubernetes.io/part-of: {{.Name}}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{.Name}}-api
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow ingress from frontend apps
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/component: frontend
+    ports:
+    - protocol: TCP
+      port: 8080
+  # Allow ingress from ingress controller
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 8080
+  egress:
+  # Allow DNS resolution
+  - to: []
+    ports:
+    - protocol: UDP
+      port: 53
+  # Allow database connections
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/component: database
+    ports:
+    - protocol: TCP
+      port: 5432
+  # Allow Redis connections
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/component: cache
+    ports:
+    - protocol: TCP
+      port: 6379
+  # Allow HTTPS to external APIs
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 443
+{{end}}
+---
+{{if .Components.Frontend.MainApp}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{.Name}}-frontend-network-policy
+  namespace: {{.Name}}
+  labels:
+    app.kubernetes.io/name: {{.Name}}-frontend-network-policy
+    app.kubernetes.io/instance: {{.Name}}
+    app.kubernetes.io/component: frontend-security
+    app.kubernetes.io/part-of: {{.Name}}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: frontend
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow ingress from ingress controller
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 3000
+  egress:
+  # Allow DNS resolution
+  - to: []
+    ports:
+    - protocol: UDP
+      port: 53
+  # Allow API calls to backend
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: {{.Name}}-api
+    ports:
+    - protocol: TCP
+      port: 8080
+  # Allow HTTPS to external services (CDNs, APIs)
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 443
+{{end}}

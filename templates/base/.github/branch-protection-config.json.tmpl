@@ -8,7 +8,7 @@
           "contexts": [
             "ci/frontend-tests",
             "ci/backend-tests",
-            {{if or .Components.Mobile.Android .Components.Mobile.iOS}}"ci/mobile-tests",{{end}}
+            {{if or .Components.Mobile.Android .Components.Mobile.IOS}}"ci/mobile-tests",{{end}}
             "security/codeql-analysis",
             "security/trivy-scan",
             "security/dependency-audit",
@@ -49,7 +49,7 @@
           "contexts": [
             "ci/frontend-tests",
             "ci/backend-tests",
-            {{if or .Components.Mobile.Android .Components.Mobile.iOS}}"ci/mobile-tests",{{end}}
+            {{if or .Components.Mobile.Android .Components.Mobile.IOS}}"ci/mobile-tests",{{end}}
             "security/codeql-analysis",
             "security/trivy-scan"
           ]

@@ -24,6 +24,7 @@ generator generate
 ```
 
 **Generated Structure:**
+
 ```
 awesome-webapp/
 ├── App/
@@ -39,6 +40,7 @@ awesome-webapp/
 ```
 
 **Getting Started:**
+
 ```bash
 cd awesome-webapp
 make setup
@@ -54,6 +56,7 @@ generator generate --config mobile-config.yaml
 ```
 
 **mobile-config.yaml:**
+
 ```yaml
 name: "mobile-app"
 organization: "startup"
@@ -81,6 +84,7 @@ output_path: "./mobile-app"
 ```
 
 **Generated Structure:**
+
 ```
 mobile-app/
 ├── CommonServer/          # Go API server
@@ -102,6 +106,7 @@ generator generate --config enterprise-config.yaml
 ```
 
 **enterprise-config.yaml:**
+
 ```yaml
 name: "enterprise-platform"
 organization: "enterprise-corp"
@@ -130,6 +135,7 @@ output_path: "./enterprise-platform"
 ```
 
 **Generated Structure:**
+
 ```
 enterprise-platform/
 ├── App/
@@ -178,6 +184,7 @@ generator generate --config notification-service.yaml
 ```
 
 **api-gateway.yaml:**
+
 ```yaml
 name: "api-gateway"
 organization: "microservices-corp"
@@ -219,6 +226,7 @@ generator validate
 ```
 
 **Example Validation Output:**
+
 ```
 ⏳ Validating project at ./my-project...
 ✅ Project validation completed successfully
@@ -260,6 +268,7 @@ generator version --packages
 ```
 
 **Example Output:**
+
 ```
 Open Source Template Generator v1.0.0
 Built with Go 1.22+
@@ -332,6 +341,7 @@ tail -f ~/.cache/template-generator/logs/generator-$(date +%Y-%m-%d).log
 ## Configuration Templates
 
 ### Minimal Configuration
+
 ```yaml
 name: "simple-project"
 organization: "developer"
@@ -345,6 +355,7 @@ components:
 ```
 
 ### Full-Featured Configuration
+
 ```yaml
 name: "full-project"
 organization: "company"

@@ -63,7 +63,7 @@ func (m *MockTemplateUpdater) RestoreTemplates(templatePaths []string) error {
 	return nil
 }
 
-func TestUpdatePipeline_Execute_NoUpdates(t *testing.T) {
+func TestUpdatePipelineExecute_NoUpdates(t *testing.T) {
 	// Setup mocks
 	cache := NewMemoryCache(24 * time.Hour)
 	storage := NewMockVersionStorage()
@@ -123,7 +123,7 @@ func TestUpdatePipeline_Execute_NoUpdates(t *testing.T) {
 	}
 }
 
-func TestUpdatePipeline_Execute_WithUpdates(t *testing.T) {
+func TestUpdatePipelineExecute_WithUpdates(t *testing.T) {
 	// Setup mocks
 	cache := NewMemoryCache(24 * time.Hour)
 	storage := NewMockVersionStorage()
@@ -208,7 +208,7 @@ func TestUpdatePipeline_Execute_WithUpdates(t *testing.T) {
 	}
 }
 
-func TestUpdatePipeline_Execute_WithSecurityUpdates(t *testing.T) {
+func TestUpdatePipelineExecute_WithSecurityUpdates(t *testing.T) {
 	// Setup mocks
 	cache := NewMemoryCache(24 * time.Hour)
 	storage := NewMockVersionStorage()
@@ -297,7 +297,7 @@ func TestUpdatePipeline_Execute_WithSecurityUpdates(t *testing.T) {
 	}
 }
 
-func TestUpdatePipeline_Execute_WithRollback(t *testing.T) {
+func TestUpdatePipelineExecute_WithRollback(t *testing.T) {
 	// Setup mocks
 	cache := NewMemoryCache(24 * time.Hour)
 	storage := NewMockVersionStorage()
@@ -371,7 +371,7 @@ func TestUpdatePipeline_Execute_WithRollback(t *testing.T) {
 	}
 }
 
-func TestUpdatePipeline_Execute_BreakingChangeApproval(t *testing.T) {
+func TestUpdatePipelineExecute_BreakingChangeApproval(t *testing.T) {
 	// Setup mocks
 	cache := NewMemoryCache(24 * time.Hour)
 	storage := NewMockVersionStorage()

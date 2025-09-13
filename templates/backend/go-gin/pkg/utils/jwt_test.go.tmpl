@@ -4,123 +4,243 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGenerateToken(t *testing.T) {
+const testSecret = "test-secret-key-for-jwt-testing"
+
+func TestGenerateJWT(t *testing.T) {
 	t.Run("successful token generation", func(t *testing.T) {
 		userID := uint(1)
-		email := "test@example.com"
+		expiration := time.Hour
 
-		token, err := GenerateToken(userID, email)
+		token, err := GenerateJWT(userID, testSecret, expiration)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, token)
+		
+		// Verify token structure
+		parts := len(token)
+		assert.True(t, parts > 100) // JWT tokens are typically longer than 100 chars
 	})
 
-	t.Run("token generation with zero user ID", func(t *testing.T) {
+	t.Run("token generation with zero user ID should fail", func(t *testing.T) {
 		userID := uint(0)
-		email := "test@example.com"
+		expiration := time.Hour
 
-		token, err := GenerateToken(userID, email)
-		assert.NoError(t, err)
-		assert.NotEmpty(t, token)
+		token, err := GenerateJWT(userID, testSecret, expiration)
+		assert.Error(t, err)
+		assert.Empty(t, token)
+		assert.Contains(t, err.Error(), "invalid user ID")
 	})
 
-	t.Run("token generation with empty email", func(t *testing.T) {
+	t.Run("token generation with empty secret should fail", func(t *testing.T) {
 		userID := uint(1)
-		email := ""
+		expiration := time.Hour
 
-		token, err := GenerateToken(userID, email)
-		assert.NoError(t, err)
-		assert.NotEmpty(t, token)
+		token, err := GenerateJWT(userID, "", expiration)
+		assert.Error(t, err)
+		assert.Empty(t, token)
+		assert.Contains(t, err.Error(), "secret cannot be empty")
+	})
+
+	t.Run("token generation with zero expiration should fail", func(t *testing.T) {
+		userID := uint(1)
+		expiration := time.Duration(0)
+
+		token, err := GenerateJWT(userID, testSecret, expiration)
+		assert.Error(t, err)
+		assert.Empty(t, token)
+		assert.Contains(t, err.Error(), "expiration must be positive")
 	})
 }
 
-func TestValidateToken(t *testing.T) {
+func TestValidateJWT(t *testing.T) {
 	t.Run("valid token validation", func(t *testing.T) {
 		userID := uint(1)
-		email := "test@example.com"
+		expiration := time.Hour
 
 		// Generate a token
-		token, err := GenerateToken(userID, email)
+		token, err := GenerateJWT(userID, testSecret, expiration)
 		assert.NoError(t, err)
 
 		// Validate the token
-		claims, err := ValidateToken(token)
+		claims, err := ValidateJWT(token, testSecret)
 		assert.NoError(t, err)
 		assert.NotNil(t, claims)
 		assert.Equal(t, userID, claims.UserID)
-		assert.Equal(t, email, claims.Email)
+		assert.Equal(t, "{{.Name}}", claims.Issuer)
+		assert.Equal(t, "user-auth", claims.Subject)
 	})
 
 	t.Run("invalid token validation", func(t *testing.T) {
 		invalidToken := "invalid.token.here"
 
-		claims, err := ValidateToken(invalidToken)
+		claims, err := ValidateJWT(invalidToken, testSecret)
 		assert.Error(t, err)
 		assert.Nil(t, claims)
+		assert.Equal(t, "authentication failed", err.Error())
 	})
 
 	t.Run("malformed token validation", func(t *testing.T) {
 		malformedToken := "not.a.jwt"
 
-		claims, err := ValidateToken(malformedToken)
+		claims, err := ValidateJWT(malformedToken, testSecret)
 		assert.Error(t, err)
 		assert.Nil(t, claims)
+		assert.Equal(t, "authentication failed", err.Error())
 	})
 
 	t.Run("empty token validation", func(t *testing.T) {
 		emptyToken := ""
 
-		claims, err := ValidateToken(emptyToken)
+		claims, err := ValidateJWT(emptyToken, testSecret)
 		assert.Error(t, err)
 		assert.Nil(t, claims)
+		assert.Equal(t, "authentication failed", err.Error())
 	})
-}
 
-func TestTokenExpiration(t *testing.T) {
-	t.Run("token should not be expired immediately", func(t *testing.T) {
+	t.Run("token with wrong secret", func(t *testing.T) {
 		userID := uint(1)
-		email := "test@example.com"
+		expiration := time.Hour
 
-		token, err := GenerateToken(userID, email)
+		token, err := GenerateJWT(userID, testSecret, expiration)
 		assert.NoError(t, err)
 
-		claims, err := ValidateToken(token)
+		claims, err := ValidateJWT(token, "wrong-secret")
+		assert.Error(t, err)
+		assert.Nil(t, claims)
+		assert.Equal(t, "authentication failed", err.Error())
+	})
+
+	t.Run("expired token validation", func(t *testing.T) {
+		userID := uint(1)
+		expiration := -time.Hour // Expired token
+
+		token, err := GenerateJWT(userID, testSecret, expiration)
 		assert.NoError(t, err)
-		assert.True(t, claims.ExpiresAt.After(time.Now()))
+
+		claims, err := ValidateJWT(token, testSecret)
+		assert.Error(t, err)
+		assert.Nil(t, claims)
+		assert.Equal(t, "authentication failed", err.Error())
 	})
 }
 
-func TestRefreshToken(t *testing.T) {
+func TestSecurityVulnerabilities(t *testing.T) {
+	t.Run("prevent none algorithm attack", func(t *testing.T) {
+		// Create a token with 'none' algorithm
+		claims := JWTClaims{
+			UserID: 1,
+			RegisteredClaims: jwt.RegisteredClaims{
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
+				IssuedAt:  jwt.NewNumericDate(time.Now()),
+				NotBefore: jwt.NewNumericDate(time.Now()),
+				Issuer:    "{{.Name}}",
+				Subject:   "user-auth",
+			},
+		}
+
+		// Create token with 'none' algorithm
+		token := jwt.NewWithClaims(jwt.SigningMethodNone, claims)
+		tokenString, err := token.SignedString(jwt.UnsafeAllowNoneSignatureType)
+		assert.NoError(t, err)
+
+		// Validation should fail
+		validatedClaims, err := ValidateJWT(tokenString, testSecret)
+		assert.Error(t, err)
+		assert.Nil(t, validatedClaims)
+		assert.Equal(t, "authentication failed", err.Error())
+	})
+
+	t.Run("prevent algorithm confusion attack", func(t *testing.T) {
+		// Create a token with RS256 algorithm (should be rejected)
+		claims := JWTClaims{
+			UserID: 1,
+			RegisteredClaims: jwt.RegisteredClaims{
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
+				IssuedAt:  jwt.NewNumericDate(time.Now()),
+				NotBefore: jwt.NewNumericDate(time.Now()),
+				Issuer:    "{{.Name}}",
+				Subject:   "user-auth",
+			},
+		}
+
+		// Try to create token with RS256 (this will fail in signing, but test the validation)
+		token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+		
+		// We can't actually sign with RS256 without a private key, but we can test
+		// that our validator rejects non-HMAC algorithms
+		tokenString := "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJpc3MiOiJ0ZXN0IiwiZXhwIjo5OTk5OTk5OTk5fQ.invalid"
+		
+		validatedClaims, err := ValidateJWT(tokenString, testSecret)
+		assert.Error(t, err)
+		assert.Nil(t, validatedClaims)
+		assert.Equal(t, "authentication failed", err.Error())
+	})
+
+	t.Run("validate token timing claims", func(t *testing.T) {
+		// Test NotBefore claim
+		claims := JWTClaims{
+			UserID: 1,
+			RegisteredClaims: jwt.RegisteredClaims{
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
+				IssuedAt:  jwt.NewNumericDate(time.Now()),
+				NotBefore: jwt.NewNumericDate(time.Now().Add(time.Hour)), // Future NotBefore
+				Issuer:    "{{.Name}}",
+				Subject:   "user-auth",
+			},
+		}
+
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+		tokenString, err := token.SignedString([]byte(testSecret))
+		assert.NoError(t, err)
+
+		validatedClaims, err := ValidateJWT(tokenString, testSecret)
+		assert.Error(t, err)
+		assert.Nil(t, validatedClaims)
+		assert.Equal(t, "authentication failed", err.Error())
+	})
+}
+
+func TestGenerateRefreshJWT(t *testing.T) {
 	t.Run("successful refresh token generation", func(t *testing.T) {
 		userID := uint(1)
-		email := "test@example.com"
+		expiration := 7 * 24 * time.Hour // 7 days
 
-		refreshToken, err := GenerateRefreshToken(userID, email)
+		refreshToken, err := GenerateRefreshJWT(userID, testSecret, expiration)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, refreshToken)
 	})
 
 	t.Run("refresh token validation", func(t *testing.T) {
 		userID := uint(1)
-		email := "test@example.com"
+		expiration := 7 * 24 * time.Hour
 
-		refreshToken, err := GenerateRefreshToken(userID, email)
+		refreshToken, err := GenerateRefreshJWT(userID, testSecret, expiration)
 		assert.NoError(t, err)
 
-		claims, err := ValidateRefreshToken(refreshToken)
+		claims, err := ValidateJWT(refreshToken, testSecret)
 		assert.NoError(t, err)
 		assert.NotNil(t, claims)
 		assert.Equal(t, userID, claims.UserID)
-		assert.Equal(t, email, claims.Email)
+		assert.Equal(t, "refresh-token", claims.Subject)
 	})
 
-	t.Run("invalid refresh token validation", func(t *testing.T) {
-		invalidToken := "invalid.refresh.token"
-
-		claims, err := ValidateRefreshToken(invalidToken)
+	t.Run("refresh token with invalid parameters", func(t *testing.T) {
+		// Test zero user ID
+		token, err := GenerateRefreshJWT(0, testSecret, time.Hour)
 		assert.Error(t, err)
-		assert.Nil(t, claims)
+		assert.Empty(t, token)
+
+		// Test empty secret
+		token, err = GenerateRefreshJWT(1, "", time.Hour)
+		assert.Error(t, err)
+		assert.Empty(t, token)
+
+		// Test zero expiration
+		token, err = GenerateRefreshJWT(1, testSecret, 0)
+		assert.Error(t, err)
+		assert.Empty(t, token)
 	})
 }

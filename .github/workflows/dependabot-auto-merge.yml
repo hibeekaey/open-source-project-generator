@@ -1,0 +1,55 @@
+name: Dependabot Auto-merge
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    name: Auto-merge Dependabot PRs
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: Run tests
+        run: go test -v ./...
+
+      - name: Add dependencies label
+        run: |
+          gh pr edit --add-label "dependencies"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check if PR is for minor/patch updates
+        id: check-update-type
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          if [[ "$PR_TITLE" =~ (bump|update).*from.*to.* ]]; then
+            # Extract version info and determine if it's minor/patch
+            if [[ "$PR_TITLE" =~ [0-9]+\.[0-9]+\.[0-9]+ ]]; then
+              echo "is_safe_update=true" >> $GITHUB_OUTPUT
+            else
+              echo "is_safe_update=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "is_safe_update=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Enable auto-merge for safe updates
+        if: steps.check-update-type.outputs.is_safe_update == 'true'
+        run: |
+          gh pr merge --auto --squash --delete-branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

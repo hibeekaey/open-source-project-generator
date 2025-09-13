@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -27,12 +28,19 @@ type Logger struct {
 	errLogger   *log.Logger
 	debugLogger *log.Logger
 	logFile     *os.File
+	component   string // Component name for contextual logging
 }
 
 // NewLogger creates a new logger instance
 func NewLogger(level LogLevel, logToFile bool) (*Logger, error) {
+	return NewLoggerWithComponent(level, logToFile, "app")
+}
+
+// NewLoggerWithComponent creates a new logger instance with a specific component name
+func NewLoggerWithComponent(level LogLevel, logToFile bool, component string) (*Logger, error) {
 	logger := &Logger{
-		level: level,
+		level:     level,
+		component: component,
 	}
 
 	var writers []io.Writer
@@ -62,11 +70,12 @@ func NewLogger(level LogLevel, logToFile bool) (*Logger, error) {
 
 	multiWriter := io.MultiWriter(writers...)
 
-	// Create loggers for different levels
-	logger.infoLogger = log.New(multiWriter, "INFO  ", log.Ldate|log.Ltime|log.Lshortfile)
-	logger.warnLogger = log.New(multiWriter, "WARN  ", log.Ldate|log.Ltime|log.Lshortfile)
-	logger.errLogger = log.New(multiWriter, "ERROR ", log.Ldate|log.Ltime|log.Lshortfile)
-	logger.debugLogger = log.New(multiWriter, "DEBUG ", log.Ldate|log.Ltime|log.Lshortfile)
+	// Create loggers for different levels with consistent formatting
+	flags := log.Ldate | log.Ltime | log.Lmicroseconds | log.LUTC
+	logger.infoLogger = log.New(multiWriter, "", flags)
+	logger.warnLogger = log.New(multiWriter, "", flags)
+	logger.errLogger = log.New(multiWriter, "", flags)
+	logger.debugLogger = log.New(multiWriter, "", flags)
 
 	return logger, nil
 }
@@ -79,32 +88,154 @@ func (l *Logger) Close() error {
 	return nil
 }
 
-// Debug logs a debug message
+// Debug logs a debug message with structured format
 func (l *Logger) Debug(msg string, args ...interface{}) {
 	if l.level <= LogLevelDebug {
-		l.debugLogger.Printf(msg, args...)
+		l.logWithLevel("DEBUG", msg, args...)
 	}
 }
 
-// Info logs an info message
+// Info logs an info message with structured format
 func (l *Logger) Info(msg string, args ...interface{}) {
 	if l.level <= LogLevelInfo {
-		l.infoLogger.Printf(msg, args...)
+		l.logWithLevel("INFO", msg, args...)
 	}
 }
 
-// Warn logs a warning message
+// Warn logs a warning message with structured format
 func (l *Logger) Warn(msg string, args ...interface{}) {
 	if l.level <= LogLevelWarn {
-		l.warnLogger.Printf(msg, args...)
+		l.logWithLevel("WARN", msg, args...)
 	}
 }
 
-// Error logs an error message
+// Error logs an error message with structured format
 func (l *Logger) Error(msg string, args ...interface{}) {
 	if l.level <= LogLevelError {
-		l.errLogger.Printf(msg, args...)
+		l.logWithLevel("ERROR", msg, args...)
 	}
+}
+
+// logWithLevel provides consistent structured logging format
+func (l *Logger) logWithLevel(level, msg string, args ...interface{}) {
+	// Format the message
+	formattedMsg := fmt.Sprintf(msg, args...)
+
+	// Create structured log entry
+	logEntry := fmt.Sprintf("[%s] component=%s message=\"%s\"", level, l.component, formattedMsg)
+
+	// Select appropriate logger based on level
+	var logger *log.Logger
+	switch level {
+	case "DEBUG":
+		logger = l.debugLogger
+	case "INFO":
+		logger = l.infoLogger
+	case "WARN":
+		logger = l.warnLogger
+	case "ERROR":
+		logger = l.errLogger
+	default:
+		logger = l.infoLogger
+	}
+
+	logger.Println(logEntry)
+}
+
+// Structured logging methods for better consistency
+
+// DebugWithFields logs a debug message with structured fields
+func (l *Logger) DebugWithFields(msg string, fields map[string]interface{}) {
+	if l.level <= LogLevelDebug {
+		l.logWithFields("DEBUG", msg, fields)
+	}
+}
+
+// InfoWithFields logs an info message with structured fields
+func (l *Logger) InfoWithFields(msg string, fields map[string]interface{}) {
+	if l.level <= LogLevelInfo {
+		l.logWithFields("INFO", msg, fields)
+	}
+}
+
+// WarnWithFields logs a warning message with structured fields
+func (l *Logger) WarnWithFields(msg string, fields map[string]interface{}) {
+	if l.level <= LogLevelWarn {
+		l.logWithFields("WARN", msg, fields)
+	}
+}
+
+// ErrorWithFields logs an error message with structured fields
+func (l *Logger) ErrorWithFields(msg string, fields map[string]interface{}) {
+	if l.level <= LogLevelError {
+		l.logWithFields("ERROR", msg, fields)
+	}
+}
+
+// logWithFields provides structured logging with key-value pairs
+func (l *Logger) logWithFields(level, msg string, fields map[string]interface{}) {
+	// Build structured log entry
+	var parts []string
+	parts = append(parts, fmt.Sprintf("component=%s", l.component))
+	parts = append(parts, fmt.Sprintf("message=\"%s\"", msg))
+
+	// Add fields
+	for k, v := range fields {
+		parts = append(parts, fmt.Sprintf("%s=%v", k, v))
+	}
+
+	logEntry := fmt.Sprintf("[%s] %s", level, strings.Join(parts, " "))
+
+	// Select appropriate logger
+	var logger *log.Logger
+	switch level {
+	case "DEBUG":
+		logger = l.debugLogger
+	case "INFO":
+		logger = l.infoLogger
+	case "WARN":
+		logger = l.warnLogger
+	case "ERROR":
+		logger = l.errLogger
+	default:
+		logger = l.infoLogger
+	}
+
+	logger.Println(logEntry)
+}
+
+// Operation logging methods for tracking key operations
+
+// LogOperationStart logs the start of an operation
+func (l *Logger) LogOperationStart(operation string, fields map[string]interface{}) {
+	if fields == nil {
+		fields = make(map[string]interface{})
+	}
+	fields["operation"] = operation
+	fields["status"] = "started"
+	l.InfoWithFields("Operation started", fields)
+}
+
+// LogOperationSuccess logs successful completion of an operation
+func (l *Logger) LogOperationSuccess(operation string, duration time.Duration, fields map[string]interface{}) {
+	if fields == nil {
+		fields = make(map[string]interface{})
+	}
+	fields["operation"] = operation
+	fields["status"] = "success"
+	fields["duration_ms"] = duration.Milliseconds()
+	l.InfoWithFields("Operation completed successfully", fields)
+}
+
+// LogOperationError logs an error during an operation
+func (l *Logger) LogOperationError(operation string, err error, fields map[string]interface{}) {
+	if fields == nil {
+		fields = make(map[string]interface{})
+	}
+	fields["operation"] = operation
+	fields["status"] = "error"
+	fields["error"] = err.Error()
+	l.ErrorWithFields("Operation failed", fields)
 }
 
 // LogLevelFromString converts a string to LogLevel

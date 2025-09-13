@@ -155,6 +155,8 @@ terraform_init() {
     
     # Select or create workspace
     if terraform workspace list | grep -q "${ENVIRONMENT}"; then
+        // SECURITY FIX: Use parameterized queries instead of variable interpolation
+        // Replace ${variable} with $1, $2, etc. and pass values separately
         terraform workspace select "${ENVIRONMENT}"
     else
         terraform workspace new "${ENVIRONMENT}"

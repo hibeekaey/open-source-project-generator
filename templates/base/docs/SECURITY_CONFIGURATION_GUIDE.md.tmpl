@@ -1,0 +1,491 @@
+# Security Configuration Guide for {{.Name}}
+
+This guide provides comprehensive information about the security configurations implemented in {{.Name}} and how to properly configure and maintain them.
+
+## Table of Contents
+
+1. [Overview](#overview)
+2. [Content Security Policy (CSP)](#content-security-policy-csp)
+3. [Session Security](#session-security)
+4. [Security Headers](#security-headers)
+5. [Logging Security](#logging-security)
+6. [Environment-Specific Configurations](#environment-specific-configurations)
+7. [Compliance and Audit](#compliance-and-audit)
+8. [Security Monitoring](#security-monitoring)
+9. [Incident Response](#incident-response)
+10. [Best Practices](#best-practices)
+
+## Overview
+
+{{.Name}} implements a comprehensive security framework with multiple layers of protection:
+
+- **Content Security Policy (CSP)**: Prevents XSS attacks and unauthorized resource loading
+- **Security Headers**: Protects against common web vulnerabilities
+- **Session Security**: Secure session management with encryption and validation
+- **Secure Logging**: Protects sensitive data while maintaining audit trails
+- **Input Validation**: Prevents injection attacks and data corruption
+- **Rate Limiting**: Protects against DoS attacks and abuse
+
+## Content Security Policy (CSP)
+
+### Purpose
+
+Content Security Policy helps prevent Cross-Site Scripting (XSS) attacks by controlling which resources the browser is allowed to load for your application.
+
+### Configuration Files
+
+- **Frontend**: `csp.config.js` - Comprehensive CSP configuration
+- **Backend**: `security.yaml` - CSP reporting and violation handling
+
+### Environment-Specific CSP
+
+#### Development
+```javascript
+// More permissive for development tools
+'script-src': ["'self'", "'unsafe-eval'", "'unsafe-inline'"]
+'connect-src': ["'self'", "ws:", "wss:", "http://localhost:*"]
+```
+
+**Rationale**: Development requires `unsafe-eval` for hot reloading and `unsafe-inline` for development tools.
+
+#### Staging
+```javascript
+// Balanced security for testing
+'script-src': ["'self'", "'nonce-{{nonce}}'"]
+'connect-src': ["'self'", "https:", "wss://{{.StagingDomain}}"]
+```
+
+**Rationale**: Uses nonces for inline scripts while allowing testing flexibility.
+
+#### Production
+```javascript
+// Most restrictive for security
+'script-src': ["'self'", "'nonce-{{nonce}}'"]
+'connect-src': ["'self'", "https://{{.Domain}}", "https://api.{{.Domain}}"]
+```
+
+**Rationale**: Maximum security with explicit allowlists and nonce-based inline scripts.
+
+### CSP Violation Reporting
+
+CSP violations are automatically reported to `/api/security/csp-report` in staging and production environments.
+
+**Example Violation Log**:
+```json
+{
+  "document-uri": "https://{{.Domain}}/dashboard",
+  "violated-directive": "script-src 'self'",
+  "blocked-uri": "https://malicious-site.com/script.js",
+  "source-file": "https://{{.Domain}}/dashboard",
+  "line-number": 42,
+  "user-agent": "Mozilla/5.0...",
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+## Session Security
+
+### Session Configuration
+
+Sessions are configured in `session-security.yaml` with environment-specific overrides.
+
+#### Key Security Features
+
+1. **Secure Cookie Settings**
+   ```yaml
+   cookie:
+     secure: true          # HTTPS only
+     http_only: true       # Prevent XSS access
+     same_site: "Strict"   # CSRF protection
+   ```
+
+2. **Session Validation**
+   ```yaml
+   validation:
+     ip_validation: true           # Prevent session hijacking
+     user_agent_validation: true   # Additional security layer
+   ```
+
+3. **Session Regeneration**
+   ```yaml
+   regeneration:
+     on_login: true               # Prevent session fixation
+     periodic: true               # Regular regeneration
+     periodic_interval: 900       # Every 15 minutes
+   ```
+
+#### Session Timeouts by Environment
+
+| Environment | Idle Timeout | Absolute Timeout | Rationale |
+|-------------|--------------|------------------|-----------|
+| Development | 2 hours      | 24 hours         | Developer convenience |
+| Staging     | 1 hour       | 6 hours          | Testing flexibility |
+| Production  | 30 minutes   | 4 hours          | Maximum security |
+
+### Session Storage
+
+**Recommended**: Redis for production environments
+```yaml
+store:
+  type: "redis"
+  redis:
+    host: "${REDIS_HOST}"
+    password: "${REDIS_PASSWORD}"
+    key_prefix: "{{.Name}}:session:"
+```
+
+**Alternative**: Database storage for smaller deployments
+```yaml
+store:
+  type: "database"
+  database:
+    table_name: "user_sessions"
+    cleanup_interval: 3600
+```
+
+## Security Headers
+
+### Implemented Headers
+
+| Header | Value | Purpose |
+|--------|-------|---------|
+| `X-Content-Type-Options` | `nosniff` | Prevent MIME type sniffing |
+| `X-Frame-Options` | `DENY` | Prevent clickjacking |
+| `X-XSS-Protection` | `1; mode=block` | Enable XSS protection |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains; preload` | Force HTTPS |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` | Control referrer information |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()...` | Restrict browser features |
+
+### Cross-Origin Policies
+
+```yaml
+headers:
+  cross_origin_embedder_policy: "require-corp"
+  cross_origin_opener_policy: "same-origin"
+  cross_origin_resource_policy: "same-origin"
+```
+
+**Purpose**: These headers provide additional protection against Spectre-style attacks and unauthorized cross-origin access.
+
+## Logging Security
+
+### Data Sanitization
+
+Sensitive data is automatically redacted from logs to prevent information leakage.
+
+#### Completely Redacted Fields
+- `password`
+- `secret`
+- `token`
+- `credit_card`
+- `ssn`
+
+#### Partially Redacted Fields
+- `email`: `user@domain.com` → `us***@domain.com`
+- `phone`: `+1234567890` → `+12*****90`
+- `ip_address`: `192.168.1.1` → `192.168.*.*`
+
+### Security Event Logging
+
+Critical security events are logged with appropriate detail levels:
+
+```yaml
+security_events:
+  authentication:
+    login_failure:
+      level: "warn"
+      include_fields: ["attempted_username", "ip_address", "failure_reason"]
+      exclude_fields: ["password"]
+```
+
+### Log Retention
+
+| Log Type | Development | Staging | Production | Rationale |
+|----------|-------------|---------|------------|-----------|
+| Security | 30 days     | 180 days | 365 days  | Compliance requirements |
+| Application | 30 days  | 90 days  | 90 days   | Operational needs |
+| Debug | 7 days       | 14 days  | 0 days    | Troubleshooting only |
+
+## Environment-Specific Configurations
+
+### Development Environment
+
+**Focus**: Developer productivity while maintaining basic security
+
+- Relaxed CSP policies for development tools
+- Longer session timeouts for convenience
+- Verbose logging for debugging
+- Disabled certificate validation for local development
+
+### Staging Environment
+
+**Focus**: Production-like security with testing flexibility
+
+- Moderate CSP policies allowing testing tools
+- Balanced session timeouts
+- Enhanced logging for testing validation
+- Full certificate validation
+
+### Production Environment
+
+**Focus**: Maximum security and compliance
+
+- Strict CSP policies with minimal exceptions
+- Short session timeouts for security
+- Minimal logging to protect privacy
+- Full security validation and monitoring
+
+## Compliance and Audit
+
+### GDPR Compliance
+
+When GDPR compliance is enabled:
+
+```yaml
+compliance:
+  gdpr:
+    enabled: true
+    anonymize_personal_data: true
+    right_to_erasure: true
+    data_retention_days: 365
+```
+
+**Features**:
+- Automatic data anonymization in logs
+- Support for data subject access requests
+- Configurable data retention periods
+- Consent tracking and management
+
+### HIPAA Compliance
+
+For healthcare applications:
+
+```yaml
+compliance:
+  hipaa:
+    enabled: true
+    encrypt_phi: true
+    audit_phi_access: true
+    retention_years: 6
+```
+
+**Features**:
+- Enhanced encryption for Protected Health Information (PHI)
+- Comprehensive audit trails for PHI access
+- Extended retention periods for compliance
+
+### SOX Compliance
+
+For financial applications:
+
+```yaml
+compliance:
+  sox:
+    enabled: true
+    immutable_logs: true
+    retention_years: 7
+```
+
+**Features**:
+- Immutable audit logs
+- Extended retention for financial records
+- Enhanced access controls
+
+## Security Monitoring
+
+### Real-Time Monitoring
+
+Security events are monitored in real-time with configurable thresholds:
+
+```yaml
+monitoring:
+  security_monitoring:
+    alert_thresholds:
+      failed_logins_per_minute: 5
+      rate_limit_violations_per_minute: 20
+      csp_violations_per_minute: 2
+```
+
+### Health Checks
+
+Security-aware health checks include:
+
+- Certificate expiration monitoring
+- Dependency vulnerability scanning
+- Security configuration validation
+- Session store connectivity
+
+### Alerting
+
+Multiple alert channels are supported:
+
+```yaml
+alerting:
+  destinations:
+    email:
+      enabled: true
+      recipients: "security@{{.Domain}}"
+    webhook:
+      enabled: true
+      url: "https://alerts.{{.Domain}}/webhook"
+    slack:
+      enabled: true
+      channel: "#security-alerts"
+```
+
+## Incident Response
+
+### Automated Response
+
+Certain security incidents trigger automated responses:
+
+1. **Multiple Failed Logins**: Account lockout
+2. **Rate Limit Exceeded**: IP-based blocking
+3. **CSP Violations**: Request blocking and logging
+4. **Suspicious Activity**: Enhanced monitoring
+
+### Manual Response Procedures
+
+1. **Incident Detection**: Monitor alerts and logs
+2. **Assessment**: Determine severity and impact
+3. **Containment**: Implement immediate protective measures
+4. **Investigation**: Analyze logs and gather evidence
+5. **Recovery**: Restore normal operations
+6. **Lessons Learned**: Update security measures
+
+## Best Practices
+
+### Configuration Management
+
+1. **Environment Variables**: Use environment variables for sensitive configuration
+2. **Secret Management**: Use dedicated secret management systems
+3. **Configuration Validation**: Validate security configurations on startup
+4. **Regular Updates**: Keep security configurations up to date
+
+### Monitoring and Maintenance
+
+1. **Regular Security Reviews**: Review configurations quarterly
+2. **Penetration Testing**: Conduct regular security assessments
+3. **Vulnerability Scanning**: Automated scanning for known vulnerabilities
+4. **Security Training**: Keep team updated on security best practices
+
+### Development Practices
+
+1. **Security by Design**: Consider security from the beginning
+2. **Code Reviews**: Include security considerations in code reviews
+3. **Testing**: Include security testing in CI/CD pipelines
+4. **Documentation**: Keep security documentation up to date
+
+## Configuration Examples
+
+### Basic Production Setup
+
+```bash
+# Environment variables for production
+export SESSION_COOKIE_SECURE=true
+export SESSION_COOKIE_SAMESITE=Strict
+export SESSION_IDLE_TIMEOUT=1800
+export LOG_LEVEL=info
+export CSP_ENFORCE_MODE=true
+export SECURITY_HEADERS_ENABLED=true
+```
+
+### High-Security Setup
+
+```bash
+# Additional security for high-risk environments
+export SESSION_IP_VALIDATION=true
+export SESSION_USER_AGENT_VALIDATION=true
+export SESSION_REGENERATE_INTERVAL=600
+export RATE_LIMIT_STRICT_MODE=true
+export LOG_ENCRYPTION_ENABLED=true
+export AUDIT_TRAIL_ENABLED=true
+```
+
+### Compliance Setup (GDPR + HIPAA)
+
+```bash
+# Compliance-focused configuration
+export GDPR_COMPLIANCE=true
+export HIPAA_COMPLIANCE=true
+export DATA_RETENTION_DAYS=2555
+export LOG_ANONYMIZATION=true
+export AUDIT_RETENTION_YEARS=7
+export ENCRYPTION_AT_REST=true
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **CSP Violations**: Check browser console for blocked resources
+2. **Session Issues**: Verify Redis connectivity and configuration
+3. **Login Problems**: Check rate limiting and account lockout settings
+4. **Performance Issues**: Review logging levels and retention settings
+
+### Debug Mode
+
+Enable debug logging for troubleshooting:
+
+```bash
+export LOG_LEVEL=debug
+export SECURITY_DEBUG_MODE=true
+```
+
+**Warning**: Never enable debug mode in production as it may log sensitive information.
+
+## Security Checklist
+
+### Pre-Deployment
+
+- [ ] CSP policies configured for environment
+- [ ] Security headers enabled
+- [ ] Session security configured
+- [ ] Logging sanitization enabled
+- [ ] Rate limiting configured
+- [ ] SSL/TLS certificates valid
+- [ ] Environment variables secured
+- [ ] Compliance requirements met
+
+### Post-Deployment
+
+- [ ] Security monitoring active
+- [ ] Alerts configured and tested
+- [ ] Log retention policies applied
+- [ ] Backup and recovery tested
+- [ ] Incident response procedures documented
+- [ ] Security team notified
+
+### Regular Maintenance
+
+- [ ] Security configurations reviewed (quarterly)
+- [ ] Certificates renewed before expiration
+- [ ] Dependencies updated for security patches
+- [ ] Penetration testing conducted (annually)
+- [ ] Security training completed (annually)
+- [ ] Compliance audits passed
+
+## Support and Resources
+
+### Internal Resources
+
+- Security Team: security@{{.Domain}}
+- DevOps Team: devops@{{.Domain}}
+- Compliance Team: compliance@{{.Domain}}
+
+### External Resources
+
+- [OWASP Security Guidelines](https://owasp.org/)
+- [Mozilla Security Guidelines](https://infosec.mozilla.org/guidelines/)
+- [NIST Cybersecurity Framework](https://www.nist.gov/cyberframework)
+
+### Emergency Contacts
+
+- Security Incident Response: +1-XXX-XXX-XXXX
+- 24/7 Security Hotline: security-emergency@{{.Domain}}
+
+---
+
+**Last Updated**: {{.Date}}
+**Version**: {{.Version}}
+**Reviewed By**: Security Team

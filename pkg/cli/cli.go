@@ -1,3 +1,15 @@
+// Package cli provides interactive command-line interface functionality for the
+// Open Source Template Generator.
+//
+// This package handles all user interactions including:
+//   - Interactive project configuration collection
+//   - Component selection with dependency validation
+//   - Progress indication and user feedback
+//   - Configuration preview and confirmation
+//   - Error and warning display
+//
+// The CLI uses the survey library for rich interactive prompts and provides
+// a user-friendly experience for configuring and generating projects.
 package cli
 
 import (
@@ -7,18 +19,35 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AlecAivazis/survey/v2"
+	survey "github.com/AlecAivazis/survey/v2"
 	"github.com/open-source-template-generator/pkg/interfaces"
 	"github.com/open-source-template-generator/pkg/models"
 )
 
-// CLI implements the CLIInterface for interactive user operations
+// CLI implements the CLIInterface for interactive user operations.
+//
+// The CLI struct provides methods for:
+//   - Collecting project configuration through interactive prompts
+//   - Validating user input and component dependencies
+//   - Displaying progress, success, error, and warning messages
+//   - Previewing project configuration before generation
+//   - Managing output path validation and confirmation
+//
+// It integrates with the configuration manager for defaults and version
+// information, and the validation engine for input validation.
 type CLI struct {
-	configManager interfaces.ConfigManager
-	validator     interfaces.ValidationEngine
+	configManager interfaces.ConfigManager    // Manages configuration and defaults
+	validator     interfaces.ValidationEngine // Validates user input and project structure
 }
 
-// NewCLI creates a new CLI instance
+// NewCLI creates a new CLI instance with the provided dependencies.
+//
+// Parameters:
+//   - configManager: Handles configuration loading, validation, and version management
+//   - validator: Provides input validation and project structure validation
+//
+// Returns:
+//   - *CLI: Initialized CLI instance ready for interactive operations
 func NewCLI(configManager interfaces.ConfigManager, validator interfaces.ValidationEngine) *CLI {
 	return &CLI{
 		configManager: configManager,
@@ -33,7 +62,20 @@ func (c *CLI) Run() error {
 	return nil
 }
 
-// PromptProjectDetails collects project configuration from user input
+// PromptProjectDetails collects comprehensive project configuration through interactive prompts.
+//
+// This method guides the user through the complete project setup process:
+//  1. Basic project information (name, organization, description, etc.)
+//  2. Component selection (frontend, backend, mobile, infrastructure)
+//  3. Output path configuration
+//  4. Latest version fetching and integration
+//
+// The method validates all input, checks component dependencies, and ensures
+// the configuration is complete and valid before returning.
+//
+// Returns:
+//   - *models.ProjectConfig: Complete project configuration ready for generation
+//   - error: Any error that occurred during the collection process
 func (c *CLI) PromptProjectDetails() (*models.ProjectConfig, error) {
 	fmt.Println("🚀 Welcome to the Open Source Template Generator!")
 	fmt.Println("Let's configure your new project...")
@@ -427,7 +469,7 @@ func (c *CLI) getDefaultVersions() *models.VersionConfig {
 		Go:        "1.22.0",
 		Kotlin:    "2.0.0",
 		Swift:     "5.9.0",
-		NextJS:    "15.0.0",
+		NextJS:    "15.5.3",
 		React:     "18.2.0",
 		Packages:  make(map[string]string),
 		UpdatedAt: time.Now(),

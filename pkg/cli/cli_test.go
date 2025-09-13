@@ -174,6 +174,61 @@ func (m *MockValidationEngine) ValidateSecurityVulnerabilities(projectPath strin
 	}, m.err
 }
 
+func (m *MockValidationEngine) ValidatePreGeneration(config *models.ProjectConfig, templatePath string) (*models.ValidationResult, error) {
+	if m.result != nil {
+		return m.result, m.err
+	}
+	return &models.ValidationResult{
+		Valid:    true,
+		Errors:   []models.ValidationError{},
+		Warnings: []models.ValidationWarning{},
+	}, m.err
+}
+
+func (m *MockValidationEngine) ValidatePreGenerationDirectory(config *models.ProjectConfig, templateDir string) (*models.ValidationResult, error) {
+	if m.result != nil {
+		return m.result, m.err
+	}
+	return &models.ValidationResult{
+		Valid:    true,
+		Errors:   []models.ValidationError{},
+		Warnings: []models.ValidationWarning{},
+	}, m.err
+}
+
+func (m *MockValidationEngine) ValidateNodeJSVersionCompatibility(projectPath string) (*models.ValidationResult, error) {
+	if m.result != nil {
+		return m.result, m.err
+	}
+	return &models.ValidationResult{
+		Valid:    true,
+		Errors:   []models.ValidationError{},
+		Warnings: []models.ValidationWarning{},
+	}, m.err
+}
+
+func (m *MockValidationEngine) ValidateCrossTemplateVersionConsistency(templatesPath string) (*models.ValidationResult, error) {
+	if m.result != nil {
+		return m.result, m.err
+	}
+	return &models.ValidationResult{
+		Valid:    true,
+		Errors:   []models.ValidationError{},
+		Warnings: []models.ValidationWarning{},
+	}, m.err
+}
+
+func (m *MockValidationEngine) ValidateNodeJSVersionConfiguration(config *models.NodeVersionConfig) (*models.ValidationResult, error) {
+	if m.result != nil {
+		return m.result, m.err
+	}
+	return &models.ValidationResult{
+		Valid:    true,
+		Errors:   []models.ValidationError{},
+		Warnings: []models.ValidationWarning{},
+	}, m.err
+}
+
 func TestNewCLI(t *testing.T) {
 	configManager := &MockConfigManager{}
 	validator := &MockValidationEngine{}
