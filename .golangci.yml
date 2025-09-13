@@ -18,7 +18,6 @@ linters:
     - goconst
     - gocyclo
     - dupl
-    - shadow
 
 linters-settings:
   gocyclo:
