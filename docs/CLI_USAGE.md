@@ -95,39 +95,6 @@ generator generate --output /path/to/project
 generator generate --dry-run
 ```
 
-### `generator validate`
-
-Validates a generated project structure, configuration, and dependencies.
-
-**Usage:**
-
-```bash
-generator validate [project-path]
-```
-
-**Flags:**
-
-- `--verbose, -v`: Show detailed validation output
-- `--security`: Include security vulnerability scanning
-- `--dependencies`: Validate all dependency versions
-- `--structure`: Validate project structure only
-
-**Examples:**
-
-```bash
-# Validate current directory
-generator validate
-
-# Validate specific project
-generator validate /path/to/project
-
-# Comprehensive validation with security scan
-generator validate --verbose --security /path/to/project
-
-# Validate only project structure
-generator validate --structure /path/to/project
-```
-
 ### `generator version`
 
 Shows version information for the generator and available packages.
@@ -148,39 +115,6 @@ generator version --packages
 
 # Check for updates
 generator version --check-updates
-```
-
-### `generator audit`
-
-Performs comprehensive codebase auditing and cleanup (for existing projects).
-
-**Usage:**
-
-```bash
-generator audit [project-path]
-```
-
-**Flags:**
-
-- `--fix`: Automatically fix issues where possible
-- `--report`: Generate detailed audit report
-- `--security-only`: Run security audit only
-- `--dependencies-only`: Audit dependencies only
-
-**Examples:**
-
-```bash
-# Run comprehensive audit
-generator audit
-
-# Audit with automatic fixes
-generator audit --fix /path/to/project
-
-# Security audit only
-generator audit --security-only
-
-# Generate detailed report
-generator audit --report /path/to/project
 ```
 
 ### `generator config`

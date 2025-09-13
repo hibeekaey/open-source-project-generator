@@ -30,7 +30,6 @@ This project and everyone participating in it is governed by our Code of Conduct
 - 🧪 **Testing**: Add or improve tests
 - 💻 **Code**: Submit bug fixes or new features
 - 🎨 **Templates**: Add or improve project templates
-- 🔧 **Tools**: Improve build tools and automation
 
 ### Before You Start
 

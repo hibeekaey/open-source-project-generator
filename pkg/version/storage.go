@@ -13,18 +13,16 @@ import (
 
 	"github.com/open-source-template-generator/pkg/interfaces"
 	"github.com/open-source-template-generator/pkg/models"
-	"github.com/open-source-template-generator/pkg/security"
 )
 
 // FileStorage implements VersionStorage interface using file system
 type FileStorage struct {
-	filePath      string
-	backupDir     string
-	format        string // "yaml" or "json"
-	store         *models.VersionStore
-	lastLoaded    time.Time
-	mu            sync.RWMutex // Mutex for concurrent access
-	secureFileOps security.SecureFileOperations
+	filePath   string
+	backupDir  string
+	format     string // "yaml" or "json"
+	store      *models.VersionStore
+	lastLoaded time.Time
+	mu         sync.RWMutex // Mutex for concurrent access
 }
 
 // NewFileStorage creates a new file-based version storage
@@ -39,10 +37,9 @@ func NewFileStorage(filePath string, format string) (*FileStorage, error) {
 	}
 
 	storage := &FileStorage{
-		filePath:      filePath,
-		backupDir:     backupDir,
-		format:        format,
-		secureFileOps: security.NewSecureFileOperations(),
+		filePath:  filePath,
+		backupDir: backupDir,
+		format:    format,
 	}
 
 	// Initialize with empty store if file doesn't exist
@@ -135,9 +132,15 @@ func (fs *FileStorage) saveUnlocked(store *models.VersionStore) error {
 		}
 	}
 
-	// Use secure atomic write operation instead of predictable temp files
-	if err := fs.secureFileOps.WriteFileAtomic(fs.filePath, data, 0644); err != nil {
-		return fmt.Errorf("failed to write file atomically: %w", err)
+	// Write file with atomic operation using temporary file
+	tempFile := fs.filePath + ".tmp"
+	if err := os.WriteFile(tempFile, data, 0644); err != nil {
+		return fmt.Errorf("failed to write temporary file: %w", err)
+	}
+
+	if err := os.Rename(tempFile, fs.filePath); err != nil {
+		os.Remove(tempFile) // Clean up on failure
+		return fmt.Errorf("failed to atomically replace file: %w", err)
 	}
 
 	fs.store = store

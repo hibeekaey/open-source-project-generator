@@ -48,6 +48,11 @@ func (e *Engine) registerDefaultFunctions() {
 		"packageVersion": getPackageVersion,
 		"hasPackage":     hasPackage,
 
+		// GitHub Actions template helpers
+		"secrets": githubSecrets,
+		"matrix":  githubMatrix,
+		"github":  githubContext,
+
 		// Enhanced Node.js version functions
 		"nodeRuntime":      getNodeRuntime,
 		"nodeTypesVersion": getNodeTypesVersion,
@@ -585,4 +590,19 @@ func getEnvVar(key string, defaultValue ...string) string {
 		return "${{ env." + key + " || '" + defaultValue[0] + "' }}"
 	}
 	return "${{ env." + key + " }}"
+}
+
+// githubSecrets returns a GitHub Actions secrets expression
+func githubSecrets(secretName string) string {
+	return "${{ secrets." + secretName + " }}"
+}
+
+// githubMatrix returns a GitHub Actions matrix expression
+func githubMatrix(field string) string {
+	return "${{ matrix." + field + " }}"
+}
+
+// githubContext returns a GitHub Actions github context expression
+func githubContext(field string) string {
+	return "${{ github." + field + " }}"
 }

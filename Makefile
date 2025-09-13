@@ -132,26 +132,10 @@ test-install: ## Test installation script
 	bash -n scripts/install.sh
 	@echo "Installation script syntax is valid"
 
-# Audit targets
-audit: ## Run comprehensive codebase audit
-	@echo "Running comprehensive codebase audit..."
-	./scripts/audit.sh
-
-audit-structure: ## Run structural analysis only
-	@echo "Running structural analysis..."
-	./scripts/audit.sh --structure
-
-audit-dependencies: ## Run dependency analysis only
-	@echo "Running dependency analysis..."
-	./scripts/audit.sh --dependencies
-
-audit-quality: ## Run code quality analysis only
-	@echo "Running code quality analysis..."
-	./scripts/audit.sh --quality
-
-audit-clean: ## Clean audit results
-	@echo "Cleaning audit results..."
-	rm -rf audit-results/
+# Template validation
+validate-templates: ## Validate template files
+	@echo "Validating template files..."
+	cd scripts/validate-templates && go run . ../../templates
 
 # Docker targets
 docker-build: ## Build Docker image

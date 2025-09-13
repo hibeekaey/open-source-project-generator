@@ -22,10 +22,9 @@ The Open Source Template Generator provides a comprehensive API for generating p
 
 - **CLI Interface**: Interactive command-line operations
 - **Template Engine**: Template processing and rendering
-- **Validation Engine**: Project and configuration validation
-- **Version Manager**: Package version management and updates
 - **Config Manager**: Configuration loading and validation
 - **File System Generator**: File and directory operations
+- **Version Manager**: Package version management and updates
 
 ## Core Interfaces
 
@@ -43,12 +42,14 @@ type CLIInterface interface {
 ```
 
 **Key Features:**
+
 - Interactive project configuration collection
 - Component selection with dependency validation
 - Configuration preview and confirmation
 - Progress indication and user feedback
 
 **Usage:**
+
 ```go
 cli := cli.NewCLI(configManager, validator)
 config, err := cli.PromptProjectDetails()
@@ -76,6 +77,7 @@ type TemplateEngine interface {
 ```
 
 **Key Features:**
+
 - Single template file processing with variable substitution
 - Recursive directory processing for complete project generation
 - Custom function registration for extended template functionality
@@ -83,6 +85,7 @@ type TemplateEngine interface {
 - Version management integration for automatic dependency updates
 
 **Usage:**
+
 ```go
 engine := template.NewEngine()
 
@@ -96,47 +99,6 @@ if err != nil {
 err = engine.ProcessDirectory("templates/frontend", "output/frontend", config)
 if err != nil {
     return fmt.Errorf("failed to process directory: %w", err)
-}
-```
-
-### ValidationEngine
-
-The `ValidationEngine` provides comprehensive validation for generated projects, templates, and configurations.
-
-```go
-type ValidationEngine interface {
-    ValidateProject(projectPath string) (*models.ValidationResult, error)
-    ValidatePackageJSON(path string) error
-    ValidateGoMod(path string) error
-    ValidateDockerfile(path string) error
-    ValidateYAML(path string) error
-    ValidateJSON(path string) error
-    // ... additional validation methods
-}
-```
-
-**Key Features:**
-- Project structure and file organization validation
-- Configuration file syntax and semantic validation
-- Cross-template consistency and compatibility checks
-- Security vulnerability scanning
-- Version compatibility validation
-- Platform-specific deployment validation
-
-**Usage:**
-```go
-validator := validation.NewEngine()
-
-// Validate entire project
-result, err := validator.ValidateProject("/path/to/project")
-if err != nil {
-    return fmt.Errorf("validation failed: %w", err)
-}
-
-if !result.Valid {
-    for _, issue := range result.Issues {
-        fmt.Printf("Issue: %s\n", issue.Message)
-    }
 }
 ```
 
@@ -158,6 +120,7 @@ type VersionManager interface {
 ```
 
 **Key Features:**
+
 - Multi-registry support (npm, Go modules, GitHub releases)
 - Version caching for performance
 - Automatic version updates
@@ -165,6 +128,7 @@ type VersionManager interface {
 - Version compatibility validation
 
 **Usage:**
+
 ```go
 versionManager := version.NewManager()
 
@@ -186,9 +150,11 @@ if err != nil {
 The API is organized into the following packages:
 
 ### pkg/interfaces
+
 Contains all interface definitions for dependency injection and testing.
 
 ### pkg/models
+
 Contains data models and configuration structures.
 
 ```go
@@ -209,18 +175,19 @@ type ProjectConfig struct {
 ```
 
 ### pkg/cli
+
 Implements the CLI interface for interactive operations.
 
 ### pkg/template
+
 Implements the template engine for processing templates.
 
-### pkg/validation
-Implements the validation engine for project validation.
-
 ### pkg/version
+
 Implements version management functionality.
 
 ### pkg/filesystem
+
 Implements file system operations.
 
 ## CLI Interface
@@ -263,6 +230,7 @@ The CLI supports selection of various project components:
 ### Configuration Preview
 
 Before generation, the CLI provides a comprehensive preview of:
+
 - Project metadata (name, organization, description)
 - Selected components and their dependencies
 - Package versions that will be used
@@ -290,6 +258,7 @@ content, err := engine.ProcessTemplate("template.tmpl", config)
 ### Custom Template Functions
 
 Built-in template functions include:
+
 - String manipulation (case conversion, replacement)
 - Date and time formatting
 - Mathematical operations
@@ -321,63 +290,6 @@ Templates support conditional rendering based on selected components:
 {{if .Components.Backend.API}}
 // Backend-specific configuration
 {{end}}
-```
-
-## Validation Engine
-
-### Project Validation
-
-The validation engine performs comprehensive project validation:
-
-```go
-validator := validation.NewEngine()
-
-// Validate entire project
-result, err := validator.ValidateProject(projectPath)
-if err != nil {
-    return err
-}
-
-// Check validation results
-if !result.Valid {
-    fmt.Printf("Validation failed with %d issues:\n", len(result.Issues))
-    for _, issue := range result.Issues {
-        fmt.Printf("- %s: %s\n", issue.Severity, issue.Message)
-    }
-}
-```
-
-### File-Specific Validation
-
-Individual file types can be validated:
-
-```go
-// Validate package.json
-err := validator.ValidatePackageJSON("package.json")
-
-// Validate go.mod
-err := validator.ValidateGoMod("go.mod")
-
-// Validate Dockerfile
-err := validator.ValidateDockerfile("Dockerfile")
-
-// Validate YAML configuration
-err := validator.ValidateYAML("config.yaml")
-```
-
-### Cross-Template Validation
-
-The engine validates consistency across multiple templates:
-
-```go
-// Validate template consistency
-result, err := validator.ValidateTemplateConsistency("templates/")
-
-// Validate version consistency
-result, err := validator.ValidateCrossTemplateVersionConsistency("templates/")
-
-// Validate environment variables
-result, err := validator.ValidateEnvironmentVariablesConsistency("templates/")
 ```
 
 ## Version Management

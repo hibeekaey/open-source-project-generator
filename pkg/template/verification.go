@@ -210,20 +210,70 @@ func hasOnlyStandardLibraryImports(content string) bool {
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 
-		// Skip non-import lines
-		if !strings.Contains(line, "\"") {
-			continue
+		// Check if this is an import line
+		if strings.HasPrefix(line, "import") || (strings.Contains(line, "import") && strings.Contains(line, "\"")) {
+			continue // Skip import statement line itself
 		}
 
-		// Check for non-standard library imports
-		if strings.Contains(line, "github.com") ||
-			strings.Contains(line, "golang.org") ||
-			strings.Contains(line, "gopkg.in") ||
-			strings.Contains(line, ".com/") ||
-			strings.Contains(line, ".org/") {
-			return false
+		// Check for actual import paths in quotes
+		if strings.Contains(line, "\"") && (strings.HasPrefix(strings.TrimSpace(line), "\"") || strings.Contains(line, " \"")) {
+			// Extract the import path
+			start := strings.Index(line, "\"")
+			end := strings.LastIndex(line, "\"")
+			if start != -1 && end != -1 && start != end {
+				importPath := line[start+1 : end]
+
+				// Check for non-standard library imports
+				if strings.Contains(importPath, "github.com") ||
+					strings.Contains(importPath, "golang.org") ||
+					strings.Contains(importPath, "gopkg.in") ||
+					strings.Contains(importPath, ".com/") ||
+					strings.Contains(importPath, ".org/") ||
+					strings.Contains(importPath, "testproject/") ||
+					strings.Contains(importPath, "project/") ||
+					strings.Contains(importPath, "/internal/") ||
+					(strings.Contains(importPath, "/") && !isStandardLibraryPackage(importPath)) {
+					return false
+				}
+			}
 		}
 	}
 
 	return true
+}
+
+// isStandardLibraryPackage checks if a package is part of Go's standard library
+func isStandardLibraryPackage(pkg string) bool {
+	// List of common standard library packages with slashes
+	standardPackages := []string{
+		"net/http", "encoding/json", "text/template", "html/template",
+		"path/filepath", "crypto/rand", "crypto/md5", "crypto/sha256",
+		"encoding/base64", "encoding/xml", "net/url", "os/exec",
+		"database/sql", "context", "time", "fmt", "strings", "strconv",
+		"io", "bufio", "bytes", "regexp", "sort", "math", "errors",
+	}
+
+	// If it has no slash, it's likely a standard package (fmt, os, etc.)
+	if !strings.Contains(pkg, "/") {
+		return true
+	}
+
+	// Check against known standard packages
+	for _, stdPkg := range standardPackages {
+		if pkg == stdPkg {
+			return true
+		}
+	}
+
+	// If it starts with known third-party patterns, it's not standard
+	if strings.HasPrefix(pkg, "github.com") ||
+		strings.HasPrefix(pkg, "golang.org") ||
+		strings.HasPrefix(pkg, "gopkg.in") ||
+		strings.Contains(pkg, ".com/") ||
+		strings.Contains(pkg, ".org/") {
+		return false
+	}
+
+	// For other patterns with slashes, assume they're project-specific
+	return false
 }

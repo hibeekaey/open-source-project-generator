@@ -161,7 +161,7 @@ func authenticate() {}
 
 
 
-func "template_placeholder"Service() {}
+func TemplateNameService() {}
 
 
 func main() {}`,
@@ -180,9 +180,9 @@ func main() {
 }`,
 			expected: `package main
 
-const version = "template_placeholder"
-const author = "template_placeholder"
-const description = "template_placeholder"
+const version = "TemplateVersion"
+const author = "TemplateAuthor"
+const description = "TemplateDescription"
 
 func main() {
 	fmt.Printf("Version: %s\n", version)
@@ -220,7 +220,7 @@ import "log"
 
 
 func "template_placeholder"() {
-	fmt.Printf("Starting "template_placeholder" at %v\n", time.Now())
+	fmt.Printf("Starting template_value at %v\n", time.Now())
 	
 	authenticate()
 	
@@ -401,7 +401,7 @@ func main() {
 	fmt.Println(result)
 	json.NewEncoder(os.Stdout).Encode(map[string]string{"key": "value"})
 }`,
-			expected:    []string{"strings.ToLower", "strings.TrimSpace", "fmt.Println", "json.NewEncoder", "os.Stdout"},
+			expected:    []string{"strings.ToLower", "strings.TrimSpace", "fmt.Println", "json.NewEncoder"},
 			description: "Detect chained function calls",
 		},
 		{

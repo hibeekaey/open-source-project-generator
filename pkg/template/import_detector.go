@@ -296,10 +296,67 @@ func (id *ImportDetector) preprocessTemplateContent(content string) string {
 	}
 
 	// Remove any remaining template expressions that might break parsing
-	templateExpr := regexp.MustCompile(`{{[^}]*}}`)
-	processed = templateExpr.ReplaceAllString(processed, `"template_placeholder"`)
+	// We need to handle template expressions differently based on context
+	processed = id.replaceTemplateExpressions(processed)
 
 	return processed
+}
+
+// replaceTemplateExpressions replaces template expressions based on context
+func (id *ImportDetector) replaceTemplateExpressions(content string) string {
+	result := ""
+	inString := false
+	escapeNext := false
+	i := 0
+	
+	for i < len(content) {
+		if escapeNext {
+			result += string(content[i])
+			escapeNext = false
+			i++
+			continue
+		}
+		
+		if content[i] == '\\' {
+			result += string(content[i])
+			escapeNext = true
+			i++
+			continue
+		}
+		
+		if content[i] == '"' {
+			inString = !inString
+			result += string(content[i])
+			i++
+			continue
+		}
+		
+		// Check for template expression start
+		if i < len(content)-1 && content[i:i+2] == "{{" {
+			// Find the end of the template expression
+			end := i + 2
+			for end < len(content)-1 && content[end:end+2] != "}}" {
+				end++
+			}
+			if end < len(content)-1 {
+				end += 2 // Include the closing }}
+				
+				// Replace based on context
+				if inString {
+					result += "template_value"
+				} else {
+					result += `"template_placeholder"`
+				}
+				i = end
+				continue
+			}
+		}
+		
+		result += string(content[i])
+		i++
+	}
+	
+	return result
 }
 
 // extractImports extracts import statements from the parsed AST
