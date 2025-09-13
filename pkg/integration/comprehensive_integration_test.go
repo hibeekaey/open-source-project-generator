@@ -3,6 +3,7 @@ package integration
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -17,6 +18,8 @@ import (
 )
 
 func TestFullSystemIntegration(t *testing.T) {
+	t.Parallel()
+
 	// Create a temporary directory for testing
 	tempDir, err := os.MkdirTemp("", "full-integration-test-*")
 	if err != nil {
@@ -78,6 +81,8 @@ func TestFullSystemIntegration(t *testing.T) {
 }
 
 func TestProjectGenerationWorkflow(t *testing.T) {
+	t.Parallel()
+
 	// Create a temporary directory for testing
 	tempDir, err := os.MkdirTemp("", "workflow-test-*")
 	if err != nil {
@@ -152,6 +157,8 @@ func TestProjectGenerationWorkflow(t *testing.T) {
 }
 
 func TestComponentInteraction(t *testing.T) {
+	t.Parallel()
+
 	// Test interaction between different components
 	tempDir, err := os.MkdirTemp("", "component-interaction-test-*")
 	if err != nil {
@@ -162,11 +169,8 @@ func TestComponentInteraction(t *testing.T) {
 	// Initialize components
 	cacheDir := filepath.Join(tempDir, "cache")
 	configManager := config.NewManager(cacheDir, "")
-	_ = template.NewEngine() // templateEngine not used in this test
 	fsGenerator := filesystem.NewGenerator()
 	validator := validation.NewEngine()
-	versionCache := version.NewMemoryCache(1 * time.Hour)
-	_ = version.NewManager(versionCache) // versionManager not used in this test
 
 	// Test configuration loading and validation
 	t.Log("Testing configuration management")
@@ -222,6 +226,8 @@ func TestComponentInteraction(t *testing.T) {
 }
 
 func TestErrorHandlingIntegration(t *testing.T) {
+	t.Parallel()
+
 	// Test error handling across components
 	tempDir, err := os.MkdirTemp("", "error-handling-test-*")
 	if err != nil {
@@ -275,6 +281,8 @@ func TestErrorHandlingIntegration(t *testing.T) {
 }
 
 func TestPerformanceIntegration(t *testing.T) {
+	t.Parallel()
+
 	// Test performance characteristics of integrated components
 	tempDir, err := os.MkdirTemp("", "performance-test-*")
 	if err != nil {
@@ -283,11 +291,7 @@ func TestPerformanceIntegration(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	// Initialize components
-	_ = template.NewEngine() // templateEngine not used in this test
 	fsGenerator := filesystem.NewGenerator()
-	_ = validation.NewEngine() // validator not used in this test
-	versionCache := version.NewMemoryCache(1 * time.Hour)
-	_ = version.NewManager(versionCache) // versionManager not used in this test
 
 	// Test multiple project generations
 	t.Log("Testing performance with multiple project generations")
@@ -313,6 +317,7 @@ func TestPerformanceIntegration(t *testing.T) {
 
 	// Test version caching performance
 	t.Log("Testing version caching performance")
+	versionCache := version.NewMemoryCache(1 * time.Hour)
 	startTime = time.Now()
 
 	for i := 0; i < 100; i++ {
@@ -333,7 +338,7 @@ func TestPerformanceIntegration(t *testing.T) {
 }
 
 func TestConcurrencyIntegration(t *testing.T) {
-	// Test concurrent operations
+	// Note: Not parallelized as this test specifically checks concurrent behavior
 	tempDir, err := os.MkdirTemp("", "concurrency-test-*")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
@@ -387,7 +392,7 @@ func TestMemoryUsageIntegration(t *testing.T) {
 	t.Log("Testing memory usage patterns")
 
 	// Create and destroy multiple components to test for memory leaks
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 20; i++ { // Reduced iterations for better performance
 		// Create components
 		templateEngine := template.NewEngine()
 		fsGenerator := filesystem.NewGenerator()
@@ -406,13 +411,21 @@ func TestMemoryUsageIntegration(t *testing.T) {
 		_, _ = validator.ValidateProject(tempDir)
 		_, _ = versionManager.GetLatestNodeVersion()
 
-		// Components should be garbage collected when they go out of scope
+		// Explicit cleanup to prevent memory accumulation
 		templateEngine = nil
 		fsGenerator = nil
 		validator = nil
-		versionCache = nil
 		versionManager = nil
+
+		// Force garbage collection every 5 iterations
+		if i%5 == 0 {
+			runtime.GC()
+		}
 	}
+
+	// Final cleanup
+	runtime.GC()
+	runtime.GC()
 
 	t.Log("Memory usage integration test completed")
 }

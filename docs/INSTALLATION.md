@@ -157,20 +157,58 @@ generator --version
 
 ## Docker Installation
 
-### Pull from Docker Hub
+### Configuration
+
+The Docker images are published to GitHub Container Registry with dynamic organization names.
+The image name automatically adapts to the repository owner:
+
+- For `cuesoftinc` organization: `ghcr.io/cuesoftinc/open-source-project-generator:latest`
+- For your fork: `ghcr.io/yourusername/open-source-project-generator:latest`
+
+### Pull from GitHub Container Registry
 
 ```bash
-docker pull generator/generator:latest
+# For cuesoftinc organization
+docker pull ghcr.io/cuesoftinc/open-source-project-generator:latest
+
+# For your own fork (replace 'yourusername' with your GitHub username)
+docker pull ghcr.io/yourusername/open-source-project-generator:latest
 ```
 
 ### Run in Container
 
 ```bash
-# Interactive mode
-docker run -it --rm -v $(pwd):/workspace generator/generator:latest generate
+# Interactive mode (using cuesoftinc organization)
+docker run -it --rm -v $(pwd):/workspace ghcr.io/cuesoftinc/open-source-project-generator:latest generate
 
-# One-time generation
-docker run --rm -v $(pwd):/workspace generator/generator:latest generate --config /workspace/config.yaml
+# One-time generation (using cuesoftinc organization)
+docker run --rm -v $(pwd):/workspace ghcr.io/cuesoftinc/open-source-project-generator:latest generate --config /workspace/config.yaml
+
+# Using your own fork (replace 'yourusername')
+docker run -it --rm -v $(pwd):/workspace ghcr.io/yourusername/open-source-project-generator:latest generate
+```
+
+### Environment Variables
+
+For development and customization, you can configure the following environment variables:
+
+```bash
+# Set your GitHub organization/username
+export GITHUB_REPOSITORY_OWNER=yourusername
+
+# Set Docker registry (default: ghcr.io)  
+export DOCKER_REGISTRY=ghcr.io
+
+# For authentication when pushing images
+export GITHUB_ACTOR=yourusername
+export GITHUB_TOKEN=your_github_token
+```
+
+Copy `env.example` to `.env` and customize for your setup:
+
+```bash
+cp env.example .env
+# Edit .env with your configuration
 ```
 
 ### Build from Source
@@ -185,7 +223,7 @@ docker build -t generator:local .
 
 ### Prerequisites
 
-- Go 1.22 or later
+- Go 1.24 or later
 - Git
 - Make (optional, for using Makefile)
 
@@ -271,7 +309,7 @@ templates:
 # Version preferences
 versions:
   node: "20"
-  go: "1.22"
+  go: "1.24"
   
 # Cache settings
 cache:

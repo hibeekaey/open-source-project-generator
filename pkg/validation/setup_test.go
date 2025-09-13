@@ -1,5 +1,3 @@
-//go:build !ci
-
 package validation
 
 import (
@@ -14,8 +12,9 @@ import (
 )
 
 func TestSetupEngine_SetupProject(t *testing.T) {
+	t.Parallel()
 	engine := NewSetupEngine()
-	engine.SetTimeout(30 * time.Second) // Shorter timeout for tests
+	engine.SetTimeout(10 * time.Second) // Optimized timeout for faster tests
 
 	tests := []struct {
 		name           string
@@ -67,7 +66,7 @@ func TestSetupEngine_SetupProject(t *testing.T) {
 
 				goMod := `module test-backend
 
-go 1.21`
+go 1.24`
 				if err := os.WriteFile(filepath.Join(backendPath, "go.mod"), []byte(goMod), 0644); err != nil {
 					return err
 				}
@@ -137,13 +136,14 @@ end`
 		{
 			name: "infrastructure project setup",
 			setupProject: func(projectPath string) error {
-				// Create Terraform files
+				// Create minimal Terraform files without external providers
 				mainTf := `terraform {
   required_version = ">= 1.0"
 }
 
-provider "aws" {
-  region = "us-west-2"
+# Basic terraform configuration for testing
+output "test_output" {
+  value = "test value"
 }`
 				if err := os.WriteFile(filepath.Join(projectPath, "main.tf"), []byte(mainTf), 0644); err != nil {
 					return err
@@ -165,20 +165,20 @@ provider "aws" {
 					},
 				},
 			},
-			expectedValid:  true,
-			expectedErrors: 0,
+			expectedValid:  true, // Minimal terraform config should work
+			expectedErrors: 0,    // No errors expected with minimal config
 		},
 	}
 
 	for _, tt := range tests {
+		tt := tt // capture range variable
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			// Create temporary directory
-			tempDir, err := os.MkdirTemp("", "test-setup-*")
-			require.NoError(t, err)
-			defer os.RemoveAll(tempDir)
+			tempDir := t.TempDir() // Use t.TempDir() for automatic cleanup
 
 			// Setup project
-			err = tt.setupProject(tempDir)
+			err := tt.setupProject(tempDir)
 			require.NoError(t, err)
 
 			// Run setup
@@ -193,8 +193,9 @@ provider "aws" {
 }
 
 func TestSetupEngine_VerifyProject(t *testing.T) {
+	t.Parallel()
 	engine := NewSetupEngine()
-	engine.SetTimeout(30 * time.Second) // Shorter timeout for tests
+	engine.SetTimeout(10 * time.Second) // Optimized timeout for faster tests
 
 	tests := []struct {
 		name           string
@@ -246,7 +247,7 @@ func TestSetupEngine_VerifyProject(t *testing.T) {
 
 				goMod := `module test-backend
 
-go 1.21`
+go 1.24`
 				if err := os.WriteFile(filepath.Join(backendPath, "go.mod"), []byte(goMod), 0644); err != nil {
 					return err
 				}
@@ -283,7 +284,7 @@ func main() {
 
 				goMod := `module test-backend
 
-go 1.21`
+go 1.24`
 				if err := os.WriteFile(filepath.Join(backendPath, "go.mod"), []byte(goMod), 0644); err != nil {
 					return err
 				}
@@ -339,14 +340,14 @@ CMD ["npm", "start"]`
 	}
 
 	for _, tt := range tests {
+		tt := tt // capture range variable
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			// Create temporary directory
-			tempDir, err := os.MkdirTemp("", "test-verify-*")
-			require.NoError(t, err)
-			defer os.RemoveAll(tempDir)
+			tempDir := t.TempDir() // Use t.TempDir() for automatic cleanup
 
 			// Setup project
-			err = tt.setupProject(tempDir)
+			err := tt.setupProject(tempDir)
 			require.NoError(t, err)
 
 			// Run verification
@@ -361,8 +362,9 @@ CMD ["npm", "start"]`
 }
 
 func TestSetupEngine_SetupFrontendComponents(t *testing.T) {
+	t.Parallel()
 	engine := NewSetupEngine()
-	engine.SetTimeout(10 * time.Second)
+	engine.SetTimeout(5 * time.Second) // Further optimized for faster tests
 
 	tests := []struct {
 		name           string
@@ -413,14 +415,14 @@ func TestSetupEngine_SetupFrontendComponents(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt // capture range variable
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			// Create temporary directory
-			tempDir, err := os.MkdirTemp("", "test-frontend-setup-*")
-			require.NoError(t, err)
-			defer os.RemoveAll(tempDir)
+			tempDir := t.TempDir() // Use t.TempDir() for automatic cleanup
 
 			// Setup project
-			err = tt.setupProject(tempDir)
+			err := tt.setupProject(tempDir)
 			require.NoError(t, err)
 
 			// Run frontend setup
@@ -439,8 +441,9 @@ func TestSetupEngine_SetupFrontendComponents(t *testing.T) {
 }
 
 func TestSetupEngine_SetupBackendComponents(t *testing.T) {
+	t.Parallel()
 	engine := NewSetupEngine()
-	engine.SetTimeout(10 * time.Second)
+	engine.SetTimeout(5 * time.Second) // Further optimized for faster tests
 
 	tests := []struct {
 		name           string
@@ -457,7 +460,7 @@ func TestSetupEngine_SetupBackendComponents(t *testing.T) {
 
 				goMod := `module test-backend
 
-go 1.21`
+go 1.24`
 				return os.WriteFile(filepath.Join(backendPath, "go.mod"), []byte(goMod), 0644)
 			},
 			expectedErrors: 0,
@@ -473,14 +476,14 @@ go 1.21`
 	}
 
 	for _, tt := range tests {
+		tt := tt // capture range variable
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			// Create temporary directory
-			tempDir, err := os.MkdirTemp("", "test-backend-setup-*")
-			require.NoError(t, err)
-			defer os.RemoveAll(tempDir)
+			tempDir := t.TempDir() // Use t.TempDir() for automatic cleanup
 
 			// Setup project
-			err = tt.setupProject(tempDir)
+			err := tt.setupProject(tempDir)
 			require.NoError(t, err)
 
 			// Run backend setup
@@ -507,8 +510,9 @@ go 1.21`
 }
 
 func TestSetupEngine_RunCommand(t *testing.T) {
+	t.Parallel()
 	engine := NewSetupEngine()
-	engine.SetTimeout(5 * time.Second)
+	engine.SetTimeout(3 * time.Second) // Short timeout for faster tests
 
 	tests := []struct {
 		name        string
@@ -537,14 +541,14 @@ func TestSetupEngine_RunCommand(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt // capture range variable
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			// Create temporary directory
-			tempDir, err := os.MkdirTemp("", "test-command-*")
-			require.NoError(t, err)
-			defer os.RemoveAll(tempDir)
+			tempDir := t.TempDir() // Use t.TempDir() for automatic cleanup
 
 			// Run command
-			err = engine.runCommand(tempDir, tt.command, tt.args...)
+			err := engine.runCommand(tempDir, tt.command, tt.args...)
 			if tt.expectError {
 				assert.Error(t, err)
 			} else {
@@ -555,25 +559,25 @@ func TestSetupEngine_RunCommand(t *testing.T) {
 }
 
 func TestSetupEngine_Timeout(t *testing.T) {
+	t.Parallel()
 	engine := NewSetupEngine()
-	engine.SetTimeout(1 * time.Second) // Very short timeout
+	engine.SetTimeout(500 * time.Millisecond) // Shorter timeout for faster tests
 
 	// Create temporary directory
-	tempDir, err := os.MkdirTemp("", "test-timeout-*")
-	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	tempDir := t.TempDir() // Use t.TempDir() for automatic cleanup
 
 	// Run a command that should timeout (sleep for longer than timeout)
-	err = engine.runCommand(tempDir, "sleep", "5")
+	err := engine.runCommand(tempDir, "sleep", "2")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "timed out")
 }
 
 func TestSetupEngine_SetTimeout(t *testing.T) {
+	t.Parallel()
 	engine := NewSetupEngine()
 
 	// Test setting timeout
-	newTimeout := 2 * time.Minute
+	newTimeout := 10 * time.Second // Reasonable timeout for tests
 	engine.SetTimeout(newTimeout)
 	assert.Equal(t, newTimeout, engine.timeout)
 }
@@ -581,16 +585,14 @@ func TestSetupEngine_SetTimeout(t *testing.T) {
 // Benchmark tests
 func BenchmarkSetupEngine_SetupProject(b *testing.B) {
 	engine := NewSetupEngine()
-	engine.SetTimeout(30 * time.Second)
+	engine.SetTimeout(10 * time.Second) // Optimized for benchmarks
 
 	// Create a test project
-	tempDir, err := os.MkdirTemp("", "benchmark-setup-*")
-	require.NoError(b, err)
-	defer os.RemoveAll(tempDir)
+	tempDir := b.TempDir() // Use b.TempDir() for automatic cleanup
 
 	// Create frontend directory with package.json
 	frontendPath := filepath.Join(tempDir, "frontend")
-	err = os.MkdirAll(frontendPath, 0755)
+	err := os.MkdirAll(frontendPath, 0755)
 	require.NoError(b, err)
 
 	packageJSON := `{
@@ -624,21 +626,19 @@ func BenchmarkSetupEngine_SetupProject(b *testing.B) {
 
 func BenchmarkSetupEngine_VerifyProject(b *testing.B) {
 	engine := NewSetupEngine()
-	engine.SetTimeout(30 * time.Second)
+	engine.SetTimeout(10 * time.Second) // Optimized for benchmarks
 
 	// Create a test project
-	tempDir, err := os.MkdirTemp("", "benchmark-verify-*")
-	require.NoError(b, err)
-	defer os.RemoveAll(tempDir)
+	tempDir := b.TempDir() // Use b.TempDir() for automatic cleanup
 
 	// Create backend directory with Go project
 	backendPath := filepath.Join(tempDir, "backend")
-	err = os.MkdirAll(backendPath, 0755)
+	err := os.MkdirAll(backendPath, 0755)
 	require.NoError(b, err)
 
 	goMod := `module test-backend
 
-go 1.21`
+go 1.24`
 	err = os.WriteFile(filepath.Join(backendPath, "go.mod"), []byte(goMod), 0644)
 	require.NoError(b, err)
 

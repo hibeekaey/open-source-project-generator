@@ -44,7 +44,7 @@ This project and everyone participating in it is governed by our Code of Conduct
 
 Ensure you have the required tools installed:
 
-- **Go**: 1.23 or later
+- **Go**: 1.24 or later
 - **Make**: Build automation tool
 - **Git**: Latest stable version
 - **Docker**: Latest stable version (optional, for testing)
@@ -429,7 +429,7 @@ make test-coverage
 go test ./pkg/template/...
 
 # Run integration tests
-go test -tags=integration ./test/integration/...
+go test ./test/integration/...
 
 # Validate templates (recommended before committing template changes)
 go run scripts/validate-templates/main.go --check-imports

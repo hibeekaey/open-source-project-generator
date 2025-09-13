@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/open-source-template-generator/pkg/constants"
 	"github.com/open-source-template-generator/pkg/interfaces"
 	"github.com/open-source-template-generator/pkg/models"
 )
@@ -159,7 +160,7 @@ func (r *GitHubRegistry) determineType(owner, repo string) string {
 	}
 
 	// Default to language for runtime repositories
-	return "language"
+	return constants.TypeLanguage
 }
 
 // Ensure GitHubRegistry implements VersionRegistry interface

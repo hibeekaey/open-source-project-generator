@@ -151,7 +151,6 @@ func TestTemplateGenerationWithUpdatedVersions(t *testing.T) {
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		t.Fatalf("Failed to create output directory: %v", err)
 	}
-	_ = outputDir // Use the variable to avoid "declared and not used" error
 
 	// Generate project using template engine
 	engine := template.NewEngine()

@@ -56,8 +56,8 @@ func verifyTemplateCompilation(templatePath string, testData *models.ProjectConf
 	result.GeneratedFile = outputPath
 
 	// Create output directory
-	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
-		result.Error = fmt.Sprintf("failed to create output directory: %v", err)
+	if mkdirErr := os.MkdirAll(filepath.Dir(outputPath), 0755); mkdirErr != nil {
+		result.Error = fmt.Sprintf("failed to create output directory: %v", mkdirErr)
 		return result
 	}
 
@@ -67,7 +67,7 @@ func verifyTemplateCompilation(templatePath string, testData *models.ProjectConf
 		result.Error = fmt.Sprintf("failed to create output file: %v", err)
 		return result
 	}
-	defer outputFile.Close()
+	defer func() { _ = outputFile.Close() }()
 
 	// Execute template
 	err = tmpl.Execute(outputFile, testData)
@@ -171,24 +171,24 @@ func tryCompileGoFile(filePath string) (string, error) {
 
 	// Create a temporary directory for compilation
 	tempDir := filepath.Dir(filePath) + "_compile_test"
-	if err := os.MkdirAll(tempDir, 0755); err != nil {
-		return "", fmt.Errorf("failed to create temp directory: %w", err)
+	if mkdirErr := os.MkdirAll(tempDir, 0755); mkdirErr != nil {
+		return "", fmt.Errorf("failed to create temp directory: %w", mkdirErr)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Copy the file to temp directory
 	tempFile := filepath.Join(tempDir, "main.go")
-	if err := os.WriteFile(tempFile, content, 0644); err != nil {
-		return "", fmt.Errorf("failed to write temp file: %w", err)
+	if writeErr := os.WriteFile(tempFile, content, 0644); writeErr != nil {
+		return "", fmt.Errorf("failed to write temp file: %w", writeErr)
 	}
 
 	// Create a simple go.mod for the temp directory
 	goModContent := `module temp-validation
-go 1.22
+go 1.24
 `
 	goModPath := filepath.Join(tempDir, "go.mod")
-	if err := os.WriteFile(goModPath, []byte(goModContent), 0644); err != nil {
-		return "", fmt.Errorf("failed to create go.mod: %w", err)
+	if goModErr := os.WriteFile(goModPath, []byte(goModContent), 0644); goModErr != nil {
+		return "", fmt.Errorf("failed to create go.mod: %w", goModErr)
 	}
 
 	// Try to compile the file

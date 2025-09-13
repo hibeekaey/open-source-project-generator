@@ -50,21 +50,21 @@ func (m *MockVersionManager) SetError(shouldError bool, message string) {
 
 func (m *MockVersionManager) GetLatestNodeVersion() (string, error) {
 	if m.shouldError {
-		return "", fmt.Errorf(m.errorMessage)
+		return "", fmt.Errorf("%s", m.errorMessage)
 	}
 	return m.nodeVersion, nil
 }
 
 func (m *MockVersionManager) GetLatestGoVersion() (string, error) {
 	if m.shouldError {
-		return "", fmt.Errorf(m.errorMessage)
+		return "", fmt.Errorf("%s", m.errorMessage)
 	}
 	return m.goVersion, nil
 }
 
 func (m *MockVersionManager) GetLatestNPMPackage(packageName string) (string, error) {
 	if m.shouldError {
-		return "", fmt.Errorf(m.errorMessage)
+		return "", fmt.Errorf("%s", m.errorMessage)
 	}
 	if version, exists := m.npmPackages[packageName]; exists {
 		return version, nil
@@ -74,7 +74,7 @@ func (m *MockVersionManager) GetLatestNPMPackage(packageName string) (string, er
 
 func (m *MockVersionManager) GetLatestGoModule(moduleName string) (string, error) {
 	if m.shouldError {
-		return "", fmt.Errorf(m.errorMessage)
+		return "", fmt.Errorf("%s", m.errorMessage)
 	}
 	if version, exists := m.goModules[moduleName]; exists {
 		return version, nil
@@ -84,7 +84,7 @@ func (m *MockVersionManager) GetLatestGoModule(moduleName string) (string, error
 
 func (m *MockVersionManager) GetLatestGitHubRelease(repo string) (string, error) {
 	if m.shouldError {
-		return "", fmt.Errorf(m.errorMessage)
+		return "", fmt.Errorf("%s", m.errorMessage)
 	}
 	if version, exists := m.githubReleases[repo]; exists {
 		return version, nil

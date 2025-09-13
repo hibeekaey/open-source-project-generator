@@ -443,7 +443,7 @@ This guide helps you resolve common issues with the Open Source Template Generat
 2. **Use correct volume mounts**:
 
    ```bash
-   docker run -v $(pwd):/workspace generator/generator:latest
+   docker run -v $(pwd):/workspace ghcr.io/cuesoftinc/open-source-project-generator:latest
    ```
 
 3. **Check permissions**:

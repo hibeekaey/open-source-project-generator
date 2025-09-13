@@ -9,7 +9,10 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/open-source-template-generator/pkg/constants"
 	"github.com/open-source-template-generator/pkg/models"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // registerDefaultFunctions registers the default template functions
@@ -18,7 +21,7 @@ func (e *Engine) registerDefaultFunctions() {
 		// String manipulation functions
 		"lower":      strings.ToLower,
 		"upper":      strings.ToUpper,
-		"title":      strings.Title,
+		"title":      cases.Title(language.English).String,
 		"camelCase":  toCamelCase,
 		"snakeCase":  toSnakeCase,
 		"kebabCase":  toKebabCase,
@@ -272,7 +275,7 @@ func getLatestVersion(config *models.ProjectConfig, packageName string) string {
 		}
 	}
 
-	return "latest"
+	return constants.VersionLatest
 }
 
 func addVersionPrefix(version string) string {
@@ -335,7 +338,7 @@ func getPackageVersion(config *models.ProjectConfig, packageName string) string 
 			return version
 		}
 	}
-	return "latest"
+	return constants.VersionLatest
 }
 
 func hasPackage(config *models.ProjectConfig, packageName string) bool {
@@ -440,7 +443,7 @@ func hasInfrastructureComponent(config *models.ProjectConfig) bool {
 
 func hasComponent(config *models.ProjectConfig, componentType, componentName string) bool {
 	switch componentType {
-	case "frontend":
+	case constants.TemplateFrontend:
 		switch componentName {
 		case "main_app":
 			return config.Components.Frontend.MainApp
@@ -449,7 +452,7 @@ func hasComponent(config *models.ProjectConfig, componentType, componentName str
 		case "admin":
 			return config.Components.Frontend.Admin
 		}
-	case "backend":
+	case constants.TemplateBackend:
 		switch componentName {
 		case "api":
 			return config.Components.Backend.API

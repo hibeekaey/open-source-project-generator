@@ -61,7 +61,7 @@ func (c *NPMClient) GetLatestVersion(packageName string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to make request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("NPM registry returned status %d for package %s", resp.StatusCode, packageName)
@@ -95,7 +95,7 @@ func (c *NPMClient) GetVersionInfo(packageName, version string) (*NPMVersionInfo
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("NPM registry returned status %d for package %s@%s", resp.StatusCode, packageName, version)

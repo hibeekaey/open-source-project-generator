@@ -14,6 +14,8 @@ import (
 	"github.com/open-source-template-generator/pkg/models"
 	"github.com/open-source-template-generator/pkg/template"
 	"github.com/open-source-template-generator/pkg/validation"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // TestVersionConsistencyAcrossMultipleFrontendTemplates tests that all frontend templates
@@ -1187,7 +1189,7 @@ func createComprehensiveMockPackageJSON(outputDir string, config *models.Project
 		"name":        strings.ToLower(fmt.Sprintf("%s-%s", config.Name, templateName)),
 		"version":     "0.1.0",
 		"private":     true,
-		"description": fmt.Sprintf("%s - %s Component", config.Description, strings.Title(templateName)),
+		"description": fmt.Sprintf("%s - %s Component", config.Description, cases.Title(language.English).String(templateName)),
 		"author":      fmt.Sprintf("%s <%s>", config.Author, config.Email),
 		"license":     config.License,
 		"repository": map[string]string{

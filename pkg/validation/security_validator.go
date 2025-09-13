@@ -215,48 +215,41 @@ func (sv *SecurityValidator) validateSinglePackageJSON(packageJSONPath string, r
 
 	// Check dependencies
 	if deps, ok := packageJSON["dependencies"].(map[string]interface{}); ok {
-		for packageName, version := range deps {
-			if versionStr, ok := version.(string); ok {
-				cleanVersion := sv.cleanVersion(versionStr)
-				securityResult, err := sv.ValidatePackageVersionSecurity(packageName, cleanVersion, "npm")
-				if err != nil {
-					// Log warning but don't fail validation
-					result.Warnings = append(result.Warnings, models.ValidationWarning{
-						Field:   "SecurityCheck",
-						Message: fmt.Sprintf("Failed to check security for %s@%s: %s", packageName, cleanVersion, err.Error()),
-					})
-					continue
-				}
-
-				if len(securityResult.Vulnerabilities) > 0 {
-					sv.addVulnerabilityWarnings(packageName, cleanVersion, securityResult.Vulnerabilities, result)
-				}
-			}
-		}
+		sv.validateDependencyMap(deps, "prod", result)
 	}
 
 	// Check devDependencies
 	if devDeps, ok := packageJSON["devDependencies"].(map[string]interface{}); ok {
-		for packageName, version := range devDeps {
-			if versionStr, ok := version.(string); ok {
-				cleanVersion := sv.cleanVersion(versionStr)
-				securityResult, err := sv.ValidatePackageVersionSecurity(packageName, cleanVersion, "npm")
-				if err != nil {
-					result.Warnings = append(result.Warnings, models.ValidationWarning{
-						Field:   "SecurityCheck",
-						Message: fmt.Sprintf("Failed to check security for dev dependency %s@%s: %s", packageName, cleanVersion, err.Error()),
-					})
-					continue
-				}
-
-				if len(securityResult.Vulnerabilities) > 0 {
-					sv.addVulnerabilityWarnings(packageName, cleanVersion, securityResult.Vulnerabilities, result)
-				}
-			}
-		}
+		sv.validateDependencyMap(devDeps, "dev", result)
 	}
 
 	return nil
+}
+
+// validateDependencyMap validates a map of dependencies (either dependencies or devDependencies)
+func (sv *SecurityValidator) validateDependencyMap(deps map[string]interface{}, depType string, result *models.ValidationResult) {
+	for packageName, version := range deps {
+		if versionStr, ok := version.(string); ok {
+			cleanVersion := sv.cleanVersion(versionStr)
+			securityResult, err := sv.ValidatePackageVersionSecurity(packageName, cleanVersion, "npm")
+			if err != nil {
+				// Log warning but don't fail validation
+				message := fmt.Sprintf("Failed to check security for %s@%s: %s", packageName, cleanVersion, err.Error())
+				if depType == "dev" {
+					message = fmt.Sprintf("Failed to check security for dev dependency %s@%s: %s", packageName, cleanVersion, err.Error())
+				}
+				result.Warnings = append(result.Warnings, models.ValidationWarning{
+					Field:   "SecurityCheck",
+					Message: message,
+				})
+				continue
+			}
+
+			if len(securityResult.Vulnerabilities) > 0 {
+				sv.addVulnerabilityWarnings(packageName, cleanVersion, securityResult.Vulnerabilities, result)
+			}
+		}
+	}
 }
 
 // validateSingleGoMod validates a single go.mod file

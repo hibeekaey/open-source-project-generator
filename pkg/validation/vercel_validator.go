@@ -38,9 +38,9 @@ func (vv *VercelValidator) ValidateVercelCompatibility(projectPath string) (*mod
 
 	// Check for Vercel configuration
 	vercelConfigPath := filepath.Join(projectPath, "vercel.json")
-	vercelResult, err := vv.validateVercelConfig(vercelConfigPath, result)
-	if err != nil {
-		return nil, fmt.Errorf("failed to validate vercel.json: %w", err)
+	vercelResult, vercelErr := vv.validateVercelConfig(vercelConfigPath, result)
+	if vercelErr != nil {
+		return nil, fmt.Errorf("failed to validate vercel.json: %w", vercelErr)
 	}
 	// Merge results
 	result.Valid = result.Valid && vercelResult.Valid
@@ -98,9 +98,9 @@ func (vv *VercelValidator) ValidateEnvironmentVariablesConsistency(templatesPath
 		return result, nil
 	}
 
-	templateDirs, err := vv.getFrontendTemplateDirs(frontendPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get template directories: %w", err)
+	templateDirs, dirErr := vv.getFrontendTemplateDirs(frontendPath)
+	if dirErr != nil {
+		return nil, fmt.Errorf("failed to get template directories: %w", dirErr)
 	}
 
 	// Validate environment variables consistency
@@ -113,6 +113,23 @@ func (vv *VercelValidator) ValidateEnvironmentVariablesConsistency(templatesPath
 
 // validatePackageJSONForVercel validates package.json for Vercel compatibility
 func (vv *VercelValidator) validatePackageJSONForVercel(packageJSONPath string, result *models.ValidationResult) error {
+	packageJSON, err := vv.loadAndParsePackageJSON(packageJSONPath, result)
+	if err != nil {
+		return err
+	}
+	if packageJSON == nil {
+		return nil // Error already recorded in result
+	}
+
+	vv.validateVercelScripts(packageJSON, result)
+	vv.validateNodeEngines(packageJSON, result)
+	vv.validateNextJSDependency(packageJSON, result)
+
+	return nil
+}
+
+// loadAndParsePackageJSON loads and parses package.json file
+func (vv *VercelValidator) loadAndParsePackageJSON(packageJSONPath string, result *models.ValidationResult) (map[string]interface{}, error) {
 	if _, err := os.Stat(packageJSONPath); os.IsNotExist(err) {
 		result.Valid = false
 		result.Errors = append(result.Errors, models.ValidationError{
@@ -121,7 +138,7 @@ func (vv *VercelValidator) validatePackageJSONForVercel(packageJSONPath string, 
 			Value:   packageJSONPath,
 			Message: "package.json is required for Vercel deployment",
 		})
-		return nil
+		return nil, nil
 	}
 
 	data, err := os.ReadFile(packageJSONPath)
@@ -133,7 +150,7 @@ func (vv *VercelValidator) validatePackageJSONForVercel(packageJSONPath string, 
 			Value:   packageJSONPath,
 			Message: fmt.Sprintf("Failed to read package.json: %s", err.Error()),
 		})
-		return nil
+		return nil, nil
 	}
 
 	var packageJSON map[string]interface{}
@@ -145,36 +162,16 @@ func (vv *VercelValidator) validatePackageJSONForVercel(packageJSONPath string, 
 			Value:   packageJSONPath,
 			Message: fmt.Sprintf("Invalid JSON format: %s", err.Error()),
 		})
-		return nil
+		return nil, nil
 	}
 
-	// Validate required scripts for Vercel
-	requiredScripts := []string{"build", "start"}
-	if scripts, ok := packageJSON["scripts"].(map[string]interface{}); ok {
-		for _, script := range requiredScripts {
-			if _, exists := scripts[script]; !exists {
-				result.Valid = false
-				result.Errors = append(result.Errors, models.ValidationError{
-					Field:   "Scripts",
-					Tag:     "required",
-					Value:   script,
-					Message: fmt.Sprintf("Missing required script for Vercel deployment: %s", script),
-				})
-			}
-		}
+	return packageJSON, nil
+}
 
-		// Validate build script content
-		if buildScript, exists := scripts["build"]; exists {
-			if buildStr, ok := buildScript.(string); ok {
-				if !strings.Contains(buildStr, "next build") && !strings.Contains(buildStr, "npm run build") {
-					result.Warnings = append(result.Warnings, models.ValidationWarning{
-						Field:   "Scripts",
-						Message: "Build script should use 'next build' for optimal Vercel deployment",
-					})
-				}
-			}
-		}
-	} else {
+// validateVercelScripts validates required scripts for Vercel deployment
+func (vv *VercelValidator) validateVercelScripts(packageJSON map[string]interface{}, result *models.ValidationResult) {
+	scripts, ok := packageJSON["scripts"].(map[string]interface{})
+	if !ok {
 		result.Valid = false
 		result.Errors = append(result.Errors, models.ValidationError{
 			Field:   "Scripts",
@@ -182,38 +179,91 @@ func (vv *VercelValidator) validatePackageJSONForVercel(packageJSONPath string, 
 			Value:   "",
 			Message: "Scripts section is required for Vercel deployment",
 		})
+		return
 	}
 
-	// Validate engines for Node.js version
-	if engines, ok := packageJSON["engines"].(map[string]interface{}); ok {
-		if nodeVersion, exists := engines["node"]; exists {
-			if nodeStr, ok := nodeVersion.(string); ok {
-				if !vv.isValidNodeVersionForVercel(nodeStr) {
-					result.Warnings = append(result.Warnings, models.ValidationWarning{
-						Field:   "Engines",
-						Message: fmt.Sprintf("Node.js version %s may not be supported by Vercel", nodeStr),
-					})
-				}
-			}
-		} else {
-			result.Warnings = append(result.Warnings, models.ValidationWarning{
-				Field:   "Engines",
-				Message: "Node.js version not specified - Vercel will use default version",
+	vv.validateRequiredScripts(scripts, result)
+	vv.validateBuildScript(scripts, result)
+}
+
+// validateRequiredScripts checks for required scripts
+func (vv *VercelValidator) validateRequiredScripts(scripts map[string]interface{}, result *models.ValidationResult) {
+	requiredScripts := []string{"build", "start"}
+	for _, script := range requiredScripts {
+		if _, exists := scripts[script]; !exists {
+			result.Valid = false
+			result.Errors = append(result.Errors, models.ValidationError{
+				Field:   "Scripts",
+				Tag:     "required",
+				Value:   script,
+				Message: fmt.Sprintf("Missing required script for Vercel deployment: %s", script),
 			})
 		}
 	}
+}
 
-	// Check for Next.js dependency
-	if deps, ok := packageJSON["dependencies"].(map[string]interface{}); ok {
-		if _, exists := deps["next"]; !exists {
-			result.Warnings = append(result.Warnings, models.ValidationWarning{
-				Field:   "Dependencies",
-				Message: "Next.js dependency not found - ensure framework is correctly specified",
-			})
-		}
+// validateBuildScript validates the build script content
+func (vv *VercelValidator) validateBuildScript(scripts map[string]interface{}, result *models.ValidationResult) {
+	buildScript, exists := scripts["build"]
+	if !exists {
+		return
 	}
 
-	return nil
+	buildStr, ok := buildScript.(string)
+	if !ok {
+		return
+	}
+
+	if !strings.Contains(buildStr, "next build") && !strings.Contains(buildStr, "npm run build") {
+		result.Warnings = append(result.Warnings, models.ValidationWarning{
+			Field:   "Scripts",
+			Message: "Build script should use 'next build' for optimal Vercel deployment",
+		})
+	}
+}
+
+// validateNodeEngines validates Node.js engine specification
+func (vv *VercelValidator) validateNodeEngines(packageJSON map[string]interface{}, result *models.ValidationResult) {
+	engines, ok := packageJSON["engines"].(map[string]interface{})
+	if !ok {
+		return
+	}
+
+	nodeVersion, exists := engines["node"]
+	if !exists {
+		result.Warnings = append(result.Warnings, models.ValidationWarning{
+			Field:   "Engines",
+			Message: "Node.js version not specified - Vercel will use default version",
+		})
+		return
+	}
+
+	nodeStr, ok := nodeVersion.(string)
+	if !ok {
+		return
+	}
+
+	if !vv.isValidNodeVersionForVercel(nodeStr) {
+		result.Warnings = append(result.Warnings, models.ValidationWarning{
+			Field:   "Engines",
+			Message: fmt.Sprintf("Node.js version %s may not be supported by Vercel", nodeStr),
+		})
+	}
+}
+
+// validateNextJSDependency checks for Next.js dependency
+func (vv *VercelValidator) validateNextJSDependency(packageJSON map[string]interface{}, result *models.ValidationResult) {
+	deps, ok := packageJSON["dependencies"].(map[string]interface{})
+	if !ok {
+		return
+	}
+
+	if _, exists := deps["next"]; !exists {
+		result.Warnings = append(result.Warnings, models.ValidationWarning{
+			Field:   "Dependencies",
+			Message: "Next.js dependency not found - ensure framework is correctly specified",
+		})
+	}
 }
 
 // validateVercelConfig validates vercel.json configuration
@@ -449,51 +499,11 @@ func (vv *VercelValidator) validateEnvVarsConsistency(templateDirs []string, res
 
 		// Check vercel.json for environment variables
 		vercelConfigPath := filepath.Join(dir, "vercel.json.tmpl")
-		if _, err := os.Stat(vercelConfigPath); err == nil {
-			if vars, err := vv.extractEnvVarsFromVercelConfig(vercelConfigPath); err == nil {
-				result.Warnings = append(result.Warnings, models.ValidationWarning{
-					Field:   "Debug",
-					Message: fmt.Sprintf("Found %d env vars in %s vercel.json: %v", len(vars), templateName, vars),
-				})
-				for _, envVar := range vars {
-					envVars[templateName][envVar] = true
-				}
-			} else {
-				result.Warnings = append(result.Warnings, models.ValidationWarning{
-					Field:   "Debug",
-					Message: fmt.Sprintf("Error extracting env vars from %s vercel.json: %v", templateName, err),
-				})
-			}
-		} else {
-			result.Warnings = append(result.Warnings, models.ValidationWarning{
-				Field:   "Debug",
-				Message: fmt.Sprintf("No vercel.json.tmpl found for %s", templateName),
-			})
-		}
+		vv.processEnvVarFile(vercelConfigPath, templateName, "vercel.json", envVars, result)
 
 		// Check .env.example files
 		envExamplePath := filepath.Join(dir, ".env.example.tmpl")
-		if _, err := os.Stat(envExamplePath); err == nil {
-			if vars, err := vv.extractEnvVarsFromEnvFile(envExamplePath); err == nil {
-				result.Warnings = append(result.Warnings, models.ValidationWarning{
-					Field:   "Debug",
-					Message: fmt.Sprintf("Found %d env vars in %s .env.example: %v", len(vars), templateName, vars),
-				})
-				for _, envVar := range vars {
-					envVars[templateName][envVar] = true
-				}
-			} else {
-				result.Warnings = append(result.Warnings, models.ValidationWarning{
-					Field:   "Debug",
-					Message: fmt.Sprintf("Error extracting env vars from %s .env.example: %v", templateName, err),
-				})
-			}
-		} else {
-			result.Warnings = append(result.Warnings, models.ValidationWarning{
-				Field:   "Debug",
-				Message: fmt.Sprintf("No .env.example.tmpl found for %s", templateName),
-			})
-		}
+		vv.processEnvVarFile(envExamplePath, templateName, ".env.example", envVars, result)
 	}
 
 	// Compare environment variables across templates
@@ -537,6 +547,40 @@ func (vv *VercelValidator) validateSecurityHeaders(headers []interface{}, result
 				Message: fmt.Sprintf("Missing recommended security header: %s", requiredHeader),
 			})
 		}
+	}
+}
+
+// processEnvVarFile processes a single environment variable file (vercel.json or .env.example)
+func (vv *VercelValidator) processEnvVarFile(filePath, templateName, fileType string, envVars map[string]map[string]bool, result *models.ValidationResult) {
+	if _, err := os.Stat(filePath); err == nil {
+		var vars []string
+		var extractErr error
+
+		if fileType == "vercel" {
+			vars, extractErr = vv.extractEnvVarsFromVercelConfig(filePath)
+		} else {
+			vars, extractErr = vv.extractEnvVarsFromEnvFile(filePath)
+		}
+
+		if extractErr == nil {
+			result.Warnings = append(result.Warnings, models.ValidationWarning{
+				Field:   "Debug",
+				Message: fmt.Sprintf("Found %d env vars in %s %s: %v", len(vars), templateName, fileType, vars),
+			})
+			for _, envVar := range vars {
+				envVars[templateName][envVar] = true
+			}
+		} else {
+			result.Warnings = append(result.Warnings, models.ValidationWarning{
+				Field:   "Debug",
+				Message: fmt.Sprintf("Error extracting env vars from %s %s: %v", templateName, fileType, extractErr),
+			})
+		}
+	} else {
+		result.Warnings = append(result.Warnings, models.ValidationWarning{
+			Field:   "Debug",
+			Message: fmt.Sprintf("No %s.tmpl found for %s", fileType, templateName),
+		})
 	}
 }
 

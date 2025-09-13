@@ -10,6 +10,12 @@ import (
 	"github.com/open-source-template-generator/pkg/utils"
 )
 
+// contextKey is a custom type for context keys to avoid string collisions
+type contextKey string
+
+// resourceManagerKey is the context key for resource manager
+const resourceManagerKey contextKey = "resourceManager"
+
 // ResourceManager manages application resources and memory usage
 type ResourceManager struct {
 	memoryPool      *utils.MemoryPool
@@ -258,12 +264,12 @@ func (rm *ResourceManager) Close() error {
 
 // WithResourceManager creates a context with resource management
 func (rm *ResourceManager) WithResourceManager(ctx context.Context) context.Context {
-	return context.WithValue(ctx, "resourceManager", rm)
+	return context.WithValue(ctx, resourceManagerKey, rm)
 }
 
 // FromContext retrieves resource manager from context
 func FromContext(ctx context.Context) (*ResourceManager, bool) {
-	rm, ok := ctx.Value("resourceManager").(*ResourceManager)
+	rm, ok := ctx.Value(resourceManagerKey).(*ResourceManager)
 	return rm, ok
 }
 

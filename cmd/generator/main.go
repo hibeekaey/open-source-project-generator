@@ -2,7 +2,7 @@
 //
 // The generator is a comprehensive tool for creating production-ready, enterprise-grade
 // open source project structures following modern best practices. It supports multiple
-// technology stacks including Go 1.23+, Node.js 20+, Next.js 15+, React 19+, and more.
+// technology stacks including Go 1.24+, Node.js 20+, Next.js 15+, React 19+, and more.
 //
 // Usage:
 //
@@ -24,6 +24,13 @@ import (
 	"github.com/open-source-template-generator/internal/container"
 )
 
+// Version information set by build
+var (
+	Version   = "dev"
+	GitCommit = "unknown"
+	BuildTime = "unknown"
+)
+
 // main is the entry point for the Open Source Template Generator CLI application.
 // It initializes the dependency injection container, creates the application instance,
 // and handles proper cleanup and error reporting.
@@ -34,7 +41,7 @@ func main() {
 
 	// Create and configure the application with the initialized container
 	// This sets up all CLI commands, flags, and validation logic
-	application := app.NewApp(c)
+	application := app.NewAppWithVersion(c, Version, GitCommit, BuildTime)
 
 	// Ensure proper cleanup of resources when the application exits
 	// This includes closing file handles, network connections, and temporary files

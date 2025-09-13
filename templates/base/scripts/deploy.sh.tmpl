@@ -189,7 +189,7 @@ validate_prerequisites() {
                 read -p "Are you sure you want to continue? [y/N] " -n 1 -r
                 echo
                 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-                    log_info "Deployment cancelled"
+                    log_info "Deployment canceled"
                     exit 0
                 fi
             fi

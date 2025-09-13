@@ -4,7 +4,7 @@ FROM ubuntu:22.04
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y \
-    golang-1.23 \
+    golang-1.24 \
     git \
     ca-certificates \
     curl \
@@ -20,8 +20,8 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Set up Go environment
-ENV PATH="/usr/lib/go-1.23/bin:${PATH}"
-ENV GOROOT="/usr/lib/go-1.23"
+ENV PATH="/usr/lib/go-1.24/bin:${PATH}"
+ENV GOROOT="/usr/lib/go-1.24"
 ENV GOPATH="/go"
 ENV PATH="${GOPATH}/bin:${PATH}"
 

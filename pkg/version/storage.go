@@ -11,6 +11,7 @@ import (
 
 	yaml "gopkg.in/yaml.v3"
 
+	"github.com/open-source-template-generator/pkg/constants"
 	"github.com/open-source-template-generator/pkg/interfaces"
 	"github.com/open-source-template-generator/pkg/models"
 )
@@ -27,7 +28,7 @@ type FileStorage struct {
 
 // NewFileStorage creates a new file-based version storage
 func NewFileStorage(filePath string, format string) (*FileStorage, error) {
-	if format != "yaml" && format != "json" {
+	if format != constants.FormatYAML && format != constants.FormatJSON {
 		return nil, fmt.Errorf("unsupported format: %s, must be 'yaml' or 'json'", format)
 	}
 
@@ -78,11 +79,11 @@ func (fs *FileStorage) Load() (*models.VersionStore, error) {
 
 	var store models.VersionStore
 	switch fs.format {
-	case "yaml":
+	case constants.FormatYAML:
 		if err := yaml.Unmarshal(data, &store); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal YAML: %w", err)
 		}
-	case "json":
+	case constants.FormatJSON:
 		if err := json.Unmarshal(data, &store); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal JSON: %w", err)
 		}
@@ -120,12 +121,12 @@ func (fs *FileStorage) saveUnlocked(store *models.VersionStore) error {
 	var err error
 
 	switch fs.format {
-	case "yaml":
+	case constants.FormatYAML:
 		data, err = yaml.Marshal(store)
 		if err != nil {
 			return fmt.Errorf("failed to marshal YAML: %w", err)
 		}
-	case "json":
+	case constants.FormatJSON:
 		data, err = json.MarshalIndent(store, "", "  ")
 		if err != nil {
 			return fmt.Errorf("failed to marshal JSON: %w", err)
@@ -139,7 +140,7 @@ func (fs *FileStorage) saveUnlocked(store *models.VersionStore) error {
 	}
 
 	if err := os.Rename(tempFile, fs.filePath); err != nil {
-		os.Remove(tempFile) // Clean up on failure
+		_ = os.Remove(tempFile) // Clean up on failure
 		return fmt.Errorf("failed to atomically replace file: %w", err)
 	}
 
@@ -197,7 +198,7 @@ func (fs *FileStorage) SetVersionInfo(name string, info *models.VersionInfo) err
 		fs.store.Languages[name] = info
 	case "framework":
 		fs.store.Frameworks[name] = info
-	case "package":
+	case constants.FileTypePackage:
 		fs.store.Packages[name] = info
 	default:
 		return fmt.Errorf("unknown version info type: %s", info.Type)
@@ -326,8 +327,8 @@ func (fs *FileStorage) Restore(backupPath string) error {
 		return fmt.Errorf("failed to read backup file: %w", err)
 	}
 
-	if err := os.WriteFile(fs.filePath, backupData, 0644); err != nil {
-		return fmt.Errorf("failed to restore file: %w", err)
+	if writeErr := os.WriteFile(fs.filePath, backupData, 0644); writeErr != nil {
+		return fmt.Errorf("failed to restore file: %w", writeErr)
 	}
 
 	// Reload the store

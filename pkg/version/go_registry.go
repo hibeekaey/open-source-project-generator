@@ -122,7 +122,7 @@ func (r *GoRegistry) performGoVulnCheck(moduleName, version string) ([]models.Se
 	if err != nil {
 		return nil, fmt.Errorf("failed to perform vulnerability check: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// If vulnerability API is unavailable, return empty result rather than failing
 	if resp.StatusCode != http.StatusOK {
