@@ -798,7 +798,7 @@ func (a *App) runVersionCommand(showPackages bool) error {
 			fmt.Println()
 			fmt.Println("Latest Package Versions (defaults):")
 			fmt.Println("  Node.js: 20.11.0")
-			fmt.Println("  Go: 1.22.0")
+			fmt.Println("  Go: 1.24.0")
 			fmt.Println("  Next.js: 15.0.0")
 			fmt.Println("  React: 18.2.0")
 			fmt.Println("  Kotlin: 2.0.0")
