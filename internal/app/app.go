@@ -42,14 +42,23 @@ type App struct {
 	generator      interfaces.FileSystemGenerator
 	templateEngine interfaces.TemplateEngine
 	versionManager interfaces.VersionManager
+	// Version information
+	version   string
+	gitCommit string
+	buildTime string
 }
 
 // NewApp creates a new application instance with all required dependencies.
 //
+// Parameters:
+//   - appVersion: Application version string
+//   - gitCommit: Git commit hash
+//   - buildTime: Build timestamp
+//
 // Returns:
 //   - *App: New application instance ready for use
 //   - error: Any error that occurred during initialization
-func NewApp() (*App, error) {
+func NewApp(appVersion, gitCommit, buildTime string) (*App, error) {
 	// Initialize basic components
 	configManager := config.NewManager("", "")
 	validator := validation.NewEngine()
@@ -67,6 +76,9 @@ func NewApp() (*App, error) {
 		generator:      generator,
 		templateEngine: templateEngine,
 		versionManager: versionManager,
+		version:        appVersion,
+		gitCommit:      gitCommit,
+		buildTime:      buildTime,
 	}, nil
 }
 
@@ -244,7 +256,7 @@ func (a *App) runHelp(cmd *cobra.Command, args []string) error {
 
 // runVersion handles the version command
 func (a *App) runVersion(cmd *cobra.Command, args []string) error {
-	fmt.Println("Open Source Template Generator v1.0.0")
+	fmt.Printf("Open Source Template Generator %s\n", a.version)
 
 	packages, _ := cmd.Flags().GetBool("packages")
 	checkUpdates, _ := cmd.Flags().GetBool("check-updates")

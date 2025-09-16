@@ -44,7 +44,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -168,7 +168,7 @@ jobs:
 
       - name: Upload Windows artifacts
         if: matrix.os == 'windows'
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v4
         with:
           name: generator-${{ matrix.os }}-${{ matrix.arch }}
           path: dist/generator-${{ matrix.os }}-${{ matrix.arch }}.zip
@@ -182,7 +182,7 @@ jobs:
 
       - name: Upload non-Windows artifacts
         if: matrix.os != 'windows'
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v4
         with:
           name: generator-${{ matrix.os }}-${{ matrix.arch }}
           path: dist/generator-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
@@ -196,7 +196,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download Linux AMD64 artifact
         uses: actions/download-artifact@v5
@@ -237,7 +237,7 @@ jobs:
           ./scripts/build-packages.sh rpm
 
       - name: Upload package artifacts
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v4
         with:
           name: packages
           path: packages/
@@ -251,7 +251,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Get version
         id: version
@@ -262,10 +262,17 @@ jobs:
             echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Download all artifacts
+      - name: Download binary artifacts
         uses: actions/download-artifact@v5
         with:
           path: artifacts/
+          pattern: "generator-*"
+
+      - name: Download package artifacts
+        uses: actions/download-artifact@v5
+        with:
+          path: artifacts/
+          name: packages
 
       - name: Prepare release assets
         run: |
@@ -368,20 +375,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download Linux AMD64 artifact
-        uses: actions/download-artifact@v5
-        with:
-          name: generator-linux-amd64
-          path: dist/
-
-      - name: Extract binary
-        run: |
-          cd dist
-          echo "Files in dist directory:"
-          ls -la
-          tar -xzf generator-linux-amd64.tar.gz
+        uses: actions/checkout@v5
 
       - name: Get version
         id: version
@@ -402,28 +396,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
 
-      - name: Create Dockerfile
+      - name: Prepare build context
         run: |
-          cat > Dockerfile << 'EOF'
-          FROM alpine:latest
-
-          # Install ca-certificates for HTTPS requests
-          RUN apk --no-cache add ca-certificates git
-
-          # Create non-root user
-          RUN adduser -D -s /bin/sh generator
-
-          # Copy binary
-          COPY dist/generator-linux-amd64/generator /usr/local/bin/generator
-          RUN chmod +x /usr/local/bin/generator
-
-          # Switch to non-root user
-          USER generator
-          WORKDIR /workspace
-
-          ENTRYPOINT ["generator"]
-          CMD ["--help"]
-          EOF
+          # The Dockerfile already exists in the repo and will build from source
+          echo "Using existing Dockerfile for release build"
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
@@ -434,6 +410,10 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/open-source-project-generator:${{ steps.version.outputs.version }}
             ghcr.io/${{ github.repository_owner }}/open-source-project-generator:latest
           platforms: linux/amd64
+          build-args: |
+            VERSION=${{ steps.version.outputs.version }}
+            GIT_COMMIT=${{ github.sha }}
+            BUILD_TIME=${{ github.event.head_commit.timestamp }}
 
   notify:
     name: Notify Release
