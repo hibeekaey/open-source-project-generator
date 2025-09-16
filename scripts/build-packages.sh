@@ -7,9 +7,9 @@ set -e
 
 # Configuration
 APP_NAME="generator"
-APP_DESCRIPTION="Open Source Template Generator - Create production-ready project structures"
+APP_DESCRIPTION="Open Source Project Generator - Create production-ready project structures"
 APP_URL="https://github.com/cuesoftinc/open-source-project-generator"
-MAINTAINER="Open Source Template Generator Team <team@example.com>"
+MAINTAINER="Open Source Project Generator Team <team@example.com>"
 LICENSE="MIT"
 VERSION=${VERSION:-"1.0.0"}
 ARCH="amd64"
@@ -120,7 +120,7 @@ Priority: optional
 Architecture: ${ARCH}
 Maintainer: ${MAINTAINER}
 Description: ${APP_DESCRIPTION}
- The Open Source Template Generator creates production-ready project structures
+ The Open Source Project Generator creates production-ready project structures
  with modern best practices, including frontend applications, backend services,
  mobile applications, infrastructure code, and comprehensive documentation.
  .
@@ -211,7 +211,7 @@ URL:            ${APP_URL}
 BuildArch:      x86_64
 
 %description
-The Open Source Template Generator creates production-ready project structures
+The Open Source Project Generator creates production-ready project structures
 with modern best practices, including frontend applications, backend services,
 mobile applications, infrastructure code, and comprehensive documentation.
 
@@ -325,12 +325,12 @@ create_man_page() {
     cat > "$man_file" << 'EOF'
 .TH GENERATOR 1 "2024" "Generator 1.0" "User Commands"
 .SH NAME
-generator \- Open Source Template Generator
+generator \- Open Source Project Generator
 .SH SYNOPSIS
 .B generator
 [\fIOPTION\fR]... [\fICOMMAND\fR]
 .SH DESCRIPTION
-The Open Source Template Generator creates production-ready project structures with modern best practices, including frontend applications, backend services, mobile applications, infrastructure code, and comprehensive documentation.
+The Open Source Project Generator creates production-ready project structures with modern best practices, including frontend applications, backend services, mobile applications, infrastructure code, and comprehensive documentation.
 .SH COMMANDS
 .TP
 .B generate
@@ -375,7 +375,7 @@ User configuration file
 .I ~/.cache/generator/
 Cache directory for package versions
 .SH AUTHOR
-Open Source Template Generator Team
+Open Source Project Generator Team
 .SH REPORTING BUGS
 Report bugs at: https://github.com/cuesoftinc/open-source-project-generator/issues
 .SH COPYRIGHT
@@ -388,12 +388,12 @@ create_man_page_content() {
     cat << 'EOF'
 .TH GENERATOR 1 "2024" "Generator 1.0" "User Commands"
 .SH NAME
-generator \- Open Source Template Generator
+generator \- Open Source Project Generator
 .SH SYNOPSIS
 .B generator
 [\fIOPTION\fR]... [\fICOMMAND\fR]
 .SH DESCRIPTION
-The Open Source Template Generator creates production-ready project structures with modern best practices.
+The Open Source Project Generator creates production-ready project structures with modern best practices.
 .SH COMMANDS
 .TP
 .B generate
@@ -412,7 +412,7 @@ Show help message
 .B \-v, \-\-version
 Show version information
 .SH AUTHOR
-Open Source Template Generator Team
+Open Source Project Generator Team
 EOF
 }
 

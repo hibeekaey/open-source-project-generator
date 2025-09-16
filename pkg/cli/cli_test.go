@@ -88,7 +88,7 @@ func TestNewCLI(t *testing.T) {
 	configManager := &MockConfigManager{}
 	validator := &MockValidationEngine{}
 
-	cli := NewCLI(configManager, validator)
+	cli := NewCLI(configManager, validator, "test-version")
 
 	if cli == nil {
 		t.Fatal("NewCLI returned nil")
@@ -105,7 +105,7 @@ func TestNewCLI(t *testing.T) {
 
 func TestCLIWithNilDependencies(t *testing.T) {
 	// Test CLI with nil dependencies
-	cli := NewCLI(nil, nil)
+	cli := NewCLI(nil, nil, "test-version")
 
 	if cli == nil {
 		t.Fatal("NewCLI with nil dependencies should not return nil")
@@ -128,7 +128,7 @@ func TestCLIErrorHandling(t *testing.T) {
 	configManager := &MockConfigManager{err: testErr}
 	validator := &MockValidationEngine{err: testErr}
 
-	cli := NewCLI(configManager, validator)
+	cli := NewCLI(configManager, validator, "test-version")
 
 	if cli == nil {
 		t.Fatal("NewCLI returned nil")

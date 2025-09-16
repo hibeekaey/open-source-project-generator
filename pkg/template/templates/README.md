@@ -1,6 +1,6 @@
 # Templates Directory
 
-This directory contains all the template files used by the Open Source Template Generator. All templates use the latest stable versions of their respective technologies and follow modern best practices.
+This directory contains all the template files used by the Open Source Project Generator. All templates use the latest stable versions of their respective technologies and follow modern best practices.
 
 ## Structure
 

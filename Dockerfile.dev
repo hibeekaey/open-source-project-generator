@@ -1,4 +1,4 @@
-# Development Dockerfile for Open Source Template Generator
+# Development Dockerfile for Open Source Project Generator
 
 FROM golang:1.25-alpine
 

@@ -1,9 +1,77 @@
 # Changelog
 
-All notable changes to the Open Source Template Generator will be documented in this file.
+All notable changes to the Open Source Project Generator will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.3.0] - 2025-09-16 - Android Generation Fix & Configuration System
+
+### Added
+
+- **Comprehensive Configuration System**: Complete set of configuration examples for all use cases
+  - `config-full-usage.yaml/json` - Demonstrates all available features and components
+  - `config-minimal.yaml` - Minimal configuration for simple projects
+  - `config-frontend-only.yaml` - Frontend-focused applications
+  - `config-mobile-focused.yaml` - Mobile applications with backend API
+  - `config-enterprise.yaml` - Enterprise-grade full-stack platform
+- **Configuration Documentation**: Comprehensive `CONFIG_USAGE_GUIDE.md` with detailed usage instructions
+  - Complete configuration schema documentation
+  - Use case examples and best practices
+  - Command-line usage examples and troubleshooting guide
+- **Android Java Package Structure**: Proper Java package hierarchy generation
+  - Automatic creation of `java/[organization]/[project-name]/mobile/` structure
+  - Generated Application.kt file with proper package name and class name
+  - Package directories: core, data, di, domain, presentation with documentation
+- **Enhanced Version Configuration**: Extended package version support
+  - Frontend: React, Next.js, TypeScript, Tailwind CSS, ESLint, Prettier
+  - Backend: Gin, JWT, Validator, GORM, Redis client
+  - Mobile: Kotlin, Swift, Android Gradle Plugin
+  - Infrastructure: Docker, Kubernetes, Terraform, Helm, Prometheus, Grafana
+
+### Fixed
+
+- **CRITICAL: Android Generation**: Fixed Android templates not being generated
+  - Root cause: Go embed package cannot include directories with template variables (`{{.Organization}}`)
+  - Solution: Hybrid approach using embedded engine + manual Java package structure creation
+  - Android projects now generate complete Kotlin application structure
+- **Template Variable Processing**: Fixed template variables in directory names not being resolved
+  - `{{.Organization}}` and `{{.Name | lower}}` now properly processed in Android Java packages
+  - Consistent package naming across all generated Android files
+- **Configuration Validation**: Enhanced configuration validation and error handling
+  - Better error messages for invalid configurations
+  - Automatic fallbacks for missing configuration values
+
+### Changed
+
+- **Android Template Processing**: Switched from DirectoryProcessor to hybrid embedded engine approach
+  - Maintains compatibility with embedded templates while supporting template variables in paths
+  - Improved reliability and consistency of Android project generation
+- **Configuration Examples**: All configuration files now include comprehensive version specifications
+  - Latest stable versions for all supported technologies
+  - Production-ready version combinations tested for compatibility
+
+### Testing
+
+- **Android Generation Verification**: Comprehensive testing of Android template generation
+  - Verified Java package structure creation with multiple configurations
+  - Tested template variable resolution in directory names
+  - Confirmed Application.kt generation with proper package imports
+- **Configuration System Testing**: Validated all configuration examples
+  - Full-usage configuration generates complete multi-platform project
+  - Minimal configuration works with sensible defaults
+  - Specialized configurations (frontend-only, mobile-focused, enterprise) generate appropriate structures
+
+### Documentation
+
+- **Usage Guide**: Complete configuration usage documentation
+  - Step-by-step instructions for all configuration options
+  - Command-line examples and best practices
+  - Troubleshooting guide for common issues
+- **Configuration Schema**: Detailed documentation of all configuration fields
+  - Required vs optional fields clearly marked
+  - Supported values and validation rules
+  - Examples for each configuration section
 
 ## [1.2.0] - 2025-09-16 - Security & Template Improvements
 
@@ -110,7 +178,7 @@ This version consolidates all development work leading up to the first stable re
 
 #### Core Features Developed
 
-- Initial Open Source Template Generator implementation
+- Initial Open Source Project Generator implementation
 - Support for frontend templates (Next.js, React)
 - Support for backend templates (Go + Gin)
 - Support for mobile templates (Android Kotlin, iOS Swift)

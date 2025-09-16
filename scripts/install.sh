@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Installation script for Open Source Template Generator
+# Installation script for Open Source Project Generator
 # This script automatically detects the platform and installs the appropriate binary
 
 set -e
@@ -284,7 +284,7 @@ verify_installation() {
 
 # Show usage
 show_usage() {
-    echo "Open Source Template Generator Installation Script"
+    echo "Open Source Project Generator Installation Script"
     echo ""
     echo "Usage: $0 [OPTIONS]"
     echo ""
@@ -354,7 +354,7 @@ check_requirements() {
 
 # Main installation function
 main() {
-    echo "Open Source Template Generator Installation Script"
+    echo "Open Source Project Generator Installation Script"
     echo "================================================="
     echo ""
     

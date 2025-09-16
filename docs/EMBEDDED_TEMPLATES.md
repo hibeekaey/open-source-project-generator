@@ -1,6 +1,6 @@
 # Embedded Templates
 
-The Open Source Template Generator uses Go's `embed` package to bundle all templates directly into the binary, making it completely self-contained and portable.
+The Open Source Project Generator uses Go's `embed` package to bundle all templates directly into the binary, making it completely self-contained and portable.
 
 ## How It Works
 

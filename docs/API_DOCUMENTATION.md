@@ -1,6 +1,6 @@
 # API Documentation
 
-This document provides comprehensive API documentation for the Open Source Template Generator.
+This document provides comprehensive API documentation for the Open Source Project Generator.
 
 ## Table of Contents
 
@@ -19,7 +19,7 @@ This document provides comprehensive API documentation for the Open Source Templ
 
 ## Overview
 
-The Open Source Template Generator provides a comprehensive API for generating production-ready project structures. The API is organized into several core interfaces that handle different aspects of project generation:
+The Open Source Project Generator provides a comprehensive API for generating production-ready project structures. The API is organized into several core interfaces that handle different aspects of project generation:
 
 - **CLI Interface**: Interactive command-line operations
 - **Template Engine**: Template processing and rendering
@@ -689,4 +689,4 @@ if len(vulnerabilities) > 0 {
 
 ---
 
-This API documentation provides comprehensive coverage of the Open Source Template Generator's public interfaces and usage patterns. For additional examples and implementation details, refer to the source code and test files in the respective packages.
+This API documentation provides comprehensive coverage of the Open Source Project Generator's public interfaces and usage patterns. For additional examples and implementation details, refer to the source code and test files in the respective packages.

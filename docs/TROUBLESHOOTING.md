@@ -1,6 +1,6 @@
 # Troubleshooting Guide
 
-This guide helps you resolve common issues with the Open Source Template Generator installation and usage.
+This guide helps you resolve common issues with the Open Source Project Generator installation and usage.
 
 ## Installation Issues
 

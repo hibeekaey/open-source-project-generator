@@ -1,4 +1,4 @@
-// Package template provides template processing capabilities for the Open Source Template Generator.
+// Package template provides template processing capabilities for the Open Source Project Generator.
 //
 // This package implements the TemplateEngine interface and provides:
 //   - Template file loading and parsing

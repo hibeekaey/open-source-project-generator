@@ -1,4 +1,4 @@
-// Package constants provides centralized constants for the Open Source Template Generator.
+// Package constants provides centralized constants for the Open Source Project Generator.
 //
 // This package defines commonly used constants across the application to ensure
 // consistency, reduce duplication, and improve maintainability. Constants are

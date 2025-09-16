@@ -1,0 +1,58 @@
+{
+  "name": "my-awesome-project",
+  "organization": "my-organization",
+  "description": "A comprehensive full-stack application with mobile apps and infrastructure",
+  "license": "MIT",
+  "author": "Your Name",
+  "email": "your.email@example.com",
+  "repository": "https://github.com/my-organization/my-awesome-project",
+  "output_path": "output/generated",
+  "components": {
+    "frontend": {
+      "nextjs": {
+        "app": true,
+        "home": true,
+        "admin": true,
+        "shared": true
+      }
+    },
+    "backend": {
+      "go_gin": true
+    },
+    "mobile": {
+      "android": true,
+      "ios": true
+    },
+    "infrastructure": {
+      "docker": true,
+      "kubernetes": true,
+      "terraform": true
+    }
+  },
+  "versions": {
+    "node": "20.11.0",
+    "go": "1.22.0",
+    "packages": {
+      "react": "18.2.0",
+      "next": "15.0.0",
+      "typescript": "5.3.0",
+      "tailwindcss": "3.4.0",
+      "eslint": "8.56.0",
+      "prettier": "3.2.0",
+      "@types/react": "18.2.0",
+      "@types/node": "20.11.0",
+      "gin-gonic/gin": "v1.9.1",
+      "golang-jwt/jwt": "v5.0.0",
+      "go-playground/validator": "v10.16.0",
+      "kotlin": "2.0.0",
+      "swift": "5.9.0",
+      "android-gradle-plugin": "8.2.0",
+      "docker": "24.0.0",
+      "kubernetes": "1.29.0",
+      "terraform": "1.6.0",
+      "helm": "3.13.0"
+    }
+  },
+  "generated_at": "2024-01-01T00:00:00Z",
+  "generator_version": "auto"
+}

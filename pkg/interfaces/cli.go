@@ -1,5 +1,5 @@
 // Package interfaces defines the core contracts and interfaces for the
-// Open Source Template Generator components.
+// Open Source Project Generator components.
 //
 // This package contains interface definitions that enable dependency injection,
 // testing, and modular architecture throughout the application.
