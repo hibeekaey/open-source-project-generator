@@ -90,15 +90,15 @@ jobs:
       run: |
         # Build Docker images first
         docker build -t {{.Organization}}/{{.Name | lower}}-api:latest -f CommonServer/Dockerfile .
-        {{if .Components.Frontend.MainApp}}docker build -t {{.Organization}}/{{.Name | lower}}-app:latest -f App/Dockerfile .{{end}}
-        {{if .Components.Frontend.Home}}docker build -t {{.Organization}}/{{.Name | lower}}-home:latest -f Home/Dockerfile .{{end}}
-        {{if .Components.Frontend.Admin}}docker build -t {{.Organization}}/{{.Name | lower}}-admin:latest -f Admin/Dockerfile .{{end}}
+        {{if .Components.Frontend.NextJS.App}}docker build -t {{.Organization}}/{{.Name | lower}}-app:latest -f App/Dockerfile .{{end}}
+        {{if .Components.Frontend.NextJS.Home}}docker build -t {{.Organization}}/{{.Name | lower}}-home:latest -f Home/Dockerfile .{{end}}
+        {{if .Components.Frontend.NextJS.Admin}}docker build -t {{.Organization}}/{{.Name | lower}}-admin:latest -f Admin/Dockerfile .{{end}}
         
         # Scan images
         trivy image --format sarif --output api-trivy-results.sarif {{.Organization}}/{{.Name | lower}}-api:latest
-        {{if .Components.Frontend.MainApp}}trivy image --format sarif --output app-trivy-results.sarif {{.Organization}}/{{.Name | lower}}-app:latest{{end}}
-        {{if .Components.Frontend.Home}}trivy image --format sarif --output home-trivy-results.sarif {{.Organization}}/{{.Name | lower}}-home:latest{{end}}
-        {{if .Components.Frontend.Admin}}trivy image --format sarif --output admin-trivy-results.sarif {{.Organization}}/{{.Name | lower}}-admin:latest{{end}}
+        {{if .Components.Frontend.NextJS.App}}trivy image --format sarif --output app-trivy-results.sarif {{.Organization}}/{{.Name | lower}}-app:latest{{end}}
+        {{if .Components.Frontend.NextJS.Home}}trivy image --format sarif --output home-trivy-results.sarif {{.Organization}}/{{.Name | lower}}-home:latest{{end}}
+        {{if .Components.Frontend.NextJS.Admin}}trivy image --format sarif --output admin-trivy-results.sarif {{.Organization}}/{{.Name | lower}}-admin:latest{{end}}
 
   dependency-audit:
     name: Dependency Audit
@@ -120,13 +120,13 @@ jobs:
 
     - name: Audit Node.js dependencies
       run: |
-        {{if .Components.Frontend.MainApp}}
+        {{if .Components.Frontend.NextJS.App}}
         cd App && npm audit --audit-level=moderate
         {{end}}
-        {{if .Components.Frontend.Home}}
+        {{if .Components.Frontend.NextJS.Home}}
         cd Home && npm audit --audit-level=moderate
         {{end}}
-        {{if .Components.Frontend.Admin}}
+        {{if .Components.Frontend.NextJS.Admin}}
         cd Admin && npm audit --audit-level=moderate
         {{end}}
 
@@ -180,13 +180,13 @@ jobs:
 
     - name: Check frontend licenses
       run: |
-        {{if .Components.Frontend.MainApp}}
+        {{if .Components.Frontend.NextJS.App}}
         cd App && license-checker --onlyAllow 'MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD'
         {{end}}
-        {{if .Components.Frontend.Home}}
+        {{if .Components.Frontend.NextJS.Home}}
         cd Home && license-checker --onlyAllow 'MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD'
         {{end}}
-        {{if .Components.Frontend.Admin}}
+        {{if .Components.Frontend.NextJS.Admin}}
         cd Admin && license-checker --onlyAllow 'MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD'
         {{end}}
 

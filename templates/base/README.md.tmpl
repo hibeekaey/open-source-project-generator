@@ -43,9 +43,9 @@ Visit [http://localhost:3000](http://localhost:3000) to see your application run
 ## ✨ Features
 
 {{if .Components.Frontend.NextJS.App}}- **Modern Frontend**: Next.js {{.Versions.Packages.next}} with TypeScript, Tailwind CSS, and App Router{{end}}
-{{if .Components.Frontend.Home}}- **Landing Page**: Responsive marketing site with modern design{{end}}
-{{if .Components.Frontend.Admin}}- **Admin Dashboard**: Comprehensive admin interface with data management{{end}}
-{{if .Components.Backend.API}}- **REST API**: Go {{.Versions.Go}} backend with Gin framework and comprehensive middleware{{end}}
+{{if .Components.Frontend.NextJS.Home}}- **Landing Page**: Responsive marketing site with modern design{{end}}
+{{if .Components.Frontend.NextJS.Admin}}- **Admin Dashboard**: Comprehensive admin interface with data management{{end}}
+{{if .Components.Backend.GoGin}}- **REST API**: Go {{.Versions.Go}} backend with Gin framework and comprehensive middleware{{end}}
 {{if .Components.Mobile.Android}}- **Android App**: Native Android application with Kotlin {{.Versions.Packages.kotlin}} and Jetpack Compose{{end}}
 {{if .Components.Mobile.IOS}}- **iOS App**: Native iOS application with Swift {{.Versions.Packages.swift}} and SwiftUI{{end}}
 {{if .Components.Infrastructure.Docker}}- **Containerization**: Docker and Docker Compose for easy deployment{{end}}
@@ -63,10 +63,10 @@ Visit [http://localhost:3000](http://localhost:3000) to see your application run
 ```
 {{.Name}}/
 ├── 📱 Frontend Applications
-{{if .Components.Frontend.MainApp}}│   ├── App/                 # Main Next.js application{{end}}
-{{if .Components.Frontend.Home}}│   ├── Home/                # Landing page{{end}}
-{{if .Components.Frontend.Admin}}│   └── Admin/               # Admin dashboard{{end}}
-{{if .Components.Backend.API}}├── 🔧 Backend Services
+{{if .Components.Frontend.NextJS.App}}│   ├── App/                 # Main Next.js application{{end}}
+{{if .Components.Frontend.NextJS.Home}}│   ├── Home/                # Landing page{{end}}
+{{if .Components.Frontend.NextJS.Admin}}│   └── Admin/               # Admin dashboard{{end}}
+{{if .Components.Backend.GoGin}}├── 🔧 Backend Services
 │   └── CommonServer/        # Go API server{{end}}
 {{if or .Components.Mobile.Android .Components.Mobile.IOS}}├── 📱 Mobile Applications
 {{if .Components.Mobile.Android}}│   ├── Android/             # Kotlin Android app{{end}}
@@ -83,7 +83,7 @@ Visit [http://localhost:3000](http://localhost:3000) to see your application run
 
 ### Technology Stack
 
-{{if .Components.Frontend.MainApp}}#### Frontend
+{{if .Components.Frontend.NextJS.App}}#### Frontend
 - **Framework**: Next.js {{.Versions.Packages.next}} with App Router
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
@@ -91,7 +91,7 @@ Visit [http://localhost:3000](http://localhost:3000) to see your application run
 - **State Management**: Zustand / React Context
 - **Testing**: Jest, React Testing Library, Playwright{{end}}
 
-{{if .Components.Backend.API}}#### Backend
+{{if .Components.Backend.GoGin}}#### Backend
 - **Language**: Go {{.Versions.Go}}
 - **Framework**: Gin
 - **Database**: PostgreSQL with GORM
@@ -121,9 +121,9 @@ Before you begin, ensure you have the following installed:
 ### Required
 - **Git**: Version control
 - **Make**: Build automation (usually pre-installed on macOS/Linux)
-{{if .Components.Frontend.MainApp}}- **Node.js**: {{.Versions.Node}} or later
+{{if .Components.Frontend.NextJS.App}}- **Node.js**: {{.Versions.Node}} or later
 - **npm/yarn**: Package manager{{end}}
-{{if .Components.Backend.API}}- **Go**: {{.Versions.Go}} or later{{end}}
+{{if .Components.Backend.GoGin}}- **Go**: {{.Versions.Go}} or later{{end}}
 {{if .Components.Infrastructure.Docker}}- **Docker**: Latest stable version
 - **Docker Compose**: V2 or later{{end}}
 
@@ -154,11 +154,11 @@ cd {{.Name}}
 ```bash
 # Copy environment templates
 cp .env.example .env.local
-{{if .Components.Backend.API}}cp CommonServer/.env.example CommonServer/.env{{end}}
+{{if .Components.Backend.GoGin}}cp CommonServer/.env.example CommonServer/.env{{end}}
 
 # Edit environment variables
 nano .env.local
-{{if .Components.Backend.API}}nano CommonServer/.env{{end}}
+{{if .Components.Backend.GoGin}}nano CommonServer/.env{{end}}
 ```
 
 ### 3. Automated Setup
@@ -169,8 +169,8 @@ make setup
 ```
 
 This command will:
-{{if .Components.Frontend.MainApp}}- Install Node.js dependencies{{end}}
-{{if .Components.Backend.API}}- Install Go dependencies
+{{if .Components.Frontend.NextJS.App}}- Install Node.js dependencies{{end}}
+{{if .Components.Backend.GoGin}}- Install Go dependencies
 - Set up database schema{{end}}
 - Configure development tools
 - Validate the installation
@@ -179,24 +179,24 @@ This command will:
 
 If you prefer manual setup:
 
-{{if .Components.Frontend.MainApp}}```bash
+{{if .Components.Frontend.NextJS.App}}```bash
 # Frontend setup
 cd App
 npm install
 cd ..
-{{if .Components.Frontend.Home}}
+{{if .Components.Frontend.NextJS.Home}}
 cd Home
 npm install
 cd ..
 {{end}}
-{{if .Components.Frontend.Admin}}
+{{if .Components.Frontend.NextJS.Admin}}
 cd Admin
 npm install
 cd ..
 {{end}}
 ```{{end}}
 
-{{if .Components.Backend.API}}```bash
+{{if .Components.Backend.GoGin}}```bash
 # Backend setup
 cd CommonServer
 go mod download
@@ -214,25 +214,25 @@ make dev
 ```
 
 This will start:
-{{if .Components.Frontend.MainApp}}- Frontend application at [http://localhost:3000](http://localhost:3000){{end}}
-{{if .Components.Frontend.Home}}- Landing page at [http://localhost:3001](http://localhost:3001){{end}}
-{{if .Components.Frontend.Admin}}- Admin dashboard at [http://localhost:3002](http://localhost:3002){{end}}
-{{if .Components.Backend.API}}- Backend API at [http://localhost:8080](http://localhost:8080){{end}}
+{{if .Components.Frontend.NextJS.App}}- Frontend application at [http://localhost:3000](http://localhost:3000){{end}}
+{{if .Components.Frontend.NextJS.Home}}- Landing page at [http://localhost:3001](http://localhost:3001){{end}}
+{{if .Components.Frontend.NextJS.Admin}}- Admin dashboard at [http://localhost:3002](http://localhost:3002){{end}}
+{{if .Components.Backend.GoGin}}- Backend API at [http://localhost:8080](http://localhost:8080){{end}}
 - Development database and cache services
 
 ### Individual Service Development
 
-{{if .Components.Frontend.MainApp}}```bash
+{{if .Components.Frontend.NextJS.App}}```bash
 # Frontend only
 make dev-frontend
 
 # Specific frontend app
 cd App && npm run dev
-{{if .Components.Frontend.Home}}cd Home && npm run dev{{end}}
-{{if .Components.Frontend.Admin}}cd Admin && npm run dev{{end}}
+{{if .Components.Frontend.NextJS.Home}}cd Home && npm run dev{{end}}
+{{if .Components.Frontend.NextJS.Admin}}cd Admin && npm run dev{{end}}
 ```{{end}}
 
-{{if .Components.Backend.API}}```bash
+{{if .Components.Backend.GoGin}}```bash
 # Backend only
 make dev-backend
 
@@ -253,7 +253,7 @@ make lint
 make typecheck
 
 # Database operations
-{{if .Components.Backend.API}}make db-migrate      # Run migrations
+{{if .Components.Backend.GoGin}}make db-migrate      # Run migrations
 make db-seed        # Seed test data
 make db-reset       # Reset database{{end}}
 ```
@@ -261,8 +261,8 @@ make db-reset       # Reset database{{end}}
 ### Hot Reloading
 
 All services support hot reloading:
-{{if .Components.Frontend.MainApp}}- **Frontend**: Automatic reload on file changes{{end}}
-{{if .Components.Backend.API}}- **Backend**: Uses Air for Go hot reloading{{end}}
+{{if .Components.Frontend.NextJS.App}}- **Frontend**: Automatic reload on file changes{{end}}
+{{if .Components.Backend.GoGin}}- **Backend**: Uses Air for Go hot reloading{{end}}
 - **Database**: Schema changes via migrations
 
 ## 🧪 Testing
@@ -282,7 +282,7 @@ make test-watch
 
 ### Component-Specific Testing
 
-{{if .Components.Frontend.MainApp}}```bash
+{{if .Components.Frontend.NextJS.App}}```bash
 # Frontend tests
 make test-frontend
 
@@ -296,7 +296,7 @@ cd App && npm run test:integration
 cd App && npm run test:e2e
 ```{{end}}
 
-{{if .Components.Backend.API}}```bash
+{{if .Components.Backend.GoGin}}```bash
 # Backend tests
 make test-backend
 
@@ -397,7 +397,7 @@ terraform apply
 
 Required environment variables for deployment:
 
-{{if .Components.Backend.API}}#### Backend
+{{if .Components.Backend.GoGin}}#### Backend
 ```bash
 DATABASE_URL=postgresql://user:pass@localhost/{{.Name}}
 REDIS_URL=redis://localhost:6379
@@ -405,7 +405,7 @@ JWT_SECRET=your-jwt-secret
 API_PORT=8080
 ```{{end}}
 
-{{if .Components.Frontend.MainApp}}#### Frontend
+{{if .Components.Frontend.NextJS.App}}#### Frontend
 ```bash
 NEXT_PUBLIC_API_URL=http://localhost:8080
 NEXT_PUBLIC_APP_ENV=development
@@ -415,7 +415,7 @@ See `.env.example` files for complete configuration options.
 
 ## 📚 API Documentation
 
-{{if .Components.Backend.API}}### REST API
+{{if .Components.Backend.GoGin}}### REST API
 
 The API documentation is available at:
 - **Development**: [http://localhost:8080/docs](http://localhost:8080/docs)

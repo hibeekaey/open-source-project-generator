@@ -46,11 +46,11 @@ spec:
   tls:
   - hosts:
     - {{.Name}}.{{.Organization}}.com
-    {{if .Components.Frontend.Home}}- home.{{.Name}}.{{.Organization}}.com{{end}}
-    {{if .Components.Frontend.Admin}}- admin.{{.Name}}.{{.Organization}}.com{{end}}
+    {{if .Components.Frontend.NextJS.Home}}- home.{{.Name}}.{{.Organization}}.com{{end}}
+    {{if .Components.Frontend.NextJS.Admin}}- admin.{{.Name}}.{{.Organization}}.com{{end}}
     secretName: {{.Name}}-tls
   rules:
-  {{if .Components.Frontend.MainApp}}
+  {{if .Components.Frontend.NextJS.App}}
   - host: {{.Name}}.{{.Organization}}.com
     http:
       paths:
@@ -61,7 +61,7 @@ spec:
             name: {{.Name}}-app-service
             port:
               number: 3000
-      {{if .Components.Backend.API}}
+      {{if .Components.Backend.GoGin}}
       - path: /api
         pathType: Prefix
         backend:
@@ -72,7 +72,7 @@ spec:
       {{end}}
   {{end}}
   
-  {{if .Components.Frontend.Home}}
+  {{if .Components.Frontend.NextJS.Home}}
   - host: home.{{.Name}}.{{.Organization}}.com
     http:
       paths:
@@ -85,7 +85,7 @@ spec:
               number: 3000
   {{end}}
   
-  {{if .Components.Frontend.Admin}}
+  {{if .Components.Frontend.NextJS.Admin}}
   - host: admin.{{.Name}}.{{.Organization}}.com
     http:
       paths:
@@ -96,7 +96,7 @@ spec:
             name: {{.Name}}-admin-service
             port:
               number: 3000
-      {{if .Components.Backend.API}}
+      {{if .Components.Backend.GoGin}}
       - path: /api
         pathType: Prefix
         backend:

@@ -226,16 +226,16 @@ show_status() {
 # Show service URLs
 show_urls() {
     log_info "Service URLs:"
-    {{if .Components.Frontend.MainApp}}
+    {{if .Components.Frontend.NextJS.App}}
     echo "  App:     http://localhost:3000"
     {{end}}
-    {{if .Components.Frontend.Home}}
+    {{if .Components.Frontend.NextJS.Home}}
     echo "  Home:    http://localhost:3001"
     {{end}}
-    {{if .Components.Frontend.Admin}}
+    {{if .Components.Frontend.NextJS.Admin}}
     echo "  Admin:   http://localhost:3002"
     {{end}}
-    {{if .Components.Backend.API}}
+    {{if .Components.Backend.GoGin}}
     echo "  API:     http://localhost:8080"
     {{end}}
     echo "  Grafana: http://localhost:3003 (admin/admin)"

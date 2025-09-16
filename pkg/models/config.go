@@ -13,6 +13,7 @@ type ProjectConfig struct {
 	License      string `yaml:"license" json:"license"`
 	Author       string `yaml:"author" json:"author"`
 	Email        string `yaml:"email" json:"email"`
+	Repository   string `yaml:"repository" json:"repository"`
 
 	// Component selection
 	Components Components `yaml:"components" json:"components"`
@@ -38,6 +39,12 @@ type Components struct {
 
 // FrontendComponents defines frontend application options
 type FrontendComponents struct {
+	// New format (documented)
+	MainApp bool `yaml:"main_app" json:"main_app"`
+	Home    bool `yaml:"home" json:"home"`
+	Admin   bool `yaml:"admin" json:"admin"`
+
+	// Legacy format (for backward compatibility)
 	NextJS NextJSComponents `yaml:"nextjs" json:"nextjs"`
 }
 
@@ -51,6 +58,10 @@ type NextJSComponents struct {
 
 // BackendComponents defines backend application options
 type BackendComponents struct {
+	// New format (documented)
+	API bool `yaml:"api" json:"api"`
+
+	// Legacy format (for backward compatibility)
 	GoGin bool `yaml:"go_gin" json:"go_gin"`
 }
 

@@ -35,7 +35,7 @@
 /App/Dockerfile @{{.Organization}}/frontend-team @{{.Organization}}/devops-team
 {{end}}
 
-{{if .Components.Frontend.Home}}
+{{if .Components.Frontend.NextJS.Home}}
 # Frontend - Home/Landing
 /Home/ @{{.Organization}}/frontend-team @{{.Organization}}/maintainers
 /Home/package.json @{{.Organization}}/frontend-team @{{.Organization}}/maintainers
@@ -45,7 +45,7 @@
 /Home/Dockerfile @{{.Organization}}/frontend-team @{{.Organization}}/devops-team
 {{end}}
 
-{{if .Components.Frontend.Admin}}
+{{if .Components.Frontend.NextJS.Admin}}
 # Frontend - Admin Dashboard
 /Admin/ @{{.Organization}}/frontend-team @{{.Organization}}/maintainers
 /Admin/package.json @{{.Organization}}/frontend-team @{{.Organization}}/maintainers

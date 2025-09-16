@@ -19,8 +19,8 @@ DOCKER_REGISTRY ?= ghcr.io/{{.Organization}}
 DOCKER_TAG ?= $(VERSION)
 
 # Directories
-{{if or (or .Components.Frontend.MainApp .Components.Frontend.Home) .Components.Frontend.Admin}}FRONTEND_DIRS := {{if .Components.Frontend.MainApp}}App{{end}}{{if .Components.Frontend.Home}} Home{{end}}{{if .Components.Frontend.Admin}} Admin{{end}}{{end}}
-{{if .Components.Backend.API}}BACKEND_DIR := CommonServer{{end}}
+{{if or (or .Components.Frontend.NextJS.App .Components.Frontend.NextJS.Home) .Components.Frontend.NextJS.Admin}}FRONTEND_DIRS := {{if .Components.Frontend.NextJS.App}}App{{end}}{{if .Components.Frontend.NextJS.Home}} Home{{end}}{{if .Components.Frontend.NextJS.Admin}} Admin{{end}}{{end}}
+{{if .Components.Backend.GoGin}}BACKEND_DIR := CommonServer{{end}}
 {{if or .Components.Mobile.Android .Components.Mobile.IOS}}MOBILE_DIR := Mobile{{end}}
 DOCS_DIR := Docs
 SCRIPTS_DIR := Scripts
@@ -46,27 +46,27 @@ setup: ## Setup development environment
 .PHONY: install-deps
 install-deps: ## Install all project dependencies
 	@echo "$(BLUE)Installing dependencies...$(RESET)"
-{{if or (or .Components.Frontend.MainApp .Components.Frontend.Home) .Components.Frontend.Admin}}	@$(MAKE) install-frontend-deps{{end}}
-{{if .Components.Backend.API}}	@$(MAKE) install-backend-deps{{end}}
+{{if or (or .Components.Frontend.NextJS.App .Components.Frontend.NextJS.Home) .Components.Frontend.NextJS.Admin}}	@$(MAKE) install-frontend-deps{{end}}
+{{if .Components.Backend.GoGin}}	@$(MAKE) install-backend-deps{{end}}
 {{if or .Components.Mobile.Android .Components.Mobile.IOS}}	@$(MAKE) install-mobile-deps{{end}}
 
-{{if or (or .Components.Frontend.MainApp .Components.Frontend.Home) .Components.Frontend.Admin}}.PHONY: install-frontend-deps
+{{if or (or .Components.Frontend.NextJS.App .Components.Frontend.NextJS.Home) .Components.Frontend.NextJS.Admin}}.PHONY: install-frontend-deps
 install-frontend-deps: ## Install frontend dependencies
 	@echo "$(BLUE)Installing frontend dependencies...$(RESET)"
-{{if .Components.Frontend.MainApp}}	@if [ -d "App" ]; then \
+{{if .Components.Frontend.NextJS.App}}	@if [ -d "App" ]; then \
 		echo "$(CYAN)Installing dependencies for App...$(RESET)"; \
 		cd App && npm ci; \
 	fi{{end}}
-{{if .Components.Frontend.Home}}	@if [ -d "Home" ]; then \
+{{if .Components.Frontend.NextJS.Home}}	@if [ -d "Home" ]; then \
 		echo "$(CYAN)Installing dependencies for Home...$(RESET)"; \
 		cd Home && npm ci; \
 	fi{{end}}
-{{if .Components.Frontend.Admin}}	@if [ -d "Admin" ]; then \
+{{if .Components.Frontend.NextJS.Admin}}	@if [ -d "Admin" ]; then \
 		echo "$(CYAN)Installing dependencies for Admin...$(RESET)"; \
 		cd Admin && npm ci; \
 	fi{{end}}{{end}}
 
-{{if .Components.Backend.API}}.PHONY: install-backend-deps
+{{if .Components.Backend.GoGin}}.PHONY: install-backend-deps
 install-backend-deps: ## Install backend dependencies
 	@echo "$(BLUE)Installing backend dependencies...$(RESET)"
 	@cd $(BACKEND_DIR) && go mod download && go mod tidy{{end}}
@@ -87,19 +87,19 @@ install-mobile-deps: ## Install mobile dependencies
 .PHONY: dev
 dev: ## Start development environment
 	@echo "$(BLUE)Starting development environment...$(RESET)"
-{{if or (or .Components.Frontend.MainApp .Components.Frontend.Home) .Components.Frontend.Admin}}	@$(MAKE) dev-frontend &{{end}}
-{{if .Components.Backend.API}}	@$(MAKE) dev-backend &{{end}}
+{{if or (or .Components.Frontend.NextJS.App .Components.Frontend.NextJS.Home) .Components.Frontend.NextJS.Admin}}	@$(MAKE) dev-frontend &{{end}}
+{{if .Components.Backend.GoGin}}	@$(MAKE) dev-backend &{{end}}
 	@wait
 
-{{if or (or .Components.Frontend.MainApp .Components.Frontend.Home) .Components.Frontend.Admin}}.PHONY: dev-frontend
+{{if or (or .Components.Frontend.NextJS.App .Components.Frontend.NextJS.Home) .Components.Frontend.NextJS.Admin}}.PHONY: dev-frontend
 dev-frontend: ## Start frontend development servers
 	@echo "$(CYAN)Starting frontend development servers...$(RESET)"
-{{if .Components.Frontend.MainApp}}	@cd App && npm run dev &{{end}}
-{{if .Components.Frontend.Home}}	@cd Home && npm run dev &{{end}}
-{{if .Components.Frontend.Admin}}	@cd Admin && npm run dev &{{end}}
+{{if .Components.Frontend.NextJS.App}}	@cd App && npm run dev &{{end}}
+{{if .Components.Frontend.NextJS.Home}}	@cd Home && npm run dev &{{end}}
+{{if .Components.Frontend.NextJS.Admin}}	@cd Admin && npm run dev &{{end}}
 	@wait{{end}}
 
-{{if .Components.Backend.API}}.PHONY: dev-backend
+{{if .Components.Backend.GoGin}}.PHONY: dev-backend
 dev-backend: ## Start backend development server
 	@echo "$(CYAN)Starting backend development server...$(RESET)"
 	@cd $(BACKEND_DIR) && go run main.go{{end}}
@@ -108,28 +108,28 @@ dev-backend: ## Start backend development server
 .PHONY: test
 test: ## Run all tests
 	@echo "$(BLUE)Running all tests...$(RESET)"
-{{if or (or .Components.Frontend.MainApp .Components.Frontend.Home) .Components.Frontend.Admin}}	@$(MAKE) test-frontend{{end}}
-{{if .Components.Backend.API}}	@$(MAKE) test-backend{{end}}
+{{if or (or .Components.Frontend.NextJS.App .Components.Frontend.NextJS.Home) .Components.Frontend.NextJS.Admin}}	@$(MAKE) test-frontend{{end}}
+{{if .Components.Backend.GoGin}}	@$(MAKE) test-backend{{end}}
 {{if or .Components.Mobile.Android .Components.Mobile.IOS}}	@$(MAKE) test-mobile{{end}}
 	@echo "$(GREEN)✅ All tests completed$(RESET)"
 
-{{if or (or .Components.Frontend.MainApp .Components.Frontend.Home) .Components.Frontend.Admin}}.PHONY: test-frontend
+{{if or (or .Components.Frontend.NextJS.App .Components.Frontend.NextJS.Home) .Components.Frontend.NextJS.Admin}}.PHONY: test-frontend
 test-frontend: ## Run frontend tests
 	@echo "$(BLUE)Running frontend tests...$(RESET)"
-{{if .Components.Frontend.MainApp}}	@if [ -d "App" ]; then \
+{{if .Components.Frontend.NextJS.App}}	@if [ -d "App" ]; then \
 		echo "$(CYAN)Testing App...$(RESET)"; \
 		cd App && npm test -- --run; \
 	fi{{end}}
-{{if .Components.Frontend.Home}}	@if [ -d "Home" ]; then \
+{{if .Components.Frontend.NextJS.Home}}	@if [ -d "Home" ]; then \
 		echo "$(CYAN)Testing Home...$(RESET)"; \
 		cd Home && npm test -- --run; \
 	fi{{end}}
-{{if .Components.Frontend.Admin}}	@if [ -d "Admin" ]; then \
+{{if .Components.Frontend.NextJS.Admin}}	@if [ -d "Admin" ]; then \
 		echo "$(CYAN)Testing Admin...$(RESET)"; \
 		cd Admin && npm test -- --run; \
 	fi{{end}}{{end}}
 
-{{if .Components.Backend.API}}.PHONY: test-backend
+{{if .Components.Backend.GoGin}}.PHONY: test-backend
 test-backend: ## Run backend tests
 	@echo "$(BLUE)Running backend tests...$(RESET)"
 	@cd $(BACKEND_DIR) && go test -v ./...{{end}}
@@ -150,28 +150,28 @@ test-mobile: ## Run mobile tests
 .PHONY: build
 build: ## Build all components
 	@echo "$(BLUE)Building all components...$(RESET)"
-{{if or (or .Components.Frontend.MainApp .Components.Frontend.Home) .Components.Frontend.Admin}}	@$(MAKE) build-frontend{{end}}
-{{if .Components.Backend.API}}	@$(MAKE) build-backend{{end}}
+{{if or (or .Components.Frontend.NextJS.App .Components.Frontend.NextJS.Home) .Components.Frontend.NextJS.Admin}}	@$(MAKE) build-frontend{{end}}
+{{if .Components.Backend.GoGin}}	@$(MAKE) build-backend{{end}}
 {{if or .Components.Mobile.Android .Components.Mobile.IOS}}	@$(MAKE) build-mobile{{end}}
 	@echo "$(GREEN)✅ Build completed$(RESET)"
 
-{{if or (or .Components.Frontend.MainApp .Components.Frontend.Home) .Components.Frontend.Admin}}.PHONY: build-frontend
+{{if or (or .Components.Frontend.NextJS.App .Components.Frontend.NextJS.Home) .Components.Frontend.NextJS.Admin}}.PHONY: build-frontend
 build-frontend: ## Build frontend applications
 	@echo "$(CYAN)Building frontend applications...$(RESET)"
-{{if .Components.Frontend.MainApp}}	@if [ -d "App" ]; then \
+{{if .Components.Frontend.NextJS.App}}	@if [ -d "App" ]; then \
 		echo "$(CYAN)Building App...$(RESET)"; \
 		cd App && npm run build; \
 	fi{{end}}
-{{if .Components.Frontend.Home}}	@if [ -d "Home" ]; then \
+{{if .Components.Frontend.NextJS.Home}}	@if [ -d "Home" ]; then \
 		echo "$(CYAN)Building Home...$(RESET)"; \
 		cd Home && npm run build; \
 	fi{{end}}
-{{if .Components.Frontend.Admin}}	@if [ -d "Admin" ]; then \
+{{if .Components.Frontend.NextJS.Admin}}	@if [ -d "Admin" ]; then \
 		echo "$(CYAN)Building Admin...$(RESET)"; \
 		cd Admin && npm run build; \
 	fi{{end}}{{end}}
 
-{{if .Components.Backend.API}}.PHONY: build-backend
+{{if .Components.Backend.GoGin}}.PHONY: build-backend
 build-backend: ## Build backend application
 	@echo "$(CYAN)Building backend...$(RESET)"
 	@cd $(BACKEND_DIR) && go build -ldflags="-X main.Version=$(VERSION) -X main.BuildTime=$(BUILD_TIME) -X main.GitCommit=$(GIT_COMMIT)" -o bin/{{.Name}} .{{end}}
@@ -192,26 +192,26 @@ build-mobile: ## Build mobile applications
 .PHONY: lint
 lint: ## Run linting for all components
 	@echo "$(BLUE)Running linting...$(RESET)"
-{{if or (or .Components.Frontend.MainApp .Components.Frontend.Home) .Components.Frontend.Admin}}	@$(MAKE) lint-frontend{{end}}
-{{if .Components.Backend.API}}	@$(MAKE) lint-backend{{end}}
+{{if or (or .Components.Frontend.NextJS.App .Components.Frontend.NextJS.Home) .Components.Frontend.NextJS.Admin}}	@$(MAKE) lint-frontend{{end}}
+{{if .Components.Backend.GoGin}}	@$(MAKE) lint-backend{{end}}
 
-{{if or (or .Components.Frontend.MainApp .Components.Frontend.Home) .Components.Frontend.Admin}}.PHONY: lint-frontend
+{{if or (or .Components.Frontend.NextJS.App .Components.Frontend.NextJS.Home) .Components.Frontend.NextJS.Admin}}.PHONY: lint-frontend
 lint-frontend: ## Run frontend linting
 	@echo "$(CYAN)Linting frontend...$(RESET)"
-{{if .Components.Frontend.MainApp}}	@if [ -d "App" ]; then \
+{{if .Components.Frontend.NextJS.App}}	@if [ -d "App" ]; then \
 		echo "$(CYAN)Linting App...$(RESET)"; \
 		cd App && npm run lint; \
 	fi{{end}}
-{{if .Components.Frontend.Home}}	@if [ -d "Home" ]; then \
+{{if .Components.Frontend.NextJS.Home}}	@if [ -d "Home" ]; then \
 		echo "$(CYAN)Linting Home...$(RESET)"; \
 		cd Home && npm run lint; \
 	fi{{end}}
-{{if .Components.Frontend.Admin}}	@if [ -d "Admin" ]; then \
+{{if .Components.Frontend.NextJS.Admin}}	@if [ -d "Admin" ]; then \
 		echo "$(CYAN)Linting Admin...$(RESET)"; \
 		cd Admin && npm run lint; \
 	fi{{end}}{{end}}
 
-{{if .Components.Backend.API}}.PHONY: lint-backend
+{{if .Components.Backend.GoGin}}.PHONY: lint-backend
 lint-backend: ## Run backend linting
 	@echo "$(CYAN)Linting backend...$(RESET)"
 	@cd $(BACKEND_DIR) && go vet ./...
@@ -220,26 +220,26 @@ lint-backend: ## Run backend linting
 .PHONY: format
 format: ## Format code for all components
 	@echo "$(BLUE)Formatting code...$(RESET)"
-{{if or (or .Components.Frontend.MainApp .Components.Frontend.Home) .Components.Frontend.Admin}}	@$(MAKE) format-frontend{{end}}
-{{if .Components.Backend.API}}	@$(MAKE) format-backend{{end}}
+{{if or (or .Components.Frontend.NextJS.App .Components.Frontend.NextJS.Home) .Components.Frontend.NextJS.Admin}}	@$(MAKE) format-frontend{{end}}
+{{if .Components.Backend.GoGin}}	@$(MAKE) format-backend{{end}}
 
-{{if or (or .Components.Frontend.MainApp .Components.Frontend.Home) .Components.Frontend.Admin}}.PHONY: format-frontend
+{{if or (or .Components.Frontend.NextJS.App .Components.Frontend.NextJS.Home) .Components.Frontend.NextJS.Admin}}.PHONY: format-frontend
 format-frontend: ## Format frontend code
 	@echo "$(CYAN)Formatting frontend...$(RESET)"
-{{if .Components.Frontend.MainApp}}	@if [ -d "App" ]; then \
+{{if .Components.Frontend.NextJS.App}}	@if [ -d "App" ]; then \
 		echo "$(CYAN)Formatting App...$(RESET)"; \
 		cd App && npm run format; \
 	fi{{end}}
-{{if .Components.Frontend.Home}}	@if [ -d "Home" ]; then \
+{{if .Components.Frontend.NextJS.Home}}	@if [ -d "Home" ]; then \
 		echo "$(CYAN)Formatting Home...$(RESET)"; \
 		cd Home && npm run format; \
 	fi{{end}}
-{{if .Components.Frontend.Admin}}	@if [ -d "Admin" ]; then \
+{{if .Components.Frontend.NextJS.Admin}}	@if [ -d "Admin" ]; then \
 		echo "$(CYAN)Formatting Admin...$(RESET)"; \
 		cd Admin && npm run format; \
 	fi{{end}}{{end}}
 
-{{if .Components.Backend.API}}.PHONY: format-backend
+{{if .Components.Backend.GoGin}}.PHONY: format-backend
 format-backend: ## Format backend code
 	@echo "$(CYAN)Formatting backend...$(RESET)"
 	@cd $(BACKEND_DIR) && go fmt ./...{{end}}
@@ -248,10 +248,10 @@ format-backend: ## Format backend code
 {{if .Components.Infrastructure.Docker}}.PHONY: docker-build
 docker-build: ## Build Docker images
 	@echo "$(BLUE)Building Docker images...$(RESET)"
-{{if .Components.Frontend.MainApp}}	@docker build -t $(DOCKER_REGISTRY)/{{.Name}}-app:$(DOCKER_TAG) -f App/Dockerfile App/{{end}}
-{{if .Components.Frontend.Home}}	@docker build -t $(DOCKER_REGISTRY)/{{.Name}}-home:$(DOCKER_TAG) -f Home/Dockerfile Home/{{end}}
-{{if .Components.Frontend.Admin}}	@docker build -t $(DOCKER_REGISTRY)/{{.Name}}-admin:$(DOCKER_TAG) -f Admin/Dockerfile Admin/{{end}}
-{{if .Components.Backend.API}}	@docker build -t $(DOCKER_REGISTRY)/{{.Name}}-api:$(DOCKER_TAG) -f $(BACKEND_DIR)/Dockerfile $(BACKEND_DIR)/{{end}}
+{{if .Components.Frontend.NextJS.App}}	@docker build -t $(DOCKER_REGISTRY)/{{.Name}}-app:$(DOCKER_TAG) -f App/Dockerfile App/{{end}}
+{{if .Components.Frontend.NextJS.Home}}	@docker build -t $(DOCKER_REGISTRY)/{{.Name}}-home:$(DOCKER_TAG) -f Home/Dockerfile Home/{{end}}
+{{if .Components.Frontend.NextJS.Admin}}	@docker build -t $(DOCKER_REGISTRY)/{{.Name}}-admin:$(DOCKER_TAG) -f Admin/Dockerfile Admin/{{end}}
+{{if .Components.Backend.GoGin}}	@docker build -t $(DOCKER_REGISTRY)/{{.Name}}-api:$(DOCKER_TAG) -f $(BACKEND_DIR)/Dockerfile $(BACKEND_DIR)/{{end}}
 
 .PHONY: docker-up
 docker-up: ## Start services with Docker Compose
@@ -267,19 +267,19 @@ docker-down: ## Stop services with Docker Compose
 .PHONY: clean
 clean: ## Clean build artifacts and dependencies
 	@echo "$(YELLOW)Cleaning build artifacts...$(RESET)"
-{{if .Components.Frontend.MainApp}}	@if [ -d "App" ]; then \
+{{if .Components.Frontend.NextJS.App}}	@if [ -d "App" ]; then \
 		echo "$(CYAN)Cleaning App...$(RESET)"; \
 		cd App && rm -rf .next dist build node_modules/.cache; \
 	fi{{end}}
-{{if .Components.Frontend.Home}}	@if [ -d "Home" ]; then \
+{{if .Components.Frontend.NextJS.Home}}	@if [ -d "Home" ]; then \
 		echo "$(CYAN)Cleaning Home...$(RESET)"; \
 		cd Home && rm -rf .next dist build node_modules/.cache; \
 	fi{{end}}
-{{if .Components.Frontend.Admin}}	@if [ -d "Admin" ]; then \
+{{if .Components.Frontend.NextJS.Admin}}	@if [ -d "Admin" ]; then \
 		echo "$(CYAN)Cleaning Admin...$(RESET)"; \
 		cd Admin && rm -rf .next dist build node_modules/.cache; \
 	fi{{end}}
-{{if .Components.Backend.API}}	@if [ -d "$(BACKEND_DIR)" ]; then \
+{{if .Components.Backend.GoGin}}	@if [ -d "$(BACKEND_DIR)" ]; then \
 		echo "$(CYAN)Cleaning backend...$(RESET)"; \
 		cd $(BACKEND_DIR) && rm -rf bin/ *.log; \
 	fi{{end}}
@@ -287,15 +287,15 @@ clean: ## Clean build artifacts and dependencies
 .PHONY: clean-all
 clean-all: clean ## Clean everything including node_modules
 	@echo "$(YELLOW)Cleaning all dependencies...$(RESET)"
-{{if .Components.Frontend.MainApp}}	@if [ -d "App" ]; then \
+{{if .Components.Frontend.NextJS.App}}	@if [ -d "App" ]; then \
 		echo "$(CYAN)Removing App/node_modules...$(RESET)"; \
 		rm -rf App/node_modules; \
 	fi{{end}}
-{{if .Components.Frontend.Home}}	@if [ -d "Home" ]; then \
+{{if .Components.Frontend.NextJS.Home}}	@if [ -d "Home" ]; then \
 		echo "$(CYAN)Removing Home/node_modules...$(RESET)"; \
 		rm -rf Home/node_modules; \
 	fi{{end}}
-{{if .Components.Frontend.Admin}}	@if [ -d "Admin" ]; then \
+{{if .Components.Frontend.NextJS.Admin}}	@if [ -d "Admin" ]; then \
 		echo "$(CYAN)Removing Admin/node_modules...$(RESET)"; \
 		rm -rf Admin/node_modules; \
 	fi{{end}}
@@ -305,23 +305,23 @@ clean-all: clean ## Clean everything including node_modules
 status: ## Show project status
 	@echo "$(BLUE){{.Name}} Project Status$(RESET)"
 	@echo ""
-{{if or (or .Components.Frontend.MainApp .Components.Frontend.Home) .Components.Frontend.Admin}}	@echo "$(YELLOW)Frontend Applications:$(RESET)"
-{{if .Components.Frontend.MainApp}}	@if [ -d "App" ]; then \
+{{if or (or .Components.Frontend.NextJS.App .Components.Frontend.NextJS.Home) .Components.Frontend.NextJS.Admin}}	@echo "$(YELLOW)Frontend Applications:$(RESET)"
+{{if .Components.Frontend.NextJS.App}}	@if [ -d "App" ]; then \
 		echo "  ✅ App"; \
 	else \
 		echo "  ❌ App (not found)"; \
 	fi{{end}}
-{{if .Components.Frontend.Home}}	@if [ -d "Home" ]; then \
+{{if .Components.Frontend.NextJS.Home}}	@if [ -d "Home" ]; then \
 		echo "  ✅ Home"; \
 	else \
 		echo "  ❌ Home (not found)"; \
 	fi{{end}}
-{{if .Components.Frontend.Admin}}	@if [ -d "Admin" ]; then \
+{{if .Components.Frontend.NextJS.Admin}}	@if [ -d "Admin" ]; then \
 		echo "  ✅ Admin"; \
 	else \
 		echo "  ❌ Admin (not found)"; \
 	fi{{end}}{{end}}
-{{if .Components.Backend.API}}	@echo "$(YELLOW)Backend Services:$(RESET)"
+{{if .Components.Backend.GoGin}}	@echo "$(YELLOW)Backend Services:$(RESET)"
 	@if [ -d "$(BACKEND_DIR)" ]; then \
 		echo "  ✅ API Server"; \
 	else \

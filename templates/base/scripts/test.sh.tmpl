@@ -26,8 +26,8 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 COVERAGE_DIR="$PROJECT_ROOT/coverage"
 REPORTS_DIR="$PROJECT_ROOT/test-reports"
 
-{{if .Components.Frontend.MainApp}}FRONTEND_DIRS=("App"{{if .Components.Frontend.Home}} "Home"{{end}}{{if .Components.Frontend.Admin}} "Admin"{{end}}){{end}}
-{{if .Components.Backend.API}}BACKEND_DIR="CommonServer"{{end}}
+{{if .Components.Frontend.NextJS.App}}FRONTEND_DIRS=("App"{{if .Components.Frontend.NextJS.Home}} "Home"{{end}}{{if .Components.Frontend.NextJS.Admin}} "Admin"{{end}}){{end}}
+{{if .Components.Backend.GoGin}}BACKEND_DIR="CommonServer"{{end}}
 
 # Test configuration
 TEST_TIMEOUT="${TEST_TIMEOUT:-300s}"
@@ -179,7 +179,7 @@ stop_test_services() {
     log_success "Test services stopped"
 }
 
-{{if .Components.Frontend.MainApp}}# Run frontend tests
+{{if .Components.Frontend.NextJS.App}}# Run frontend tests
 run_frontend_tests() {
     log_step "Running frontend tests..."
     
@@ -336,7 +336,7 @@ run_frontend_tests() {
     log_success "Frontend tests completed"
 }{{end}}
 
-{{if .Components.Backend.API}}# Run backend tests
+{{if .Components.Backend.GoGin}}# Run backend tests
 run_backend_tests() {
     log_step "Running backend tests..."
     
@@ -440,7 +440,7 @@ run_security_tests() {
     
     log_step "Running security tests..."
     
-{{if .Components.Frontend.MainApp}}    # Frontend security audit
+{{if .Components.Frontend.NextJS.App}}    # Frontend security audit
     for dir in "${FRONTEND_DIRS[@]}"; do
         if [[ -d "$dir" ]]; then
             log_info "Running security audit for $dir..."
@@ -457,7 +457,7 @@ run_security_tests() {
         fi
     done{{end}}
     
-{{if .Components.Backend.API}}    # Backend security scan
+{{if .Components.Backend.GoGin}}    # Backend security scan
     if [[ -d "$BACKEND_DIR" ]]; then
         log_info "Running backend security scan..."
         cd "$BACKEND_DIR"
@@ -495,7 +495,7 @@ generate_test_reports() {
 
 EOF
 
-{{if .Components.Frontend.MainApp}}    echo "### Frontend Tests" >> "$report_file"
+{{if .Components.Frontend.NextJS.App}}    echo "### Frontend Tests" >> "$report_file"
     echo "" >> "$report_file"
     
     for dir in "${FRONTEND_DIRS[@]}"; do
@@ -517,7 +517,7 @@ EOF
         fi
     done{{end}}
 
-{{if .Components.Backend.API}}    echo "### Backend Tests" >> "$report_file"
+{{if .Components.Backend.GoGin}}    echo "### Backend Tests" >> "$report_file"
     echo "" >> "$report_file"
     
     if [[ -f "$COVERAGE_DIR/backend/coverage.txt" ]]; then
@@ -562,13 +562,13 @@ show_test_summary() {
     if [[ "$COVERAGE_ENABLED" == "true" ]]; then
         echo -e "${CYAN}Coverage Reports:${NC}"
         
-{{if .Components.Frontend.MainApp}}        for dir in "${FRONTEND_DIRS[@]}"; do
+{{if .Components.Frontend.NextJS.App}}        for dir in "${FRONTEND_DIRS[@]}"; do
             if [[ -f "$COVERAGE_DIR/$dir/coverage.html" ]]; then
                 echo "  Frontend ($dir): file://$COVERAGE_DIR/$dir/coverage.html"
             fi
         done{{end}}
         
-{{if .Components.Backend.API}}        if [[ -f "$COVERAGE_DIR/backend/coverage.html" ]]; then
+{{if .Components.Backend.GoGin}}        if [[ -f "$COVERAGE_DIR/backend/coverage.html" ]]; then
             echo "  Backend: file://$COVERAGE_DIR/backend/coverage.html"
         fi{{end}}
         
@@ -603,11 +603,11 @@ main() {
         start_test_services
     fi
     
-{{if .Components.Frontend.MainApp}}    if [[ "$TEST_MODE" == "all" || "$TEST_MODE" == "frontend" || "$TEST_MODE" == "unit" || "$TEST_MODE" == "integration" || "$TEST_MODE" == "e2e" ]]; then
+{{if .Components.Frontend.NextJS.App}}    if [[ "$TEST_MODE" == "all" || "$TEST_MODE" == "frontend" || "$TEST_MODE" == "unit" || "$TEST_MODE" == "integration" || "$TEST_MODE" == "e2e" ]]; then
         run_frontend_tests
     fi{{end}}
     
-{{if .Components.Backend.API}}    if [[ "$TEST_MODE" == "all" || "$TEST_MODE" == "backend" || "$TEST_MODE" == "unit" || "$TEST_MODE" == "integration" || "$TEST_MODE" == "benchmark" || "$TEST_MODE" == "race" ]]; then
+{{if .Components.Backend.GoGin}}    if [[ "$TEST_MODE" == "all" || "$TEST_MODE" == "backend" || "$TEST_MODE" == "unit" || "$TEST_MODE" == "integration" || "$TEST_MODE" == "benchmark" || "$TEST_MODE" == "race" ]]; then
         run_backend_tests
     fi{{end}}
     

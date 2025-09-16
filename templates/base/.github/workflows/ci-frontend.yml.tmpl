@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        app: [App, Home{{if .Components.Frontend.Admin}}, Admin{{end}}]
+        app: [App, Home{{if .Components.Frontend.NextJS.Admin}}, Admin{{end}}]
     
     steps:
     - name: Checkout code
