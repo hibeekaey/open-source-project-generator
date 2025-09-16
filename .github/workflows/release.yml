@@ -160,22 +160,32 @@ jobs:
               ;;
           esac
 
-      - name: Create archive
+      - name: Create and upload Windows archive
+        if: matrix.os == 'windows'
         run: |
           cd dist
-          if [ "${{ matrix.os }}" = "windows" ]; then
-            zip -r "generator-${{ matrix.os }}-${{ matrix.arch }}.zip" "generator-${{ matrix.os }}-${{ matrix.arch }}/"
-          else
-            tar -czf "generator-${{ matrix.os }}-${{ matrix.arch }}.tar.gz" "generator-${{ matrix.os }}-${{ matrix.arch }}/"
-          fi
+          zip -r "generator-${{ matrix.os }}-${{ matrix.arch }}.zip" "generator-${{ matrix.os }}-${{ matrix.arch }}/"
 
-      - name: Upload artifacts
+      - name: Upload Windows artifacts
+        if: matrix.os == 'windows'
         uses: actions/upload-artifact@v4.6.2
         with:
           name: generator-${{ matrix.os }}-${{ matrix.arch }}
-          path: |
-            dist/generator-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
-            dist/generator-${{ matrix.os }}-${{ matrix.arch }}.zip
+          path: dist/generator-${{ matrix.os }}-${{ matrix.arch }}.zip
+          retention-days: 7
+
+      - name: Create and upload non-Windows archive
+        if: matrix.os != 'windows'
+        run: |
+          cd dist
+          tar -czf "generator-${{ matrix.os }}-${{ matrix.arch }}.tar.gz" "generator-${{ matrix.os }}-${{ matrix.arch }}/"
+
+      - name: Upload non-Windows artifacts
+        if: matrix.os != 'windows'
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: generator-${{ matrix.os }}-${{ matrix.arch }}
+          path: dist/generator-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
           retention-days: 7
 
   package:
@@ -197,6 +207,8 @@ jobs:
       - name: Extract Linux binary
         run: |
           cd dist
+          echo "Files in dist directory:"
+          ls -la
           tar -xzf generator-linux-amd64.tar.gz
 
       - name: Install packaging tools
@@ -367,6 +379,8 @@ jobs:
       - name: Extract binary
         run: |
           cd dist
+          echo "Files in dist directory:"
+          ls -la
           tar -xzf generator-linux-amd64.tar.gz
 
       - name: Get version
