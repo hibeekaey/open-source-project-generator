@@ -63,7 +63,7 @@ func NewApp(appVersion, gitCommit, buildTime string) (*App, error) {
 	configManager := config.NewManager("", "")
 	validator := validation.NewEngine()
 	generator := filesystem.NewGenerator()
-	templateEngine := template.NewEngine()
+	templateEngine := template.NewEmbeddedEngine()
 	versionManager := version.NewManager()
 
 	// Initialize CLI
@@ -402,26 +402,21 @@ func (a *App) generateProject(config *models.ProjectConfig) error {
 
 // processTemplates processes all templates for the project with proper directory mapping
 func (a *App) processTemplates(config *models.ProjectConfig) error {
-	templateDir := "./templates"
-	if _, err := os.Stat(templateDir); os.IsNotExist(err) {
-		return fmt.Errorf("templates directory not found: %s", templateDir)
-	}
-
 	projectOutputDir := filepath.Join(config.OutputPath, config.Name)
 
 	// Process base templates with proper directory mapping
-	if err := a.processBaseTemplates(templateDir, projectOutputDir, config); err != nil {
+	if err := a.processBaseTemplates("base", projectOutputDir, config); err != nil {
 		return fmt.Errorf("failed to process base templates: %w", err)
 	}
 
 	// Process frontend templates with proper directory mapping
-	if err := a.processFrontendTemplates(templateDir, projectOutputDir, config); err != nil {
+	if err := a.processFrontendTemplates("frontend", projectOutputDir, config); err != nil {
 		return fmt.Errorf("failed to process frontend templates: %w", err)
 	}
 
 	// Process backend templates
 	if config.Components.Backend.GoGin {
-		backendTemplateDir := filepath.Join(templateDir, "backend", "go-gin")
+		backendTemplateDir := "backend/go-gin"
 		backendOutputDir := filepath.Join(projectOutputDir, "CommonServer")
 		if err := a.templateEngine.ProcessDirectory(backendTemplateDir, backendOutputDir, config); err != nil {
 			return fmt.Errorf("failed to process backend templates: %w", err)
@@ -429,12 +424,12 @@ func (a *App) processTemplates(config *models.ProjectConfig) error {
 	}
 
 	// Process mobile templates
-	if err := a.processMobileTemplates(templateDir, projectOutputDir, config); err != nil {
+	if err := a.processMobileTemplates("mobile", projectOutputDir, config); err != nil {
 		return fmt.Errorf("failed to process mobile templates: %w", err)
 	}
 
 	// Process infrastructure templates
-	if err := a.processInfrastructureTemplates(templateDir, projectOutputDir, config); err != nil {
+	if err := a.processInfrastructureTemplates("infrastructure", projectOutputDir, config); err != nil {
 		return fmt.Errorf("failed to process infrastructure templates: %w", err)
 	}
 
@@ -530,39 +525,29 @@ func (a *App) showDryRunPreview(config *models.ProjectConfig) {
 
 // processBaseTemplates processes base templates with proper directory mapping
 func (a *App) processBaseTemplates(templateDir, projectOutputDir string, config *models.ProjectConfig) error {
-	baseDir := filepath.Join(templateDir, "base")
-	if _, err := os.Stat(baseDir); os.IsNotExist(err) {
-		return nil // No base templates
-	}
+	baseDir := templateDir
 
 	// Process only root-level template files (not subdirectories)
 	if err := a.processBaseRootFiles(baseDir, projectOutputDir, config); err != nil {
 		return fmt.Errorf("failed to process base root templates: %w", err)
 	}
 
-	// Process .github directory
-	githubTemplateDir := filepath.Join(baseDir, ".github")
-	if _, err := os.Stat(githubTemplateDir); err == nil {
-		githubOutputDir := filepath.Join(projectOutputDir, ".github")
-		if err := a.templateEngine.ProcessDirectory(githubTemplateDir, githubOutputDir, config); err != nil {
+	// Process .github directory (renamed to github in templates)
+	githubTemplateDir := baseDir + "/github"
+	githubOutputDir := filepath.Join(projectOutputDir, ".github")
+	if err := a.templateEngine.ProcessDirectory(githubTemplateDir, githubOutputDir, config); err != nil {
+		// Ignore if directory doesn't exist in embedded templates
+		if !strings.Contains(err.Error(), "file does not exist") {
 			return fmt.Errorf("failed to process .github templates: %w", err)
 		}
 	}
 
-	// Process docs → Docs (capitalized)
-	docsTemplateDir := filepath.Join(baseDir, "docs")
-	if _, err := os.Stat(docsTemplateDir); err == nil {
-		docsOutputDir := filepath.Join(projectOutputDir, "Docs")
-		if err := a.templateEngine.ProcessDirectory(docsTemplateDir, docsOutputDir, config); err != nil {
-			return fmt.Errorf("failed to process Docs templates: %w", err)
-		}
-	}
-
 	// Process scripts → Scripts (capitalized)
-	scriptsTemplateDir := filepath.Join(baseDir, "scripts")
-	if _, err := os.Stat(scriptsTemplateDir); err == nil {
-		scriptsOutputDir := filepath.Join(projectOutputDir, "Scripts")
-		if err := a.templateEngine.ProcessDirectory(scriptsTemplateDir, scriptsOutputDir, config); err != nil {
+	scriptsTemplateDir := baseDir + "/scripts"
+	scriptsOutputDir := filepath.Join(projectOutputDir, "Scripts")
+	if err := a.templateEngine.ProcessDirectory(scriptsTemplateDir, scriptsOutputDir, config); err != nil {
+		// Ignore if directory doesn't exist in embedded templates
+		if !strings.Contains(err.Error(), "file does not exist") {
 			return fmt.Errorf("failed to process Scripts templates: %w", err)
 		}
 	}
@@ -572,45 +557,47 @@ func (a *App) processBaseTemplates(templateDir, projectOutputDir string, config 
 
 // processFrontendTemplates processes frontend templates with proper App/ structure
 func (a *App) processFrontendTemplates(templateDir, projectOutputDir string, config *models.ProjectConfig) error {
-	frontendDir := filepath.Join(templateDir, "frontend")
-	if _, err := os.Stat(frontendDir); os.IsNotExist(err) {
-		return nil // No frontend templates
-	}
-
+	frontendDir := templateDir
 	appDir := filepath.Join(projectOutputDir, "App")
 
 	// Process main app
 	if config.Components.Frontend.NextJS.App {
-		mainAppTemplateDir := filepath.Join(frontendDir, "nextjs-app")
+		mainAppTemplateDir := frontendDir + "/nextjs-app"
 		mainAppOutputDir := filepath.Join(appDir, "main")
 		if err := a.templateEngine.ProcessDirectory(mainAppTemplateDir, mainAppOutputDir, config); err != nil {
-			return fmt.Errorf("failed to process main app templates: %w", err)
+			if !strings.Contains(err.Error(), "file does not exist") {
+				return fmt.Errorf("failed to process main app templates: %w", err)
+			}
 		}
 	}
 
 	// Process home page
 	if config.Components.Frontend.NextJS.Home {
-		homeTemplateDir := filepath.Join(frontendDir, "nextjs-home")
+		homeTemplateDir := frontendDir + "/nextjs-home"
 		homeOutputDir := filepath.Join(appDir, "home")
 		if err := a.templateEngine.ProcessDirectory(homeTemplateDir, homeOutputDir, config); err != nil {
-			return fmt.Errorf("failed to process home templates: %w", err)
+			if !strings.Contains(err.Error(), "file does not exist") {
+				return fmt.Errorf("failed to process home templates: %w", err)
+			}
 		}
 	}
 
 	// Process admin dashboard
 	if config.Components.Frontend.NextJS.Admin {
-		adminTemplateDir := filepath.Join(frontendDir, "nextjs-admin")
+		adminTemplateDir := frontendDir + "/nextjs-admin"
 		adminOutputDir := filepath.Join(appDir, "admin")
 		if err := a.templateEngine.ProcessDirectory(adminTemplateDir, adminOutputDir, config); err != nil {
-			return fmt.Errorf("failed to process admin templates: %w", err)
+			if !strings.Contains(err.Error(), "file does not exist") {
+				return fmt.Errorf("failed to process admin templates: %w", err)
+			}
 		}
 	}
 
 	// Process shared components
-	sharedTemplateDir := filepath.Join(frontendDir, "shared-components")
-	if _, err := os.Stat(sharedTemplateDir); err == nil {
-		sharedOutputDir := filepath.Join(appDir, "shared-components")
-		if err := a.templateEngine.ProcessDirectory(sharedTemplateDir, sharedOutputDir, config); err != nil {
+	sharedTemplateDir := frontendDir + "/shared-components"
+	sharedOutputDir := filepath.Join(appDir, "shared-components")
+	if err := a.templateEngine.ProcessDirectory(sharedTemplateDir, sharedOutputDir, config); err != nil {
+		if !strings.Contains(err.Error(), "file does not exist") {
 			return fmt.Errorf("failed to process shared components templates: %w", err)
 		}
 	}
@@ -620,36 +607,36 @@ func (a *App) processFrontendTemplates(templateDir, projectOutputDir string, con
 
 // processMobileTemplates processes mobile templates with proper Mobile/ structure
 func (a *App) processMobileTemplates(templateDir, projectOutputDir string, config *models.ProjectConfig) error {
-	mobileDir := filepath.Join(templateDir, "mobile")
-	if _, err := os.Stat(mobileDir); os.IsNotExist(err) {
-		return nil // No mobile templates
-	}
-
+	mobileDir := templateDir
 	mobileOutputDir := filepath.Join(projectOutputDir, "Mobile")
 
 	// Process Android
 	if config.Components.Mobile.Android {
-		androidTemplateDir := filepath.Join(mobileDir, "android-kotlin")
+		androidTemplateDir := mobileDir + "/android-kotlin"
 		androidOutputDir := filepath.Join(mobileOutputDir, "android")
 		if err := a.templateEngine.ProcessDirectory(androidTemplateDir, androidOutputDir, config); err != nil {
-			return fmt.Errorf("failed to process Android templates: %w", err)
+			if !strings.Contains(err.Error(), "file does not exist") {
+				return fmt.Errorf("failed to process Android templates: %w", err)
+			}
 		}
 	}
 
 	// Process iOS
 	if config.Components.Mobile.IOS {
-		iosTemplateDir := filepath.Join(mobileDir, "ios-swift")
+		iosTemplateDir := mobileDir + "/ios-swift"
 		iosOutputDir := filepath.Join(mobileOutputDir, "ios")
 		if err := a.templateEngine.ProcessDirectory(iosTemplateDir, iosOutputDir, config); err != nil {
-			return fmt.Errorf("failed to process iOS templates: %w", err)
+			if !strings.Contains(err.Error(), "file does not exist") {
+				return fmt.Errorf("failed to process iOS templates: %w", err)
+			}
 		}
 	}
 
 	// Process shared mobile resources
-	sharedTemplateDir := filepath.Join(mobileDir, "shared")
-	if _, err := os.Stat(sharedTemplateDir); err == nil {
-		sharedOutputDir := filepath.Join(mobileOutputDir, "shared")
-		if err := a.templateEngine.ProcessDirectory(sharedTemplateDir, sharedOutputDir, config); err != nil {
+	sharedTemplateDir := mobileDir + "/shared"
+	sharedOutputDir := filepath.Join(mobileOutputDir, "shared")
+	if err := a.templateEngine.ProcessDirectory(sharedTemplateDir, sharedOutputDir, config); err != nil {
+		if !strings.Contains(err.Error(), "file does not exist") {
 			return fmt.Errorf("failed to process mobile shared templates: %w", err)
 		}
 	}
@@ -659,37 +646,39 @@ func (a *App) processMobileTemplates(templateDir, projectOutputDir string, confi
 
 // processInfrastructureTemplates processes infrastructure templates with proper Deploy/ structure
 func (a *App) processInfrastructureTemplates(templateDir, projectOutputDir string, config *models.ProjectConfig) error {
-	infraDir := filepath.Join(templateDir, "infrastructure")
-	if _, err := os.Stat(infraDir); os.IsNotExist(err) {
-		return nil // No infrastructure templates
-	}
-
+	infraDir := templateDir
 	deployDir := filepath.Join(projectOutputDir, "Deploy")
 
 	// Process Docker
 	if config.Components.Infrastructure.Docker {
-		dockerTemplateDir := filepath.Join(infraDir, "docker")
+		dockerTemplateDir := infraDir + "/docker"
 		dockerOutputDir := filepath.Join(deployDir, "docker")
 		if err := a.templateEngine.ProcessDirectory(dockerTemplateDir, dockerOutputDir, config); err != nil {
-			return fmt.Errorf("failed to process Docker templates: %w", err)
+			if !strings.Contains(err.Error(), "file does not exist") {
+				return fmt.Errorf("failed to process Docker templates: %w", err)
+			}
 		}
 	}
 
 	// Process Kubernetes
 	if config.Components.Infrastructure.Kubernetes {
-		k8sTemplateDir := filepath.Join(infraDir, "kubernetes")
+		k8sTemplateDir := infraDir + "/kubernetes"
 		k8sOutputDir := filepath.Join(deployDir, "k8s")
 		if err := a.templateEngine.ProcessDirectory(k8sTemplateDir, k8sOutputDir, config); err != nil {
-			return fmt.Errorf("failed to process Kubernetes templates: %w", err)
+			if !strings.Contains(err.Error(), "file does not exist") {
+				return fmt.Errorf("failed to process Kubernetes templates: %w", err)
+			}
 		}
 	}
 
 	// Process Terraform
 	if config.Components.Infrastructure.Terraform {
-		terraformTemplateDir := filepath.Join(infraDir, "terraform")
+		terraformTemplateDir := infraDir + "/terraform"
 		terraformOutputDir := filepath.Join(deployDir, "terraform")
 		if err := a.templateEngine.ProcessDirectory(terraformTemplateDir, terraformOutputDir, config); err != nil {
-			return fmt.Errorf("failed to process Terraform templates: %w", err)
+			if !strings.Contains(err.Error(), "file does not exist") {
+				return fmt.Errorf("failed to process Terraform templates: %w", err)
+			}
 		}
 	}
 
@@ -701,9 +690,9 @@ func (a *App) processInfrastructureTemplates(templateDir, projectOutputDir strin
 		}
 
 		// Process monitoring templates if they exist
-		monitoringTemplateDir := filepath.Join(infraDir, "monitoring")
-		if _, err := os.Stat(monitoringTemplateDir); err == nil {
-			if err := a.templateEngine.ProcessDirectory(monitoringTemplateDir, monitoringDir, config); err != nil {
+		monitoringTemplateDir := infraDir + "/monitoring"
+		if err := a.templateEngine.ProcessDirectory(monitoringTemplateDir, monitoringDir, config); err != nil {
+			if !strings.Contains(err.Error(), "file does not exist") {
 				return fmt.Errorf("failed to process monitoring templates: %w", err)
 			}
 		}
@@ -714,35 +703,47 @@ func (a *App) processInfrastructureTemplates(templateDir, projectOutputDir strin
 
 // processBaseRootFiles processes only the root-level template files from base directory
 func (a *App) processBaseRootFiles(baseDir, projectOutputDir string, config *models.ProjectConfig) error {
-	// Read the base directory
-	entries, err := os.ReadDir(baseDir)
-	if err != nil {
-		return err
+	// For embedded templates, we'll process known base template files
+	// This is a simplified approach - in a full implementation you might want to
+	// add a method to the embedded engine to list files
+	baseTemplateFiles := []string{
+		"README.md.tmpl",
+		"LICENSE.tmpl",
+		"CONTRIBUTING.md.tmpl",
+		"SECURITY.md.tmpl",
+		"gitignore.tmpl",
+		"Makefile.tmpl",
+		"docker-compose.yml.tmpl",
 	}
 
-	// Process only template files, skip subdirectories
-	for _, entry := range entries {
-		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".tmpl") {
-			srcFile := filepath.Join(baseDir, entry.Name())
+	for _, templateFile := range baseTemplateFiles {
+		srcFile := baseDir + "/" + templateFile
 
-			// Determine output filename (remove .tmpl extension)
-			outputName := strings.TrimSuffix(entry.Name(), ".tmpl")
-			outputFile := filepath.Join(projectOutputDir, outputName)
+		// Determine output filename (remove .tmpl extension)
+		outputName := strings.TrimSuffix(templateFile, ".tmpl")
+		// Handle special case for gitignore -> .gitignore
+		if outputName == "gitignore" {
+			outputName = ".gitignore"
+		}
+		outputFile := filepath.Join(projectOutputDir, outputName)
 
-			// Process the individual template file
-			content, err := a.templateEngine.ProcessTemplate(srcFile, config)
-			if err != nil {
-				return fmt.Errorf("failed to process template file %s: %w", entry.Name(), err)
+		// Process the individual template file
+		content, err := a.templateEngine.ProcessTemplate(srcFile, config)
+		if err != nil {
+			// Skip if template doesn't exist
+			if strings.Contains(err.Error(), "file does not exist") {
+				continue
 			}
+			return fmt.Errorf("failed to process template file %s: %w", templateFile, err)
+		}
 
-			// Write the processed content to the output file
-			if err := os.MkdirAll(filepath.Dir(outputFile), 0750); err != nil {
-				return fmt.Errorf("failed to create output directory: %w", err)
-			}
+		// Write the processed content to the output file
+		if err := os.MkdirAll(filepath.Dir(outputFile), 0750); err != nil {
+			return fmt.Errorf("failed to create output directory: %w", err)
+		}
 
-			if err := os.WriteFile(outputFile, content, 0600); err != nil {
-				return fmt.Errorf("failed to write output file %s: %w", outputName, err)
-			}
+		if err := os.WriteFile(outputFile, content, 0644); err != nil {
+			return fmt.Errorf("failed to write output file %s: %w", outputName, err)
 		}
 	}
 

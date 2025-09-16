@@ -54,12 +54,12 @@ open-source-project-generator/
 │   ├── validation/        # Basic validation
 │   ├── version/           # Version management
 │   └── models/            # Data models
-├── templates/             # Project templates
-│   ├── base/              # Base templates
-│   ├── frontend/          # Frontend templates
-│   ├── backend/           # Backend templates
-│   ├── mobile/            # Mobile templates
-│   └── infrastructure/    # Infrastructure templates
+├── pkg/template/templates/ # Embedded project templates
+│   ├── base/              # Base templates (embedded)
+│   ├── frontend/          # Frontend templates (embedded)
+│   ├── backend/           # Backend templates (embedded)
+│   ├── mobile/            # Mobile templates (embedded)
+│   └── infrastructure/    # Infrastructure templates (embedded)
 └── scripts/               # Build and utility scripts
 ```
 
@@ -99,12 +99,14 @@ make dev
 
 ## Templates
 
-The generator includes templates for:
+The generator includes embedded templates for:
 
 - **Frontend**: Next.js applications with React
 - **Backend**: Go applications with Gin framework
 - **Mobile**: Android (Kotlin) and iOS (Swift) applications
 - **Infrastructure**: Docker, Kubernetes, and Terraform configurations
+
+**Note**: All templates are embedded directly into the binary, making the generator completely self-contained and portable.
 
 ## Configuration
 
