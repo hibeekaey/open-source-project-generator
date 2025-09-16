@@ -11,13 +11,13 @@ RESET := \033[0m
 
 # Configuration
 NODE_VERSION := {{.Versions.Node}}
-NEXT_VERSION := {{.Versions.NextJS}}
-REACT_VERSION := {{.Versions.React}}
+NEXT_VERSION := {{.Versions.Packages.next}}
+REACT_VERSION := {{.Versions.Packages.react}}
 
 # Directories
-{{if .Components.Frontend.MainApp}}APP_DIR := App{{end}}
-{{if .Components.Frontend.Home}}HOME_DIR := Home{{end}}
-{{if .Components.Frontend.Admin}}ADMIN_DIR := Admin{{end}}
+{{if .Components.Frontend.NextJS.App}}APP_DIR := App{{end}}
+{{if .Components.Frontend.NextJS.Home}}HOME_DIR := Home{{end}}
+{{if .Components.Frontend.NextJS.Admin}}ADMIN_DIR := Admin{{end}}
 SHARED_DIR := shared-components
 
 # Default target
@@ -36,23 +36,23 @@ help: ## Display frontend-specific help
 .PHONY: dev
 dev: ## Start all frontend development servers
 	@echo "$(GREEN)Starting all frontend development servers...$(RESET)"
-{{if .Components.Frontend.MainApp}}	@$(MAKE) dev-app &{{end}}
-{{if .Components.Frontend.Home}}	@$(MAKE) dev-home &{{end}}
-{{if .Components.Frontend.Admin}}	@$(MAKE) dev-admin &{{end}}
+{{if .Components.Frontend.NextJS.App}}	@$(MAKE) dev-app &{{end}}
+{{if .Components.Frontend.NextJS.Home}}	@$(MAKE) dev-home &{{end}}
+{{if .Components.Frontend.NextJS.Admin}}	@$(MAKE) dev-admin &{{end}}
 	@echo "$(CYAN)All frontend servers started. Press Ctrl+C to stop.$(RESET)"
 	@wait
 
-{{if .Components.Frontend.MainApp}}.PHONY: dev-app
+{{if .Components.Frontend.NextJS.App}}.PHONY: dev-app
 dev-app: ## Start main application development server
 	@echo "$(BLUE)Starting main application development server...$(RESET)"
 	@cd $(APP_DIR) && npm run dev{{end}}
 
-{{if .Components.Frontend.Home}}.PHONY: dev-home
+{{if .Components.Frontend.NextJS.Home}}.PHONY: dev-home
 dev-home: ## Start home page development server
 	@echo "$(BLUE)Starting home page development server...$(RESET)"
 	@cd $(HOME_DIR) && npm run dev{{end}}
 
-{{if .Components.Frontend.Admin}}.PHONY: dev-admin
+{{if .Components.Frontend.NextJS.Admin}}.PHONY: dev-admin
 dev-admin: ## Start admin dashboard development server
 	@echo "$(BLUE)Starting admin dashboard development server...$(RESET)"
 	@cd $(ADMIN_DIR) && npm run dev{{end}}
@@ -67,23 +67,23 @@ dev-shared: ## Start shared components development
 .PHONY: install
 install: ## Install all frontend dependencies
 	@echo "$(BLUE)Installing all frontend dependencies...$(RESET)"
-{{if .Components.Frontend.MainApp}}	@$(MAKE) install-app{{end}}
-{{if .Components.Frontend.Home}}	@$(MAKE) install-home{{end}}
-{{if .Components.Frontend.Admin}}	@$(MAKE) install-admin{{end}}
+{{if .Components.Frontend.NextJS.App}}	@$(MAKE) install-app{{end}}
+{{if .Components.Frontend.NextJS.Home}}	@$(MAKE) install-home{{end}}
+{{if .Components.Frontend.NextJS.Admin}}	@$(MAKE) install-admin{{end}}
 	@$(MAKE) install-shared
 	@echo "$(GREEN)✅ All frontend dependencies installed$(RESET)"
 
-{{if .Components.Frontend.MainApp}}.PHONY: install-app
+{{if .Components.Frontend.NextJS.App}}.PHONY: install-app
 install-app: ## Install main application dependencies
 	@echo "$(CYAN)Installing main application dependencies...$(RESET)"
 	@cd $(APP_DIR) && npm ci{{end}}
 
-{{if .Components.Frontend.Home}}.PHONY: install-home
+{{if .Components.Frontend.NextJS.Home}}.PHONY: install-home
 install-home: ## Install home page dependencies
 	@echo "$(CYAN)Installing home page dependencies...$(RESET)"
 	@cd $(HOME_DIR) && npm ci{{end}}
 
-{{if .Components.Frontend.Admin}}.PHONY: install-admin
+{{if .Components.Frontend.NextJS.Admin}}.PHONY: install-admin
 install-admin: ## Install admin dashboard dependencies
 	@echo "$(CYAN)Installing admin dashboard dependencies...$(RESET)"
 	@cd $(ADMIN_DIR) && npm ci{{end}}
@@ -98,23 +98,23 @@ install-shared: ## Install shared components dependencies
 .PHONY: build
 build: ## Build all frontend applications
 	@echo "$(BLUE)Building all frontend applications...$(RESET)"
-{{if .Components.Frontend.MainApp}}	@$(MAKE) build-app{{end}}
-{{if .Components.Frontend.Home}}	@$(MAKE) build-home{{end}}
-{{if .Components.Frontend.Admin}}	@$(MAKE) build-admin{{end}}
+{{if .Components.Frontend.NextJS.App}}	@$(MAKE) build-app{{end}}
+{{if .Components.Frontend.NextJS.Home}}	@$(MAKE) build-home{{end}}
+{{if .Components.Frontend.NextJS.Admin}}	@$(MAKE) build-admin{{end}}
 	@$(MAKE) build-shared
 	@echo "$(GREEN)✅ All frontend applications built$(RESET)"
 
-{{if .Components.Frontend.MainApp}}.PHONY: build-app
+{{if .Components.Frontend.NextJS.App}}.PHONY: build-app
 build-app: ## Build main application
 	@echo "$(CYAN)Building main application...$(RESET)"
 	@cd $(APP_DIR) && npm run build{{end}}
 
-{{if .Components.Frontend.Home}}.PHONY: build-home
+{{if .Components.Frontend.NextJS.Home}}.PHONY: build-home
 build-home: ## Build home page
 	@echo "$(CYAN)Building home page...$(RESET)"
 	@cd $(HOME_DIR) && npm run build{{end}}
 
-{{if .Components.Frontend.Admin}}.PHONY: build-admin
+{{if .Components.Frontend.NextJS.Admin}}.PHONY: build-admin
 build-admin: ## Build admin dashboard
 	@echo "$(CYAN)Building admin dashboard...$(RESET)"
 	@cd $(ADMIN_DIR) && npm run build{{end}}
@@ -129,23 +129,23 @@ build-shared: ## Build shared components
 .PHONY: test
 test: ## Run all frontend tests
 	@echo "$(BLUE)Running all frontend tests...$(RESET)"
-{{if .Components.Frontend.MainApp}}	@$(MAKE) test-app{{end}}
-{{if .Components.Frontend.Home}}	@$(MAKE) test-home{{end}}
-{{if .Components.Frontend.Admin}}	@$(MAKE) test-admin{{end}}
+{{if .Components.Frontend.NextJS.App}}	@$(MAKE) test-app{{end}}
+{{if .Components.Frontend.NextJS.Home}}	@$(MAKE) test-home{{end}}
+{{if .Components.Frontend.NextJS.Admin}}	@$(MAKE) test-admin{{end}}
 	@$(MAKE) test-shared
 	@echo "$(GREEN)✅ All frontend tests completed$(RESET)"
 
-{{if .Components.Frontend.MainApp}}.PHONY: test-app
+{{if .Components.Frontend.NextJS.App}}.PHONY: test-app
 test-app: ## Run main application tests
 	@echo "$(CYAN)Running main application tests...$(RESET)"
 	@cd $(APP_DIR) && npm test -- --run{{end}}
 
-{{if .Components.Frontend.Home}}.PHONY: test-home
+{{if .Components.Frontend.NextJS.Home}}.PHONY: test-home
 test-home: ## Run home page tests
 	@echo "$(CYAN)Running home page tests...$(RESET)"
 	@cd $(HOME_DIR) && npm test -- --run{{end}}
 
-{{if .Components.Frontend.Admin}}.PHONY: test-admin
+{{if .Components.Frontend.NextJS.Admin}}.PHONY: test-admin
 test-admin: ## Run admin dashboard tests
 	@echo "$(CYAN)Running admin dashboard tests...$(RESET)"
 	@cd $(ADMIN_DIR) && npm test -- --run{{end}}
@@ -158,27 +158,27 @@ test-shared: ## Run shared components tests
 .PHONY: test-watch
 test-watch: ## Run tests in watch mode
 	@echo "$(BLUE)Running tests in watch mode...$(RESET)"
-{{if .Components.Frontend.MainApp}}	@cd $(APP_DIR) && npm test{{end}}
+{{if .Components.Frontend.NextJS.App}}	@cd $(APP_DIR) && npm test{{end}}
 
 .PHONY: test-coverage
 test-coverage: ## Run tests with coverage
 	@echo "$(BLUE)Running tests with coverage...$(RESET)"
-{{if .Components.Frontend.MainApp}}	@$(MAKE) test-coverage-app{{end}}
-{{if .Components.Frontend.Home}}	@$(MAKE) test-coverage-home{{end}}
-{{if .Components.Frontend.Admin}}	@$(MAKE) test-coverage-admin{{end}}
+{{if .Components.Frontend.NextJS.App}}	@$(MAKE) test-coverage-app{{end}}
+{{if .Components.Frontend.NextJS.Home}}	@$(MAKE) test-coverage-home{{end}}
+{{if .Components.Frontend.NextJS.Admin}}	@$(MAKE) test-coverage-admin{{end}}
 	@$(MAKE) test-coverage-shared
 
-{{if .Components.Frontend.MainApp}}.PHONY: test-coverage-app
+{{if .Components.Frontend.NextJS.App}}.PHONY: test-coverage-app
 test-coverage-app: ## Run main application tests with coverage
 	@echo "$(CYAN)Running main application tests with coverage...$(RESET)"
 	@cd $(APP_DIR) && npm run test:coverage{{end}}
 
-{{if .Components.Frontend.Home}}.PHONY: test-coverage-home
+{{if .Components.Frontend.NextJS.Home}}.PHONY: test-coverage-home
 test-coverage-home: ## Run home page tests with coverage
 	@echo "$(CYAN)Running home page tests with coverage...$(RESET)"
 	@cd $(HOME_DIR) && npm run test:coverage{{end}}
 
-{{if .Components.Frontend.Admin}}.PHONY: test-coverage-admin
+{{if .Components.Frontend.NextJS.Admin}}.PHONY: test-coverage-admin
 test-coverage-admin: ## Run admin dashboard tests with coverage
 	@echo "$(CYAN)Running admin dashboard tests with coverage...$(RESET)"
 	@cd $(ADMIN_DIR) && npm run test:coverage{{end}}
@@ -191,30 +191,30 @@ test-coverage-shared: ## Run shared components tests with coverage
 .PHONY: test-e2e
 test-e2e: ## Run end-to-end tests
 	@echo "$(BLUE)Running end-to-end tests...$(RESET)"
-{{if .Components.Frontend.MainApp}}	@cd $(APP_DIR) && npm run test:e2e{{end}}
+{{if .Components.Frontend.NextJS.App}}	@cd $(APP_DIR) && npm run test:e2e{{end}}
 
 ##@ Code Quality
 
 .PHONY: lint
 lint: ## Run linting on all frontend code
 	@echo "$(BLUE)Running linting on all frontend code...$(RESET)"
-{{if .Components.Frontend.MainApp}}	@$(MAKE) lint-app{{end}}
-{{if .Components.Frontend.Home}}	@$(MAKE) lint-home{{end}}
-{{if .Components.Frontend.Admin}}	@$(MAKE) lint-admin{{end}}
+{{if .Components.Frontend.NextJS.App}}	@$(MAKE) lint-app{{end}}
+{{if .Components.Frontend.NextJS.Home}}	@$(MAKE) lint-home{{end}}
+{{if .Components.Frontend.NextJS.Admin}}	@$(MAKE) lint-admin{{end}}
 	@$(MAKE) lint-shared
 	@echo "$(GREEN)✅ All frontend linting completed$(RESET)"
 
-{{if .Components.Frontend.MainApp}}.PHONY: lint-app
+{{if .Components.Frontend.NextJS.App}}.PHONY: lint-app
 lint-app: ## Run linting on main application
 	@echo "$(CYAN)Linting main application...$(RESET)"
 	@cd $(APP_DIR) && npm run lint{{end}}
 
-{{if .Components.Frontend.Home}}.PHONY: lint-home
+{{if .Components.Frontend.NextJS.Home}}.PHONY: lint-home
 lint-home: ## Run linting on home page
 	@echo "$(CYAN)Linting home page...$(RESET)"
 	@cd $(HOME_DIR) && npm run lint{{end}}
 
-{{if .Components.Frontend.Admin}}.PHONY: lint-admin
+{{if .Components.Frontend.NextJS.Admin}}.PHONY: lint-admin
 lint-admin: ## Run linting on admin dashboard
 	@echo "$(CYAN)Linting admin dashboard...$(RESET)"
 	@cd $(ADMIN_DIR) && npm run lint{{end}}
@@ -227,31 +227,31 @@ lint-shared: ## Run linting on shared components
 .PHONY: lint-fix
 lint-fix: ## Fix linting issues automatically
 	@echo "$(BLUE)Fixing linting issues...$(RESET)"
-{{if .Components.Frontend.MainApp}}	@cd $(APP_DIR) && npm run lint:fix{{end}}
-{{if .Components.Frontend.Home}}	@cd $(HOME_DIR) && npm run lint:fix{{end}}
-{{if .Components.Frontend.Admin}}	@cd $(ADMIN_DIR) && npm run lint:fix{{end}}
+{{if .Components.Frontend.NextJS.App}}	@cd $(APP_DIR) && npm run lint:fix{{end}}
+{{if .Components.Frontend.NextJS.Home}}	@cd $(HOME_DIR) && npm run lint:fix{{end}}
+{{if .Components.Frontend.NextJS.Admin}}	@cd $(ADMIN_DIR) && npm run lint:fix{{end}}
 	@cd $(SHARED_DIR) && npm run lint:fix
 
 .PHONY: format
 format: ## Format all frontend code
 	@echo "$(BLUE)Formatting all frontend code...$(RESET)"
-{{if .Components.Frontend.MainApp}}	@$(MAKE) format-app{{end}}
-{{if .Components.Frontend.Home}}	@$(MAKE) format-home{{end}}
-{{if .Components.Frontend.Admin}}	@$(MAKE) format-admin{{end}}
+{{if .Components.Frontend.NextJS.App}}	@$(MAKE) format-app{{end}}
+{{if .Components.Frontend.NextJS.Home}}	@$(MAKE) format-home{{end}}
+{{if .Components.Frontend.NextJS.Admin}}	@$(MAKE) format-admin{{end}}
 	@$(MAKE) format-shared
 	@echo "$(GREEN)✅ All frontend code formatted$(RESET)"
 
-{{if .Components.Frontend.MainApp}}.PHONY: format-app
+{{if .Components.Frontend.NextJS.App}}.PHONY: format-app
 format-app: ## Format main application code
 	@echo "$(CYAN)Formatting main application...$(RESET)"
 	@cd $(APP_DIR) && npm run format{{end}}
 
-{{if .Components.Frontend.Home}}.PHONY: format-home
+{{if .Components.Frontend.NextJS.Home}}.PHONY: format-home
 format-home: ## Format home page code
 	@echo "$(CYAN)Formatting home page...$(RESET)"
 	@cd $(HOME_DIR) && npm run format{{end}}
 
-{{if .Components.Frontend.Admin}}.PHONY: format-admin
+{{if .Components.Frontend.NextJS.Admin}}.PHONY: format-admin
 format-admin: ## Format admin dashboard code
 	@echo "$(CYAN)Formatting admin dashboard...$(RESET)"
 	@cd $(ADMIN_DIR) && npm run format{{end}}
@@ -264,23 +264,23 @@ format-shared: ## Format shared components code
 .PHONY: typecheck
 typecheck: ## Run TypeScript type checking
 	@echo "$(BLUE)Running TypeScript type checking...$(RESET)"
-{{if .Components.Frontend.MainApp}}	@$(MAKE) typecheck-app{{end}}
-{{if .Components.Frontend.Home}}	@$(MAKE) typecheck-home{{end}}
-{{if .Components.Frontend.Admin}}	@$(MAKE) typecheck-admin{{end}}
+{{if .Components.Frontend.NextJS.App}}	@$(MAKE) typecheck-app{{end}}
+{{if .Components.Frontend.NextJS.Home}}	@$(MAKE) typecheck-home{{end}}
+{{if .Components.Frontend.NextJS.Admin}}	@$(MAKE) typecheck-admin{{end}}
 	@$(MAKE) typecheck-shared
 	@echo "$(GREEN)✅ All TypeScript type checking completed$(RESET)"
 
-{{if .Components.Frontend.MainApp}}.PHONY: typecheck-app
+{{if .Components.Frontend.NextJS.App}}.PHONY: typecheck-app
 typecheck-app: ## Run type checking on main application
 	@echo "$(CYAN)Type checking main application...$(RESET)"
 	@cd $(APP_DIR) && npm run typecheck{{end}}
 
-{{if .Components.Frontend.Home}}.PHONY: typecheck-home
+{{if .Components.Frontend.NextJS.Home}}.PHONY: typecheck-home
 typecheck-home: ## Run type checking on home page
 	@echo "$(CYAN)Type checking home page...$(RESET)"
 	@cd $(HOME_DIR) && npm run typecheck{{end}}
 
-{{if .Components.Frontend.Admin}}.PHONY: typecheck-admin
+{{if .Components.Frontend.NextJS.Admin}}.PHONY: typecheck-admin
 typecheck-admin: ## Run type checking on admin dashboard
 	@echo "$(CYAN)Type checking admin dashboard...$(RESET)"
 	@cd $(ADMIN_DIR) && npm run typecheck{{end}}
@@ -295,23 +295,23 @@ typecheck-shared: ## Run type checking on shared components
 .PHONY: update
 update: ## Update all frontend dependencies
 	@echo "$(BLUE)Updating all frontend dependencies...$(RESET)"
-{{if .Components.Frontend.MainApp}}	@$(MAKE) update-app{{end}}
-{{if .Components.Frontend.Home}}	@$(MAKE) update-home{{end}}
-{{if .Components.Frontend.Admin}}	@$(MAKE) update-admin{{end}}
+{{if .Components.Frontend.NextJS.App}}	@$(MAKE) update-app{{end}}
+{{if .Components.Frontend.NextJS.Home}}	@$(MAKE) update-home{{end}}
+{{if .Components.Frontend.NextJS.Admin}}	@$(MAKE) update-admin{{end}}
 	@$(MAKE) update-shared
 	@echo "$(GREEN)✅ All frontend dependencies updated$(RESET)"
 
-{{if .Components.Frontend.MainApp}}.PHONY: update-app
+{{if .Components.Frontend.NextJS.App}}.PHONY: update-app
 update-app: ## Update main application dependencies
 	@echo "$(CYAN)Updating main application dependencies...$(RESET)"
 	@cd $(APP_DIR) && npm update{{end}}
 
-{{if .Components.Frontend.Home}}.PHONY: update-home
+{{if .Components.Frontend.NextJS.Home}}.PHONY: update-home
 update-home: ## Update home page dependencies
 	@echo "$(CYAN)Updating home page dependencies...$(RESET)"
 	@cd $(HOME_DIR) && npm update{{end}}
 
-{{if .Components.Frontend.Admin}}.PHONY: update-admin
+{{if .Components.Frontend.NextJS.Admin}}.PHONY: update-admin
 update-admin: ## Update admin dashboard dependencies
 	@echo "$(CYAN)Updating admin dashboard dependencies...$(RESET)"
 	@cd $(ADMIN_DIR) && npm update{{end}}
@@ -324,22 +324,22 @@ update-shared: ## Update shared components dependencies
 .PHONY: audit
 audit: ## Run security audit on all frontend dependencies
 	@echo "$(BLUE)Running security audit...$(RESET)"
-{{if .Components.Frontend.MainApp}}	@$(MAKE) audit-app{{end}}
-{{if .Components.Frontend.Home}}	@$(MAKE) audit-home{{end}}
-{{if .Components.Frontend.Admin}}	@$(MAKE) audit-admin{{end}}
+{{if .Components.Frontend.NextJS.App}}	@$(MAKE) audit-app{{end}}
+{{if .Components.Frontend.NextJS.Home}}	@$(MAKE) audit-home{{end}}
+{{if .Components.Frontend.NextJS.Admin}}	@$(MAKE) audit-admin{{end}}
 	@$(MAKE) audit-shared
 
-{{if .Components.Frontend.MainApp}}.PHONY: audit-app
+{{if .Components.Frontend.NextJS.App}}.PHONY: audit-app
 audit-app: ## Run security audit on main application
 	@echo "$(CYAN)Auditing main application...$(RESET)"
 	@cd $(APP_DIR) && npm audit{{end}}
 
-{{if .Components.Frontend.Home}}.PHONY: audit-home
+{{if .Components.Frontend.NextJS.Home}}.PHONY: audit-home
 audit-home: ## Run security audit on home page
 	@echo "$(CYAN)Auditing home page...$(RESET)"
 	@cd $(HOME_DIR) && npm audit{{end}}
 
-{{if .Components.Frontend.Admin}}.PHONY: audit-admin
+{{if .Components.Frontend.NextJS.Admin}}.PHONY: audit-admin
 audit-admin: ## Run security audit on admin dashboard
 	@echo "$(CYAN)Auditing admin dashboard...$(RESET)"
 	@cd $(ADMIN_DIR) && npm audit{{end}}
@@ -352,9 +352,9 @@ audit-shared: ## Run security audit on shared components
 .PHONY: audit-fix
 audit-fix: ## Fix security vulnerabilities automatically
 	@echo "$(BLUE)Fixing security vulnerabilities...$(RESET)"
-{{if .Components.Frontend.MainApp}}	@cd $(APP_DIR) && npm audit fix{{end}}
-{{if .Components.Frontend.Home}}	@cd $(HOME_DIR) && npm audit fix{{end}}
-{{if .Components.Frontend.Admin}}	@cd $(ADMIN_DIR) && npm audit fix{{end}}
+{{if .Components.Frontend.NextJS.App}}	@cd $(APP_DIR) && npm audit fix{{end}}
+{{if .Components.Frontend.NextJS.Home}}	@cd $(HOME_DIR) && npm audit fix{{end}}
+{{if .Components.Frontend.NextJS.Admin}}	@cd $(ADMIN_DIR) && npm audit fix{{end}}
 	@cd $(SHARED_DIR) && npm audit fix
 
 ##@ Maintenance
@@ -362,23 +362,23 @@ audit-fix: ## Fix security vulnerabilities automatically
 .PHONY: clean
 clean: ## Clean build artifacts and cache
 	@echo "$(YELLOW)Cleaning frontend build artifacts...$(RESET)"
-{{if .Components.Frontend.MainApp}}	@$(MAKE) clean-app{{end}}
-{{if .Components.Frontend.Home}}	@$(MAKE) clean-home{{end}}
-{{if .Components.Frontend.Admin}}	@$(MAKE) clean-admin{{end}}
+{{if .Components.Frontend.NextJS.App}}	@$(MAKE) clean-app{{end}}
+{{if .Components.Frontend.NextJS.Home}}	@$(MAKE) clean-home{{end}}
+{{if .Components.Frontend.NextJS.Admin}}	@$(MAKE) clean-admin{{end}}
 	@$(MAKE) clean-shared
 	@echo "$(GREEN)✅ Frontend cleanup completed$(RESET)"
 
-{{if .Components.Frontend.MainApp}}.PHONY: clean-app
+{{if .Components.Frontend.NextJS.App}}.PHONY: clean-app
 clean-app: ## Clean main application artifacts
 	@echo "$(CYAN)Cleaning main application...$(RESET)"
 	@cd $(APP_DIR) && rm -rf .next dist build node_modules/.cache{{end}}
 
-{{if .Components.Frontend.Home}}.PHONY: clean-home
+{{if .Components.Frontend.NextJS.Home}}.PHONY: clean-home
 clean-home: ## Clean home page artifacts
 	@echo "$(CYAN)Cleaning home page...$(RESET)"
 	@cd $(HOME_DIR) && rm -rf .next dist build node_modules/.cache{{end}}
 
-{{if .Components.Frontend.Admin}}.PHONY: clean-admin
+{{if .Components.Frontend.NextJS.Admin}}.PHONY: clean-admin
 clean-admin: ## Clean admin dashboard artifacts
 	@echo "$(CYAN)Cleaning admin dashboard...$(RESET)"
 	@cd $(ADMIN_DIR) && rm -rf .next dist build node_modules/.cache{{end}}
@@ -391,9 +391,9 @@ clean-shared: ## Clean shared components artifacts
 .PHONY: clean-deps
 clean-deps: ## Remove all node_modules
 	@echo "$(YELLOW)Removing all node_modules...$(RESET)"
-{{if .Components.Frontend.MainApp}}	@rm -rf $(APP_DIR)/node_modules{{end}}
-{{if .Components.Frontend.Home}}	@rm -rf $(HOME_DIR)/node_modules{{end}}
-{{if .Components.Frontend.Admin}}	@rm -rf $(ADMIN_DIR)/node_modules{{end}}
+{{if .Components.Frontend.NextJS.App}}	@rm -rf $(APP_DIR)/node_modules{{end}}
+{{if .Components.Frontend.NextJS.Home}}	@rm -rf $(HOME_DIR)/node_modules{{end}}
+{{if .Components.Frontend.NextJS.Admin}}	@rm -rf $(ADMIN_DIR)/node_modules{{end}}
 	@rm -rf $(SHARED_DIR)/node_modules
 	@echo "$(GREEN)✅ All node_modules removed$(RESET)"
 
@@ -402,21 +402,21 @@ clean-deps: ## Remove all node_modules
 .PHONY: docker-build
 docker-build: ## Build all frontend Docker images
 	@echo "$(BLUE)Building all frontend Docker images...$(RESET)"
-{{if .Components.Frontend.MainApp}}	@$(MAKE) docker-build-app{{end}}
-{{if .Components.Frontend.Home}}	@$(MAKE) docker-build-home{{end}}
-{{if .Components.Frontend.Admin}}	@$(MAKE) docker-build-admin{{end}}
+{{if .Components.Frontend.NextJS.App}}	@$(MAKE) docker-build-app{{end}}
+{{if .Components.Frontend.NextJS.Home}}	@$(MAKE) docker-build-home{{end}}
+{{if .Components.Frontend.NextJS.Admin}}	@$(MAKE) docker-build-admin{{end}}
 
-{{if .Components.Frontend.MainApp}}.PHONY: docker-build-app
+{{if .Components.Frontend.NextJS.App}}.PHONY: docker-build-app
 docker-build-app: ## Build main application Docker image
 	@echo "$(CYAN)Building main application Docker image...$(RESET)"
 	@cd $(APP_DIR) && docker build -t {{.Organization}}/{{.Name}}-app:latest .{{end}}
 
-{{if .Components.Frontend.Home}}.PHONY: docker-build-home
+{{if .Components.Frontend.NextJS.Home}}.PHONY: docker-build-home
 docker-build-home: ## Build home page Docker image
 	@echo "$(CYAN)Building home page Docker image...$(RESET)"
 	@cd $(HOME_DIR) && docker build -t {{.Organization}}/{{.Name}}-home:latest .{{end}}
 
-{{if .Components.Frontend.Admin}}.PHONY: docker-build-admin
+{{if .Components.Frontend.NextJS.Admin}}.PHONY: docker-build-admin
 docker-build-admin: ## Build admin dashboard Docker image
 	@echo "$(CYAN)Building admin dashboard Docker image...$(RESET)"
 	@cd $(ADMIN_DIR) && docker build -t {{.Organization}}/{{.Name}}-admin:latest .{{end}}
@@ -427,7 +427,7 @@ docker-build-admin: ## Build admin dashboard Docker image
 status: ## Show frontend project status
 	@echo "$(CYAN)Frontend Project Status$(RESET)"
 	@echo ""
-{{if .Components.Frontend.MainApp}}	@echo "$(YELLOW)Main Application ($(APP_DIR)):$(RESET)"
+{{if .Components.Frontend.NextJS.App}}	@echo "$(YELLOW)Main Application ($(APP_DIR)):$(RESET)"
 	@if [ -d "$(APP_DIR)" ]; then \
 		echo "  ✅ Directory exists"; \
 		if [ -f "$(APP_DIR)/package.json" ]; then \
@@ -445,7 +445,7 @@ status: ## Show frontend project status
 		echo "  ❌ Directory not found"; \
 	fi
 	@echo ""{{end}}
-{{if .Components.Frontend.Home}}	@echo "$(YELLOW)Home Page ($(HOME_DIR)):$(RESET)"
+{{if .Components.Frontend.NextJS.Home}}	@echo "$(YELLOW)Home Page ($(HOME_DIR)):$(RESET)"
 	@if [ -d "$(HOME_DIR)" ]; then \
 		echo "  ✅ Directory exists"; \
 		if [ -f "$(HOME_DIR)/package.json" ]; then \
@@ -463,7 +463,7 @@ status: ## Show frontend project status
 		echo "  ❌ Directory not found"; \
 	fi
 	@echo ""{{end}}
-{{if .Components.Frontend.Admin}}	@echo "$(YELLOW)Admin Dashboard ($(ADMIN_DIR)):$(RESET)"
+{{if .Components.Frontend.NextJS.Admin}}	@echo "$(YELLOW)Admin Dashboard ($(ADMIN_DIR)):$(RESET)"
 	@if [ -d "$(ADMIN_DIR)" ]; then \
 		echo "  ✅ Directory exists"; \
 		if [ -f "$(ADMIN_DIR)/package.json" ]; then \
@@ -502,12 +502,12 @@ status: ## Show frontend project status
 .PHONY: urls
 urls: ## Show development URLs
 	@echo "$(CYAN)Frontend Development URLs$(RESET)"
-{{if .Components.Frontend.MainApp}}	@echo "  🌐 Main App: http://localhost:3000"{{end}}
-{{if .Components.Frontend.Home}}	@echo "  🏠 Home Page: http://localhost:3001"{{end}}
-{{if .Components.Frontend.Admin}}	@echo "  ⚙️  Admin Dashboard: http://localhost:3002"{{end}}
+{{if .Components.Frontend.NextJS.App}}	@echo "  🌐 Main App: http://localhost:3000"{{end}}
+{{if .Components.Frontend.NextJS.Home}}	@echo "  🏠 Home Page: http://localhost:3001"{{end}}
+{{if .Components.Frontend.NextJS.Admin}}	@echo "  ⚙️  Admin Dashboard: http://localhost:3002"{{end}}
 
 # Include component-specific Makefiles if they exist
-{{if .Components.Frontend.MainApp}}-include $(APP_DIR)/Makefile{{end}}
-{{if .Components.Frontend.Home}}-include $(HOME_DIR)/Makefile{{end}}
-{{if .Components.Frontend.Admin}}-include $(ADMIN_DIR)/Makefile{{end}}
+{{if .Components.Frontend.NextJS.App}}-include $(APP_DIR)/Makefile{{end}}
+{{if .Components.Frontend.NextJS.Home}}-include $(HOME_DIR)/Makefile{{end}}
+{{if .Components.Frontend.NextJS.Admin}}-include $(ADMIN_DIR)/Makefile{{end}}
 -include $(SHARED_DIR)/Makefile

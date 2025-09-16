@@ -1,0 +1,36 @@
+# Comprehensive configuration with all components enabled
+name: comprehensive-test-project
+organization: test-org
+description: A comprehensive test project with all components enabled
+license: Apache-2.0
+author: Test Author
+email: test@example.com
+output_path: ./output/comprehensive
+
+components:
+  frontend:
+    nextjs:
+      app: true
+      home: true
+      admin: true
+      shared: true
+  
+  backend:
+    go_gin: true
+  
+  mobile:
+    android: true
+    ios: true
+  
+  infrastructure:
+    docker: true
+    kubernetes: true
+    terraform: true
+
+versions:
+  go: "1.22"
+  node: "20.11.0"
+  nextjs: "15.0.0"
+  react: "18.2.0"
+  kotlin: "2.0.0"
+  swift: "5.9.0"

@@ -105,7 +105,7 @@ func NewValidationError(field, message string, value interface{}) *models.Genera
 		models.ValidationErrorType,
 		fmt.Sprintf("validation failed for field '%s': %s", field, message),
 		nil,
-	).WithContext("field", field).WithContext("value", value)
+	)
 }
 
 // NewTemplateError creates a standardized template processing error
@@ -114,7 +114,7 @@ func NewTemplateError(templatePath, operation, message string, cause error) *mod
 		models.TemplateErrorType,
 		fmt.Sprintf("template %s failed during %s: %s", templatePath, operation, message),
 		cause,
-	).WithContext("template_path", templatePath).WithContext("operation", operation)
+	)
 }
 
 // NewFileSystemError creates a standardized filesystem error
@@ -123,7 +123,7 @@ func NewFileSystemError(path, operation, message string, cause error) *models.Ge
 		models.FileSystemErrorType,
 		fmt.Sprintf("filesystem %s failed for path '%s': %s", operation, path, message),
 		cause,
-	).WithContext("path", path).WithContext("operation", operation)
+	)
 }
 
 // NewConfigurationError creates a standardized configuration error
@@ -132,16 +132,7 @@ func NewConfigurationError(configKey, message string, cause error) *models.Gener
 		models.ConfigurationErrorType,
 		fmt.Sprintf("configuration error for '%s': %s", configKey, message),
 		cause,
-	).WithContext("config_key", configKey)
-}
-
-// NewNetworkError creates a standardized network error
-func NewNetworkError(endpoint, operation, message string, cause error) *models.GeneratorError {
-	return models.NewGeneratorError(
-		models.NetworkErrorType,
-		fmt.Sprintf("network %s failed for endpoint '%s': %s", operation, endpoint, message),
-		cause,
-	).WithContext("endpoint", endpoint).WithContext("operation", operation)
+	)
 }
 
 // ValidateAndWrapError validates an error and wraps it with appropriate context
@@ -152,26 +143,8 @@ func ValidateAndWrapError(err error, ctx *ErrorContext) error {
 
 	// Check if it's already a GeneratorError
 	if genErr, ok := err.(*models.GeneratorError); ok {
-		// Add additional context if available
-		if ctx.Component != "" {
-			genErr = genErr.WithContext("component", ctx.Component)
-		}
-		if ctx.Operation != "" {
-			genErr = genErr.WithContext("operation", ctx.Operation)
-		}
+		// Return the error as-is since WithContext method was removed
 		return genErr
-	}
-
-	// Check if it's a SecurityOperationError
-	if secErr, ok := err.(*models.SecurityOperationError); ok {
-		// Add additional context if available
-		if ctx.Component != "" {
-			secErr = secErr.WithContext("component", ctx.Component)
-		}
-		if ctx.Operation != "" {
-			secErr = secErr.WithContext("operation", ctx.Operation)
-		}
-		return secErr
 	}
 
 	// Wrap as a generic error with context
@@ -189,10 +162,7 @@ func FormatErrorForUser(err error) string {
 		return formatGeneratorErrorForUser(genErr)
 	}
 
-	// Handle SecurityOperationError
-	if secErr, ok := err.(*models.SecurityOperationError); ok {
-		return formatSecurityErrorForUser(secErr)
-	}
+	// Note: SecurityOperationError was removed in simplified architecture
 
 	// Default formatting for other errors
 	return fmt.Sprintf("Error: %s", err.Error())
@@ -209,8 +179,6 @@ func formatGeneratorErrorForUser(err *models.GeneratorError) string {
 		message.WriteString("📄 Template Error: ")
 	case models.FileSystemErrorType:
 		message.WriteString("📁 File System Error: ")
-	case models.NetworkErrorType:
-		message.WriteString("🌐 Network Error: ")
 	case models.ConfigurationErrorType:
 		message.WriteString("⚙️ Configuration Error: ")
 	default:
@@ -219,42 +187,9 @@ func formatGeneratorErrorForUser(err *models.GeneratorError) string {
 
 	message.WriteString(err.Message)
 
-	// Add helpful context for users
-	if field, ok := err.Context["field"]; ok {
-		message.WriteString(fmt.Sprintf(" (Field: %v)", field))
-	}
-
-	if path, ok := err.Context["path"]; ok {
-		message.WriteString(fmt.Sprintf(" (Path: %v)", path))
-	}
+	// Context field removed
 
 	return message.String()
 }
 
-// formatSecurityErrorForUser formats a SecurityOperationError for user display
-func formatSecurityErrorForUser(err *models.SecurityOperationError) string {
-	var message strings.Builder
-
-	// Add severity indicator
-	switch err.Severity {
-	case models.SecuritySeverityCritical:
-		message.WriteString("🚨 CRITICAL Security Error: ")
-	case models.SecuritySeverityHigh:
-		message.WriteString("⚠️ HIGH Security Error: ")
-	case models.SecuritySeverityMedium:
-		message.WriteString("⚡ MEDIUM Security Error: ")
-	case models.SecuritySeverityLow:
-		message.WriteString("ℹ️ LOW Security Error: ")
-	default:
-		message.WriteString("🔒 Security Error: ")
-	}
-
-	message.WriteString(err.Message)
-
-	// Add remediation if available
-	if err.Remediation != "" {
-		message.WriteString(fmt.Sprintf("\n💡 Suggestion: %s", err.Remediation))
-	}
-
-	return message.String()
-}
+// Note: formatSecurityErrorForUser was removed in simplified architecture

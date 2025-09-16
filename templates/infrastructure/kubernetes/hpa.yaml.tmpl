@@ -1,4 +1,4 @@
-{{if .Components.Frontend.MainApp}}
+{{if .Components.Frontend.NextJS.App}}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -50,7 +50,7 @@ spec:
 ---
 {{end}}
 
-{{if .Components.Frontend.Admin}}
+{{if .Components.Frontend.NextJS.Admin}}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -102,7 +102,7 @@ spec:
 ---
 {{end}}
 
-{{if .Components.Backend.API}}
+{{if .Components.Backend.GoGin}}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:

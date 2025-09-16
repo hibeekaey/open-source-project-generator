@@ -66,12 +66,12 @@ func TestGoClient_GetLatestVersion(t *testing.T) {
 				if strings.HasSuffix(r.URL.Path, "/@latest") {
 					w.WriteHeader(tt.latestStatus)
 					if tt.latestStatus == http.StatusOK && tt.mockLatest != nil {
-						json.NewEncoder(w).Encode(tt.mockLatest)
+						_ = json.NewEncoder(w).Encode(tt.mockLatest)
 					}
 				} else if strings.HasSuffix(r.URL.Path, "/@v/list") {
 					w.WriteHeader(tt.versionsStatus)
 					if tt.versionsStatus == http.StatusOK {
-						w.Write([]byte(strings.Join(tt.mockVersions, "\n")))
+						_, _ = w.Write([]byte(strings.Join(tt.mockVersions, "\n")))
 					}
 				} else {
 					w.WriteHeader(http.StatusNotFound)
@@ -150,7 +150,7 @@ func TestGoClient_GetVersionInfo(t *testing.T) {
 
 				w.WriteHeader(tt.expectedStatus)
 				if tt.expectedStatus == http.StatusOK && tt.mockResponse != nil {
-					json.NewEncoder(w).Encode(tt.mockResponse)
+					_ = json.NewEncoder(w).Encode(tt.mockResponse)
 				}
 			}))
 			defer server.Close()

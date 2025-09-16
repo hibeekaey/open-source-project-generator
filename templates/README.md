@@ -4,7 +4,7 @@ This directory contains all the template files used by the Open Source Template 
 
 ## Structure
 
-```
+```text
 templates/
 ├── base/                    # Core project files and documentation
 │   ├── .github/            # GitHub Actions workflows and templates

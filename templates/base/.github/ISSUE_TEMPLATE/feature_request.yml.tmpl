@@ -29,9 +29,9 @@ body:
       label: Target Component
       description: Which component would this feature affect?
       options:
-        {{if .Components.Frontend.MainApp}}- Frontend - Main App{{end}}
-        {{if .Components.Frontend.Home}}- Frontend - Home{{end}}
-        {{if .Components.Frontend.Admin}}- Frontend - Admin{{end}}
+        {{if .Components.Frontend.NextJS.App}}- Frontend - Main App{{end}}
+        {{if .Components.Frontend.NextJS.Home}}- Frontend - Home{{end}}
+        {{if .Components.Frontend.NextJS.Admin}}- Frontend - Admin{{end}}
         - Backend - API Server
         {{if .Components.Mobile.Android}}- Mobile - Android{{end}}
         {{if .Components.Mobile.IOS}}- Mobile - iOS{{end}}

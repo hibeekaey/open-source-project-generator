@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   # Frontend Applications
-  {{if .Components.Frontend.MainApp}}
+  {{if .Components.Frontend.NextJS.App}}
   app:
     build:
       context: ./App
@@ -35,7 +35,7 @@ services:
       start_period: 40s
   {{end}}
 
-  {{if .Components.Frontend.Home}}
+  {{if .Components.Frontend.NextJS.Home}}
   home:
     build:
       context: ./Home
@@ -66,7 +66,7 @@ services:
       start_period: 40s
   {{end}}
 
-  {{if .Components.Frontend.Admin}}
+  {{if .Components.Frontend.NextJS.Admin}}
   admin:
     build:
       context: ./Admin
@@ -100,7 +100,7 @@ services:
   {{end}}
 
   # Backend API
-  {{if .Components.Backend.API}}
+  {{if .Components.Backend.GoGin}}
   api:
     build:
       context: ./CommonServer
@@ -200,10 +200,10 @@ services:
       - ./Deploy/nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./Deploy/nginx/ssl:/etc/nginx/ssl
     depends_on:
-      {{if .Components.Frontend.MainApp}}- app{{end}}
-      {{if .Components.Frontend.Home}}- home{{end}}
-      {{if .Components.Frontend.Admin}}- admin{{end}}
-      {{if .Components.Backend.API}}- api{{end}}
+      {{if .Components.Frontend.NextJS.App}}- app{{end}}
+      {{if .Components.Frontend.NextJS.Home}}- home{{end}}
+      {{if .Components.Frontend.NextJS.Admin}}- admin{{end}}
+      {{if .Components.Backend.GoGin}}- api{{end}}
     networks:
       - {{.Name}}-network
     restart: unless-stopped

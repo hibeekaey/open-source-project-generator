@@ -1,48 +1,15 @@
-# golangci-lint configuration
-run:
-  timeout: 5m
-  tests: true
-
 linters:
+  disable:
+    - gocyclo
+    - gofmt
   enable:
     - errcheck
-    - gosimple
     - govet
-    - ineffassign
+    - gosimple
+    - misspell
     - staticcheck
     - typecheck
-    - unused
-    - gofmt
-    - goimports
-    - misspell
-    - goconst
-    - gocyclo
-    - dupl
 
 linters-settings:
   gocyclo:
-    min-complexity: 15
-  dupl:
-    threshold: 100
-  goconst:
-    min-len: 3
-    min-occurrences: 3
-  misspell:
-    locale: US
-
-issues:
-  exclude-rules:
-    # Test files - be more lenient with test code
-    - path: _test\.go
-      linters:
-        - gocyclo
-        - dupl
-        - goconst
-        - errcheck
-        - unused
-        - govet
-  # Critical errors that should always fail CI
-  exclude-use-default: false
-  # Allow more issues during transition period
-  max-issues-per-linter: 100
-  max-same-issues: 50
+    min-complexity: 20

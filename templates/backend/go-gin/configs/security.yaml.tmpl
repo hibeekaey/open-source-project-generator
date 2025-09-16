@@ -8,7 +8,7 @@ security:
     enabled: true
     # Restrictive CSP for production environments
     default_src: "'self'"
-    script_src: "'self' 'nonce-{{.CSPNonce}}'"
+    script_src: "'self' 'nonce-RANDOM_CSP_NONCE_VALUE'"
     style_src: "'self' 'unsafe-inline'"
     img_src: "'self' data: https:"
     font_src: "'self' https:"

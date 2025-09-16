@@ -272,7 +272,7 @@ deploy_docker() {
     cd "$PROJECT_ROOT"
     
     # Tag images with version
-{{if .Components.Frontend.MainApp}}    local frontend_images=("app"{{if .Components.Frontend.Home}} "home"{{end}}{{if .Components.Frontend.Admin}} "admin"{{end}})
+{{if .Components.Frontend.NextJS.App}}    local frontend_images=("app"{{if .Components.Frontend.NextJS.Home}} "home"{{end}}{{if .Components.Frontend.NextJS.Admin}} "admin"{{end}})
     for image in "${frontend_images[@]}"; do
         if docker images | grep -q "$REGISTRY_URL/{{.Name}}-$image"; then
             log_info "Tagging frontend image: $image"
@@ -285,7 +285,7 @@ deploy_docker() {
         fi
     done{{end}}
     
-{{if .Components.Backend.API}}    # Backend image
+{{if .Components.Backend.GoGin}}    # Backend image
     if docker images | grep -q "$REGISTRY_URL/{{.Name}}-backend"; then
         log_info "Tagging backend image"
         docker tag "$REGISTRY_URL/{{.Name}}-backend:latest" "$REGISTRY_URL/{{.Name}}-backend:$VERSION"
@@ -532,7 +532,7 @@ run_post_deployment_tests() {
 run_docker_smoke_tests() {
     log_info "Running Docker smoke tests..."
     
-{{if .Components.Backend.API}}    # Test backend health endpoint
+{{if .Components.Backend.GoGin}}    # Test backend health endpoint
     local backend_url="http://localhost:8080"
     if curl -f "$backend_url/health" >/dev/null 2>&1; then
         log_success "Backend health check passed"
@@ -541,7 +541,7 @@ run_docker_smoke_tests() {
         return 1
     fi{{end}}
     
-{{if .Components.Frontend.MainApp}}    # Test frontend
+{{if .Components.Frontend.NextJS.App}}    # Test frontend
     local frontend_url="http://localhost:3000"
     if curl -f "$frontend_url" >/dev/null 2>&1; then
         log_success "Frontend health check passed"

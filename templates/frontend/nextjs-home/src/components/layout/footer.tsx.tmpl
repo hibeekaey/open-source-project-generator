@@ -55,7 +55,7 @@ export function Footer() {
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center space-x-2 mb-4">
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
-                {{.Name | slice 0 1 | upper}}
+                {{.Name | printf "%.1s" | upper}}
               </div>
               <span className="text-xl font-bold">{{.Name}}</span>
             </Link>

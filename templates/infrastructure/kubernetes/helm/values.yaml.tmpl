@@ -43,7 +43,7 @@ podSecurityContext:
     drop:
     - ALL
 
-{{if .Components.Frontend.MainApp}}
+{{if .Components.Frontend.NextJS.App}}
 # Frontend App configuration
 frontend:
   app:
@@ -73,7 +73,7 @@ frontend:
     affinity: {}
 {{end}}
 
-{{if .Components.Frontend.Home}}
+{{if .Components.Frontend.NextJS.Home}}
   home:
     enabled: true
     replicaCount: 1
@@ -97,7 +97,7 @@ frontend:
     affinity: {}
 {{end}}
 
-{{if .Components.Frontend.Admin}}
+{{if .Components.Frontend.NextJS.Admin}}
   admin:
     enabled: true
     replicaCount: 1
@@ -125,7 +125,7 @@ frontend:
     affinity: {}
 {{end}}
 
-{{if .Components.Backend.API}}
+{{if .Components.Backend.GoGin}}
 # Backend API configuration
 backend:
   api:
@@ -218,26 +218,26 @@ ingress:
       paths:
         - path: /
           pathType: Prefix
-          {{if .Components.Frontend.MainApp}}service: {{.Name}}-app-service{{end}}
-        {{if .Components.Backend.API}}
+          {{if .Components.Frontend.NextJS.App}}service: {{.Name}}-app-service{{end}}
+        {{if .Components.Backend.GoGin}}
         - path: /api
           pathType: Prefix
           service: {{.Name}}-api-service
         {{end}}
-    {{if .Components.Frontend.Home}}
+    {{if .Components.Frontend.NextJS.Home}}
     - host: home.{{.Name}}.{{.Organization}}.com
       paths:
         - path: /
           pathType: Prefix
           service: {{.Name}}-home-service
     {{end}}
-    {{if .Components.Frontend.Admin}}
+    {{if .Components.Frontend.NextJS.Admin}}
     - host: admin.{{.Name}}.{{.Organization}}.com
       paths:
         - path: /
           pathType: Prefix
           service: {{.Name}}-admin-service
-        {{if .Components.Backend.API}}
+        {{if .Components.Backend.GoGin}}
         - path: /api
           pathType: Prefix
           service: {{.Name}}-api-service
@@ -247,8 +247,8 @@ ingress:
     - secretName: {{.Name}}-tls
       hosts:
         - {{.Name}}.{{.Organization}}.com
-        {{if .Components.Frontend.Home}}- home.{{.Name}}.{{.Organization}}.com{{end}}
-        {{if .Components.Frontend.Admin}}- admin.{{.Name}}.{{.Organization}}.com{{end}}
+        {{if .Components.Frontend.NextJS.Home}}- home.{{.Name}}.{{.Organization}}.com{{end}}
+        {{if .Components.Frontend.NextJS.Admin}}- admin.{{.Name}}.{{.Organization}}.com{{end}}
 
 # Certificate Manager
 certManager:

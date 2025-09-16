@@ -25,7 +25,7 @@ generator generate
 
 **Generated Structure:**
 
-```
+```text
 awesome-webapp/
 ├── App/
 │   ├── main/              # Next.js main application
@@ -85,7 +85,7 @@ output_path: "./mobile-app"
 
 **Generated Structure:**
 
-```
+```text
 mobile-app/
 ├── CommonServer/          # Go API server
 ├── Mobile/
@@ -136,7 +136,7 @@ output_path: "./enterprise-platform"
 
 **Generated Structure:**
 
-```
+```text
 enterprise-platform/
 ├── App/
 │   ├── main/              # Main SaaS application
@@ -227,7 +227,7 @@ generator validate
 
 **Example Validation Output:**
 
-```
+```text
 ⏳ Validating project at ./my-project...
 ✅ Project validation completed successfully
 
@@ -269,7 +269,7 @@ generator version --packages
 
 **Example Output:**
 
-```
+```text
 Open Source Template Generator v1.0.0
 Built with Go 1.22+
 

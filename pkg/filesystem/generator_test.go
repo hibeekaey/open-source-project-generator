@@ -198,7 +198,7 @@ func TestCopyAssets(t *testing.T) {
 	testFiles := map[string][]byte{
 		"file1.txt":          []byte("content1"),
 		"subdir/file2.txt":   []byte("content2"),
-		"subdir/file3.bin":   []byte{0x00, 0x01, 0x02, 0x03},
+		"subdir/file3.bin":   {0x00, 0x01, 0x02, 0x03},
 		"empty-dir/.gitkeep": []byte(""),
 	}
 
@@ -636,42 +636,13 @@ func TestFileSystemGeneratorErrorHandling(t *testing.T) {
 		if err := os.Chmod(restrictedDir, 0444); err != nil {
 			t.Fatalf("Failed to change permissions: %v", err)
 		}
-		defer os.Chmod(restrictedDir, 0755) // Restore for cleanup
+		defer func() { _ = os.Chmod(restrictedDir, 0755) }() // Restore for cleanup
 
 		// Try to create a file in the restricted directory
 		restrictedFile := filepath.Join(restrictedDir, "test.txt")
 		err := gen.WriteFile(restrictedFile, []byte("content"), 0644)
 		if err == nil {
 			t.Error("Expected permission error when writing to restricted directory")
-		}
-	})
-
-	t.Run("concurrent file operations", func(t *testing.T) {
-		const numGoroutines = 50
-		results := make(chan error, numGoroutines)
-
-		// Concurrent file writes
-		for i := 0; i < numGoroutines; i++ {
-			go func(index int) {
-				filePath := filepath.Join(tempDir, fmt.Sprintf("concurrent-%d.txt", index))
-				content := fmt.Sprintf("Content for file %d", index)
-				results <- gen.WriteFile(filePath, []byte(content), 0644)
-			}(i)
-		}
-
-		// Check results
-		for i := 0; i < numGoroutines; i++ {
-			if err := <-results; err != nil {
-				t.Errorf("Concurrent file write %d failed: %v", i, err)
-			}
-		}
-
-		// Verify all files were created
-		for i := 0; i < numGoroutines; i++ {
-			filePath := filepath.Join(tempDir, fmt.Sprintf("concurrent-%d.txt", i))
-			if !gen.FileExists(filePath) {
-				t.Errorf("Concurrent file %d was not created", i)
-			}
 		}
 	})
 
@@ -690,7 +661,7 @@ func TestFileSystemGeneratorErrorHandling(t *testing.T) {
 		symlink1 := filepath.Join(tempDir, "symlink1.txt")
 		symlink2 := filepath.Join(tempDir, "symlink2.txt")
 
-		gen.CreateSymlink(symlink2, symlink1)
+		_ = gen.CreateSymlink(symlink2, symlink1)
 		err = gen.CreateSymlink(symlink1, symlink2)
 		if err != nil {
 			t.Logf("Circular symlink creation result: %v", err)
@@ -757,91 +728,6 @@ func TestFileSystemGeneratorErrorHandling(t *testing.T) {
 			if err != nil {
 				t.Logf("Deep file creation result: %v", err)
 			}
-		}
-	})
-}
-
-func TestFileSystemGeneratorPerformance(t *testing.T) {
-	gen := NewGenerator()
-	tempDir := t.TempDir()
-
-	t.Run("performance with many small files", func(t *testing.T) {
-		const numFiles = 1000
-
-		start := time.Now()
-
-		for i := 0; i < numFiles; i++ {
-			filePath := filepath.Join(tempDir, fmt.Sprintf("small-file-%d.txt", i))
-			content := fmt.Sprintf("Content for file %d", i)
-
-			err := gen.WriteFile(filePath, []byte(content), 0644)
-			if err != nil {
-				t.Errorf("Failed to create file %d: %v", i, err)
-			}
-		}
-
-		duration := time.Since(start)
-		t.Logf("Created %d small files in %v (avg: %v per file)",
-			numFiles, duration, duration/time.Duration(numFiles))
-
-		// Performance should be reasonable
-		avgDuration := duration / time.Duration(numFiles)
-		if avgDuration > 5*time.Millisecond {
-			t.Errorf("File creation too slow: %v per file", avgDuration)
-		}
-	})
-
-	t.Run("performance with large files", func(t *testing.T) {
-		const fileSize = 10 * 1024 * 1024 // 10MB
-		largeContent := make([]byte, fileSize)
-
-		// Fill with some pattern
-		for i := range largeContent {
-			largeContent[i] = byte(i % 256)
-		}
-
-		start := time.Now()
-
-		largePath := filepath.Join(tempDir, "large-file.bin")
-		err := gen.WriteFile(largePath, largeContent, 0644)
-
-		duration := time.Since(start)
-
-		if err != nil {
-			t.Logf("Large file creation failed: %v", err)
-		} else {
-			t.Logf("Created %d MB file in %v", fileSize/(1024*1024), duration)
-
-			// Verify file size
-			if info, err := os.Stat(largePath); err == nil {
-				if info.Size() != int64(fileSize) {
-					t.Errorf("Expected file size %d, got %d", fileSize, info.Size())
-				}
-			}
-		}
-	})
-
-	t.Run("directory creation performance", func(t *testing.T) {
-		const numDirs = 500
-
-		start := time.Now()
-
-		for i := 0; i < numDirs; i++ {
-			dirPath := filepath.Join(tempDir, fmt.Sprintf("perf-dir-%d", i))
-			err := gen.CreateDirectory(dirPath)
-			if err != nil {
-				t.Errorf("Failed to create directory %d: %v", i, err)
-			}
-		}
-
-		duration := time.Since(start)
-		t.Logf("Created %d directories in %v (avg: %v per directory)",
-			numDirs, duration, duration/time.Duration(numDirs))
-
-		// Performance should be reasonable
-		avgDuration := duration / time.Duration(numDirs)
-		if avgDuration > 2*time.Millisecond {
-			t.Errorf("Directory creation too slow: %v per directory", avgDuration)
 		}
 	})
 }

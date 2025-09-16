@@ -22,8 +22,8 @@ GO_VERSION="{{.Versions.Go}}"
 # Directories
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-{{if .Components.Frontend.MainApp}}FRONTEND_DIRS=("App"{{if .Components.Frontend.Home}} "Home"{{end}}{{if .Components.Frontend.Admin}} "Admin"{{end}}){{end}}
-{{if .Components.Backend.API}}BACKEND_DIR="CommonServer"{{end}}
+{{if .Components.Frontend.NextJS.App}}FRONTEND_DIRS=("App"{{if .Components.Frontend.NextJS.Home}} "Home"{{end}}{{if .Components.Frontend.NextJS.Admin}} "Admin"{{end}}){{end}}
+{{if .Components.Backend.GoGin}}BACKEND_DIR="CommonServer"{{end}}
 
 # Logging functions
 log_info() {
@@ -154,7 +154,7 @@ check_prerequisites() {
         log_info "Make found"
     fi
     
-{{if .Components.Frontend.MainApp}}    # Node.js
+{{if .Components.Frontend.NextJS.App}}    # Node.js
     if ! command_exists node; then
         log_warning "Node.js not found, installing..."
         case "$PACKAGE_MANAGER" in
@@ -196,7 +196,7 @@ check_prerequisites() {
         log_info "npm $(npm --version) found"
     fi{{end}}
     
-{{if .Components.Backend.API}}    # Go
+{{if .Components.Backend.GoGin}}    # Go
     if ! command_exists go; then
         log_warning "Go not found, installing..."
         case "$PACKAGE_MANAGER" in
@@ -296,8 +296,8 @@ REDIS_URL=redis://localhost:6379/0
 JWT_SECRET=your-super-secret-jwt-key-change-in-production
 
 # API
-{{if .Components.Backend.API}}API_BASE_URL=http://localhost:8080{{end}}
-{{if .Components.Frontend.MainApp}}FRONTEND_URL=http://localhost:3000{{end}}
+{{if .Components.Backend.GoGin}}API_BASE_URL=http://localhost:8080{{end}}
+{{if .Components.Frontend.NextJS.App}}FRONTEND_URL=http://localhost:3000{{end}}
 EOF
             log_success "Created basic .env.local"
         fi
@@ -305,7 +305,7 @@ EOF
         log_info ".env.local already exists"
     fi
     
-{{if .Components.Backend.API}}    # Backend environment file
+{{if .Components.Backend.GoGin}}    # Backend environment file
     if [[ ! -f "$BACKEND_DIR/.env" ]]; then
         if [[ -f "$BACKEND_DIR/.env.example" ]]; then
             cp "$BACKEND_DIR/.env.example" "$BACKEND_DIR/.env"
@@ -344,7 +344,7 @@ install_dependencies() {
     
     cd "$PROJECT_ROOT"
     
-{{if .Components.Frontend.MainApp}}    # Frontend dependencies
+{{if .Components.Frontend.NextJS.App}}    # Frontend dependencies
     for dir in "${FRONTEND_DIRS[@]}"; do
         if [[ -d "$dir" ]]; then
             log_info "Installing dependencies for $dir..."
@@ -357,7 +357,7 @@ install_dependencies() {
         fi
     done{{end}}
     
-{{if .Components.Backend.API}}    # Backend dependencies
+{{if .Components.Backend.GoGin}}    # Backend dependencies
     if [[ -d "$BACKEND_DIR" ]]; then
         log_info "Installing backend dependencies..."
         cd "$BACKEND_DIR"
@@ -428,7 +428,7 @@ EOF
             log_warning "psql not found, cannot test database connection"
         fi
         
-{{if .Components.Backend.API}}        # Run migrations
+{{if .Components.Backend.GoGin}}        # Run migrations
         if [[ -d "$BACKEND_DIR" ]]; then
             log_info "Running database migrations..."
             cd "$BACKEND_DIR"
@@ -457,7 +457,7 @@ EOF
 install_dev_tools() {
     log_step "Installing development tools..."
     
-{{if .Components.Backend.API}}    # Go tools
+{{if .Components.Backend.GoGin}}    # Go tools
     if command_exists go; then
         log_info "Installing Go development tools..."
         go install github.com/cosmtrek/air@latest
@@ -467,7 +467,7 @@ install_dev_tools() {
         log_success "Go development tools installed"
     fi{{end}}
     
-{{if .Components.Frontend.MainApp}}    # Global npm packages
+{{if .Components.Frontend.NextJS.App}}    # Global npm packages
     if command_exists npm; then
         log_info "Installing global npm packages..."
         npm install -g typescript@latest
@@ -494,7 +494,7 @@ validate_setup() {
         log_warning "Make not available, skipping validation"
     fi
     
-{{if .Components.Frontend.MainApp}}    # Test frontend builds
+{{if .Components.Frontend.NextJS.App}}    # Test frontend builds
     for dir in "${FRONTEND_DIRS[@]}"; do
         if [[ -d "$dir" && -f "$dir/package.json" ]]; then
             log_info "Testing $dir build..."
@@ -508,7 +508,7 @@ validate_setup() {
         fi
     done{{end}}
     
-{{if .Components.Backend.API}}    # Test backend build
+{{if .Components.Backend.GoGin}}    # Test backend build
     if [[ -d "$BACKEND_DIR" ]]; then
         log_info "Testing backend build..."
         cd "$BACKEND_DIR"
@@ -528,15 +528,15 @@ show_next_steps() {
     echo ""
     echo -e "${CYAN}Next steps:${NC}"
     echo "1. Review and update environment variables in .env.local"
-{{if .Components.Backend.API}}    echo "2. Review and update backend configuration in $BACKEND_DIR/.env"{{end}}
+{{if .Components.Backend.GoGin}}    echo "2. Review and update backend configuration in $BACKEND_DIR/.env"{{end}}
     echo "3. Start the development environment:"
     echo "   ${YELLOW}make dev${NC}"
     echo ""
     echo -e "${CYAN}Development URLs:${NC}"
-{{if .Components.Frontend.MainApp}}    echo "   🌐 Main App: http://localhost:3000"{{end}}
-{{if .Components.Frontend.Home}}    echo "   🏠 Home Page: http://localhost:3001"{{end}}
-{{if .Components.Frontend.Admin}}    echo "   ⚙️  Admin Dashboard: http://localhost:3002"{{end}}
-{{if .Components.Backend.API}}    echo "   🔧 API Server: http://localhost:8080"
+{{if .Components.Frontend.NextJS.App}}    echo "   🌐 Main App: http://localhost:3000"{{end}}
+{{if .Components.Frontend.NextJS.Home}}    echo "   🏠 Home Page: http://localhost:3001"{{end}}
+{{if .Components.Frontend.NextJS.Admin}}    echo "   ⚙️  Admin Dashboard: http://localhost:3002"{{end}}
+{{if .Components.Backend.GoGin}}    echo "   🔧 API Server: http://localhost:8080"
     echo "   📚 API Docs: http://localhost:8080/swagger"{{end}}
     echo ""
     echo -e "${CYAN}Useful commands:${NC}"

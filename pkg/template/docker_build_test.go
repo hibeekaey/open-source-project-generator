@@ -309,18 +309,14 @@ func TestDockerImageVersionValidation(t *testing.T) {
 				Description:  tt.description,
 				License:      "MIT",
 				Versions: &models.VersionConfig{
-					NodeJS: &models.NodeVersionConfig{
-						Runtime:      tt.nodeRuntime,
-						TypesPackage: "^20.17.0",
-						NPMVersion:   ">=10.0.0",
-						DockerImage:  tt.dockerImage,
-						LTSStatus:    true,
+					Node: tt.nodeRuntime,
+					Packages: map[string]string{
+						"typescript": "^20.17.0",
 					},
 				},
 			}
 
-			// For now, we'll just verify the configuration is valid
-			// In a real implementation, we might add validation logic
+			// Verify the configuration is valid
 			if config.Name != "test-validation" {
 				t.Errorf("Expected name %s, got %s", "test-validation", config.Name)
 			}
@@ -337,13 +333,108 @@ func TestDockerImageVersionValidation(t *testing.T) {
 				t.Errorf("Expected license %s, got %s", "MIT", config.License)
 			}
 
-			if config.Versions.NodeJS.DockerImage != tt.dockerImage {
-				t.Errorf("Expected Docker image %s, got %s", tt.dockerImage, config.Versions.NodeJS.DockerImage)
-			}
+			// Validate that the Versions field is properly set and accessible
+			if config.Versions == nil {
+				t.Error("Expected Versions field to be set")
+			} else {
+				if config.Versions.Node != tt.nodeRuntime {
+					t.Errorf("Expected Node version %s, got %s", tt.nodeRuntime, config.Versions.Node)
+				}
 
-			if config.Versions.NodeJS.Runtime != tt.nodeRuntime {
-				t.Errorf("Expected runtime %s, got %s", tt.nodeRuntime, config.Versions.NodeJS.Runtime)
+				// Validate package versions
+				if config.Versions.Packages == nil {
+					t.Error("Expected Packages field to be set")
+				} else {
+					if typescriptVersion, exists := config.Versions.Packages["typescript"]; !exists {
+						t.Error("Expected typescript package version to be set")
+					} else if typescriptVersion != "^20.17.0" {
+						t.Errorf("Expected typescript version ^20.17.0, got %s", typescriptVersion)
+					}
+				}
+
+				// Simulate Docker image version validation logic
+				// Extract Node version from Docker image (e.g., "node:20-alpine" -> "20")
+				dockerImageVersion := extractNodeVersionFromDockerImage(tt.dockerImage)
+				if dockerImageVersion == "" {
+					t.Errorf("Could not extract Node version from Docker image: %s", tt.dockerImage)
+				}
+
+				// Basic validation: check if the Docker image version meets the runtime requirement
+				isCompatible := validateNodeVersionCompatibility(dockerImageVersion, tt.nodeRuntime)
+				if isCompatible && tt.expectError {
+					t.Errorf("Expected incompatibility between Docker image %s and runtime %s, but they were compatible", tt.dockerImage, tt.nodeRuntime)
+				} else if !isCompatible && !tt.expectError {
+					t.Errorf("Expected compatibility between Docker image %s and runtime %s, but they were incompatible", tt.dockerImage, tt.nodeRuntime)
+				}
 			}
 		})
 	}
+}
+
+// extractNodeVersionFromDockerImage extracts the Node.js version from a Docker image string
+// e.g., "node:20-alpine" -> "20", "node:18.17.0-slim" -> "18.17.0"
+func extractNodeVersionFromDockerImage(dockerImage string) string {
+	// Remove the "node:" prefix
+	if !strings.HasPrefix(dockerImage, "node:") {
+		return ""
+	}
+
+	version := strings.TrimPrefix(dockerImage, "node:")
+
+	// Extract the version part before any additional tags (like -alpine, -slim)
+	parts := strings.Split(version, "-")
+	if len(parts) > 0 {
+		return parts[0]
+	}
+
+	return version
+}
+
+// validateNodeVersionCompatibility performs basic version compatibility checking
+// This is a simplified implementation for testing purposes
+func validateNodeVersionCompatibility(dockerVersion, runtimeRequirement string) bool {
+	// For this test, we'll do a simple major version comparison
+	// In a real implementation, you'd want more sophisticated semver parsing
+
+	// Extract major version from docker version (e.g., "20.17.0" -> "20")
+	dockerMajor := extractMajorVersion(dockerVersion)
+	if dockerMajor == "" {
+		return false
+	}
+
+	// Parse runtime requirement (e.g., ">=20.0.0" -> "20")
+	reqMajor := extractMajorVersionFromRequirement(runtimeRequirement)
+	if reqMajor == "" {
+		return false
+	}
+
+	// Simple comparison: docker major version should be >= required major version
+	return dockerMajor >= reqMajor
+}
+
+// extractMajorVersion extracts the major version number from a version string
+func extractMajorVersion(version string) string {
+	parts := strings.Split(version, ".")
+	if len(parts) > 0 {
+		return parts[0]
+	}
+	return ""
+}
+
+// extractMajorVersionFromRequirement extracts the major version from a requirement string
+func extractMajorVersionFromRequirement(requirement string) string {
+	// Handle patterns like ">=20.0.0", "~20.0.0", "^20.0.0", "20.0.0"
+	requirement = strings.TrimSpace(requirement)
+
+	// Remove common prefixes
+	prefixes := []string{">=", "~", "^", "="}
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(requirement, prefix) {
+			requirement = strings.TrimPrefix(requirement, prefix)
+			break
+		}
+	}
+
+	// Extract major version
+	return extractMajorVersion(requirement)
 }
