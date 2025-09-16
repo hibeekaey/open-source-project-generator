@@ -684,7 +684,7 @@ func (a *App) processInfrastructureTemplates(templateDir, projectOutputDir strin
 	// Create monitoring directory (even if no templates exist yet)
 	if config.Components.Infrastructure.Docker || config.Components.Infrastructure.Kubernetes || config.Components.Infrastructure.Terraform {
 		monitoringDir := filepath.Join(deployDir, "monitoring")
-		if err := os.MkdirAll(monitoringDir, 0755); err != nil {
+		if err := os.MkdirAll(monitoringDir, 0750); err != nil {
 			return fmt.Errorf("failed to create monitoring directory: %w", err)
 		}
 
@@ -724,11 +724,11 @@ func (a *App) processBaseRootFiles(baseDir, projectOutputDir string, config *mod
 			}
 
 			// Write the processed content to the output file
-			if err := os.MkdirAll(filepath.Dir(outputFile), 0755); err != nil {
+			if err := os.MkdirAll(filepath.Dir(outputFile), 0750); err != nil {
 				return fmt.Errorf("failed to create output directory: %w", err)
 			}
 
-			if err := os.WriteFile(outputFile, content, 0644); err != nil {
+			if err := os.WriteFile(outputFile, content, 0600); err != nil {
 				return fmt.Errorf("failed to write output file %s: %w", outputName, err)
 			}
 		}

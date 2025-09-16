@@ -154,7 +154,7 @@ func (c *CLI) PromptProjectDetails() (*models.ProjectConfig, error) {
 	}
 
 	// Create output directory if it doesn't exist
-	if err := os.MkdirAll(absPath, 0755); err != nil {
+	if err := os.MkdirAll(absPath, 0750); err != nil {
 		return nil, fmt.Errorf("failed to create output directory: %w", err)
 	}
 

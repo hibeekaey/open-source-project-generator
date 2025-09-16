@@ -73,8 +73,8 @@ func (g *Generator) CreateDirectory(path string) error {
 		return nil
 	}
 
-	// Create directory with proper permissions (0755)
-	if err := os.MkdirAll(cleanPath, 0755); err != nil {
+	// Create directory with secure permissions (0750)
+	if err := os.MkdirAll(cleanPath, 0750); err != nil {
 		return fmt.Errorf("failed to create directory %s: %w", cleanPath, err)
 	}
 
@@ -277,7 +277,7 @@ func (g *Generator) copyFile(srcPath, destPath string, perm os.FileMode) error {
 
 	// Create destination directory if it doesn't exist
 	destDir := filepath.Dir(destPath)
-	if err := os.MkdirAll(destDir, 0755); err != nil {
+	if err := os.MkdirAll(destDir, 0750); err != nil {
 		return fmt.Errorf("failed to create destination directory: %w", err)
 	}
 

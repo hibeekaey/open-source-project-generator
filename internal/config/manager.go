@@ -9,6 +9,7 @@ import (
 
 	"github.com/open-source-template-generator/pkg/interfaces"
 	"github.com/open-source-template-generator/pkg/models"
+	"github.com/open-source-template-generator/pkg/utils"
 	yaml "gopkg.in/yaml.v3"
 )
 
@@ -76,7 +77,12 @@ func (m *Manager) LoadDefaults() (*models.ProjectConfig, error) {
 
 // LoadConfig loads configuration from a file
 func (m *Manager) LoadConfig(configPath string) (*models.ProjectConfig, error) {
-	content, err := os.ReadFile(configPath)
+	// Validate path to prevent directory traversal
+	if err := utils.ValidatePath(configPath); err != nil {
+		return nil, fmt.Errorf("invalid config path: %w", err)
+	}
+
+	content, err := utils.SafeReadFile(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
@@ -121,7 +127,7 @@ func (m *Manager) SaveConfig(config *models.ProjectConfig, configPath string) er
 		return fmt.Errorf("unsupported config file format: %s", ext)
 	}
 
-	if err := os.WriteFile(configPath, content, 0644); err != nil {
+	if err := utils.SafeWriteFile(configPath, content); err != nil {
 		return fmt.Errorf("failed to write config file: %w", err)
 	}
 
