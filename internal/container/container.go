@@ -1,7 +1,7 @@
 package container
 
 import (
-	"github.com/open-source-template-generator/pkg/interfaces"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/interfaces"
 )
 
 // Container manages basic dependency injection for the application

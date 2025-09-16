@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/open-source-template-generator/pkg/filesystem"
-	"github.com/open-source-template-generator/pkg/models"
-	"github.com/open-source-template-generator/pkg/validation"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/filesystem"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/validation"
 )
 
 // TestVersionConsistencyAcrossMultipleFrontendTemplates tests that all frontend templates

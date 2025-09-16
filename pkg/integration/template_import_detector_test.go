@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/open-source-template-generator/pkg/template"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/template"
 )
 
 // TestImportDetectorIntegration tests the import detector with real template files

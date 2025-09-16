@@ -7,12 +7,12 @@ This guide provides comprehensive installation instructions for the Open Source 
 ### Linux and macOS
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/open-source-template-generator/generator/main/scripts/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/cuesoftinc/open-source-project-generator/main/scripts/install.sh | bash
 ```
 
 ### Windows (Quick Install)
 
-Download the Windows binary from the [releases page](https://github.com/open-source-template-generator/generator/releases) and follow the installation instructions included in the archive.
+Download the Windows binary from the [releases page](https://github.com/cuesoftinc/open-source-template-generator/releases) and follow the installation instructions included in the archive.
 
 ## Package Manager Installation
 
@@ -20,8 +20,8 @@ Download the Windows binary from the [releases page](https://github.com/open-sou
 
 ```bash
 # Download and install the DEB package
-wget https://github.com/open-source-template-generator/generator/releases/latest/download/generator_1.0.0_amd64.deb
-sudo dpkg -i generator_1.0.0_amd64.deb
+wget https://github.com/cuesoftinc/open-source-template-generator/releases/latest/download/generator_VERSION_amd64.deb
+sudo dpkg -i generator_VERSION_amd64.deb
 
 # Fix dependencies if needed
 sudo apt-get install -f
@@ -31,10 +31,10 @@ sudo apt-get install -f
 
 ```bash
 # Using YUM
-sudo yum install https://github.com/open-source-template-generator/generator/releases/latest/download/generator-1.0.0-1.x86_64.rpm
+sudo yum install https://github.com/cuesoftinc/open-source-project-generator/releases/latest/download/generator-VERSION-1.x86_64.rpm
 
 # Using DNF
-sudo dnf install https://github.com/open-source-template-generator/generator/releases/latest/download/generator-1.0.0-1.x86_64.rpm
+sudo dnf install https://github.com/cuesoftinc/open-source-project-generator/releases/latest/download/generator-VERSION-1.x86_64.rpm
 ```
 
 ### Arch Linux (AUR)
@@ -56,7 +56,7 @@ makepkg -si
 
 ```bash
 # Add our tap (coming soon)
-brew tap open-source-template-generator/tap
+brew tap cuesoftinc/tap
 brew install generator
 ```
 
@@ -71,7 +71,7 @@ choco install generator
 
 ```powershell
 # Coming soon
-scoop bucket add generator https://github.com/open-source-template-generator/scoop-bucket
+scoop bucket add generator https://github.com/cuesoftinc/scoop-bucket
 scoop install generator
 ```
 
@@ -79,7 +79,7 @@ scoop install generator
 
 ### Download Pre-built Binaries
 
-1. Visit the [releases page](https://github.com/open-source-template-generator/generator/releases)
+1. Visit the [releases page](https://github.com/cuesoftinc/open-source-project-generator/releases)
 2. Download the appropriate archive for your platform:
    - Linux: `generator-linux-amd64.tar.gz`
    - macOS (Intel): `generator-darwin-amd64.tar.gz`
@@ -214,8 +214,8 @@ cp env.example .env
 ### Build Docker Image from Source
 
 ```bash
-git clone https://github.com/open-source-template-generator/generator.git
-cd generator
+git clone https://github.com/cuesoftinc/open-source-project-generator.git
+cd open-source-project-generator
 docker build -t generator:local .
 ```
 
@@ -231,8 +231,8 @@ docker build -t generator:local .
 
 ```bash
 # Clone the repository
-git clone https://github.com/open-source-template-generator/generator.git
-cd generator
+git clone https://github.com/cuesoftinc/open-source-project-generator.git
+cd open-source-project-generator
 
 # Install dependencies
 go mod download
@@ -426,7 +426,7 @@ For installation issues, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 
 ## Support
 
-- 📖 [Documentation](https://github.com/open-source-template-generator/generator/wiki)
-- 🐛 [Issue Tracker](https://github.com/open-source-template-generator/generator/issues)
-- 💬 [Discussions](https://github.com/open-source-template-generator/generator/discussions)
+- 📖 [Documentation](https://github.com/cuesoftinc/open-source-project-generator/wiki)
+- 🐛 [Issue Tracker](https://github.com/cuesoftinc/open-source-project-generator/issues)
+- 💬 [Discussions](https://github.com/cuesoftinc/open-source-project-generator/discussions)
 - 📧 [Email Support](mailto:support@generator.dev)

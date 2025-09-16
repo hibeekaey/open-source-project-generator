@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/open-source-template-generator/pkg/constants"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/constants"
 )
 
 // TestTemplateFixesComprehensive runs the complete test suite for template fixes

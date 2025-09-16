@@ -106,9 +106,33 @@ VERSION=v1.2.0 ./scripts/build.sh
 
 Primary distribution method:
 
-- **URL**: `https://github.com/open-source-template-generator/generator/releases`
+- **URL**: `https://github.com/cuesoftinc/open-source-project-generator/releases`
 - **Assets**: Binaries, packages, checksums
 - **Automation**: Fully automated via GitHub Actions
+
+#### Asset Naming Convention
+
+The following assets are automatically generated for each release:
+
+**Binary Archives:**
+
+- `generator-linux-amd64.tar.gz` - Linux 64-bit
+- `generator-linux-arm64.tar.gz` - Linux ARM64  
+- `generator-darwin-amd64.tar.gz` - macOS Intel
+- `generator-darwin-arm64.tar.gz` - macOS Apple Silicon
+- `generator-windows-amd64.zip` - Windows 64-bit
+- `generator-freebsd-amd64.tar.gz` - FreeBSD 64-bit
+
+**Package Files:**
+
+- `generator_VERSION_amd64.deb` - Debian/Ubuntu package
+- `generator-VERSION-1.x86_64.rpm` - Red Hat/CentOS package
+
+**Additional Files:**
+
+- `checksums.txt` - SHA256 checksums for all assets
+
+> **Note**: Replace `VERSION` with the actual release version (e.g., `1.0.0`)
 
 ### Package Repositories
 
@@ -116,15 +140,15 @@ Primary distribution method:
 
 ```bash
 # Install from release
-wget https://github.com/open-source-template-generator/generator/releases/latest/download/generator_1.0.0_amd64.deb
-sudo dpkg -i generator_1.0.0_amd64.deb
+wget https://github.com/cuesoftinc/open-source-project-generator/releases/latest/download/generator_VERSION_amd64.deb
+sudo dpkg -i generator_VERSION_amd64.deb
 ```
 
 #### Red Hat/CentOS/Fedora (YUM/DNF)
 
 ```bash
 # Install from release
-sudo yum install https://github.com/open-source-template-generator/generator/releases/latest/download/generator-1.0.0-1.x86_64.rpm
+sudo yum install https://github.com/cuesoftinc/open-source-project-generator/releases/latest/download/generator-VERSION-1.x86_64.rpm
 ```
 
 #### Arch Linux (AUR)
@@ -192,10 +216,10 @@ scoop install generator
 
 ```bash
 # Linux/macOS
-curl -sSL https://raw.githubusercontent.com/open-source-template-generator/generator/main/scripts/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/cuesoftinc/open-source-project-generator/main/scripts/install.sh | bash
 
 # With options
-curl -sSL https://raw.githubusercontent.com/open-source-template-generator/generator/main/scripts/install.sh | bash -s -- --version v1.0.0
+curl -sSL https://raw.githubusercontent.com/cuesoftinc/open-source-project-generator/main/scripts/install.sh | bash -s -- --version v1.0.0
 ```
 
 ### Manual Installation
@@ -283,8 +307,8 @@ make test-install
 
 ```bash
 # Validate packages
-dpkg -I packages/generator_1.0.0_amd64.deb
-rpm -qip packages/generator-1.0.0-1.x86_64.rpm
+dpkg -I packages/generator_VERSION_amd64.deb
+rpm -qip packages/generator-VERSION-1.x86_64.rpm
 
 # Test binaries
 ./dist/generator-linux-amd64/generator --version
@@ -312,7 +336,7 @@ Monitor release downloads via GitHub API:
 
 ```bash
 # Get download stats
-curl -s https://api.github.com/repos/open-source-template-generator/generator/releases | jq '.[].assets[].download_count'
+curl -s https://api.github.com/repos/cuesoftinc/open-source-project-generator/releases | jq '.[].assets[].download_count'
 ```
 
 ### Usage Analytics
@@ -360,21 +384,21 @@ go build -v -x ./cmd/generator
 
 ```bash
 # Validate package structure
-dpkg-deb --contents generator_1.0.0_amd64.deb
-rpm2cpio generator-1.0.0-1.x86_64.rpm | cpio -tv
+dpkg-deb --contents generator_VERSION_amd64.deb
+rpm2cpio generator-VERSION-1.x86_64.rpm | cpio -tv
 
 # Test package installation
-docker run --rm -v $(pwd):/packages ubuntu:22.04 bash -c "apt update && dpkg -i /packages/generator_1.0.0_amd64.deb"
+docker run --rm -v $(pwd):/packages ubuntu:22.04 bash -c "apt update && dpkg -i /packages/generator_VERSION_amd64.deb"
 ```
 
 ### Distribution Issues
 
 ```bash
 # Test download URLs
-curl -I https://github.com/open-source-template-generator/generator/releases/latest/download/generator-linux-amd64.tar.gz
+curl -I https://github.com/cuesoftinc/open-source-project-generator/releases/latest/download/generator-linux-amd64.tar.gz
 
 # Verify checksums
-curl -sL https://github.com/open-source-template-generator/generator/releases/latest/download/checksums.txt | sha256sum -c
+curl -sL https://github.com/cuesoftinc/open-source-project-generator/releases/latest/download/checksums.txt | sha256sum -c
 ```
 
 ## Contributing
@@ -405,6 +429,6 @@ curl -sL https://github.com/open-source-template-generator/generator/releases/la
 For distribution-related issues:
 
 - 📖 [Installation Guide](docs/INSTALLATION.md)
-- 🐛 [Issue Tracker](https://github.com/open-source-template-generator/generator/issues)
-- 💬 [Discussions](https://github.com/open-source-template-generator/generator/discussions)
+- 🐛 [Issue Tracker](https://github.com/cuesoftinc/open-source-project-generator/issues)
+- 💬 [Discussions](https://github.com/cuesoftinc/open-source-project-generator/discussions)
 - 📧 [Email Support](mailto:support@generator.dev)

@@ -1,6 +1,6 @@
 package interfaces
 
-import "github.com/open-source-template-generator/pkg/models"
+import "github.com/cuesoftinc/open-source-project-generator/pkg/models"
 
 // ConfigManager defines the contract for configuration management operations
 type ConfigManager interface {

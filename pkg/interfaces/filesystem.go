@@ -3,7 +3,7 @@ package interfaces
 import (
 	"os"
 
-	"github.com/open-source-template-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
 )
 
 // FileSystemGenerator defines the contract for file system operations

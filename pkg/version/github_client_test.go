@@ -65,8 +65,8 @@ func TestGitHubClient_GetLatestRelease(t *testing.T) {
 				if r.Header.Get("Accept") != "application/vnd.github.v3+json" {
 					t.Errorf("Expected Accept header to be application/vnd.github.v3+json, got %s", r.Header.Get("Accept"))
 				}
-				if r.Header.Get("User-Agent") != "open-source-template-generator/1.0" {
-					t.Errorf("Expected User-Agent header to be open-source-template-generator/1.0, got %s", r.Header.Get("User-Agent"))
+				if r.Header.Get("User-Agent") != "open-source-project-generator/1.0" {
+					t.Errorf("Expected User-Agent header to be open-source-project-generator/1.0, got %s", r.Header.Get("User-Agent"))
 				}
 
 				// Verify URL path

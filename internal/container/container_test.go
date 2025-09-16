@@ -3,12 +3,12 @@ package container
 import (
 	"testing"
 
-	"github.com/open-source-template-generator/pkg/cli"
-	"github.com/open-source-template-generator/pkg/filesystem"
-	"github.com/open-source-template-generator/pkg/models"
-	"github.com/open-source-template-generator/pkg/template"
-	"github.com/open-source-template-generator/pkg/validation"
-	"github.com/open-source-template-generator/pkg/version"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/cli"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/filesystem"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/template"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/validation"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/version"
 )
 
 func TestNewContainer(t *testing.T) {

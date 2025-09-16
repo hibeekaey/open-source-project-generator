@@ -55,11 +55,11 @@ Ensure you have the required tools installed:
 
    ```bash
    # Fork the repository on GitHub, then clone your fork
-   git clone https://github.com/YOUR_USERNAME/open-source-template-generator.git
-   cd open-source-template-generator
+   git clone https://github.com/YOUR_USERNAME/open-source-project-generator.git
+   cd open-source-project-generator
    
    # Add upstream remote
-   git remote add upstream https://github.com/your-org/open-source-template-generator.git
+   git remote add upstream https://github.com/cuesoftinc/open-source-project-generator.git
    ```
 
 2. **Environment Setup**

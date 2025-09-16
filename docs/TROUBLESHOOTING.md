@@ -99,7 +99,7 @@ This guide helps you resolve common issues with the Open Source Template Generat
 
    ```bash
    # Check what's missing
-   dpkg -I generator_1.0.0_amd64.deb
+   dpkg -I generator_VERSION_amd64.deb
    
    # Install dependencies
    sudo apt install <missing-packages>
@@ -121,11 +121,11 @@ This guide helps you resolve common issues with the Open Source Template Generat
 
    ```bash
    # If curl fails, try wget
-   wget https://github.com/open-source-template-generator/generator/releases/latest/download/generator-linux-amd64.tar.gz
+   wget https://github.com/cuesoftinc/open-source-project-generator/releases/latest/download/generator-linux-amd64.tar.gz
    ```
 
 3. **Manual download**:
-   - Visit the [releases page](https://github.com/open-source-template-generator/generator/releases)
+   - Visit the [releases page](https://github.com/cuesoftinc/open-source-project-generator/releases)
    - Download manually through browser
    - Extract and install manually
 
@@ -295,8 +295,8 @@ This guide helps you resolve common issues with the Open Source Template Generat
 3. **Build from source**:
 
    ```bash
-   git clone https://github.com/open-source-template-generator/generator.git
-   cd generator
+   git clone https://github.com/cuesoftinc/open-source-project-generator.git
+   cd open-source-project-generator
    make build
    ```
 
@@ -314,7 +314,7 @@ This guide helps you resolve common issues with the Open Source Template Generat
 2. **Install manually**:
 
    ```bash
-   curl -L https://github.com/open-source-template-generator/generator/releases/latest/download/generator-darwin-amd64.tar.gz | tar -xz
+   curl -L https://github.com/cuesoftinc/open-source-project-generator/releases/latest/download/generator-darwin-amd64.tar.gz | tar -xz
    mv generator-darwin-amd64/generator /usr/local/bin/
    ```
 
@@ -381,14 +381,14 @@ This guide helps you resolve common issues with the Open Source Template Generat
 
    ```bash
    # Download static build
-   wget https://github.com/open-source-template-generator/generator/releases/latest/download/generator-linux-amd64-static.tar.gz
+   wget https://github.com/cuesoftinc/open-source-project-generator/releases/latest/download/generator-linux-amd64.tar.gz
    ```
 
 3. **Build from source**:
 
    ```bash
-   git clone https://github.com/open-source-template-generator/generator.git
-   cd generator
+   git clone https://github.com/cuesoftinc/open-source-project-generator.git
+   cd open-source-project-generator
    CGO_ENABLED=0 go build -o generator ./cmd/generator
    ```
 
@@ -739,9 +739,9 @@ ls -la ~/.cache/generator/logs/
 
 ### Support Channels
 
-1. **GitHub Issues**: [Report bugs and feature requests](https://github.com/open-source-template-generator/generator/issues)
-2. **Discussions**: [Community support](https://github.com/open-source-template-generator/generator/discussions)
-3. **Documentation**: [Wiki and guides](https://github.com/open-source-template-generator/generator/wiki)
+1. **GitHub Issues**: [Report bugs and feature requests](https://github.com/cuesoftinc/open-source-project-generator/issues)
+2. **Discussions**: [Community support](https://github.com/cuesoftinc/open-source-project-generator/discussions)
+3. **Documentation**: [Wiki and guides](https://github.com/cuesoftinc/open-source-project-generator/wiki)
 4. **Email**: [Direct support](mailto:support@generator.dev)
 
 ### Before Reporting Issues

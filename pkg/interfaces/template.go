@@ -3,7 +3,7 @@ package interfaces
 import (
 	"text/template"
 
-	"github.com/open-source-template-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
 )
 
 // TemplateEngine defines the contract for template processing operations.

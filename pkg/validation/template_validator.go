@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/open-source-template-generator/pkg/models"
-	"github.com/open-source-template-generator/pkg/utils"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/utils"
 )
 
 // TemplateValidator handles template consistency validation

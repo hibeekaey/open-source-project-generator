@@ -5,7 +5,7 @@
 // testing, and modular architecture throughout the application.
 package interfaces
 
-import "github.com/open-source-template-generator/pkg/models"
+import "github.com/cuesoftinc/open-source-project-generator/pkg/models"
 
 // CLIInterface defines the contract for command-line interface operations.
 //
