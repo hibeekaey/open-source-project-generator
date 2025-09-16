@@ -6,8 +6,8 @@
 set -e
 
 # Configuration
-REPO_OWNER="open-source-template-generator"
-REPO_NAME="generator"
+REPO_OWNER="cuesoftinc"
+REPO_NAME="open-source-project-generator"
 BINARY_NAME="generator"
 INSTALL_DIR="/usr/local/bin"
 USER_INSTALL_DIR="$HOME/bin"
