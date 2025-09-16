@@ -23,15 +23,16 @@ func TestCompleteProjectGenerationIntegration(t *testing.T) {
 		License:      "MIT",
 		Author:       "Test Author",
 		Email:        "test@awesome-org.com",
-		Repository:   "https://github.com/awesome-org/awesome-project",
 		Components: models.Components{
 			Frontend: models.FrontendComponents{
-				MainApp: true,
-				Home:    true,
-				Admin:   true,
+				NextJS: models.NextJSComponents{
+					App:   true,
+					Home:  true,
+					Admin: true,
+				},
 			},
 			Backend: models.BackendComponents{
-				API: true,
+				GoGin: true,
 			},
 			Mobile: models.MobileComponents{
 				Android: true,
@@ -44,13 +45,14 @@ func TestCompleteProjectGenerationIntegration(t *testing.T) {
 			},
 		},
 		Versions: &models.VersionConfig{
-			Node:      "18.17.0",
-			Go:        "1.22.0",
-			Kotlin:    "1.9.0",
-			Swift:     "5.9.0",
-			NextJS:    "14.0.0",
-			React:     "18.2.0",
-			UpdatedAt: time.Now(),
+			Node: "18.17.0",
+			Go:   "1.22.0",
+			Packages: map[string]string{
+				"kotlin": "1.9.0",
+				"swift":  "5.9.0",
+				"next":   "14.0.0",
+				"react":  "18.2.0",
+			},
 		},
 		OutputPath:       tempDir,
 		GeneratedAt:      time.Now(),
@@ -184,19 +186,19 @@ func TestCompleteProjectGenerationIntegration(t *testing.T) {
 			checkPath string
 		}{
 			"Frontend Main App": {
-				enabled:   config.Components.Frontend.MainApp,
+				enabled:   config.Components.Frontend.NextJS.App,
 				checkPath: "App/package.json",
 			},
 			"Frontend Home": {
-				enabled:   config.Components.Frontend.Home,
+				enabled:   config.Components.Frontend.NextJS.Home,
 				checkPath: "Home/package.json",
 			},
 			"Frontend Admin": {
-				enabled:   config.Components.Frontend.Admin,
+				enabled:   config.Components.Frontend.NextJS.Admin,
 				checkPath: "Admin/package.json",
 			},
 			"Backend API": {
-				enabled:   config.Components.Backend.API,
+				enabled:   config.Components.Backend.GoGin,
 				checkPath: "CommonServer/go.mod",
 			},
 			"Mobile Android": {
@@ -238,12 +240,14 @@ func TestProjectGenerationWithMinimalComponents(t *testing.T) {
 		License:      "MIT",
 		Components: models.Components{
 			Frontend: models.FrontendComponents{
-				MainApp: true,
-				Home:    false,
-				Admin:   false,
+				NextJS: models.NextJSComponents{
+					App:   true,
+					Home:  false,
+					Admin: false,
+				},
 			},
 			Backend: models.BackendComponents{
-				API: false,
+				GoGin: false,
 			},
 			Mobile: models.MobileComponents{
 				Android: false,
@@ -256,10 +260,12 @@ func TestProjectGenerationWithMinimalComponents(t *testing.T) {
 			},
 		},
 		Versions: &models.VersionConfig{
-			Node:   "18.17.0",
-			Go:     "1.22.0",
-			NextJS: "14.0.0",
-			React:  "18.2.0",
+			Node: "18.17.0",
+			Go:   "1.22.0",
+			Packages: map[string]string{
+				"next":  "14.0.0",
+				"react": "18.2.0",
+			},
 		},
 		OutputPath: tempDir,
 	}
@@ -330,14 +336,22 @@ func TestProjectGenerationDryRun(t *testing.T) {
 		Description:  "A project for testing dry-run mode",
 		License:      "MIT",
 		Components: models.Components{
-			Frontend: models.FrontendComponents{MainApp: true},
-			Backend:  models.BackendComponents{API: true},
+			Frontend: models.FrontendComponents{
+				NextJS: models.NextJSComponents{
+					App: true,
+				},
+			},
+			Backend: models.BackendComponents{
+				GoGin: true,
+			},
 		},
 		Versions: &models.VersionConfig{
-			Node:   "18.17.0",
-			Go:     "1.22.0",
-			NextJS: "14.0.0",
-			React:  "18.2.0",
+			Node: "18.17.0",
+			Go:   "1.22.0",
+			Packages: map[string]string{
+				"next":  "14.0.0",
+				"react": "18.2.0",
+			},
 		},
 		OutputPath: tempDir,
 	}

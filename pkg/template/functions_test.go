@@ -286,12 +286,14 @@ func TestComponentCheckingFunctions(t *testing.T) {
 	config := &models.ProjectConfig{
 		Components: models.Components{
 			Frontend: models.FrontendComponents{
-				MainApp: true,
-				Home:    false,
-				Admin:   true,
+				NextJS: models.NextJSComponents{
+					App:   true,
+					Home:  false,
+					Admin: true,
+				},
 			},
 			Backend: models.BackendComponents{
-				API: true,
+				GoGin: true,
 			},
 			Mobile: models.MobileComponents{
 				Android: false,

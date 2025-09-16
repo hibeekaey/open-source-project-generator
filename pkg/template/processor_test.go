@@ -78,7 +78,7 @@ files:
 		"frontend/app.js.tmpl": `// {{.Name}} Frontend Application
 console.log('Hello from {{.Name}}!');
 
-{{if .Components.Frontend.MainApp}}
+{{if .Components.Frontend.NextJS.App}}
 // Main application code
 {{end}}`,
 		"backend/server.go.tmpl": `package main
@@ -119,10 +119,12 @@ export const Button: React.FC<ButtonProps> = ({ children }) => {
 		Description:  "A test application for template processing",
 		Components: models.Components{
 			Frontend: models.FrontendComponents{
-				MainApp: true,
+				NextJS: models.NextJSComponents{
+					App: true,
+				},
 			},
 			Backend: models.BackendComponents{
-				API: true,
+				GoGin: true,
 			},
 		},
 	}
@@ -244,10 +246,12 @@ files:
 		Name: "FrontendApp",
 		Components: models.Components{
 			Frontend: models.FrontendComponents{
-				MainApp: true,
+				NextJS: models.NextJSComponents{
+					App: true,
+				},
 			},
 			Backend: models.BackendComponents{
-				API: false,
+				GoGin: false,
 			},
 		},
 	}
@@ -664,10 +668,12 @@ func TestShouldProcessPath(t *testing.T) {
 	configWithFrontend := &models.ProjectConfig{
 		Components: models.Components{
 			Frontend: models.FrontendComponents{
-				MainApp: true,
+				NextJS: models.NextJSComponents{
+					App: true,
+				},
 			},
 			Backend: models.BackendComponents{
-				API: false,
+				GoGin: false,
 			},
 		},
 	}
@@ -675,10 +681,12 @@ func TestShouldProcessPath(t *testing.T) {
 	configWithoutFrontend := &models.ProjectConfig{
 		Components: models.Components{
 			Frontend: models.FrontendComponents{
-				MainApp: false,
+				NextJS: models.NextJSComponents{
+					App: false,
+				},
 			},
 			Backend: models.BackendComponents{
-				API: true,
+				GoGin: true,
 			},
 		},
 	}
@@ -847,10 +855,12 @@ func main() {
 		Description:  "A simple test application",
 		Components: models.Components{
 			Frontend: models.FrontendComponents{
-				MainApp: true,
+				NextJS: models.NextJSComponents{
+					App: true,
+				},
 			},
 			Backend: models.BackendComponents{
-				API: true,
+				GoGin: true,
 			},
 		},
 	}

@@ -13,12 +13,10 @@ import (
 //   - Single template file processing with variable substitution
 //   - Recursive directory processing for complete project generation
 //   - Custom function registration for extended template functionality
-//   - Template caching and performance optimization
 //   - Version management integration for automatic dependency updates
 //
 // Implementations should provide:
 //   - Robust error handling and validation
-//   - Performance optimization through caching
 //   - Security considerations for template processing
 //   - Integration with version management systems
 type TemplateEngine interface {
@@ -86,7 +84,6 @@ type TemplateEngine interface {
 	//   - Parses the template syntax and validates correctness
 	//   - Applies registered custom functions
 	//   - Returns a parsed template ready for rendering
-	//   - Implements caching for performance optimization
 	//
 	// Parameters:
 	//   - templatePath: Path to the template file to load
@@ -106,7 +103,6 @@ type TemplateEngine interface {
 	//   - Performs variable substitution and function calls
 	//   - Handles conditional rendering and loops
 	//   - Returns the rendered content as bytes
-	//   - Implements render result caching for performance
 	//
 	// Parameters:
 	//   - tmpl: Parsed template to render (from LoadTemplate)

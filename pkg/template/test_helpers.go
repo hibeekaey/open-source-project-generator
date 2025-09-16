@@ -15,15 +15,17 @@ func createTestProjectConfig() *models.ProjectConfig {
 		License:      "MIT",
 		Author:       "Test Author",
 		Email:        "test@example.com",
-		Repository:   "https://github.com/testorg/testproject",
 		Components: models.Components{
 			Frontend: models.FrontendComponents{
-				MainApp: true,
-				Home:    true,
-				Admin:   true,
+				NextJS: models.NextJSComponents{
+					App:    true,
+					Home:   true,
+					Admin:  true,
+					Shared: true,
+				},
 			},
 			Backend: models.BackendComponents{
-				API: true,
+				GoGin: true,
 			},
 			Mobile: models.MobileComponents{
 				Android: true,
@@ -36,21 +38,12 @@ func createTestProjectConfig() *models.ProjectConfig {
 			},
 		},
 		Versions: &models.VersionConfig{
-			Node:   "20.0.0",
-			Go:     "1.22",
-			Kotlin: "1.9.0",
-			Swift:  "5.9",
-			NextJS: "14.0.0",
-			React:  "18.0.0",
+			Node: "20.0.0",
+			Go:   "1.22",
 			Packages: map[string]string{
 				"typescript": "5.0.0",
 				"eslint":     "8.0.0",
 			},
-			UpdatedAt: time.Now(),
-		},
-		CustomVars: map[string]string{
-			"DATABASE_URL": "postgresql://localhost:5432/testdb",
-			"REDIS_URL":    "redis://localhost:6379",
 		},
 		OutputPath:       "output",
 		GeneratedAt:      time.Now(),

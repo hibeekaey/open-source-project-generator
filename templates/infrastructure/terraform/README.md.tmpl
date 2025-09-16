@@ -8,7 +8,7 @@ This directory contains the Terraform infrastructure configuration for {{.Name}}
 
 ## Tech Stack
 
-- **Terraform**: {{.Versions.Terraform}} or later
+- **Terraform**: 1.6.0 or later
 - **Provider**: AWS (configurable for other cloud providers)
 - **State Management**: Remote state with S3 backend
 - **Security**: IAM roles and policies with least privilege
@@ -40,7 +40,7 @@ terraform/
 
 ### Prerequisites
 
-- **Terraform**: {{.Versions.Terraform}} or later
+- **Terraform**: 1.6.0 or later
 - **AWS CLI**: Configured with appropriate credentials
 - **Access**: AWS account with necessary permissions
 
@@ -52,8 +52,8 @@ terraform/
    brew install terraform
    
    # Linux
-   wget https://releases.hashicorp.com/terraform/{{.Versions.Terraform}}/terraform_{{.Versions.Terraform}}_linux_amd64.zip
-   unzip terraform_{{.Versions.Terraform}}_linux_amd64.zip
+   wget https://releases.hashicorp.com/terraform/1.6.0/terraform_1.6.0_linux_amd64.zip
+   unzip terraform_1.6.0_linux_amd64.zip
    sudo mv terraform /usr/local/bin/
    ```
 
@@ -237,7 +237,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: {{.Versions.Terraform}}
+          terraform_version: 1.6.0
       
       - name: Terraform Init
         run: terraform init

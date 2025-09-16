@@ -363,10 +363,7 @@ func (v *Validator) ValidateProjectConfig(config *models.ProjectConfig) {
 		v.ValidateEmail(config.Email, "email")
 	}
 
-	// Validate repository URL if provided
-	if config.Repository != "" {
-		v.ValidateURL(config.Repository, "repository")
-	}
+	// Repository field removed
 
 	// Validate output path
 	if config.OutputPath != "" {
@@ -374,8 +371,8 @@ func (v *Validator) ValidateProjectConfig(config *models.ProjectConfig) {
 	}
 
 	// Validate components - check if at least one component is selected
-	hasAnyComponent := config.Components.Frontend.MainApp || config.Components.Frontend.Home || config.Components.Frontend.Admin ||
-		config.Components.Backend.API ||
+	hasAnyComponent := config.Components.Frontend.NextJS.App || config.Components.Frontend.NextJS.Home || config.Components.Frontend.NextJS.Admin ||
+		config.Components.Backend.GoGin ||
 		config.Components.Mobile.Android || config.Components.Mobile.IOS ||
 		config.Components.Infrastructure.Terraform || config.Components.Infrastructure.Kubernetes || config.Components.Infrastructure.Docker
 

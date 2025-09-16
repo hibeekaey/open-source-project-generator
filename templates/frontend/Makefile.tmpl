@@ -11,8 +11,8 @@ RESET := \033[0m
 
 # Configuration
 NODE_VERSION := {{.Versions.Node}}
-NEXT_VERSION := {{.Versions.NextJS}}
-REACT_VERSION := {{.Versions.React}}
+NEXT_VERSION := {{.Versions.Packages.next}}
+REACT_VERSION := {{.Versions.Packages.react}}
 
 # Directories
 {{if .Components.Frontend.MainApp}}APP_DIR := App{{end}}

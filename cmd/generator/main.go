@@ -21,7 +21,6 @@ import (
 	"os"
 
 	"github.com/open-source-template-generator/internal/app"
-	"github.com/open-source-template-generator/internal/container"
 )
 
 // Version information set by build
@@ -35,25 +34,16 @@ var (
 // It initializes the dependency injection container, creates the application instance,
 // and handles proper cleanup and error reporting.
 func main() {
-	// Initialize dependency injection container with all required services
-	// including CLI handlers, template processors, and validation engines
-	c := container.NewContainer()
-
-	// Create and configure the application with the initialized container
+	// Create and configure the application
 	// This sets up all CLI commands, flags, and validation logic
-	application := app.NewAppWithVersion(c, Version, GitCommit, BuildTime)
-
-	// Ensure proper cleanup of resources when the application exits
-	// This includes closing file handles, network connections, and temporary files
-	defer func() {
-		if err := application.Close(); err != nil {
-			log.Printf("Error closing application: %v", err)
-		}
-	}()
+	application, err := app.NewApp()
+	if err != nil {
+		log.Fatalf("Failed to create application: %v", err)
+	}
 
 	// Execute the CLI application with command-line arguments
 	// This processes user input, validates configuration, and generates projects
-	if err := application.Execute(); err != nil {
+	if err := application.Run(os.Args[1:]); err != nil {
 		log.Printf("Error executing application: %v", err)
 		os.Exit(1)
 	}

@@ -42,12 +42,12 @@ Visit [http://localhost:3000](http://localhost:3000) to see your application run
 
 ## ✨ Features
 
-{{if .Components.Frontend.MainApp}}- **Modern Frontend**: Next.js {{.Versions.NextJS}} with TypeScript, Tailwind CSS, and App Router{{end}}
+{{if .Components.Frontend.NextJS.App}}- **Modern Frontend**: Next.js {{.Versions.Packages.next}} with TypeScript, Tailwind CSS, and App Router{{end}}
 {{if .Components.Frontend.Home}}- **Landing Page**: Responsive marketing site with modern design{{end}}
 {{if .Components.Frontend.Admin}}- **Admin Dashboard**: Comprehensive admin interface with data management{{end}}
 {{if .Components.Backend.API}}- **REST API**: Go {{.Versions.Go}} backend with Gin framework and comprehensive middleware{{end}}
-{{if .Components.Mobile.Android}}- **Android App**: Native Android application with Kotlin {{.Versions.Kotlin}} and Jetpack Compose{{end}}
-{{if .Components.Mobile.iOS}}- **iOS App**: Native iOS application with Swift {{.Versions.Swift}} and SwiftUI{{end}}
+{{if .Components.Mobile.Android}}- **Android App**: Native Android application with Kotlin {{.Versions.Packages.kotlin}} and Jetpack Compose{{end}}
+{{if .Components.Mobile.IOS}}- **iOS App**: Native iOS application with Swift {{.Versions.Packages.swift}} and SwiftUI{{end}}
 {{if .Components.Infrastructure.Docker}}- **Containerization**: Docker and Docker Compose for easy deployment{{end}}
 {{if .Components.Infrastructure.Kubernetes}}- **Kubernetes**: Production-ready K8s manifests with Helm charts{{end}}
 {{if .Components.Infrastructure.Terraform}}- **Infrastructure as Code**: Terraform configurations for multi-cloud deployment{{end}}
@@ -68,10 +68,10 @@ Visit [http://localhost:3000](http://localhost:3000) to see your application run
 {{if .Components.Frontend.Admin}}│   └── Admin/               # Admin dashboard{{end}}
 {{if .Components.Backend.API}}├── 🔧 Backend Services
 │   └── CommonServer/        # Go API server{{end}}
-{{if or .Components.Mobile.Android .Components.Mobile.iOS}}├── 📱 Mobile Applications
+{{if or .Components.Mobile.Android .Components.Mobile.IOS}}├── 📱 Mobile Applications
 {{if .Components.Mobile.Android}}│   ├── Android/             # Kotlin Android app{{end}}
-{{if .Components.Mobile.iOS}}│   └── iOS/                 # Swift iOS app{{end}}{{end}}
-{{if or .Components.Infrastructure.Docker .Components.Infrastructure.Kubernetes .Components.Infrastructure.Terraform}}├── 🚀 Infrastructure
+{{if .Components.Mobile.IOS}}│   └── iOS/                 # Swift iOS app{{end}}{{end}}
+{{if or (or .Components.Infrastructure.Docker .Components.Infrastructure.Kubernetes) .Components.Infrastructure.Terraform}}├── 🚀 Infrastructure
 {{if .Components.Infrastructure.Docker}}│   ├── Docker/              # Container configurations{{end}}
 {{if .Components.Infrastructure.Kubernetes}}│   ├── Kubernetes/         # K8s manifests{{end}}
 {{if .Components.Infrastructure.Terraform}}│   └── Terraform/          # Infrastructure as Code{{end}}{{end}}
@@ -84,29 +84,29 @@ Visit [http://localhost:3000](http://localhost:3000) to see your application run
 ### Technology Stack
 
 {{if .Components.Frontend.MainApp}}#### Frontend
-- **Framework**: Next.js {{.Versions.NextJS}} with App Router
-- **Language**: TypeScript {{.Versions.TypeScript}}
-- **Styling**: Tailwind CSS {{.Versions.TailwindCSS}}
+- **Framework**: Next.js {{.Versions.Packages.next}} with App Router
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
 - **UI Components**: Radix UI primitives
 - **State Management**: Zustand / React Context
 - **Testing**: Jest, React Testing Library, Playwright{{end}}
 
 {{if .Components.Backend.API}}#### Backend
 - **Language**: Go {{.Versions.Go}}
-- **Framework**: Gin {{.Versions.Gin}}
+- **Framework**: Gin
 - **Database**: PostgreSQL with GORM
 - **Cache**: Redis
 - **Authentication**: JWT with refresh tokens
 - **Testing**: Go testing package, Testify{{end}}
 
-{{if or .Components.Mobile.Android .Components.Mobile.iOS}}#### Mobile
-{{if .Components.Mobile.Android}}- **Android**: Kotlin {{.Versions.Kotlin}}, Jetpack Compose, Material Design 3{{end}}
-{{if .Components.Mobile.iOS}}- **iOS**: Swift {{.Versions.Swift}}, SwiftUI, Combine{{end}}
+{{if or .Components.Mobile.Android .Components.Mobile.IOS}}#### Mobile
+{{if .Components.Mobile.Android}}- **Android**: Kotlin {{.Versions.Packages.kotlin}}, Jetpack Compose, Material Design 3{{end}}
+{{if .Components.Mobile.IOS}}- **iOS**: Swift {{.Versions.Packages.swift}}, SwiftUI, Combine{{end}}
 - **Architecture**: MVVM with Repository pattern
 - **Networking**: Retrofit (Android) / Alamofire (iOS)
 - **Local Storage**: Room (Android) / SwiftData (iOS){{end}}
 
-{{if or .Components.Infrastructure.Docker .Components.Infrastructure.Kubernetes .Components.Infrastructure.Terraform}}#### Infrastructure
+{{if or (or .Components.Infrastructure.Docker .Components.Infrastructure.Kubernetes) .Components.Infrastructure.Terraform}}#### Infrastructure
 {{if .Components.Infrastructure.Docker}}- **Containers**: Docker, Docker Compose{{end}}
 {{if .Components.Infrastructure.Kubernetes}}- **Orchestration**: Kubernetes, Helm{{end}}
 {{if .Components.Infrastructure.Terraform}}- **IaC**: Terraform, multi-cloud support{{end}}
@@ -130,7 +130,7 @@ Before you begin, ensure you have the following installed:
 ### Optional (for full development)
 {{if .Components.Mobile.Android}}- **Android Studio**: For Android development
 - **Java**: JDK 17 or later{{end}}
-{{if .Components.Mobile.iOS}}- **Xcode**: Latest version (macOS only){{end}}
+{{if .Components.Mobile.IOS}}- **Xcode**: Latest version (macOS only){{end}}
 {{if .Components.Infrastructure.Kubernetes}}- **kubectl**: Kubernetes CLI
 - **Helm**: Package manager for Kubernetes{{end}}
 {{if .Components.Infrastructure.Terraform}}- **Terraform**: Infrastructure as Code{{end}}
@@ -310,14 +310,14 @@ cd CommonServer && go test -tags=integration ./...
 make test-load
 ```{{end}}
 
-{{if or .Components.Mobile.Android .Components.Mobile.iOS}}```bash
+{{if or .Components.Mobile.Android .Components.Mobile.IOS}}```bash
 # Mobile tests
 make test-mobile
 
 {{if .Components.Mobile.Android}}# Android tests
 cd Mobile/Android && ./gradlew test{{end}}
 
-{{if .Components.Mobile.iOS}}# iOS tests
+{{if .Components.Mobile.IOS}}# iOS tests
 cd Mobile/iOS && xcodebuild test -scheme {{.Name}}{{end}}
 ```{{end}}
 
@@ -549,4 +549,4 @@ For enterprise support and consulting:
 
 **Made with ❤️ by the {{.Organization}} team**
 
-*Last updated: {{.CurrentDate}}*
+*Last updated: {{.GeneratedAt.Format "2006-01-02"}}*
