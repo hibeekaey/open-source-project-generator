@@ -296,22 +296,35 @@ jobs:
       - name: Generate release notes
         id: release_notes
         run: |
+          # Extract changelog entry for this version
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Get the changelog section for this version
+          CHANGELOG_SECTION=$(awk "/^## \[$VERSION\]/{flag=1; next} /^## \[/{flag=0} flag" CHANGELOG.md)
+
+          # If no specific version found, get the latest unreleased changes
+          if [ -z "$CHANGELOG_SECTION" ]; then
+            CHANGELOG_SECTION=$(awk '/^## \[/{if(found) exit; found=1; next} found' CHANGELOG.md)
+          fi
+
+          # Get commit messages since last tag for additional context
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$LAST_TAG" ]; then
+            COMMITS=$(git log --oneline --pretty=format:"- %s" $LAST_TAG..HEAD 2>/dev/null || echo "")
+          else
+            COMMITS=$(git log --oneline --pretty=format:"- %s" -10)
+          fi
+
           cat > release_notes.md << EOF
-          # Release ${{ steps.version.outputs.version }}
+          # Release $VERSION
 
           ## What's New
 
-          This release includes the complete Open Source Template Generator with all features implemented.
+          $CHANGELOG_SECTION
 
-          ## Features
+          ## Recent Commits
 
-          - ✅ Interactive project generation with component selection
-          - ✅ Support for frontend (Next.js), backend (Go), and mobile (Android/iOS) applications
-          - ✅ Infrastructure as code templates (Docker, Kubernetes, Terraform)
-          - ✅ Complete CI/CD workflows with GitHub Actions
-          - ✅ Comprehensive validation and error handling
-          - ✅ Cross-platform support (Linux, macOS, Windows, FreeBSD)
-          - ✅ Package management integration (APT, YUM, Homebrew, etc.)
+          $COMMITS
 
           ## Installation
 
