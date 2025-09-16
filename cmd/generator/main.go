@@ -2,7 +2,7 @@
 //
 // The generator is a comprehensive tool for creating production-ready, enterprise-grade
 // open source project structures following modern best practices. It supports multiple
-// technology stacks including Go 1.24+, Node.js 20+, Next.js 15+, React 19+, and more.
+// technology stacks including Go 1.25+, Node.js 20+, Next.js 15+, React 19+, and more.
 //
 // Usage:
 //

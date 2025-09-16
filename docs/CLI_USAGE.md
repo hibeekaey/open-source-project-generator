@@ -29,7 +29,7 @@ curl -sSL https://raw.githubusercontent.com/your-org/open-source-template-genera
 
 ### Requirements
 
-- **Go 1.24+** for building from source
+- **Go 1.25+** for building from source
 - **Git** for cloning repositories
 - **Make** for using the build system
 - **Docker** (optional) for containerized usage
@@ -232,7 +232,7 @@ my-awesome-project/
 │   ├── home/              # Landing page optimized for performance
 │   ├── admin/             # Admin dashboard with comprehensive UI components
 │   └── shared-components/ # Reusable component library
-├── CommonServer/          # Backend API server (Go 1.24+)
+├── CommonServer/          # Backend API server (Go 1.25+)
 │   ├── cmd/               # Application entry points
 │   ├── internal/          # Private application code
 │   ├── pkg/               # Public interfaces and utilities
@@ -279,7 +279,7 @@ my-awesome-project/
 - **Admin**: Admin dashboard with forms, tables, data management, and advanced UI components
 - **Shared Components**: Reusable component library with proper TypeScript definitions
 
-### Backend Components (Go 1.24+)
+### Backend Components (Go 1.25+)
 
 - **API Server**: Go API server with Gin framework, GORM, JWT authentication, Redis caching
 - **Database**: PostgreSQL integration with migrations and proper connection pooling

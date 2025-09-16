@@ -15,7 +15,7 @@ func TestValidationEngineIntegration(t *testing.T) {
 	engine := NewEngine()
 
 	// Verify it implements the interface
-	var _ interfaces.ValidationEngine = engine
+	var _ interfaces.ValidationEngine = engine //nolint:staticcheck // Interface compliance check
 
 	// Test template consistency validation
 	t.Run("template consistency validation", func(t *testing.T) {
@@ -65,8 +65,8 @@ func TestValidationEngineIntegration(t *testing.T) {
 
 		// ValidateTemplateConsistency method removed in simplified validation
 		result := &models.ValidationResult{
-			Valid:   true,
-			Issues:  []models.ValidationIssue{},
+			Valid:  true,
+			Issues: []models.ValidationIssue{},
 		}
 
 		if !result.Valid {
@@ -108,8 +108,8 @@ func TestValidationEngineIntegration(t *testing.T) {
 
 		// ValidateVercelCompatibility method removed in simplified validation
 		result := &models.ValidationResult{
-			Valid:   true,
-			Issues:  []models.ValidationIssue{},
+			Valid:  true,
+			Issues: []models.ValidationIssue{},
 		}
 
 		if !result.Valid {
@@ -137,8 +137,8 @@ func TestValidationEngineIntegration(t *testing.T) {
 
 		// ValidateSecurityVulnerabilities method removed in simplified validation
 		result := &models.ValidationResult{
-			Valid:   true,
-			Issues:  []models.ValidationIssue{},
+			Valid:  true,
+			Issues: []models.ValidationIssue{},
 		}
 
 		if !result.Valid {
@@ -181,8 +181,8 @@ func TestValidationEngineIntegration(t *testing.T) {
 
 		// ValidatePackageJSONStructure method removed in simplified validation
 		result := &models.ValidationResult{
-			Valid:   true,
-			Issues:  []models.ValidationIssue{},
+			Valid:  true,
+			Issues: []models.ValidationIssue{},
 		}
 
 		if !result.Valid {
@@ -215,8 +215,8 @@ func TestValidationEngineIntegration(t *testing.T) {
 
 		// ValidateTypeScriptConfig method removed in simplified validation
 		result := &models.ValidationResult{
-			Valid:   true,
-			Issues:  []models.ValidationIssue{},
+			Valid:  true,
+			Issues: []models.ValidationIssue{},
 		}
 
 		if !result.Valid {

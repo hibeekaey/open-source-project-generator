@@ -184,7 +184,7 @@ func tryCompileGoFile(filePath string) (string, error) {
 
 	// Create a simple go.mod for the temp directory
 	goModContent := `module temp-validation
-go 1.24
+go 1.25
 `
 	goModPath := filepath.Join(tempDir, "go.mod")
 	if goModErr := os.WriteFile(goModPath, []byte(goModContent), 0644); goModErr != nil {
