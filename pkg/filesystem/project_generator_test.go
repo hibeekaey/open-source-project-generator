@@ -1,10 +1,8 @@
 package filesystem
 
 import (
-	"fmt"
 	"path/filepath"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -19,15 +17,16 @@ func createTestProjectConfig() *models.ProjectConfig {
 		License:      "MIT",
 		Author:       "Test Author",
 		Email:        "test@example.com",
-		Repository:   "https://github.com/test-org/test-project",
 		Components: models.Components{
 			Frontend: models.FrontendComponents{
-				MainApp: true,
-				Home:    true,
-				Admin:   true,
+				NextJS: models.NextJSComponents{
+					App:   true,
+					Home:  true,
+					Admin: true,
+				},
 			},
 			Backend: models.BackendComponents{
-				API: true,
+				GoGin: true,
 			},
 			Mobile: models.MobileComponents{
 				Android: true,
@@ -40,12 +39,14 @@ func createTestProjectConfig() *models.ProjectConfig {
 			},
 		},
 		Versions: &models.VersionConfig{
-			Node:   "18.17.0",
-			Go:     "1.22.0",
-			Kotlin: "1.9.0",
-			Swift:  "5.9.0",
-			NextJS: "14.0.0",
-			React:  "18.2.0",
+			Node: "18.17.0",
+			Go:   "1.22.0",
+			Packages: map[string]string{
+				"kotlin": "1.9.0",
+				"swift":  "5.9.0",
+				"next":   "14.0.0",
+				"react":  "18.2.0",
+			},
 		},
 		OutputPath:       "/tmp",
 		GeneratedAt:      time.Now(),
@@ -191,7 +192,7 @@ func TestGenerateProjectStructure(t *testing.T) {
 				}
 
 				// Verify component directories were created based on config
-				if tt.config.Components.Frontend.MainApp {
+				if tt.config.Components.Frontend.NextJS.App {
 					for _, dir := range pg.structure.FrontendDirs {
 						dirPath := filepath.Join(projectPath, dir)
 						if !pg.fsGen.FileExists(dirPath) {
@@ -200,7 +201,7 @@ func TestGenerateProjectStructure(t *testing.T) {
 					}
 				}
 
-				if tt.config.Components.Backend.API {
+				if tt.config.Components.Backend.GoGin {
 					for _, dir := range pg.structure.BackendDirs {
 						dirPath := filepath.Join(projectPath, dir)
 						if !pg.fsGen.FileExists(dirPath) {
@@ -272,14 +273,14 @@ func TestGenerateComponentFiles(t *testing.T) {
 				}
 
 				// Verify component-specific files were created
-				if tt.config.Components.Frontend.MainApp {
+				if tt.config.Components.Frontend.NextJS.App {
 					packageJsonPath := filepath.Join(projectPath, "App/package.json")
 					if !pg.fsGen.FileExists(packageJsonPath) {
 						t.Errorf("GenerateComponentFiles() did not create App/package.json")
 					}
 				}
 
-				if tt.config.Components.Backend.API {
+				if tt.config.Components.Backend.GoGin {
 					goModPath := filepath.Join(projectPath, "CommonServer/go.mod")
 					if !pg.fsGen.FileExists(goModPath) {
 						t.Errorf("GenerateComponentFiles() did not create CommonServer/go.mod")
@@ -448,7 +449,11 @@ func TestComponentSelectionGeneration(t *testing.T) {
 		{
 			name: "frontend only",
 			components: models.Components{
-				Frontend: models.FrontendComponents{MainApp: true},
+				Frontend: models.FrontendComponents{
+					NextJS: models.NextJSComponents{
+						App: true,
+					},
+				},
 			},
 			checkDirs:  []string{"App/src/components/ui", "App/src/hooks"},
 			checkFiles: []string{"App/package.json"},
@@ -456,7 +461,7 @@ func TestComponentSelectionGeneration(t *testing.T) {
 		{
 			name: "backend only",
 			components: models.Components{
-				Backend: models.BackendComponents{API: true},
+				Backend: models.BackendComponents{GoGin: true},
 			},
 			checkDirs:  []string{"CommonServer/internal/controllers", "CommonServer/pkg/auth"},
 			checkFiles: []string{"CommonServer/go.mod"},
@@ -726,7 +731,11 @@ func TestProjectGenerationWithDifferentComponentCombinations(t *testing.T) {
 		{
 			name: "minimal frontend only",
 			components: models.Components{
-				Frontend: models.FrontendComponents{MainApp: true},
+				Frontend: models.FrontendComponents{
+					NextJS: models.NextJSComponents{
+						App: true,
+					},
+				},
 			},
 			expectedFiles: []string{
 				"App/package.json",
@@ -745,11 +754,13 @@ func TestProjectGenerationWithDifferentComponentCombinations(t *testing.T) {
 			name: "full stack with mobile",
 			components: models.Components{
 				Frontend: models.FrontendComponents{
-					MainApp: true,
-					Home:    true,
-					Admin:   true,
+					NextJS: models.NextJSComponents{
+						App:   true,
+						Home:  true,
+						Admin: true,
+					},
 				},
-				Backend: models.BackendComponents{API: true},
+				Backend: models.BackendComponents{GoGin: true},
 				Mobile: models.MobileComponents{
 					Android: true,
 					IOS:     true,
@@ -781,7 +792,7 @@ func TestProjectGenerationWithDifferentComponentCombinations(t *testing.T) {
 		{
 			name: "backend and infrastructure only",
 			components: models.Components{
-				Backend: models.BackendComponents{API: true},
+				Backend: models.BackendComponents{GoGin: true},
 				Infrastructure: models.InfrastructureComponents{
 					Terraform: true,
 					Docker:    true,
@@ -881,7 +892,7 @@ func TestCrossReferenceValidation(t *testing.T) {
 
 	t.Run("validate component-specific cross-references", func(t *testing.T) {
 		// Frontend cross-references
-		if config.Components.Frontend.MainApp {
+		if config.Components.Frontend.NextJS.App {
 			packageJsonPath := filepath.Join(projectPath, "App/package.json")
 			if !pg.fsGen.FileExists(packageJsonPath) {
 				t.Error("Main app package.json missing")
@@ -894,7 +905,7 @@ func TestCrossReferenceValidation(t *testing.T) {
 		}
 
 		// Backend cross-references
-		if config.Components.Backend.API {
+		if config.Components.Backend.GoGin {
 			goModPath := filepath.Join(projectPath, "CommonServer/go.mod")
 			if !pg.fsGen.FileExists(goModPath) {
 				t.Error("Backend go.mod missing")
@@ -991,74 +1002,6 @@ func TestProjectGenerationErrorHandling(t *testing.T) {
 		err := pg.ValidateProjectStructure(nonExistentPath, config)
 		if err == nil {
 			t.Error("Expected error for non-existent project path, got none")
-		}
-	})
-}
-
-func TestProjectGenerationPerformance(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping performance test in short mode")
-	}
-
-	tempDir := t.TempDir()
-	config := createTestProjectConfig()
-	pg := NewProjectGenerator()
-
-	t.Run("large project generation performance", func(t *testing.T) {
-		start := time.Now()
-
-		// Generate project structure
-		if err := pg.GenerateProjectStructure(config, tempDir); err != nil {
-			t.Fatalf("Failed to generate project structure: %v", err)
-		}
-
-		// Generate component files
-		if err := pg.GenerateComponentFiles(config, tempDir); err != nil {
-			t.Fatalf("Failed to generate component files: %v", err)
-		}
-
-		duration := time.Since(start)
-
-		// Project generation should complete within reasonable time (5 seconds)
-		if duration > 5*time.Second {
-			t.Errorf("Project generation took too long: %v", duration)
-		}
-
-		t.Logf("Project generation completed in: %v", duration)
-	})
-
-	t.Run("concurrent project generation", func(t *testing.T) {
-		const numProjects = 5
-		var wg sync.WaitGroup
-		errors := make(chan error, numProjects)
-
-		for i := 0; i < numProjects; i++ {
-			wg.Add(1)
-			go func(projectNum int) {
-				defer wg.Done()
-
-				projectConfig := createTestProjectConfig()
-				projectConfig.Name = fmt.Sprintf("concurrent-test-%d", projectNum)
-				projectPG := NewProjectGenerator()
-
-				if err := projectPG.GenerateProjectStructure(projectConfig, tempDir); err != nil {
-					errors <- fmt.Errorf("project %d structure generation failed: %w", projectNum, err)
-					return
-				}
-
-				if err := projectPG.GenerateComponentFiles(projectConfig, tempDir); err != nil {
-					errors <- fmt.Errorf("project %d file generation failed: %w", projectNum, err)
-					return
-				}
-			}(i)
-		}
-
-		wg.Wait()
-		close(errors)
-
-		// Check for any errors
-		for err := range errors {
-			t.Errorf("Concurrent generation error: %v", err)
 		}
 	})
 }

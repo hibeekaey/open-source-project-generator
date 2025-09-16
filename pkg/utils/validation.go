@@ -180,6 +180,30 @@ func (v *Validator) ValidateURL(urlStr, field string) {
 	}
 }
 
+// ValidateLicenseType validates license type against supported licenses
+func (v *Validator) ValidateLicenseType(license, field string) {
+	if license == "" {
+		// Use default license if not specified
+		return
+	}
+
+	supportedLicenses := []string{
+		"MIT",
+		"Apache-2.0",
+		"GPL-3.0",
+		"BSD-3-Clause",
+	}
+
+	for _, supported := range supportedLicenses {
+		if license == supported {
+			return // Valid license found
+		}
+	}
+
+	// License not supported - add error with suggestion
+	v.AddError(field, fmt.Sprintf("License '%s' is not supported. Supported licenses are: %s. Will default to Apache-2.0", license, strings.Join(supportedLicenses, ", ")), "unsupported_license", license)
+}
+
 // Path validation methods
 
 // ValidateDirectoryPath validates directory path format and security
@@ -363,10 +387,10 @@ func (v *Validator) ValidateProjectConfig(config *models.ProjectConfig) {
 		v.ValidateEmail(config.Email, "email")
 	}
 
-	// Validate repository URL if provided
-	if config.Repository != "" {
-		v.ValidateURL(config.Repository, "repository")
-	}
+	// Validate license type
+	v.ValidateLicenseType(config.License, "license")
+
+	// Repository field removed
 
 	// Validate output path
 	if config.OutputPath != "" {
@@ -374,8 +398,8 @@ func (v *Validator) ValidateProjectConfig(config *models.ProjectConfig) {
 	}
 
 	// Validate components - check if at least one component is selected
-	hasAnyComponent := config.Components.Frontend.MainApp || config.Components.Frontend.Home || config.Components.Frontend.Admin ||
-		config.Components.Backend.API ||
+	hasAnyComponent := config.Components.Frontend.NextJS.App || config.Components.Frontend.NextJS.Home || config.Components.Frontend.NextJS.Admin ||
+		config.Components.Backend.GoGin ||
 		config.Components.Mobile.Android || config.Components.Mobile.IOS ||
 		config.Components.Infrastructure.Terraform || config.Components.Infrastructure.Kubernetes || config.Components.Infrastructure.Docker
 

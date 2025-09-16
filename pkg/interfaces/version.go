@@ -2,24 +2,6 @@ package interfaces
 
 import "github.com/open-source-template-generator/pkg/models"
 
-// VersionCache defines the contract for version caching operations
-type VersionCache interface {
-	// Get retrieves a cached version by key
-	Get(key string) (string, bool)
-
-	// Set stores a version in the cache
-	Set(key, version string) error
-
-	// Delete removes a version from the cache
-	Delete(key string) error
-
-	// Clear removes all cached versions
-	Clear() error
-
-	// Keys returns all cached keys
-	Keys() []string
-}
-
 // VersionManager defines the contract for package version management operations
 type VersionManager interface {
 	// GetLatestNodeVersion fetches the latest Node.js version
@@ -40,9 +22,6 @@ type VersionManager interface {
 	// GetLatestGitHubRelease fetches the latest release version from GitHub
 	GetLatestGitHubRelease(owner, repo string) (string, error)
 
-	// CacheVersion caches a version for future use
-	CacheVersion(key, version string) error
-
-	// GetCachedVersion retrieves a cached version
-	GetCachedVersion(key string) (string, bool)
+	// GetVersionHistory returns version history for a package
+	GetVersionHistory(packageName string) ([]string, error)
 }

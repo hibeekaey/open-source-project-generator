@@ -24,9 +24,9 @@
     "clean": "rm -rf .next out dist"
   },
   "dependencies": {
-    "next": "{{.Versions.NextJS}}",
-    "react": "{{.Versions.React}}",
-    "react-dom": "{{.Versions.React}}",
+    "next": "{{.Versions.Packages.next}}",
+    "react": "{{.Versions.Packages.react}}",
+    "react-dom": "{{.Versions.Packages.react}}",
     "typescript": "^5.7.0",
     "@types/node": "{{nodeTypesVersion .}}",
     "@types/react": "^19.0.0",
@@ -57,7 +57,7 @@
   },
   "devDependencies": {
     "eslint": "^9.15.0",
-    "eslint-config-next": "{{.Versions.NextJS}}",
+    "eslint-config-next": "{{.Versions.Packages.next}}",
     "@typescript-eslint/eslint-plugin": "^8.15.0",
     "@typescript-eslint/parser": "^8.15.0",
     "prettier": "^3.4.0",

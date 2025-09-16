@@ -245,11 +245,11 @@ func (p *MetadataParser) evaluateComponentCondition(condition TemplateCondition,
 	// Extract component value based on component type
 	switch condition.Component {
 	case constants.TemplateFrontend:
-		actualValue = projectConfig.Components.Frontend.MainApp ||
-			projectConfig.Components.Frontend.Home ||
-			projectConfig.Components.Frontend.Admin
+		actualValue = projectConfig.Components.Frontend.NextJS.App ||
+			projectConfig.Components.Frontend.NextJS.Home ||
+			projectConfig.Components.Frontend.NextJS.Admin
 	case constants.TemplateBackend:
-		actualValue = projectConfig.Components.Backend.API
+		actualValue = projectConfig.Components.Backend.GoGin
 	case "mobile":
 		actualValue = projectConfig.Components.Mobile.Android ||
 			projectConfig.Components.Mobile.IOS

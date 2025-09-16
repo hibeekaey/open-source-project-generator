@@ -1,4 +1,4 @@
-{{if .Components.Frontend.MainApp}}
+{{if .Components.Frontend.NextJS.App}}
 apiVersion: v1
 kind: Service
 metadata:
@@ -23,7 +23,7 @@ spec:
 ---
 {{end}}
 
-{{if .Components.Frontend.Home}}
+{{if .Components.Frontend.NextJS.Home}}
 apiVersion: v1
 kind: Service
 metadata:
@@ -48,7 +48,7 @@ spec:
 ---
 {{end}}
 
-{{if .Components.Frontend.Admin}}
+{{if .Components.Frontend.NextJS.Admin}}
 apiVersion: v1
 kind: Service
 metadata:
@@ -73,7 +73,7 @@ spec:
 ---
 {{end}}
 
-{{if .Components.Backend.API}}
+{{if .Components.Backend.GoGin}}
 apiVersion: v1
 kind: Service
 metadata:

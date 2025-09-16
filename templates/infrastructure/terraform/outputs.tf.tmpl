@@ -130,28 +130,28 @@ output "load_balancer_zone_id" {
 }
 
 # Application URLs
-{{if .Components.Frontend.MainApp}}
+{{if .Components.Frontend.NextJS.App}}
 output "app_url" {
   description = "URL for the main application"
   value = "https://${var.domain_name}"
 }
 {{end}}
 
-{{if .Components.Frontend.Home}}
+{{if .Components.Frontend.NextJS.Home}}
 output "home_url" {
   description = "URL for the home/landing page"
   value = "https://home.${var.domain_name}"
 }
 {{end}}
 
-{{if .Components.Frontend.Admin}}
+{{if .Components.Frontend.NextJS.Admin}}
 output "admin_url" {
   description = "URL for the admin dashboard"
   value = "https://admin.${var.domain_name}"
 }
 {{end}}
 
-{{if .Components.Backend.API}}
+{{if .Components.Backend.GoGin}}
 output "api_url" {
   description = "URL for the API"
   value = "https://${var.domain_name}/api"

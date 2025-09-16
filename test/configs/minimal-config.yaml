@@ -1,0 +1,28 @@
+# Minimal configuration with basic setup
+name: minimal-test-project
+organization: test-org
+description: A minimal test project with basic setup
+license: MIT
+author: Test Author
+email: test@example.com
+output_path: ./output/minimal
+
+components:
+  frontend:
+    nextjs:
+      app: true
+      home: false
+      admin: false
+      shared: true
+  
+  backend:
+    go_gin: false
+  
+  mobile:
+    android: false
+    ios: false
+  
+  infrastructure:
+    docker: true
+    kubernetes: false
+    terraform: false

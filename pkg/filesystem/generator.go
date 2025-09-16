@@ -73,8 +73,8 @@ func (g *Generator) CreateDirectory(path string) error {
 		return nil
 	}
 
-	// Create directory with proper permissions (0755)
-	if err := os.MkdirAll(cleanPath, 0755); err != nil {
+	// Create directory with secure permissions (0750)
+	if err := os.MkdirAll(cleanPath, 0750); err != nil {
 		return fmt.Errorf("failed to create directory %s: %w", cleanPath, err)
 	}
 
@@ -262,12 +262,38 @@ func (g *Generator) EnsureDirectory(path string) error {
 	return g.CreateDirectory(cleanPath)
 }
 
-// copyFile copies a single file from source to destination using optimized I/O
+// copyFile copies a single file from source to destination
 func (g *Generator) copyFile(srcPath, destPath string, perm os.FileMode) error {
 	if g.dryRun {
 		return nil
 	}
 
-	// Use optimized copy for better performance
-	return OptimizedCopy(srcPath, destPath, perm)
+	// Open source file
+	srcFile, err := os.Open(srcPath)
+	if err != nil {
+		return fmt.Errorf("failed to open source file: %w", err)
+	}
+	defer func() { _ = srcFile.Close() }()
+
+	// Create destination directory if it doesn't exist
+	destDir := filepath.Dir(destPath)
+	if err := os.MkdirAll(destDir, 0750); err != nil {
+		return fmt.Errorf("failed to create destination directory: %w", err)
+	}
+
+	// Create destination file
+	destFile, err := os.Create(destPath)
+	if err != nil {
+		return fmt.Errorf("failed to create destination file: %w", err)
+	}
+	defer func() { _ = destFile.Close() }()
+
+	// Copy file content
+	_, err = srcFile.WriteTo(destFile)
+	if err != nil {
+		return fmt.Errorf("failed to copy file content: %w", err)
+	}
+
+	// Set file permissions
+	return os.Chmod(destPath, perm)
 }

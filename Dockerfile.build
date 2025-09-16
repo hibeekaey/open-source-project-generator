@@ -1,10 +1,9 @@
 # Build Dockerfile for creating distribution packages
 
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y \
-    golang-1.24 \
     git \
     ca-certificates \
     curl \
@@ -19,9 +18,14 @@ RUN apt-get update && apt-get install -y \
     fakeroot \
     && rm -rf /var/lib/apt/lists/*
 
+# Install Go 1.25 manually
+RUN ARCH=$(dpkg --print-architecture) && \
+    if [ "$ARCH" = "amd64" ]; then GOARCH="amd64"; else GOARCH="arm64"; fi && \
+    curl -fsSL "https://go.dev/dl/go1.25.0.linux-${GOARCH}.tar.gz" | tar -xzC /usr/local
+
 # Set up Go environment
-ENV PATH="/usr/lib/go-1.24/bin:${PATH}"
-ENV GOROOT="/usr/lib/go-1.24"
+ENV PATH="/usr/local/go/bin:${PATH}"
+ENV GOROOT="/usr/local/go"
 ENV GOPATH="/go"
 ENV PATH="${GOPATH}/bin:${PATH}"
 

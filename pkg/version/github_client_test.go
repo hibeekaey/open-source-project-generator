@@ -77,7 +77,7 @@ func TestGitHubClient_GetLatestRelease(t *testing.T) {
 
 				w.WriteHeader(tt.expectedStatus)
 				if tt.expectedStatus == http.StatusOK && tt.mockResponse != nil {
-					json.NewEncoder(w).Encode(tt.mockResponse)
+					_ = json.NewEncoder(w).Encode(tt.mockResponse)
 				}
 			}))
 			defer server.Close()
@@ -171,7 +171,7 @@ func TestGitHubClient_GetReleases(t *testing.T) {
 
 				w.WriteHeader(tt.expectedStatus)
 				if tt.expectedStatus == http.StatusOK {
-					json.NewEncoder(w).Encode(tt.mockResponse)
+					_ = json.NewEncoder(w).Encode(tt.mockResponse)
 				}
 			}))
 			defer server.Close()
@@ -274,7 +274,7 @@ func TestGitHubClient_GetLatestStableRelease(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(tt.expectedStatus)
 				if tt.expectedStatus == http.StatusOK {
-					json.NewEncoder(w).Encode(tt.mockResponse)
+					_ = json.NewEncoder(w).Encode(tt.mockResponse)
 				}
 			}))
 			defer server.Close()
@@ -330,7 +330,7 @@ func TestGitHubClient_AuthorizationHeader(t *testing.T) {
 			TagName: "v1.0.0",
 		}
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(release)
+		_ = json.NewEncoder(w).Encode(release)
 	}))
 	defer server.Close()
 

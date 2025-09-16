@@ -54,12 +54,12 @@ func NewLoggerWithComponent(level LogLevel, logToFile bool, component string) (*
 		}
 
 		logDir := filepath.Join(homeDir, ".cache", "template-generator", "logs")
-		if mkdirErr := os.MkdirAll(logDir, 0755); mkdirErr != nil {
+		if mkdirErr := os.MkdirAll(logDir, 0750); mkdirErr != nil {
 			return nil, fmt.Errorf("failed to create log directory: %w", mkdirErr)
 		}
 
 		logFile := filepath.Join(logDir, fmt.Sprintf("generator-%s.log", time.Now().Format("2006-01-02")))
-		file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+		file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 		if err != nil {
 			return nil, fmt.Errorf("failed to open log file: %w", err)
 		}

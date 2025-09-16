@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/open-source-template-generator/pkg/constants"
-	"github.com/open-source-template-generator/pkg/interfaces"
 	"github.com/open-source-template-generator/pkg/models"
 )
 
@@ -40,16 +39,14 @@ func (r *GitHubRegistry) GetLatestVersion(repoPath string) (*models.VersionInfo,
 	packageType := r.determineType(owner, repo)
 
 	info := &models.VersionInfo{
-		Name:           repoPath,
-		Language:       language,
-		Type:           packageType,
-		LatestVersion:  version,
-		IsSecure:       true, // GitHub releases are generally secure
-		UpdatedAt:      time.Now(),
-		CheckedAt:      time.Now(),
-		UpdateSource:   "github",
-		RegistryURL:    fmt.Sprintf("https://github.com/%s/releases", repoPath),
-		SecurityIssues: make([]models.SecurityIssue, 0),
+		Name:          repoPath,
+		Language:      language,
+		Type:          packageType,
+		LatestVersion: version,
+		UpdatedAt:     time.Now(),
+		CheckedAt:     time.Now(),
+		UpdateSource:  "github",
+		RegistryURL:   fmt.Sprintf("https://github.com/%s/releases", repoPath),
 		Metadata: map[string]string{
 			"owner": owner,
 			"repo":  repo,
@@ -69,24 +66,6 @@ func (r *GitHubRegistry) GetVersionHistory(repoPath string, limit int) ([]*model
 	}
 
 	return []*models.VersionInfo{latest}, nil
-}
-
-// CheckSecurity checks for security vulnerabilities in a specific version
-func (r *GitHubRegistry) CheckSecurity(repoPath, version string) ([]models.SecurityIssue, error) {
-	// GitHub releases are generally considered secure
-	// This could be enhanced to check GitHub Security Advisories
-	return []models.SecurityIssue{}, nil
-}
-
-// GetRegistryInfo returns information about the GitHub registry
-func (r *GitHubRegistry) GetRegistryInfo() interfaces.RegistryInfo {
-	return interfaces.RegistryInfo{
-		Name:        "GitHub Releases",
-		URL:         "https://api.github.com",
-		Type:        "github",
-		Description: "GitHub repository releases for language runtimes and tools",
-		Supported:   []string{"go", "nodejs", "java", "kotlin", "swift"},
-	}
 }
 
 // IsAvailable checks if the GitHub registry is currently accessible
@@ -164,4 +143,3 @@ func (r *GitHubRegistry) determineType(owner, repo string) string {
 }
 
 // Ensure GitHubRegistry implements VersionRegistry interface
-var _ interfaces.VersionRegistry = (*GitHubRegistry)(nil)

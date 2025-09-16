@@ -9,7 +9,7 @@ on:
     branches: [main, develop]
 
 env:
-  GO_VERSION: "1.24"
+  GO_VERSION: "1.25"
 
 jobs:
   test:
@@ -66,9 +66,8 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v8
         with:
-          version: v1.64.2
           args: --timeout=5m
 
   build:
@@ -89,7 +88,6 @@ jobs:
 
       - name: Test binary
         run: ./bin/generator version
-
 
   security:
     name: Security Scan

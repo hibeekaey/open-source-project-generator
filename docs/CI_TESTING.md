@@ -44,18 +44,21 @@ The unified test suite includes:
 The test suite has been optimized for reliability and performance:
 
 ### Mocked Dependencies
+
 - External services are mocked using interfaces
 - Database dependencies use in-memory implementations
 - HTTP services use mock servers
 - File system operations use temporary directories
 
 ### Resource Management
+
 - Proper cleanup functions prevent resource leaks
 - Memory usage is optimized for CI environments
 - Temporary files are automatically cleaned up
 - Database connections are properly closed
 
 ### Performance Improvements
+
 - Tests run with safe parallelization where possible
 - Test data has been optimized for speed while maintaining coverage
 - Algorithms have been optimized for test performance
@@ -76,7 +79,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v4
         with:
-          go-version: '1.24'
+          go-version: '1.25'
       
       # Run unified test suite
       - name: Run tests
@@ -92,7 +95,7 @@ jobs:
 ```yaml
 test:
   stage: test
-  image: golang:1.24
+  image: golang:1.25
   script:
     - make test
     - make build
@@ -143,26 +146,31 @@ go test -race ./...
 ## Test Categories
 
 ### Unit Tests
+
 - Individual package functionality
 - Mocked external dependencies
 - Fast execution with comprehensive coverage
 
 ### Integration Tests
+
 - Cross-package functionality
 - In-memory database implementations
 - Mocked external services
 
 ### Template Tests
+
 - Complete template generation and compilation
 - Mocked external dependencies (GORM, etc.)
 - Optimized test fixtures for performance
 
 ### Security Tests
+
 - Security pattern validation
 - Mocked security scanning components
 - Focused on functional security behavior
 
 ### CLI Tests
+
 - Command-line interface functionality
 - File system operations testing
 - Configuration management testing
@@ -213,13 +221,16 @@ The unified test suite maintains excellent coverage:
 ## Performance Metrics
 
 ### Target Performance
+
 - **Test Duration**: 5-8 minutes in CI environments
 - **Success Rate**: >99% reliability
 - **Coverage**: >85% code coverage
 - **Build Time**: <2 minutes after tests
 
 ### Monitoring
+
 Track these metrics in your CI/CD pipeline:
+
 - Total test execution time
 - Individual test package performance
 - Test success/failure rates
@@ -257,18 +268,21 @@ Track these metrics in your CI/CD pipeline:
 If you're migrating from the previous dual-mode test system:
 
 ### Update CI Configurations
+
 - Replace `make test-ci` with `make test`
 - Remove `-tags=ci` from test commands
 - Update timeout values to 10-15 minutes
 - Remove build tag references from CI scripts
 
 ### Update Documentation
+
 - Remove references to CI vs. full test modes
 - Update examples to use unified commands
 - Revise performance expectations
 - Update troubleshooting guides
 
 ### Local Development Changes
+
 - Use `make test` for all testing
 - Remove CI-specific test workflows
 - Update IDE configurations to use unified commands
@@ -279,7 +293,7 @@ If you're migrating from the previous dual-mode test system:
 If you encounter issues with the test suite:
 
 1. Check this documentation for guidance
-2. Verify your Go version (1.24+ required)
+2. Verify your Go version (1.25+ required)
 3. Ensure all dependencies are available
 4. Try running locally to isolate CI-specific issues
 5. Review resource allocation in CI environment

@@ -1,0 +1,28 @@
+# MIT License test configuration
+name: mit-license-project
+organization: test-org
+description: A test project using MIT license
+license: MIT
+author: Test Author
+email: test@example.com
+output_path: ./output/mit-license
+
+components:
+  frontend:
+    nextjs:
+      app: true
+      home: false
+      admin: false
+      shared: true
+  
+  backend:
+    go_gin: true
+  
+  mobile:
+    android: false
+    ios: false
+  
+  infrastructure:
+    docker: true
+    kubernetes: false
+    terraform: false

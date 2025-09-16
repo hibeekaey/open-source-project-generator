@@ -12,7 +12,7 @@ on:
         type: string
 
 env:
-  GO_VERSION: "1.24"
+  GO_VERSION: "1.25"
 
 jobs:
   build:
@@ -166,7 +166,7 @@ jobs:
           fi
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: generator-${{ matrix.os }}-${{ matrix.arch }}
           path: |
@@ -185,7 +185,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download Linux AMD64 artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: generator-linux-amd64
           path: dist/
@@ -221,7 +221,7 @@ jobs:
           ./scripts/build-packages.sh rpm
 
       - name: Upload package artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: packages
           path: packages/
@@ -247,7 +247,7 @@ jobs:
           fi
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           path: artifacts/
 
@@ -329,7 +329,7 @@ jobs:
           EOF
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.version }}
           name: Release ${{ steps.version.outputs.version }}
@@ -352,7 +352,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download Linux AMD64 artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: generator-linux-amd64
           path: dist/
@@ -405,7 +405,7 @@ jobs:
           EOF
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: true

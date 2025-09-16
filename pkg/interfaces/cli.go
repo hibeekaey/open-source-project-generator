@@ -10,18 +10,18 @@ import "github.com/open-source-template-generator/pkg/models"
 // CLIInterface defines the contract for command-line interface operations.
 //
 // This interface abstracts CLI functionality to enable testing and different
-// CLI implementations. It covers the complete user interaction workflow from
-// project configuration collection to generation confirmation.
+// CLI implementations. It covers basic user interaction workflow for
+// project configuration collection and generation.
 //
 // Implementations should provide:
-//   - Interactive prompts for project configuration
-//   - Component selection with validation
-//   - Configuration preview and confirmation
-//   - Progress indication and user feedback
+//   - Basic prompts for project configuration
+//   - Simple component selection
+//   - Configuration confirmation
+//   - Basic user feedback
 type CLIInterface interface {
 	// Run executes the CLI application with command-line arguments.
 	//
-	// This method starts the CLI application and handles the complete
+	// This method starts the CLI application and handles the basic
 	// user interaction workflow. It should process command-line flags,
 	// route to appropriate subcommands, and manage the overall CLI lifecycle.
 	//
@@ -29,34 +29,21 @@ type CLIInterface interface {
 	//   - error: Any error that occurred during CLI execution
 	Run() error
 
-	// PromptProjectDetails collects comprehensive project configuration from user input.
+	// PromptProjectDetails collects basic project configuration from user input.
 	//
-	// This method guides users through interactive prompts to collect all
-	// necessary project information including basic details, component selection,
-	// and configuration options. It should validate input and ensure the
-	// configuration is complete and valid.
+	// This method guides users through simple prompts to collect essential
+	// project information including basic details and component selection.
+	// It should validate input and ensure the configuration is complete.
 	//
 	// Returns:
 	//   - *models.ProjectConfig: Complete project configuration
 	//   - error: Any error that occurred during configuration collection
 	PromptProjectDetails() (*models.ProjectConfig, error)
 
-	// SelectComponents allows users to choose which components to include in their project.
+	// ConfirmGeneration shows a basic configuration preview and asks for user confirmation.
 	//
-	// This method presents available components (frontend, backend, mobile,
-	// infrastructure) and allows users to select which ones to include.
-	// It should validate component dependencies and provide warnings for
-	// potentially problematic combinations.
-	//
-	// Returns:
-	//   - []string: List of selected component identifiers
-	//   - error: Any error that occurred during component selection
-	SelectComponents() ([]string, error)
-
-	// ConfirmGeneration shows a configuration preview and asks for user confirmation.
-	//
-	// This method displays a comprehensive summary of the project configuration
-	// including selected components, versions, and output path. It should give
+	// This method displays a simple summary of the project configuration
+	// including selected components and output path. It should give
 	// users a final opportunity to review and confirm before generation begins.
 	//
 	// Parameters:

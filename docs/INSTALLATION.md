@@ -10,7 +10,7 @@ This guide provides comprehensive installation instructions for the Open Source 
 curl -sSL https://raw.githubusercontent.com/open-source-template-generator/generator/main/scripts/install.sh | bash
 ```
 
-### Windows
+### Windows (Quick Install)
 
 Download the Windows binary from the [releases page](https://github.com/open-source-template-generator/generator/releases) and follow the installation instructions included in the archive.
 
@@ -105,7 +105,7 @@ sudo chmod +x /usr/local/bin/generator
 generator --version
 ```
 
-#### Windows
+#### Windows (System Installation)
 
 1. Extract the ZIP file to a directory (e.g., `C:\Program Files\generator`)
 2. Add the directory to your PATH environment variable:
@@ -138,7 +138,7 @@ source ~/.bashrc
 generator --version
 ```
 
-#### Windows
+#### Windows (User Installation)
 
 ```powershell
 # Create user bin directory
@@ -157,13 +157,13 @@ generator --version
 
 ## Docker Installation
 
-### Configuration
+### Docker Configuration
 
 The Docker images are published to GitHub Container Registry with dynamic organization names.
 The image name automatically adapts to the repository owner:
 
 - For `cuesoftinc` organization: `ghcr.io/cuesoftinc/open-source-project-generator:latest`
-- For your fork: `ghcr.io/yourusername/open-source-project-generator:latest`
+- For your fork: `ghcr.io/your-username/open-source-project-generator:latest`
 
 ### Pull from GitHub Container Registry
 
@@ -171,8 +171,8 @@ The image name automatically adapts to the repository owner:
 # For cuesoftinc organization
 docker pull ghcr.io/cuesoftinc/open-source-project-generator:latest
 
-# For your own fork (replace 'yourusername' with your GitHub username)
-docker pull ghcr.io/yourusername/open-source-project-generator:latest
+# For your own fork (replace 'your-username' with your GitHub username)
+docker pull ghcr.io/your-username/open-source-project-generator:latest
 ```
 
 ### Run in Container
@@ -184,23 +184,23 @@ docker run -it --rm -v $(pwd):/workspace ghcr.io/cuesoftinc/open-source-project-
 # One-time generation (using cuesoftinc organization)
 docker run --rm -v $(pwd):/workspace ghcr.io/cuesoftinc/open-source-project-generator:latest generate --config /workspace/config.yaml
 
-# Using your own fork (replace 'yourusername')
-docker run -it --rm -v $(pwd):/workspace ghcr.io/yourusername/open-source-project-generator:latest generate
+# Using your own fork (replace 'your-username')
+docker run -it --rm -v $(pwd):/workspace ghcr.io/your-username/open-source-project-generator:latest generate
 ```
 
-### Environment Variables
+### Docker Environment Variables
 
 For development and customization, you can configure the following environment variables:
 
 ```bash
 # Set your GitHub organization/username
-export GITHUB_REPOSITORY_OWNER=yourusername
+export GITHUB_REPOSITORY_OWNER=your-username
 
 # Set Docker registry (default: ghcr.io)  
 export DOCKER_REGISTRY=ghcr.io
 
 # For authentication when pushing images
-export GITHUB_ACTOR=yourusername
+export GITHUB_ACTOR=your-username
 export GITHUB_TOKEN=your_github_token
 ```
 
@@ -211,7 +211,7 @@ cp env.example .env
 # Edit .env with your configuration
 ```
 
-### Build from Source
+### Build Docker Image from Source
 
 ```bash
 git clone https://github.com/open-source-template-generator/generator.git
@@ -223,7 +223,7 @@ docker build -t generator:local .
 
 ### Prerequisites
 
-- Go 1.24 or later
+- Go 1.25 or later
 - Git
 - Make (optional, for using Makefile)
 
@@ -309,7 +309,7 @@ templates:
 # Version preferences
 versions:
   node: "20"
-  go: "1.24"
+  go: "1.25"
   
 # Cache settings
 cache:
@@ -407,7 +407,7 @@ rm -rf ~/.cache/generator
 - On first run, you may need to allow the binary in Security & Privacy settings
 - For Apple Silicon Macs, use the `arm64` version for better performance
 
-### Windows
+### Windows Notes
 
 - Requires Windows 10 or later
 - Windows Defender may flag the binary initially (false positive)

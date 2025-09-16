@@ -4,7 +4,7 @@ import (
 	"github.com/open-source-template-generator/pkg/interfaces"
 )
 
-// Container manages dependency injection for the application
+// Container manages basic dependency injection for the application
 type Container struct {
 	cli            interfaces.CLIInterface
 	templateEngine interfaces.TemplateEngine
