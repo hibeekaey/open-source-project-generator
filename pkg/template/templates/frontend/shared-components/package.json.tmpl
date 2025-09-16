@@ -31,8 +31,8 @@
     "prepublishOnly": "npm run build"
   },
   "peerDependencies": {
-    "react": "{{.Versions.Packages.react}}",
-    "react-dom": "{{.Versions.Packages.react}}"
+    "react": "{{reactVersion .}}",
+    "react-dom": "{{reactVersion .}}"
   },
   "dependencies": {
     "clsx": "^2.1.0",
@@ -45,8 +45,8 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "typescript": "^5.7.0",
-    "react": "{{.Versions.Packages.react}}",
-    "react-dom": "{{.Versions.Packages.react}}",
+    "react": "{{reactVersion .}}",
+    "react-dom": "{{reactVersion .}}",
     "@rollup/plugin-commonjs": "^28.0.0",
     "@rollup/plugin-node-resolve": "^15.3.0",
     "@rollup/plugin-typescript": "^12.1.0",
@@ -61,7 +61,7 @@
     "@storybook/react-vite": "^8.4.0",
     "@storybook/testing-library": "^0.2.0",
     "storybook": "^8.4.0",
-    "eslint": "^9.15.0",
+    "eslint": "^8.57.0",
     "@typescript-eslint/eslint-plugin": "^8.15.0",
     "@typescript-eslint/parser": "^8.15.0",
     "prettier": "^3.4.0",

@@ -2,10 +2,10 @@ package filesystem
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/utils"
 )
 
 // ProjectStructure defines the standard project directory structure
@@ -253,7 +253,7 @@ func (pg *ProjectGenerator) validateContentCrossReferences(projectPath string, c
 	makefilePath := filepath.Join(projectPath, "Makefile")
 	if pg.fsGen.FileExists(makefilePath) {
 		// Validate Makefile exists and is readable
-		if _, err := os.ReadFile(makefilePath); err != nil {
+		if _, err := utils.SafeReadFile(makefilePath); err != nil {
 			return fmt.Errorf("failed to read Makefile: %w", err)
 		}
 	}
@@ -262,7 +262,7 @@ func (pg *ProjectGenerator) validateContentCrossReferences(projectPath string, c
 	dockerComposePath := filepath.Join(projectPath, "docker-compose.yml")
 	if pg.fsGen.FileExists(dockerComposePath) {
 		// Validate docker-compose.yml exists and is readable
-		if _, err := os.ReadFile(dockerComposePath); err != nil {
+		if _, err := utils.SafeReadFile(dockerComposePath); err != nil {
 			return fmt.Errorf("failed to read docker-compose.yml: %w", err)
 		}
 	}
@@ -274,10 +274,10 @@ func (pg *ProjectGenerator) validateContentCrossReferences(projectPath string, c
 
 		if pg.fsGen.FileExists(mainAppPackageJson) && pg.fsGen.FileExists(adminPackageJson) {
 			// Validate both package.json files are readable
-			if _, err := os.ReadFile(mainAppPackageJson); err != nil {
+			if _, err := utils.SafeReadFile(mainAppPackageJson); err != nil {
 				return fmt.Errorf("failed to read main app package.json: %w", err)
 			}
-			if _, err := os.ReadFile(adminPackageJson); err != nil {
+			if _, err := utils.SafeReadFile(adminPackageJson); err != nil {
 				return fmt.Errorf("failed to read admin package.json: %w", err)
 			}
 		}

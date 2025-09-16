@@ -66,8 +66,8 @@ func (e *Engine) ProcessTemplate(templatePath string, config *models.ProjectConf
 
 // ProcessDirectory processes an entire template directory recursively
 func (e *Engine) ProcessDirectory(templateDir string, outputDir string, config *models.ProjectConfig) error {
-	// Create output directory if it doesn't exist
-	if err := os.MkdirAll(outputDir, 0755); err != nil {
+	// Create output directory if it doesn't exist with secure permissions
+	if err := utils.SafeMkdirAll(outputDir); err != nil {
 		return fmt.Errorf("failed to create output directory: %w", err)
 	}
 
@@ -88,6 +88,11 @@ func (e *Engine) ProcessDirectory(templateDir string, outputDir string, config *
 			return nil
 		}
 
+		// Skip disabled template files
+		if strings.HasSuffix(path, ".tmpl.disabled") {
+			return nil
+		}
+
 		// Calculate output path
 		outputPath := filepath.Join(outputDir, relPath)
 
@@ -97,6 +102,11 @@ func (e *Engine) ProcessDirectory(templateDir string, outputDir string, config *
 		if info.IsDir() {
 			// Create directory
 			return os.MkdirAll(outputPath, info.Mode())
+		}
+
+		// Skip disabled template files
+		if strings.HasSuffix(path, ".tmpl.disabled") {
+			return nil // Skip disabled templates
 		}
 
 		// Process file
@@ -155,13 +165,13 @@ func (e *Engine) RenderTemplate(tmpl *template.Template, data interface{}) ([]by
 
 // Helper function to copy a file
 func (e *Engine) copyFile(src, dst string, mode os.FileMode) error {
-	srcFile, err := os.Open(src)
+	srcFile, err := utils.SafeOpen(src)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = srcFile.Close() }()
 
-	dstFile, err := os.Create(dst)
+	dstFile, err := utils.SafeCreate(dst)
 	if err != nil {
 		return err
 	}

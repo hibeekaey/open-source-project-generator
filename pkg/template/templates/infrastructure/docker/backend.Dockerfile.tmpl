@@ -1,6 +1,6 @@
 # Multi-stage Dockerfile for Go Backend API
 # Build stage
-FROM golang:{{.Versions.Go}}-alpine AS builder
+FROM golang:{{goVersion .}}-alpine AS builder
 
 WORKDIR /app
 

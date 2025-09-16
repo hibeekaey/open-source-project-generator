@@ -119,7 +119,7 @@ func (s *authService) RefreshToken(req *models.RefreshTokenRequest) (*models.Log
 	}
 
 	// Remove old refresh token and store new one
-	s.removeRefreshToken(claims.UserID, req.RefreshToken)
+	_ = s.removeRefreshToken(claims.UserID, req.RefreshToken) // Ignore error as this is cleanup
 	err = s.storeRefreshToken(user.ID, refreshToken)
 	if err != nil {
 		return nil, err
@@ -224,7 +224,7 @@ func (s *authService) ConfirmPasswordReset(req *models.ResetPasswordConfirmReque
 	}
 
 	// Remove reset token
-	s.removeResetToken(claims.UserID, req.Token)
+	_ = s.removeResetToken(claims.UserID, req.Token) // Ignore error as this is cleanup
 
 	return nil
 }

@@ -313,14 +313,14 @@ func getNextjsVersion(config *models.ProjectConfig) string {
 	if config.Versions != nil && config.Versions.Packages["next"] != "" {
 		return config.Versions.Packages["next"]
 	}
-	return "15.0.0" // Default fallback
+	return "14.2.0" // Default fallback
 }
 
 func getReactVersion(config *models.ProjectConfig) string {
 	if config.Versions != nil && config.Versions.Packages["react"] != "" {
 		return config.Versions.Packages["react"]
 	}
-	return "18.2.0" // Default fallback
+	return "^18.3.1" // Default fallback
 }
 
 func getKotlinVersion(config *models.ProjectConfig) string {

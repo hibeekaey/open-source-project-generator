@@ -141,7 +141,7 @@ func (c *CLI) PromptProjectDetails() (*models.ProjectConfig, error) {
 	var outputPath string
 	prompt = &survey.Input{
 		Message: "Where should the project be generated?",
-		Default: "./output",
+		Default: "output/generated",
 	}
 	if err := survey.AskOne(prompt, &outputPath); err != nil {
 		return nil, fmt.Errorf("failed to get output path: %w", err)

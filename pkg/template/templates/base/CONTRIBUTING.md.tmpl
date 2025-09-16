@@ -45,9 +45,9 @@ This project and everyone participating in it is governed by our [Code of Conduc
 
 Ensure you have the required tools installed:
 
-{{if .Components.Frontend.NextJS.App}}- **Node.js**: {{.Versions.Node}} or later
+{{if .Components.Frontend.NextJS.App}}- **Node.js**: {{nodeVersion .}} or later
 - **npm**: 10.0.0 or later (or yarn equivalent){{end}}
-{{if .Components.Backend.GoGin}}- **Go**: {{.Versions.Go}} or later{{end}}
+{{if .Components.Backend.GoGin}}- **Go**: {{goVersion .}} or later{{end}}
 {{if .Components.Infrastructure.Docker}}- **Docker**: Latest stable version
 - **Docker Compose**: V2 or later{{end}}
 - **Git**: Latest stable version

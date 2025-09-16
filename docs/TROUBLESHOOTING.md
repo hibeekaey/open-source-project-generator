@@ -150,8 +150,8 @@ This guide helps you resolve common issues with the Open Source Template Generat
 1. **Check output directory permissions**:
 
    ```bash
-   ls -la /path/to/output/directory
-   mkdir -p /path/to/output/directory
+   ls -la /path/to/output/generated/directory
+   mkdir -p /path/to/output/generated/directory
    ```
 
 2. **Use different output directory**:

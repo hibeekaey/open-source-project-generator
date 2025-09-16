@@ -10,7 +10,7 @@ CYAN := \033[36m
 RESET := \033[0m
 
 # Configuration
-GO_VERSION := {{.Versions.Go}}
+GO_VERSION := {{goVersion .}}
 GIN_VERSION := latest
 PROJECT_NAME := {{.Name}}
 BINARY_NAME := {{.Name}}-server

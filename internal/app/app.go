@@ -21,6 +21,7 @@ import (
 	"github.com/cuesoftinc/open-source-project-generator/pkg/interfaces"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/template"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/utils"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/validation"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/version"
 	"github.com/spf13/cobra"
@@ -109,18 +110,9 @@ func (a *App) Run(args []string) error {
 		RunE:  a.runGenerate,
 	}
 	generateCmd.Flags().StringP("config", "c", "", "Path to configuration file (YAML or JSON)")
-	generateCmd.Flags().StringP("output", "o", "", "Output directory for generated project")
+	generateCmd.Flags().StringP("output", "o", "output/generated", "Output directory for generated project")
 	generateCmd.Flags().Bool("dry-run", false, "Preview generation without creating files")
 	rootCmd.AddCommand(generateCmd)
-
-	// Add help command
-	helpCmd := &cobra.Command{
-		Use:   "help",
-		Short: "Show help information",
-		Long:  "Display help information for the generator tool",
-		RunE:  a.runHelp,
-	}
-	rootCmd.AddCommand(helpCmd)
 
 	// Add version command
 	versionCmd := &cobra.Command{
@@ -234,23 +226,6 @@ func (a *App) runGenerate(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Println("Project generated successfully!")
-	return nil
-}
-
-// runHelp handles the help command
-func (a *App) runHelp(cmd *cobra.Command, args []string) error {
-	fmt.Println("Open Source Template Generator")
-	fmt.Println("A tool for generating production-ready project templates")
-	fmt.Println("")
-	fmt.Println("Commands:")
-	fmt.Println("  generate    Generate a new project from templates")
-	fmt.Println("  help        Show this help information")
-	fmt.Println("  version     Show version information")
-	fmt.Println("")
-	fmt.Println("Usage:")
-	fmt.Println("  generator generate    # Start interactive project generation")
-	fmt.Println("  generator help        # Show this help")
-	fmt.Println("  generator version     # Show version")
 	return nil
 }
 
@@ -612,10 +587,14 @@ func (a *App) processMobileTemplates(templateDir, projectOutputDir string, confi
 
 	// Process Android
 	if config.Components.Mobile.Android {
-		androidTemplateDir := mobileDir + "/android-kotlin"
+		androidTemplateDir := "pkg/template/templates/mobile/android-kotlin"
 		androidOutputDir := filepath.Join(mobileOutputDir, "android")
-		if err := a.templateEngine.ProcessDirectory(androidTemplateDir, androidOutputDir, config); err != nil {
-			if !strings.Contains(err.Error(), "file does not exist") {
+
+		// Use DirectoryProcessor for Android templates due to template variables in directory names
+		regularEngine := template.NewEngine()
+		processor := template.NewDirectoryProcessor(regularEngine.(*template.Engine))
+		if err := processor.ProcessTemplateDirectory(androidTemplateDir, androidOutputDir, config); err != nil {
+			if !strings.Contains(err.Error(), "file does not exist") && !strings.Contains(err.Error(), "no such file or directory") {
 				return fmt.Errorf("failed to process Android templates: %w", err)
 			}
 		}
@@ -742,7 +721,7 @@ func (a *App) processBaseRootFiles(baseDir, projectOutputDir string, config *mod
 			return fmt.Errorf("failed to create output directory: %w", err)
 		}
 
-		if err := os.WriteFile(outputFile, content, 0644); err != nil {
+		if err := utils.SafeWriteFile(outputFile, content); err != nil {
 			return fmt.Errorf("failed to write output file %s: %w", outputName, err)
 		}
 	}

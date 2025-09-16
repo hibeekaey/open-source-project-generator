@@ -4,13 +4,13 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
-	"os"
 	"path/filepath"
 	"strings"
 	"text/template"
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/interfaces"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/utils"
 )
 
 //go:embed templates
@@ -57,8 +57,8 @@ func (e *EmbeddedEngine) ProcessTemplate(templatePath string, config *models.Pro
 
 // ProcessDirectory processes an entire template directory recursively from embedded filesystem
 func (e *EmbeddedEngine) ProcessDirectory(templateDir string, outputDir string, config *models.ProjectConfig) error {
-	// Create output directory if it doesn't exist
-	if err := os.MkdirAll(outputDir, 0755); err != nil {
+	// Create output directory if it doesn't exist with secure permissions
+	if err := utils.SafeMkdirAll(outputDir); err != nil {
 		return fmt.Errorf("failed to create output directory: %w", err)
 	}
 
@@ -85,8 +85,19 @@ func (e *EmbeddedEngine) ProcessDirectory(templateDir string, outputDir string, 
 			return nil
 		}
 
-		// Calculate output path
+		// Skip disabled template files
+		if strings.HasSuffix(path, ".tmpl.disabled") {
+			return nil
+		}
+
+		// Calculate output path with template variable processing
 		outputPath := filepath.Join(outputDir, relPath)
+
+		// Process template variables in path names
+		outputPath, err = e.processPathTemplate(outputPath, config)
+		if err != nil {
+			return fmt.Errorf("failed to process path template %s: %w", relPath, err)
+		}
 
 		// Remove .tmpl extension if present
 		outputPath = strings.TrimSuffix(outputPath, ".tmpl")
@@ -95,8 +106,8 @@ func (e *EmbeddedEngine) ProcessDirectory(templateDir string, outputDir string, 
 		outputPath = e.restoreHiddenFileName(outputPath)
 
 		if d.IsDir() {
-			// Create directory
-			return os.MkdirAll(outputPath, 0755)
+			// Create directory with secure permissions
+			return utils.SafeMkdirAll(outputPath)
 		}
 
 		// Process file
@@ -107,8 +118,8 @@ func (e *EmbeddedEngine) ProcessDirectory(templateDir string, outputDir string, 
 				return fmt.Errorf("failed to process embedded template %s: %w", path, err)
 			}
 
-			// Write processed content
-			return os.WriteFile(outputPath, content, 0644)
+			// Write processed content with secure permissions
+			return utils.SafeWriteFile(outputPath, content)
 		} else {
 			// Copy non-template file from embedded filesystem
 			return e.copyEmbeddedFile(path, outputPath)
@@ -158,12 +169,36 @@ func (e *EmbeddedEngine) copyEmbeddedFile(src, dst string) error {
 	// Restore hidden file name for output
 	dst = e.restoreHiddenFileName(dst)
 
-	// Create directory if it doesn't exist
-	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+	// Create directory if it doesn't exist with secure permissions
+	if err := utils.SafeMkdirAll(filepath.Dir(dst)); err != nil {
 		return fmt.Errorf("failed to create directory: %w", err)
 	}
 
-	return os.WriteFile(dst, content, 0644)
+	return utils.SafeWriteFile(dst, content)
+}
+
+// processPathTemplate processes template variables in path names
+func (e *EmbeddedEngine) processPathTemplate(path string, config *models.ProjectConfig) (string, error) {
+	// Simple path template processing - replace common variables
+	result := path
+
+	// Replace common template variables in paths
+	replacements := map[string]string{
+		"{{.Name}}":                 config.Name,
+		"{{.Name | lower}}":         strings.ToLower(config.Name),
+		"{{.Name | upper}}":         strings.ToUpper(config.Name),
+		"{{kebabCase .Name}}":       toKebabCase(config.Name),
+		"{{snakeCase .Name}}":       toSnakeCase(config.Name),
+		"{{.Organization}}":         config.Organization,
+		"{{.Organization | lower}}": strings.ToLower(config.Organization),
+		"{{.Organization | upper}}": strings.ToUpper(config.Organization),
+	}
+
+	for placeholder, value := range replacements {
+		result = strings.ReplaceAll(result, placeholder, value)
+	}
+
+	return result, nil
 }
 
 // registerDefaultFunctions registers the default template functions

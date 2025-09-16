@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/constants"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/utils"
 )
 
 // TemplateScanner analyzes template configurations and identifies inconsistencies
@@ -197,7 +198,7 @@ func (s *TemplateScanner) isConfigFile(fileName string) bool {
 
 // parsePackageJSON parses a package.json template file
 func (s *TemplateScanner) parsePackageJSON(filePath string) (*PackageJSONInfo, error) {
-	content, err := os.ReadFile(filePath)
+	content, err := utils.SafeReadFile(filePath)
 	if err != nil {
 		return nil, err
 	}

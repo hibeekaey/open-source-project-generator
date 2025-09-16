@@ -946,7 +946,7 @@ func TestErrorHandling(t *testing.T) {
 
 	t.Run("invalid template directory", func(t *testing.T) {
 		t.Parallel()
-		err := processor.ProcessTemplateDirectory("/nonexistent", "/tmp/output", &models.ProjectConfig{})
+		err := processor.ProcessTemplateDirectory("/nonexistent", "/tmp/output/generated", &models.ProjectConfig{})
 		if err == nil {
 			t.Error("Expected error for nonexistent template directory")
 		}

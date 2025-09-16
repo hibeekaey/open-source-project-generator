@@ -7,6 +7,7 @@ import (
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/constants"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/utils"
 	yaml "gopkg.in/yaml.v3"
 )
 
@@ -59,8 +60,8 @@ func NewMetadataParser() *MetadataParser {
 
 // ParseMetadata parses template metadata from a file
 func (p *MetadataParser) ParseMetadata(metadataPath string) (*TemplateMetadata, error) {
-	// Read metadata file
-	content, err := os.ReadFile(metadataPath)
+	// Read metadata file with path validation
+	content, err := utils.SafeReadFile(metadataPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read metadata file %s: %w", metadataPath, err)
 	}

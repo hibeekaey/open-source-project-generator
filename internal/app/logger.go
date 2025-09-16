@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/cuesoftinc/open-source-project-generator/pkg/utils"
 )
 
 // LogLevel represents the logging level
@@ -59,7 +61,7 @@ func NewLoggerWithComponent(level LogLevel, logToFile bool, component string) (*
 		}
 
 		logFile := filepath.Join(logDir, fmt.Sprintf("generator-%s.log", time.Now().Format("2006-01-02")))
-		file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
+		file, err := utils.SafeOpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 		if err != nil {
 			return nil, fmt.Errorf("failed to open log file: %w", err)
 		}

@@ -16,8 +16,8 @@ NC='\033[0m' # No Color
 # Configuration
 PROJECT_NAME="{{.Name}}"
 ORGANIZATION="{{.Organization}}"
-NODE_VERSION="{{.Versions.Node}}"
-GO_VERSION="{{.Versions.Go}}"
+NODE_VERSION="{{nodeVersion .}}"
+GO_VERSION="{{goVersion .}}"
 
 # Directories
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

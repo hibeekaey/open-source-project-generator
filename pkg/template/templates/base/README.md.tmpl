@@ -42,12 +42,12 @@ Visit [http://localhost:3000](http://localhost:3000) to see your application run
 
 ## ✨ Features
 
-{{if .Components.Frontend.NextJS.App}}- **Modern Frontend**: Next.js {{.Versions.Packages.next}} with TypeScript, Tailwind CSS, and App Router{{end}}
+{{if .Components.Frontend.NextJS.App}}- **Modern Frontend**: Next.js {{nextjsVersion .}} with TypeScript, Tailwind CSS, and App Router{{end}}
 {{if .Components.Frontend.NextJS.Home}}- **Landing Page**: Responsive marketing site with modern design{{end}}
 {{if .Components.Frontend.NextJS.Admin}}- **Admin Dashboard**: Comprehensive admin interface with data management{{end}}
-{{if .Components.Backend.GoGin}}- **REST API**: Go {{.Versions.Go}} backend with Gin framework and comprehensive middleware{{end}}
-{{if .Components.Mobile.Android}}- **Android App**: Native Android application with Kotlin {{.Versions.Packages.kotlin}} and Jetpack Compose{{end}}
-{{if .Components.Mobile.IOS}}- **iOS App**: Native iOS application with Swift {{.Versions.Packages.swift}} and SwiftUI{{end}}
+{{if .Components.Backend.GoGin}}- **REST API**: Go {{goVersion .}} backend with Gin framework and comprehensive middleware{{end}}
+{{if .Components.Mobile.Android}}- **Android App**: Native Android application with Kotlin {{kotlinVersion .}} and Jetpack Compose{{end}}
+{{if .Components.Mobile.IOS}}- **iOS App**: Native iOS application with Swift {{swiftVersion .}} and SwiftUI{{end}}
 {{if .Components.Infrastructure.Docker}}- **Containerization**: Docker and Docker Compose for easy deployment{{end}}
 {{if .Components.Infrastructure.Kubernetes}}- **Kubernetes**: Production-ready K8s manifests with Helm charts{{end}}
 {{if .Components.Infrastructure.Terraform}}- **Infrastructure as Code**: Terraform configurations for multi-cloud deployment{{end}}
@@ -84,7 +84,7 @@ Visit [http://localhost:3000](http://localhost:3000) to see your application run
 ### Technology Stack
 
 {{if .Components.Frontend.NextJS.App}}#### Frontend
-- **Framework**: Next.js {{.Versions.Packages.next}} with App Router
+- **Framework**: Next.js {{nextjsVersion .}} with App Router
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
 - **UI Components**: Radix UI primitives
@@ -92,7 +92,7 @@ Visit [http://localhost:3000](http://localhost:3000) to see your application run
 - **Testing**: Jest, React Testing Library, Playwright{{end}}
 
 {{if .Components.Backend.GoGin}}#### Backend
-- **Language**: Go {{.Versions.Go}}
+- **Language**: Go {{goVersion .}}
 - **Framework**: Gin
 - **Database**: PostgreSQL with GORM
 - **Cache**: Redis
@@ -100,8 +100,8 @@ Visit [http://localhost:3000](http://localhost:3000) to see your application run
 - **Testing**: Go testing package, Testify{{end}}
 
 {{if or .Components.Mobile.Android .Components.Mobile.IOS}}#### Mobile
-{{if .Components.Mobile.Android}}- **Android**: Kotlin {{.Versions.Packages.kotlin}}, Jetpack Compose, Material Design 3{{end}}
-{{if .Components.Mobile.IOS}}- **iOS**: Swift {{.Versions.Packages.swift}}, SwiftUI, Combine{{end}}
+{{if .Components.Mobile.Android}}- **Android**: Kotlin {{kotlinVersion .}}, Jetpack Compose, Material Design 3{{end}}
+{{if .Components.Mobile.IOS}}- **iOS**: Swift {{swiftVersion .}}, SwiftUI, Combine{{end}}
 - **Architecture**: MVVM with Repository pattern
 - **Networking**: Retrofit (Android) / Alamofire (iOS)
 - **Local Storage**: Room (Android) / SwiftData (iOS){{end}}
@@ -121,9 +121,9 @@ Before you begin, ensure you have the following installed:
 ### Required
 - **Git**: Version control
 - **Make**: Build automation (usually pre-installed on macOS/Linux)
-{{if .Components.Frontend.NextJS.App}}- **Node.js**: {{.Versions.Node}} or later
+{{if .Components.Frontend.NextJS.App}}- **Node.js**: {{nodeVersion .}} or later
 - **npm/yarn**: Package manager{{end}}
-{{if .Components.Backend.GoGin}}- **Go**: {{.Versions.Go}} or later{{end}}
+{{if .Components.Backend.GoGin}}- **Go**: {{goVersion .}} or later{{end}}
 {{if .Components.Infrastructure.Docker}}- **Docker**: Latest stable version
 - **Docker Compose**: V2 or later{{end}}
 

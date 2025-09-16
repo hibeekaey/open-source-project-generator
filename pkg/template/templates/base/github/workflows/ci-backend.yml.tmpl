@@ -16,7 +16,7 @@ on:
       - 'go.sum'
 
 env:
-  GO_VERSION: '{{.Versions.Go}}'
+  GO_VERSION: '{{goVersion .}}'
 
 jobs:
   test-backend:
@@ -53,7 +53,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v4
       with:
-        go-version: '{{.Versions.Go}}'
+        go-version: '{{goVersion .}}'
         cache-dependency-path: go.sum
 
     - name: Install dependencies
@@ -109,7 +109,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v4
       with:
-        go-version: '{{.Versions.Go}}'
+        go-version: '{{goVersion .}}'
 
     - name: Build binary
       run: |

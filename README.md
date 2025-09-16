@@ -140,7 +140,7 @@ versions:
     react: "18.2.0"
     next: "13.4.0"
     typescript: "5.0.0"
-output_path: "./output"
+output_path: "./output/generated"
 ```
 
 ## Contributing

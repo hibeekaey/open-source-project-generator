@@ -37,13 +37,13 @@ jobs:
       if: matrix.language == 'go'
       uses: actions/setup-go@v4
       with:
-        go-version: '{{.Versions.Go}}'
+        go-version: '{{goVersion .}}'
 
     - name: Setup Node.js (for JavaScript analysis)
       if: matrix.language == 'javascript'
       uses: actions/setup-node@v4
       with:
-        node-version: '{{.Versions.Node}}'
+        node-version: '{{nodeVersion .}}'
 
     - name: Setup JDK (for Java analysis)
       if: matrix.language == 'java'
@@ -111,12 +111,12 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '{{.Versions.Node}}'
+        node-version: '{{nodeVersion .}}'
 
     - name: Setup Go
       uses: actions/setup-go@v4
       with:
-        go-version: '{{.Versions.Go}}'
+        go-version: '{{goVersion .}}'
 
     - name: Audit Node.js dependencies
       run: |
@@ -173,7 +173,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '{{.Versions.Node}}'
+        node-version: '{{nodeVersion .}}'
 
     - name: Install license-checker
       run: npm install -g license-checker

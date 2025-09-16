@@ -13,8 +13,8 @@ on:
 
 env:
   JAVA_VERSION: '17'
-  KOTLIN_VERSION: '{{.Versions.Packages.kotlin}}'
-  SWIFT_VERSION: '{{.Versions.Packages.swift}}'
+  KOTLIN_VERSION: '{{kotlinVersion .}}'
+  SWIFT_VERSION: '{{swiftVersion .}}'
 
 jobs:
 {{if .Components.Mobile.Android}}

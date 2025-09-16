@@ -9,6 +9,7 @@ import (
 	"text/template"
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/utils"
 )
 
 // VerificationStatus represents the status of template verification
@@ -36,8 +37,8 @@ func verifyTemplateCompilation(templatePath string, testData *models.ProjectConf
 		Status:       VerificationFailed,
 	}
 
-	// Read template content
-	content, err := os.ReadFile(templatePath)
+	// Read template content with path validation
+	content, err := utils.SafeReadFile(templatePath)
 	if err != nil {
 		result.Error = fmt.Sprintf("failed to read template: %v", err)
 		return result
@@ -55,14 +56,14 @@ func verifyTemplateCompilation(templatePath string, testData *models.ProjectConf
 	outputPath := filepath.Join(outputDir, outputFileName)
 	result.GeneratedFile = outputPath
 
-	// Create output directory
-	if mkdirErr := os.MkdirAll(filepath.Dir(outputPath), 0755); mkdirErr != nil {
+	// Create output directory with secure permissions
+	if mkdirErr := utils.SafeMkdirAll(filepath.Dir(outputPath)); mkdirErr != nil {
 		result.Error = fmt.Sprintf("failed to create output directory: %v", mkdirErr)
 		return result
 	}
 
-	// Create output file
-	outputFile, err := os.Create(outputPath)
+	// Create output file with secure permissions
+	outputFile, err := utils.SafeCreate(outputPath)
 	if err != nil {
 		result.Error = fmt.Sprintf("failed to create output file: %v", err)
 		return result
@@ -97,7 +98,7 @@ func verifyTemplateCompilation(templatePath string, testData *models.ProjectConf
 
 // verifyGeneratedFile performs basic verification on the generated file
 func verifyGeneratedFile(filePath string) error {
-	content, err := os.ReadFile(filePath)
+	content, err := utils.SafeReadFile(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to read generated file: %w", err)
 	}
@@ -158,7 +159,7 @@ func verifyGoModFile(content string) error {
 
 // tryCompileGoFile attempts to compile a Go file
 func tryCompileGoFile(filePath string) (string, error) {
-	content, err := os.ReadFile(filePath)
+	content, err := utils.SafeReadFile(filePath)
 	if err != nil {
 		return "", fmt.Errorf("failed to read file: %w", err)
 	}
@@ -169,16 +170,16 @@ func tryCompileGoFile(filePath string) (string, error) {
 		return "", nil
 	}
 
-	// Create a temporary directory for compilation
+	// Create a temporary directory for compilation with secure permissions
 	tempDir := filepath.Dir(filePath) + "_compile_test"
-	if mkdirErr := os.MkdirAll(tempDir, 0755); mkdirErr != nil {
+	if mkdirErr := utils.SafeMkdirAll(tempDir); mkdirErr != nil {
 		return "", fmt.Errorf("failed to create temp directory: %w", mkdirErr)
 	}
 	defer func() { _ = os.RemoveAll(tempDir) }()
 
-	// Copy the file to temp directory
+	// Copy the file to temp directory with secure permissions
 	tempFile := filepath.Join(tempDir, "main.go")
-	if writeErr := os.WriteFile(tempFile, content, 0644); writeErr != nil {
+	if writeErr := utils.SafeWriteFile(tempFile, content); writeErr != nil {
 		return "", fmt.Errorf("failed to write temp file: %w", writeErr)
 	}
 
@@ -187,7 +188,7 @@ func tryCompileGoFile(filePath string) (string, error) {
 go 1.25
 `
 	goModPath := filepath.Join(tempDir, "go.mod")
-	if goModErr := os.WriteFile(goModPath, []byte(goModContent), 0644); goModErr != nil {
+	if goModErr := utils.SafeWriteFile(goModPath, []byte(goModContent)); goModErr != nil {
 		return "", fmt.Errorf("failed to create go.mod: %w", goModErr)
 	}
 
