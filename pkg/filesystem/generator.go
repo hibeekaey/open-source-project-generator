@@ -8,6 +8,7 @@ import (
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/interfaces"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/utils"
 )
 
 // Generator implements the FileSystemGenerator interface
@@ -268,8 +269,8 @@ func (g *Generator) copyFile(srcPath, destPath string, perm os.FileMode) error {
 		return nil
 	}
 
-	// Open source file
-	srcFile, err := os.Open(srcPath)
+	// Open source file with path validation
+	srcFile, err := utils.SafeOpen(srcPath)
 	if err != nil {
 		return fmt.Errorf("failed to open source file: %w", err)
 	}
@@ -281,8 +282,8 @@ func (g *Generator) copyFile(srcPath, destPath string, perm os.FileMode) error {
 		return fmt.Errorf("failed to create destination directory: %w", err)
 	}
 
-	// Create destination file
-	destFile, err := os.Create(destPath)
+	// Create destination file with secure permissions
+	destFile, err := utils.SafeCreate(destPath)
 	if err != nil {
 		return fmt.Errorf("failed to create destination file: %w", err)
 	}

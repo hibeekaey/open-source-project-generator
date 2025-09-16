@@ -44,7 +44,7 @@ func SafeReadFile(path string, allowedBasePaths ...string) ([]byte, error) {
 	if err := ValidatePath(path, allowedBasePaths...); err != nil {
 		return nil, err
 	}
-	return os.ReadFile(path)
+	return os.ReadFile(path) // #nosec G304 - path is validated above
 }
 
 // SafeWriteFile writes a file with secure permissions and path validation
@@ -74,5 +74,21 @@ func SafeOpenFile(path string, flag int, perm os.FileMode, allowedBasePaths ...s
 		perm = 0600
 	}
 
-	return os.OpenFile(path, flag, perm)
+	return os.OpenFile(path, flag, perm) // #nosec G304 - path is validated above
+}
+
+// SafeOpen opens a file for reading with path validation
+func SafeOpen(path string, allowedBasePaths ...string) (*os.File, error) {
+	if err := ValidatePath(path, allowedBasePaths...); err != nil {
+		return nil, err
+	}
+	return os.Open(path) // #nosec G304 - path is validated above
+}
+
+// SafeCreate creates a file with secure permissions and path validation
+func SafeCreate(path string, allowedBasePaths ...string) (*os.File, error) {
+	if err := ValidatePath(path, allowedBasePaths...); err != nil {
+		return nil, err
+	}
+	return os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600) // #nosec G304 - path is validated above
 }

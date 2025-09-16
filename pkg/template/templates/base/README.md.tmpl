@@ -1,0 +1,552 @@
+# {{.Name}}
+
+{{.Description}}
+
+[![License: {{.License}}](https://img.shields.io/badge/License-{{.License | replace "-" "_"}}-blue.svg)](https://opensource.org/licenses/{{.License}})
+[![CI Status](https://github.com/{{.Organization}}/{{.Name}}/workflows/CI/badge.svg)](https://github.com/{{.Organization}}/{{.Name}}/actions)
+[![Security Scan](https://github.com/{{.Organization}}/{{.Name}}/workflows/Security%20Scan/badge.svg)](https://github.com/{{.Organization}}/{{.Name}}/actions)
+[![codecov](https://codecov.io/gh/{{.Organization}}/{{.Name}}/branch/main/graph/badge.svg)](https://codecov.io/gh/{{.Organization}}/{{.Name}})
+
+## 🚀 Quick Start
+
+Get {{.Name}} up and running in minutes:
+
+```bash
+# Clone the repository
+git clone https://github.com/{{.Organization}}/{{.Name}}.git
+cd {{.Name}}
+
+# Set up the development environment
+make setup
+
+# Start the development environment
+make dev
+```
+
+Visit [http://localhost:3000](http://localhost:3000) to see your application running!
+
+## 📋 Table of Contents
+
+- [Features](#-features)
+- [Architecture](#-architecture)
+- [Prerequisites](#-prerequisites)
+- [Installation](#-installation)
+- [Development](#-development)
+- [Testing](#-testing)
+- [Deployment](#-deployment)
+- [API Documentation](#-api-documentation)
+- [Contributing](#-contributing)
+- [Security](#-security)
+- [License](#-license)
+- [Support](#-support)
+
+## ✨ Features
+
+{{if .Components.Frontend.NextJS.App}}- **Modern Frontend**: Next.js {{nextjsVersion .}} with TypeScript, Tailwind CSS, and App Router{{end}}
+{{if .Components.Frontend.NextJS.Home}}- **Landing Page**: Responsive marketing site with modern design{{end}}
+{{if .Components.Frontend.NextJS.Admin}}- **Admin Dashboard**: Comprehensive admin interface with data management{{end}}
+{{if .Components.Backend.GoGin}}- **REST API**: Go {{goVersion .}} backend with Gin framework and comprehensive middleware{{end}}
+{{if .Components.Mobile.Android}}- **Android App**: Native Android application with Kotlin {{kotlinVersion .}} and Jetpack Compose{{end}}
+{{if .Components.Mobile.IOS}}- **iOS App**: Native iOS application with Swift {{swiftVersion .}} and SwiftUI{{end}}
+{{if .Components.Infrastructure.Docker}}- **Containerization**: Docker and Docker Compose for easy deployment{{end}}
+{{if .Components.Infrastructure.Kubernetes}}- **Kubernetes**: Production-ready K8s manifests with Helm charts{{end}}
+{{if .Components.Infrastructure.Terraform}}- **Infrastructure as Code**: Terraform configurations for multi-cloud deployment{{end}}
+- **CI/CD**: Automated testing, security scanning, and deployment pipelines
+- **Security**: Comprehensive security scanning, dependency management, and best practices
+- **Documentation**: Complete API documentation and user guides
+- **Monitoring**: Built-in observability and logging
+
+## 🏗️ Architecture
+
+{{.Name}} follows a modern microservices architecture:
+
+```
+{{.Name}}/
+├── 📱 Frontend Applications
+{{if .Components.Frontend.NextJS.App}}│   ├── App/                 # Main Next.js application{{end}}
+{{if .Components.Frontend.NextJS.Home}}│   ├── Home/                # Landing page{{end}}
+{{if .Components.Frontend.NextJS.Admin}}│   └── Admin/               # Admin dashboard{{end}}
+{{if .Components.Backend.GoGin}}├── 🔧 Backend Services
+│   └── CommonServer/        # Go API server{{end}}
+{{if or .Components.Mobile.Android .Components.Mobile.IOS}}├── 📱 Mobile Applications
+{{if .Components.Mobile.Android}}│   ├── Android/             # Kotlin Android app{{end}}
+{{if .Components.Mobile.IOS}}│   └── iOS/                 # Swift iOS app{{end}}{{end}}
+{{if or (or .Components.Infrastructure.Docker .Components.Infrastructure.Kubernetes) .Components.Infrastructure.Terraform}}├── 🚀 Infrastructure
+{{if .Components.Infrastructure.Docker}}│   ├── Docker/              # Container configurations{{end}}
+{{if .Components.Infrastructure.Kubernetes}}│   ├── Kubernetes/         # K8s manifests{{end}}
+{{if .Components.Infrastructure.Terraform}}│   └── Terraform/          # Infrastructure as Code{{end}}{{end}}
+├── 📚 Documentation
+├── 🧪 Tests
+├── 📜 Scripts
+└── 🔄 CI/CD (.github/)
+```
+
+### Technology Stack
+
+{{if .Components.Frontend.NextJS.App}}#### Frontend
+- **Framework**: Next.js {{nextjsVersion .}} with App Router
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **UI Components**: Radix UI primitives
+- **State Management**: Zustand / React Context
+- **Testing**: Jest, React Testing Library, Playwright{{end}}
+
+{{if .Components.Backend.GoGin}}#### Backend
+- **Language**: Go {{goVersion .}}
+- **Framework**: Gin
+- **Database**: PostgreSQL with GORM
+- **Cache**: Redis
+- **Authentication**: JWT with refresh tokens
+- **Testing**: Go testing package, Testify{{end}}
+
+{{if or .Components.Mobile.Android .Components.Mobile.IOS}}#### Mobile
+{{if .Components.Mobile.Android}}- **Android**: Kotlin {{kotlinVersion .}}, Jetpack Compose, Material Design 3{{end}}
+{{if .Components.Mobile.IOS}}- **iOS**: Swift {{swiftVersion .}}, SwiftUI, Combine{{end}}
+- **Architecture**: MVVM with Repository pattern
+- **Networking**: Retrofit (Android) / Alamofire (iOS)
+- **Local Storage**: Room (Android) / SwiftData (iOS){{end}}
+
+{{if or (or .Components.Infrastructure.Docker .Components.Infrastructure.Kubernetes) .Components.Infrastructure.Terraform}}#### Infrastructure
+{{if .Components.Infrastructure.Docker}}- **Containers**: Docker, Docker Compose{{end}}
+{{if .Components.Infrastructure.Kubernetes}}- **Orchestration**: Kubernetes, Helm{{end}}
+{{if .Components.Infrastructure.Terraform}}- **IaC**: Terraform, multi-cloud support{{end}}
+- **CI/CD**: GitHub Actions
+- **Monitoring**: Prometheus, Grafana
+- **Logging**: ELK Stack{{end}}
+
+## 📋 Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+### Required
+- **Git**: Version control
+- **Make**: Build automation (usually pre-installed on macOS/Linux)
+{{if .Components.Frontend.NextJS.App}}- **Node.js**: {{nodeVersion .}} or later
+- **npm/yarn**: Package manager{{end}}
+{{if .Components.Backend.GoGin}}- **Go**: {{goVersion .}} or later{{end}}
+{{if .Components.Infrastructure.Docker}}- **Docker**: Latest stable version
+- **Docker Compose**: V2 or later{{end}}
+
+### Optional (for full development)
+{{if .Components.Mobile.Android}}- **Android Studio**: For Android development
+- **Java**: JDK 17 or later{{end}}
+{{if .Components.Mobile.IOS}}- **Xcode**: Latest version (macOS only){{end}}
+{{if .Components.Infrastructure.Kubernetes}}- **kubectl**: Kubernetes CLI
+- **Helm**: Package manager for Kubernetes{{end}}
+{{if .Components.Infrastructure.Terraform}}- **Terraform**: Infrastructure as Code{{end}}
+
+### System Requirements
+- **OS**: macOS, Linux, or Windows with WSL2
+- **RAM**: 8GB minimum, 16GB recommended
+- **Storage**: 10GB free space
+
+## 🛠️ Installation
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/{{.Organization}}/{{.Name}}.git
+cd {{.Name}}
+```
+
+### 2. Environment Setup
+
+```bash
+# Copy environment templates
+cp .env.example .env.local
+{{if .Components.Backend.GoGin}}cp CommonServer/.env.example CommonServer/.env{{end}}
+
+# Edit environment variables
+nano .env.local
+{{if .Components.Backend.GoGin}}nano CommonServer/.env{{end}}
+```
+
+### 3. Automated Setup
+
+```bash
+# Install all dependencies and set up the development environment
+make setup
+```
+
+This command will:
+{{if .Components.Frontend.NextJS.App}}- Install Node.js dependencies{{end}}
+{{if .Components.Backend.GoGin}}- Install Go dependencies
+- Set up database schema{{end}}
+- Configure development tools
+- Validate the installation
+
+### 4. Manual Setup (Alternative)
+
+If you prefer manual setup:
+
+{{if .Components.Frontend.NextJS.App}}```bash
+# Frontend setup
+cd App
+npm install
+cd ..
+{{if .Components.Frontend.NextJS.Home}}
+cd Home
+npm install
+cd ..
+{{end}}
+{{if .Components.Frontend.NextJS.Admin}}
+cd Admin
+npm install
+cd ..
+{{end}}
+```{{end}}
+
+{{if .Components.Backend.GoGin}}```bash
+# Backend setup
+cd CommonServer
+go mod download
+go mod tidy
+cd ..
+```{{end}}
+
+## 🚀 Development
+
+### Starting the Development Environment
+
+```bash
+# Start all services
+make dev
+```
+
+This will start:
+{{if .Components.Frontend.NextJS.App}}- Frontend application at [http://localhost:3000](http://localhost:3000){{end}}
+{{if .Components.Frontend.NextJS.Home}}- Landing page at [http://localhost:3001](http://localhost:3001){{end}}
+{{if .Components.Frontend.NextJS.Admin}}- Admin dashboard at [http://localhost:3002](http://localhost:3002){{end}}
+{{if .Components.Backend.GoGin}}- Backend API at [http://localhost:8080](http://localhost:8080){{end}}
+- Development database and cache services
+
+### Individual Service Development
+
+{{if .Components.Frontend.NextJS.App}}```bash
+# Frontend only
+make dev-frontend
+
+# Specific frontend app
+cd App && npm run dev
+{{if .Components.Frontend.NextJS.Home}}cd Home && npm run dev{{end}}
+{{if .Components.Frontend.NextJS.Admin}}cd Admin && npm run dev{{end}}
+```{{end}}
+
+{{if .Components.Backend.GoGin}}```bash
+# Backend only
+make dev-backend
+
+# Or directly
+cd CommonServer && go run main.go
+```{{end}}
+
+### Development Tools
+
+```bash
+# Code formatting
+make format
+
+# Linting
+make lint
+
+# Type checking
+make typecheck
+
+# Database operations
+{{if .Components.Backend.GoGin}}make db-migrate      # Run migrations
+make db-seed        # Seed test data
+make db-reset       # Reset database{{end}}
+```
+
+### Hot Reloading
+
+All services support hot reloading:
+{{if .Components.Frontend.NextJS.App}}- **Frontend**: Automatic reload on file changes{{end}}
+{{if .Components.Backend.GoGin}}- **Backend**: Uses Air for Go hot reloading{{end}}
+- **Database**: Schema changes via migrations
+
+## 🧪 Testing
+
+### Running All Tests
+
+```bash
+# Run complete test suite
+make test
+
+# Run tests with coverage
+make test-coverage
+
+# Run tests in watch mode
+make test-watch
+```
+
+### Component-Specific Testing
+
+{{if .Components.Frontend.NextJS.App}}```bash
+# Frontend tests
+make test-frontend
+
+# Unit tests
+cd App && npm test
+
+# Integration tests
+cd App && npm run test:integration
+
+# E2E tests
+cd App && npm run test:e2e
+```{{end}}
+
+{{if .Components.Backend.GoGin}}```bash
+# Backend tests
+make test-backend
+
+# Unit tests
+cd CommonServer && go test ./...
+
+# Integration tests
+cd CommonServer && go test -tags=integration ./...
+
+# Load tests
+make test-load
+```{{end}}
+
+{{if or .Components.Mobile.Android .Components.Mobile.IOS}}```bash
+# Mobile tests
+make test-mobile
+
+{{if .Components.Mobile.Android}}# Android tests
+cd Mobile/Android && ./gradlew test{{end}}
+
+{{if .Components.Mobile.IOS}}# iOS tests
+cd Mobile/iOS && xcodebuild test -scheme {{.Name}}{{end}}
+```{{end}}
+
+### Test Coverage
+
+View test coverage reports:
+
+```bash
+# Generate coverage report
+make coverage
+
+# Open coverage report in browser
+make coverage-html
+```
+
+## 🚀 Deployment
+
+### Development Deployment
+
+```bash
+# Deploy to development environment
+make deploy-dev
+```
+
+### Staging Deployment
+
+```bash
+# Deploy to staging
+make deploy-staging
+```
+
+### Production Deployment
+
+```bash
+# Deploy to production (requires approval)
+make deploy-prod
+```
+
+{{if .Components.Infrastructure.Docker}}### Docker Deployment
+
+```bash
+# Build all containers
+make docker-build
+
+# Run with Docker Compose
+make docker-up
+
+# Production deployment
+docker-compose -f docker-compose.prod.yml up -d
+```{{end}}
+
+{{if .Components.Infrastructure.Kubernetes}}### Kubernetes Deployment
+
+```bash
+# Deploy to Kubernetes
+make k8s-deploy
+
+# Using Helm
+helm install {{.Name}} ./Deploy/Kubernetes/helm/
+```{{end}}
+
+{{if .Components.Infrastructure.Terraform}}### Infrastructure Deployment
+
+```bash
+# Initialize Terraform
+cd Deploy/Terraform
+terraform init
+
+# Plan deployment
+terraform plan
+
+# Apply infrastructure
+terraform apply
+```{{end}}
+
+### Environment Variables
+
+Required environment variables for deployment:
+
+{{if .Components.Backend.GoGin}}#### Backend
+```bash
+DATABASE_URL=postgresql://user:pass@localhost/{{.Name}}
+REDIS_URL=redis://localhost:6379
+JWT_SECRET=your-jwt-secret
+API_PORT=8080
+```{{end}}
+
+{{if .Components.Frontend.NextJS.App}}#### Frontend
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_APP_ENV=development
+```{{end}}
+
+See `.env.example` files for complete configuration options.
+
+## 📚 API Documentation
+
+{{if .Components.Backend.GoGin}}### REST API
+
+The API documentation is available at:
+- **Development**: [http://localhost:8080/docs](http://localhost:8080/docs)
+- **Swagger UI**: [http://localhost:8080/swagger](http://localhost:8080/swagger)
+- **OpenAPI Spec**: [http://localhost:8080/openapi.json](http://localhost:8080/openapi.json)
+
+### Authentication
+
+The API uses JWT authentication:
+
+```bash
+# Login
+curl -X POST http://localhost:8080/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "user@example.com", "password": "password"}'
+
+# Use token
+curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  http://localhost:8080/api/protected-endpoint
+```
+
+### Rate Limiting
+
+API endpoints are rate-limited:
+- **Authenticated users**: 1000 requests/hour
+- **Anonymous users**: 100 requests/hour
+- **Login endpoint**: 5 attempts/minute
+
+### API Versioning
+
+The API uses URL versioning:
+- **Current version**: `/api/v1/`
+- **Legacy support**: Previous versions supported for 6 months{{end}}
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+### Quick Contribution Steps
+
+1. **Fork** the repository
+2. **Create** a feature branch: `git checkout -b feature/amazing-feature`
+3. **Commit** your changes: `git commit -m 'Add amazing feature'`
+4. **Push** to the branch: `git push origin feature/amazing-feature`
+5. **Open** a Pull Request
+
+### Development Workflow
+
+```bash
+# Set up development environment
+make setup
+
+# Create feature branch
+git checkout -b feature/your-feature
+
+# Make changes and test
+make test
+
+# Commit changes
+git add .
+git commit -m "feat: add your feature"
+
+# Push and create PR
+git push origin feature/your-feature
+```
+
+### Code Standards
+
+- Follow existing code style and conventions
+- Write tests for new functionality
+- Update documentation as needed
+- Ensure all CI checks pass
+
+## 🔒 Security
+
+Security is a top priority. Please see our [Security Policy](SECURITY.md) for:
+- Vulnerability reporting procedures
+- Security best practices
+- Supported versions
+- Contact information
+
+### Security Features
+
+- **Authentication**: JWT with refresh tokens
+- **Authorization**: Role-based access control
+- **Input Validation**: Comprehensive input sanitization
+- **Rate Limiting**: API and authentication rate limits
+- **Security Headers**: CORS, CSP, and security headers
+- **Dependency Scanning**: Automated vulnerability detection
+- **Secret Management**: Secure secret handling
+
+## 📄 License
+
+This project is licensed under the {{.License}} License - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 Support
+
+### Getting Help
+
+- **Documentation**: Check our [docs](./Docs/)
+- **Issues**: [GitHub Issues](https://github.com/{{.Organization}}/{{.Name}}/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/{{.Organization}}/{{.Name}}/discussions)
+- **Email**: support@{{.Organization}}.com
+
+### Community
+
+- **Discord**: [Join our Discord](https://discord.gg/{{.Name}})
+- **Twitter**: [@{{.Organization}}](https://twitter.com/{{.Organization}})
+- **Blog**: [{{.Organization}}.com/blog](https://{{.Organization}}.com/blog)
+
+### Commercial Support
+
+For enterprise support and consulting:
+- **Email**: enterprise@{{.Organization}}.com
+- **Website**: [{{.Organization}}.com/enterprise](https://{{.Organization}}.com/enterprise)
+
+## 🙏 Acknowledgments
+
+- Thanks to all [contributors](https://github.com/{{.Organization}}/{{.Name}}/contributors)
+- Built with amazing open source projects
+- Inspired by modern development best practices
+
+## 📊 Project Status
+
+- **Build Status**: [![CI](https://github.com/{{.Organization}}/{{.Name}}/workflows/CI/badge.svg)](https://github.com/{{.Organization}}/{{.Name}}/actions)
+- **Coverage**: [![codecov](https://codecov.io/gh/{{.Organization}}/{{.Name}}/branch/main/graph/badge.svg)](https://codecov.io/gh/{{.Organization}}/{{.Name}})
+- **Dependencies**: [![Dependencies](https://img.shields.io/david/{{.Organization}}/{{.Name}}.svg)](https://david-dm.org/{{.Organization}}/{{.Name}})
+- **License**: [![License](https://img.shields.io/badge/License-{{.License}}-blue.svg)](LICENSE)
+
+---
+
+**Made with ❤️ by the {{.Organization}} team**
+
+*Last updated: {{.GeneratedAt.Format "2006-01-02"}}*

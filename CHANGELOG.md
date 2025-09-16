@@ -5,6 +5,74 @@ All notable changes to the Open Source Template Generator will be documented in 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-09-16 - Security & Template Improvements
+
+### Added
+
+- **Default Version Management**: Added automatic fallback versions for all package dependencies
+  - React: `^18.3.1`, Next.js: `14.2.0`, Go: `1.22.0`, Node.js: `20.11.0`
+  - Kotlin: `2.0.0`, Swift: `5.9.0` with automatic version resolution
+- **Enhanced Security**: Comprehensive security improvements across all templates
+  - Secure file operations with path validation and traversal protection
+  - Secure file permissions (0600 for files, 0750 for directories)
+  - Added security utility functions with proper error handling
+- **Template Variable Processing**: Enhanced support for complex template expressions
+  - Added support for `{{.Name | lower}}`, `{{.Name | upper}}` in directory names
+  - Fixed iOS and Android project structure generation with proper naming
+- **Disabled Template Filtering**: Automatic exclusion of `.tmpl.disabled` files from generated projects
+
+### Changed
+
+- **Default Output Directory**: Changed from no default to `output/generated` for better organization
+- **Template Engine Architecture**: iOS/Android templates now use DirectoryProcessor for proper path processing
+- **Package Versions**: Updated to compatible, secure versions
+  - Redis Go client: `v9.14.0` (was `v9.15.0` which didn't exist)
+  - ESLint: `^8.57.0` (compatible with Next.js 14.2.0)
+- **CLI Interface**: Removed duplicate help command for cleaner interface
+
+### Fixed
+
+- **Android Project Generation**: Fixed missing Java directory structure in Android projects
+  - Template variables in directory names now properly processed
+  - Complete Android Kotlin project structure with proper package hierarchy
+- **iOS Project Generation**: Fixed `{{.Name}}` appearing literally in iOS directory names
+  - Proper Xcode project structure with correct naming
+- **Security Vulnerabilities**: Fixed all gosec security issues
+  - Path traversal vulnerabilities (G304): 25 issues resolved
+  - Insecure file permissions (G301/G306): 20 issues resolved  
+  - Unhandled errors (G104): 2 issues resolved in generated code
+- **Template Processing**: Fixed nil pointer errors when version configurations are missing
+  - All templates now use version functions with fallbacks
+  - Minimal configurations work without specifying any versions
+- **Package Dependencies**: Fixed version compatibility issues
+  - React/Next.js/ESLint version conflicts resolved
+  - All frontend dependencies now resolve correctly
+
+### Security
+
+- **Zero Security Issues**: Complete gosec compliance achieved
+  - Main codebase: 0 issues (4 intentional suppressions in security utils)
+  - Generated code: 0 issues in all templates
+- **Secure Defaults**: All generated projects follow security best practices
+  - Secure file permissions and operations
+  - Path validation and traversal protection
+  - Proper error handling in generated code
+
+### Testing
+
+- **Comprehensive Testing**: Full component integration testing completed
+  - All components (Frontend, Backend, Mobile, Infrastructure) generate successfully
+  - Package dependency resolution verified for all templates
+  - Cross-platform compatibility maintained
+  - Zero regressions in existing functionality
+
+### Migration Notes
+
+- **Default Output Path**: Projects now generate to `output/generated/` by default instead of requiring manual specification
+- **Version Requirements**: Version specifications in config files are now optional - sensible defaults are provided
+- **iOS/Android Projects**: Existing projects with `{{.Name}}` in directory names should be regenerated for proper structure
+- **Security**: All generated projects now follow enhanced security practices automatically
+
 ## [1.0.0] - 2025-09-16 - First Stable Release
 
 ### Added

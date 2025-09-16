@@ -7,7 +7,7 @@ services:
     image: ${DOCKER_REGISTRY:-ghcr.io}/${GITHUB_REPOSITORY_OWNER:-cuesoftinc}/open-source-project-generator:${VERSION:-latest}
     container_name: generator
     volumes:
-      - ./output:/workspace
+      - ./output/generated:/workspace
       - ./config:/home/generator/.config/generator:ro
     environment:
       - GENERATOR_LOG_LEVEL=info
@@ -26,7 +26,7 @@ services:
     container_name: generator-dev
     volumes:
       - .:/app
-      - ./output:/workspace
+      - ./output/generated:/workspace
       - go-mod-cache:/go/pkg/mod
     environment:
       - GENERATOR_LOG_LEVEL=debug

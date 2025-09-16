@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/constants"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/utils"
 )
 
 // TestTemplateFixesComprehensive runs the complete test suite for template fixes
@@ -220,7 +221,7 @@ func main() {
 			tempDir := t.TempDir()
 			templateFile := filepath.Join(tempDir, "test.go.tmpl")
 
-			err := os.WriteFile(templateFile, []byte(tc.content), 0644)
+			err := utils.SafeWriteFile(templateFile, []byte(tc.content))
 			if err != nil {
 				t.Fatalf("Failed to create template file: %v", err)
 			}
@@ -311,7 +312,7 @@ func processData(data interface{}) {
 			tempDir := t.TempDir()
 			templateFile := filepath.Join(tempDir, "test.go.tmpl")
 
-			err := os.WriteFile(templateFile, []byte(issue.templateContent), 0644)
+			err := utils.SafeWriteFile(templateFile, []byte(issue.templateContent))
 			if err != nil {
 				t.Fatalf("Failed to create template file: %v", err)
 			}
@@ -327,7 +328,7 @@ func processData(data interface{}) {
 
 			// Verify imports are present in generated file
 			generatedFile := filepath.Join(tempDir, "test.go")
-			if content, err := os.ReadFile(generatedFile); err == nil {
+			if content, err := utils.SafeReadFile(generatedFile); err == nil {
 				contentStr := string(content)
 				for _, requiredImport := range issue.requiredImports {
 					if !strings.Contains(contentStr, fmt.Sprintf("\"%s\"", requiredImport)) {
@@ -414,7 +415,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 	tempDir := t.TempDir()
 	templateFile := filepath.Join(tempDir, "auth.go.tmpl")
 
-	err := os.WriteFile(templateFile, []byte(templateContent), 0644)
+	err := utils.SafeWriteFile(templateFile, []byte(templateContent))
 	if err != nil {
 		t.Fatalf("Failed to create template file: %v", err)
 	}
@@ -486,7 +487,7 @@ func StatusHandler(w http.ResponseWriter, r *http.Request) {
 	tempDir := t.TempDir()
 	templateFile := filepath.Join(tempDir, "handlers.go.tmpl")
 
-	err := os.WriteFile(templateFile, []byte(templateContent), 0644)
+	err := utils.SafeWriteFile(templateFile, []byte(templateContent))
 	if err != nil {
 		t.Fatalf("Failed to create template file: %v", err)
 	}
@@ -550,7 +551,7 @@ func JSONHandler(w http.ResponseWriter, r *http.Request) {
 	tempDir := t.TempDir()
 	templateFile := filepath.Join(tempDir, "api.go.tmpl")
 
-	err := os.WriteFile(templateFile, []byte(templateContent), 0644)
+	err := utils.SafeWriteFile(templateFile, []byte(templateContent))
 	if err != nil {
 		t.Fatalf("Failed to create template file: %v", err)
 	}
@@ -599,7 +600,7 @@ func GenerateToken() (string, error) {
 	tempDir := t.TempDir()
 	templateFile := filepath.Join(tempDir, "security.go.tmpl")
 
-	err := os.WriteFile(templateFile, []byte(templateContent), 0644)
+	err := utils.SafeWriteFile(templateFile, []byte(templateContent))
 	if err != nil {
 		t.Fatalf("Failed to create template file: %v", err)
 	}

@@ -10,6 +10,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/cuesoftinc/open-source-project-generator/pkg/utils"
 )
 
 // FunctionUsage represents a function call found in template code
@@ -495,7 +497,7 @@ func (id *ImportDetector) isStandardLibrary(pkg string) bool {
 
 // readFileContent reads the content of a file
 func readFileContent(filePath string) (string, error) {
-	data, err := os.ReadFile(filePath)
+	data, err := utils.SafeReadFile(filePath)
 	if err != nil {
 		return "", err
 	}

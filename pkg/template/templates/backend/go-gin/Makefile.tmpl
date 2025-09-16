@@ -1,0 +1,457 @@
+# {{.Name}} Backend - Go API Server Makefile
+# This Makefile provides commands specific to backend development
+
+# Colors for output
+RED := \033[31m
+GREEN := \033[32m
+YELLOW := \033[33m
+BLUE := \033[34m
+CYAN := \033[36m
+RESET := \033[0m
+
+# Configuration
+GO_VERSION := {{goVersion .}}
+GIN_VERSION := latest
+PROJECT_NAME := {{.Name}}
+BINARY_NAME := {{.Name}}-server
+MAIN_PATH := ./main.go
+
+# Build information
+VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
+BUILD_TIME := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+GIT_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+GIT_BRANCH := $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+
+# Build flags
+LDFLAGS := -ldflags="-X main.Version=$(VERSION) -X main.BuildTime=$(BUILD_TIME) -X main.GitCommit=$(GIT_COMMIT) -X main.GitBranch=$(GIT_BRANCH)"
+
+# Directories
+BIN_DIR := bin
+COVERAGE_DIR := coverage
+DOCS_DIR := docs
+MIGRATIONS_DIR := migrations
+SCRIPTS_DIR := scripts
+
+# Database configuration
+DB_HOST := localhost
+DB_PORT := 5432
+DB_USER := {{.Name}}_user
+DB_PASSWORD := password
+DB_NAME := {{.Name}}_dev
+DB_SSL := disable
+DATABASE_URL := postgresql://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=$(DB_SSL)
+
+# Redis configuration
+REDIS_HOST := localhost
+REDIS_PORT := 6379
+REDIS_DB := 0
+REDIS_URL := redis://$(REDIS_HOST):$(REDIS_PORT)/$(REDIS_DB)
+
+# Test configuration
+TEST_DB_NAME := {{.Name}}_test
+TEST_DATABASE_URL := postgresql://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(TEST_DB_NAME)?sslmode=$(DB_SSL)
+
+# Default target
+.DEFAULT_GOAL := help
+
+##@ Help
+
+.PHONY: help
+help: ## Display backend-specific help
+	@echo "$(CYAN){{.Name}} Backend Commands$(RESET)"
+	@echo ""
+	@awk 'BEGIN {FS = ":.*##"; printf "$(YELLOW)Available targets:$(RESET)\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  $(CYAN)%-20s$(RESET) %s\n", $$1, $$2 } /^##@/ { printf "\n$(BLUE)%s$(RESET)\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+
+##@ Development
+
+.PHONY: dev
+dev: ## Start development server with hot reload
+	@echo "$(GREEN)Starting {{.Name}} backend development server...$(RESET)"
+	@if command -v air >/dev/null 2>&1; then \
+		air; \
+	else \
+		echo "$(YELLOW)Air not found, installing...$(RESET)"; \
+		go install github.com/cosmtrek/air@latest; \
+		air; \
+	fi
+
+.PHONY: run
+run: ## Run the application directly
+	@echo "$(BLUE)Running {{.Name}} backend...$(RESET)"
+	@go run $(LDFLAGS) $(MAIN_PATH)
+
+.PHONY: build
+build: ## Build the application binary
+	@echo "$(BLUE)Building {{.Name}} backend...$(RESET)"
+	@mkdir -p $(BIN_DIR)
+	@go build $(LDFLAGS) -o $(BIN_DIR)/$(BINARY_NAME) $(MAIN_PATH)
+	@echo "$(GREEN)✅ Binary built: $(BIN_DIR)/$(BINARY_NAME)$(RESET)"
+
+.PHONY: build-linux
+build-linux: ## Build Linux binary
+	@echo "$(BLUE)Building Linux binary...$(RESET)"
+	@mkdir -p $(BIN_DIR)
+	@GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o $(BIN_DIR)/$(BINARY_NAME)-linux-amd64 $(MAIN_PATH)
+	@echo "$(GREEN)✅ Linux binary built: $(BIN_DIR)/$(BINARY_NAME)-linux-amd64$(RESET)"
+
+.PHONY: build-windows
+build-windows: ## Build Windows binary
+	@echo "$(BLUE)Building Windows binary...$(RESET)"
+	@mkdir -p $(BIN_DIR)
+	@GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -o $(BIN_DIR)/$(BINARY_NAME)-windows-amd64.exe $(MAIN_PATH)
+	@echo "$(GREEN)✅ Windows binary built: $(BIN_DIR)/$(BINARY_NAME)-windows-amd64.exe$(RESET)"
+
+.PHONY: build-darwin
+build-darwin: ## Build macOS binary
+	@echo "$(BLUE)Building macOS binary...$(RESET)"
+	@mkdir -p $(BIN_DIR)
+	@GOOS=darwin GOARCH=amd64 go build $(LDFLAGS) -o $(BIN_DIR)/$(BINARY_NAME)-darwin-amd64 $(MAIN_PATH)
+	@GOOS=darwin GOARCH=arm64 go build $(LDFLAGS) -o $(BIN_DIR)/$(BINARY_NAME)-darwin-arm64 $(MAIN_PATH)
+	@echo "$(GREEN)✅ macOS binaries built$(RESET)"
+
+.PHONY: build-all
+build-all: build-linux build-windows build-darwin ## Build binaries for all platforms
+
+##@ Dependencies
+
+.PHONY: deps
+deps: ## Download and install dependencies
+	@echo "$(BLUE)Downloading dependencies...$(RESET)"
+	@go mod download
+	@go mod tidy
+	@echo "$(GREEN)✅ Dependencies installed$(RESET)"
+
+.PHONY: deps-update
+deps-update: ## Update all dependencies
+	@echo "$(BLUE)Updating dependencies...$(RESET)"
+	@go get -u ./...
+	@go mod tidy
+	@echo "$(GREEN)✅ Dependencies updated$(RESET)"
+
+.PHONY: deps-vendor
+deps-vendor: ## Create vendor directory
+	@echo "$(BLUE)Creating vendor directory...$(RESET)"
+	@go mod vendor
+	@echo "$(GREEN)✅ Vendor directory created$(RESET)"
+
+.PHONY: deps-verify
+deps-verify: ## Verify dependencies
+	@echo "$(BLUE)Verifying dependencies...$(RESET)"
+	@go mod verify
+	@echo "$(GREEN)✅ Dependencies verified$(RESET)"
+
+##@ Testing
+
+.PHONY: test
+test: ## Run all tests
+	@echo "$(BLUE)Running tests...$(RESET)"
+	@go test -v ./...
+
+.PHONY: test-short
+test-short: ## Run tests with short flag
+	@echo "$(BLUE)Running short tests...$(RESET)"
+	@go test -short -v ./...
+
+.PHONY: test-race
+test-race: ## Run tests with race detection
+	@echo "$(BLUE)Running tests with race detection...$(RESET)"
+	@go test -race -v ./...
+
+.PHONY: test-coverage
+test-coverage: ## Run tests with coverage
+	@echo "$(BLUE)Running tests with coverage...$(RESET)"
+	@mkdir -p $(COVERAGE_DIR)
+	@go test -coverprofile=$(COVERAGE_DIR)/coverage.out ./...
+	@go tool cover -html=$(COVERAGE_DIR)/coverage.out -o $(COVERAGE_DIR)/coverage.html
+	@go tool cover -func=$(COVERAGE_DIR)/coverage.out
+	@echo "$(GREEN)✅ Coverage report generated: $(COVERAGE_DIR)/coverage.html$(RESET)"
+
+.PHONY: test-integration
+test-integration: ## Run integration tests
+	@echo "$(BLUE)Running integration tests...$(RESET)"
+	@go test -tags=integration -v ./...
+
+.PHONY: test-benchmark
+test-benchmark: ## Run benchmark tests
+	@echo "$(BLUE)Running benchmark tests...$(RESET)"
+	@go test -bench=. -benchmem ./...
+
+.PHONY: test-watch
+test-watch: ## Run tests in watch mode
+	@echo "$(BLUE)Running tests in watch mode...$(RESET)"
+	@if command -v gotestsum >/dev/null 2>&1; then \
+		gotestsum --watch ./...; \
+	else \
+		echo "$(YELLOW)gotestsum not found, installing...$(RESET)"; \
+		go install gotest.tools/gotestsum@latest; \
+		gotestsum --watch ./...; \
+	fi
+
+##@ Code Quality
+
+.PHONY: lint
+lint: ## Run linting
+	@echo "$(BLUE)Running linting...$(RESET)"
+	@if command -v golangci-lint >/dev/null 2>&1; then \
+		golangci-lint run; \
+	else \
+		echo "$(YELLOW)golangci-lint not found, installing...$(RESET)"; \
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.64.2; \
+		golangci-lint run; \
+	fi
+
+.PHONY: lint-fix
+lint-fix: ## Run linting with auto-fix
+	@echo "$(BLUE)Running linting with auto-fix...$(RESET)"
+	@golangci-lint run --fix
+
+.PHONY: format
+format: ## Format code
+	@echo "$(BLUE)Formatting code...$(RESET)"
+	@go fmt ./...
+	@if command -v goimports >/dev/null 2>&1; then \
+		goimports -w .; \
+	else \
+		echo "$(YELLOW)goimports not found, installing...$(RESET)"; \
+		go install golang.org/x/tools/cmd/goimports@latest; \
+		goimports -w .; \
+	fi
+	@echo "$(GREEN)✅ Code formatted$(RESET)"
+
+.PHONY: vet
+vet: ## Run go vet
+	@echo "$(BLUE)Running go vet...$(RESET)"
+	@go vet ./...
+
+.PHONY: staticcheck
+staticcheck: ## Run staticcheck
+	@echo "$(BLUE)Running staticcheck...$(RESET)"
+	@if command -v staticcheck >/dev/null 2>&1; then \
+		staticcheck ./...; \
+	else \
+		echo "$(YELLOW)staticcheck not found, installing...$(RESET)"; \
+		go install honnef.co/go/tools/cmd/staticcheck@latest; \
+		staticcheck ./...; \
+	fi
+
+.PHONY: security
+security: ## Run security scan
+	@echo "$(BLUE)Running security scan...$(RESET)"
+	@if command -v gosec >/dev/null 2>&1; then \
+		gosec ./...; \
+	else \
+		echo "$(YELLOW)gosec not found, installing...$(RESET)"; \
+		go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest; \
+		gosec ./...; \
+	fi
+
+##@ Database
+
+.PHONY: db-create
+db-create: ## Create database
+	@echo "$(BLUE)Creating database...$(RESET)"
+	@createdb -h $(DB_HOST) -p $(DB_PORT) -U $(DB_USER) $(DB_NAME) || echo "Database may already exist"
+	@echo "$(GREEN)✅ Database created$(RESET)"
+
+.PHONY: db-drop
+db-drop: ## Drop database
+	@echo "$(RED)Dropping database...$(RESET)"
+	@read -p "Are you sure? This will delete all data. [y/N] " -n 1 -r; \
+	echo; \
+	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+		dropdb -h $(DB_HOST) -p $(DB_PORT) -U $(DB_USER) $(DB_NAME); \
+		echo "$(GREEN)✅ Database dropped$(RESET)"; \
+	fi
+
+.PHONY: db-migrate
+db-migrate: ## Run database migrations
+	@echo "$(BLUE)Running database migrations...$(RESET)"
+	@if command -v migrate >/dev/null 2>&1; then \
+		migrate -path $(MIGRATIONS_DIR) -database "$(DATABASE_URL)" up; \
+	else \
+		go run cmd/migrate/main.go up; \
+	fi
+	@echo "$(GREEN)✅ Migrations completed$(RESET)"
+
+.PHONY: db-migrate-down
+db-migrate-down: ## Rollback database migrations
+	@echo "$(YELLOW)Rolling back migrations...$(RESET)"
+	@read -p "How many migrations to rollback? [1] " -r; \
+	STEPS=$${REPLY:-1}; \
+	if command -v migrate >/dev/null 2>&1; then \
+		migrate -path $(MIGRATIONS_DIR) -database "$(DATABASE_URL)" down $$STEPS; \
+	else \
+		go run cmd/migrate/main.go down $$STEPS; \
+	fi
+
+.PHONY: db-reset
+db-reset: ## Reset database (drop, create, migrate)
+	@echo "$(RED)Resetting database...$(RESET)"
+	@read -p "Are you sure? This will delete all data. [y/N] " -n 1 -r; \
+	echo; \
+	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+		$(MAKE) db-drop; \
+		$(MAKE) db-create; \
+		$(MAKE) db-migrate; \
+		echo "$(GREEN)✅ Database reset completed$(RESET)"; \
+	fi
+
+.PHONY: db-seed
+db-seed: ## Seed database with test data
+	@echo "$(BLUE)Seeding database...$(RESET)"
+	@go run cmd/seed/main.go
+	@echo "$(GREEN)✅ Database seeded$(RESET)"
+
+.PHONY: db-status
+db-status: ## Show migration status
+	@echo "$(BLUE)Database migration status:$(RESET)"
+	@if command -v migrate >/dev/null 2>&1; then \
+		migrate -path $(MIGRATIONS_DIR) -database "$(DATABASE_URL)" version; \
+	else \
+		go run cmd/migrate/main.go status; \
+	fi
+
+.PHONY: db-new-migration
+db-new-migration: ## Create new migration file
+	@echo "$(BLUE)Creating new migration...$(RESET)"
+	@read -p "Migration name: " name; \
+	if command -v migrate >/dev/null 2>&1; then \
+		migrate create -ext sql -dir $(MIGRATIONS_DIR) -seq $$name; \
+	else \
+		go run cmd/migrate/main.go create $$name; \
+	fi
+
+##@ Docker
+
+.PHONY: docker-build
+docker-build: ## Build Docker image
+	@echo "$(BLUE)Building Docker image...$(RESET)"
+	@docker build -t {{.Organization}}/$(BINARY_NAME):$(VERSION) .
+	@docker tag {{.Organization}}/$(BINARY_NAME):$(VERSION) {{.Organization}}/$(BINARY_NAME):latest
+	@echo "$(GREEN)✅ Docker image built: {{.Organization}}/$(BINARY_NAME):$(VERSION)$(RESET)"
+
+.PHONY: docker-run
+docker-run: ## Run Docker container
+	@echo "$(BLUE)Running Docker container...$(RESET)"
+	@docker run --rm -p 8080:8080 \
+		-e DATABASE_URL="$(DATABASE_URL)" \
+		-e REDIS_URL="$(REDIS_URL)" \
+		{{.Organization}}/$(BINARY_NAME):latest
+
+.PHONY: docker-push
+docker-push: ## Push Docker image to registry
+	@echo "$(BLUE)Pushing Docker image...$(RESET)"
+	@docker push {{.Organization}}/$(BINARY_NAME):$(VERSION)
+	@docker push {{.Organization}}/$(BINARY_NAME):latest
+
+.PHONY: docker-dev
+docker-dev: ## Run development environment with Docker Compose
+	@echo "$(BLUE)Starting development environment...$(RESET)"
+	@docker-compose -f docker-compose.dev.yml up --build
+
+##@ Documentation
+
+.PHONY: docs
+docs: ## Generate API documentation
+	@echo "$(BLUE)Generating API documentation...$(RESET)"
+	@if command -v swag >/dev/null 2>&1; then \
+		swag init; \
+	else \
+		echo "$(YELLOW)swag not found, installing...$(RESET)"; \
+		go install github.com/swaggo/swag/cmd/swag@latest; \
+		swag init; \
+	fi
+	@echo "$(GREEN)✅ API documentation generated$(RESET)"
+
+.PHONY: docs-serve
+docs-serve: ## Serve documentation locally
+	@echo "$(BLUE)Serving documentation at http://localhost:8080/swagger$(RESET)"
+	@$(MAKE) run
+
+##@ Maintenance
+
+.PHONY: clean
+clean: ## Clean build artifacts
+	@echo "$(YELLOW)Cleaning build artifacts...$(RESET)"
+	@rm -rf $(BIN_DIR)
+	@rm -rf $(COVERAGE_DIR)
+	@rm -rf vendor/
+	@go clean -cache
+	@go clean -testcache
+	@echo "$(GREEN)✅ Cleanup completed$(RESET)"
+
+.PHONY: install-tools
+install-tools: ## Install development tools
+	@echo "$(BLUE)Installing development tools...$(RESET)"
+	@go install github.com/cosmtrek/air@latest
+	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	@go install golang.org/x/tools/cmd/goimports@latest
+	@go install honnef.co/go/tools/cmd/staticcheck@latest
+	@go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
+	@go install github.com/swaggo/swag/cmd/swag@latest
+	@go install gotest.tools/gotestsum@latest
+	@echo "$(GREEN)✅ Development tools installed$(RESET)"
+
+##@ Performance
+
+.PHONY: profile-cpu
+profile-cpu: ## Run CPU profiling
+	@echo "$(BLUE)Running CPU profiling...$(RESET)"
+	@go test -cpuprofile=cpu.prof -bench=. ./...
+	@go tool pprof cpu.prof
+
+.PHONY: profile-mem
+profile-mem: ## Run memory profiling
+	@echo "$(BLUE)Running memory profiling...$(RESET)"
+	@go test -memprofile=mem.prof -bench=. ./...
+	@go tool pprof mem.prof
+
+.PHONY: load-test
+load-test: ## Run load tests
+	@echo "$(BLUE)Running load tests...$(RESET)"
+	@if command -v hey >/dev/null 2>&1; then \
+		hey -n 1000 -c 10 http://localhost:8080/health; \
+	else \
+		echo "$(YELLOW)hey not found. Install with: go install github.com/rakyll/hey@latest$(RESET)"; \
+	fi
+
+##@ Information
+
+.PHONY: status
+status: ## Show project status
+	@echo "$(CYAN)Backend Project Status$(RESET)"
+	@echo "$(YELLOW)Version:$(RESET) $(VERSION)"
+	@echo "$(YELLOW)Git Commit:$(RESET) $(GIT_COMMIT)"
+	@echo "$(YELLOW)Git Branch:$(RESET) $(GIT_BRANCH)"
+	@echo "$(YELLOW)Build Time:$(RESET) $(BUILD_TIME)"
+	@echo ""
+	@echo "$(YELLOW)Go Version:$(RESET) $(shell go version | cut -d' ' -f3)"
+	@echo "$(YELLOW)Binary Name:$(RESET) $(BINARY_NAME)"
+	@echo "$(YELLOW)Main Path:$(RESET) $(MAIN_PATH)"
+	@echo ""
+	@echo "$(YELLOW)Database:$(RESET)"
+	@echo "  Host: $(DB_HOST):$(DB_PORT)"
+	@echo "  Database: $(DB_NAME)"
+	@echo "  User: $(DB_USER)"
+	@echo ""
+	@echo "$(YELLOW)Redis:$(RESET)"
+	@echo "  Host: $(REDIS_HOST):$(REDIS_PORT)"
+	@echo "  Database: $(REDIS_DB)"
+
+.PHONY: env
+env: ## Show environment variables
+	@echo "$(CYAN)Environment Variables$(RESET)"
+	@echo "$(YELLOW)DATABASE_URL:$(RESET) $(DATABASE_URL)"
+	@echo "$(YELLOW)REDIS_URL:$(RESET) $(REDIS_URL)"
+	@echo "$(YELLOW)TEST_DATABASE_URL:$(RESET) $(TEST_DATABASE_URL)"
+
+.PHONY: version
+version: ## Show version information
+	@echo "$(CYAN)Version Information$(RESET)"
+	@echo "Version: $(VERSION)"
+	@echo "Git Commit: $(GIT_COMMIT)"
+	@echo "Git Branch: $(GIT_BRANCH)"
+	@echo "Build Time: $(BUILD_TIME)"
+
+# Include local Makefile if it exists
+-include Makefile.local

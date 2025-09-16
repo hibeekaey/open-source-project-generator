@@ -112,6 +112,8 @@ Installation Instructions for Windows
 3. Open a new command prompt and run: generator --help
 
 Alternative: Place generator.exe in any directory that's already in your PATH.
+
+Note: The generator is completely self-contained with all templates embedded.
 EOF
             ;;
         "darwin")
@@ -119,22 +121,21 @@ EOF
 Installation Instructions for macOS
 ==================================
 
-Option 1: Manual Installation
-1. Extract the archive to a directory (e.g., /usr/local/bin)
-2. Make the binary executable: chmod +x generator
-3. Ensure the directory is in your PATH
+Option 1: System Installation
+1. Extract the archive
+2. Copy to system directory: sudo cp generator /usr/local/bin/
+3. Make executable: sudo chmod +x /usr/local/bin/generator
 4. Run: generator --help
 
-Option 2: Using Homebrew (if available)
-1. Move generator to /usr/local/bin/
-2. Run: generator --help
-
-Option 3: User Installation
+Option 2: User Installation
 1. Create ~/bin directory: mkdir -p ~/bin
-2. Move generator to ~/bin/
-3. Add to PATH: echo 'export PATH="$HOME/bin:$PATH"' >> ~/.zshrc
-4. Reload shell: source ~/.zshrc
-5. Run: generator --help
+2. Copy generator to ~/bin/
+3. Make executable: chmod +x ~/bin/generator
+4. Add to PATH: echo 'export PATH="$HOME/bin:$PATH"' >> ~/.zshrc
+5. Reload shell: source ~/.zshrc
+6. Run: generator --help
+
+Note: The generator is completely self-contained with all templates embedded.
 EOF
             ;;
         "linux")
@@ -160,6 +161,8 @@ Option 3: Using package managers
 - For Debian/Ubuntu: Create a .deb package (see build-packages.sh)
 - For Red Hat/CentOS: Create an .rpm package (see build-packages.sh)
 - For Arch Linux: Create a PKGBUILD (see build-packages.sh)
+
+Note: The generator is completely self-contained with all templates embedded.
 EOF
             ;;
     esac

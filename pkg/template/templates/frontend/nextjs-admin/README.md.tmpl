@@ -1,0 +1,125 @@
+# {{.Name}} - Admin Dashboard
+
+{{.Description}}
+
+## Features
+
+- ⚡ **Next.js 15.5.2** with App Router
+- ⚛️ **React 19.1.0** with TypeScript
+- 🎨 **Tailwind CSS** for styling
+- 🧩 **Radix UI** components
+- 🔧 **ESLint & Prettier** for code quality
+- 🧪 **Jest & Testing Library** for testing
+- 📦 **Optimized bundle** with automatic code splitting
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js {{nodeVersion .}} or later
+- npm 10.0.0 or later
+
+### Installation
+
+1. Install dependencies:
+```bash
+npm install
+```
+
+2. Copy environment variables:
+```bash
+cp .env.local.example .env.local
+```
+
+3. Update the environment variables in `.env.local` with your values.
+
+### Development
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3002](http://localhost:3002) with your browser to see the result.
+
+### Building
+
+Build the application for production:
+
+```bash
+npm run build
+```
+
+Start the production server:
+
+```bash
+npm start
+```
+
+## Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm start` - Start production server
+- `npm run lint` - Run ESLint
+- `npm run lint:fix` - Fix ESLint errors
+- `npm run type-check` - Run TypeScript type checking
+- `npm test` - Run tests
+- `npm run test:watch` - Run tests in watch mode
+- `npm run test:coverage` - Run tests with coverage
+- `npm run format` - Format code with Prettier
+- `npm run format:check` - Check code formatting
+
+## Project Structure
+
+```
+src/
+├── app/                 # Next.js App Router pages
+├── components/          # Reusable components
+│   └── ui/             # UI components
+├── hooks/              # Custom React hooks
+├── context/            # React context providers
+├── lib/                # Utility functions
+├── api/                # API client and utilities
+└── types/              # TypeScript type definitions
+```
+
+## Deployment
+
+### Vercel (Recommended)
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new).
+
+1. Push your code to a Git repository
+2. Import your project to Vercel
+3. Vercel will automatically detect Next.js and configure the build settings
+4. Your app will be deployed and you'll get a URL
+
+### Docker
+
+Build and run with Docker:
+
+```bash
+# Build the image
+docker build -t {{.Name}}-admin .
+
+# Run the container
+docker run -p 3002:3002 {{.Name}}-admin
+```
+
+## Environment Variables
+
+See `.env.local.example` for all available environment variables.
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the {{.License}} License.

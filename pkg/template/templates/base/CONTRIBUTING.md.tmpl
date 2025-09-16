@@ -1,0 +1,577 @@
+# Contributing to {{.Name}}
+
+Thank you for your interest in contributing to {{.Name}}! We welcome contributions from everyone and are grateful for every pull request, bug report, and feature suggestion.
+
+## 📋 Table of Contents
+
+- [Code of Conduct](#code-of-conduct)
+- [Getting Started](#getting-started)
+- [Development Setup](#development-setup)
+- [Contributing Guidelines](#contributing-guidelines)
+- [Pull Request Process](#pull-request-process)
+- [Coding Standards](#coding-standards)
+- [Testing Guidelines](#testing-guidelines)
+- [Documentation](#documentation)
+- [Issue Reporting](#issue-reporting)
+- [Security Issues](#security-issues)
+- [Community](#community)
+
+## Code of Conduct
+
+This project and everyone participating in it is governed by our [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to conduct@{{.Organization}}.com.
+
+## Getting Started
+
+### Ways to Contribute
+
+- 🐛 **Bug Reports**: Help us identify and fix bugs
+- ✨ **Feature Requests**: Suggest new features or improvements
+- 📝 **Documentation**: Improve our documentation
+- 🧪 **Testing**: Add or improve tests
+- 💻 **Code**: Submit bug fixes or new features
+- 🎨 **Design**: Improve UI/UX design
+- 🌍 **Translation**: Help translate the project
+
+### Before You Start
+
+1. **Check existing issues**: Look for existing issues or discussions about your idea
+2. **Create an issue**: For significant changes, create an issue first to discuss the approach
+3. **Fork the repository**: Create your own fork to work on
+4. **Read the guidelines**: Familiarize yourself with our coding standards and processes
+
+## Development Setup
+
+### Prerequisites
+
+Ensure you have the required tools installed:
+
+{{if .Components.Frontend.NextJS.App}}- **Node.js**: {{nodeVersion .}} or later
+- **npm**: 10.0.0 or later (or yarn equivalent){{end}}
+{{if .Components.Backend.GoGin}}- **Go**: {{goVersion .}} or later{{end}}
+{{if .Components.Infrastructure.Docker}}- **Docker**: Latest stable version
+- **Docker Compose**: V2 or later{{end}}
+- **Git**: Latest stable version
+- **Make**: Build automation tool
+
+### Initial Setup
+
+1. **Fork and Clone**
+   ```bash
+   # Fork the repository on GitHub, then clone your fork
+   git clone https://github.com/YOUR_USERNAME/{{.Name}}.git
+   cd {{.Name}}
+   
+   # Add upstream remote
+   git remote add upstream https://github.com/{{.Organization}}/{{.Name}}.git
+   ```
+
+2. **Environment Setup**
+   ```bash
+   # Set up development environment
+   make setup
+   
+   # Copy environment files
+   cp .env.example .env.local
+   {{if .Components.Backend.GoGin}}cp CommonServer/.env.example CommonServer/.env{{end}}
+   ```
+
+3. **Verify Installation**
+   ```bash
+   # Run tests to verify setup
+   make test
+   
+   # Start development environment
+   make dev
+   ```
+
+### Development Workflow
+
+```bash
+# Keep your fork updated
+git fetch upstream
+git checkout main
+git merge upstream/main
+
+# Create a feature branch
+git checkout -b feature/your-feature-name
+
+# Make your changes
+# ... edit files ...
+
+# Test your changes
+make test
+make lint
+
+# Commit your changes
+git add .
+git commit -m "feat: add your feature description"
+
+# Push to your fork
+git push origin feature/your-feature-name
+
+# Create a Pull Request on GitHub
+```
+
+## Contributing Guidelines
+
+### Types of Contributions
+
+#### 🐛 Bug Fixes
+- Fix existing functionality that doesn't work as expected
+- Include tests that verify the fix
+- Update documentation if necessary
+
+#### ✨ New Features
+- Add new functionality to the project
+- Discuss significant features in an issue first
+- Include comprehensive tests
+- Update documentation and examples
+
+#### 📝 Documentation
+- Improve existing documentation
+- Add missing documentation
+- Fix typos and grammar
+- Add examples and tutorials
+
+#### 🧪 Tests
+- Add missing test coverage
+- Improve existing tests
+- Add integration or end-to-end tests
+- Performance and load testing
+
+### Contribution Process
+
+1. **Issue First**: For significant changes, create an issue to discuss the approach
+2. **Small PRs**: Keep pull requests focused and small when possible
+3. **Clear Description**: Provide clear descriptions of what your PR does
+4. **Tests Required**: All code changes must include appropriate tests
+5. **Documentation**: Update documentation for any user-facing changes
+
+## Pull Request Process
+
+### Before Submitting
+
+- [ ] **Tests Pass**: Ensure all tests pass locally
+- [ ] **Linting**: Code passes all linting checks
+- [ ] **Documentation**: Update relevant documentation
+- [ ] **Changelog**: Add entry to CHANGELOG.md if applicable
+- [ ] **Rebase**: Rebase your branch on the latest main branch
+
+### PR Checklist
+
+```markdown
+## Pull Request Checklist
+
+- [ ] I have read the [Contributing Guidelines](CONTRIBUTING.md)
+- [ ] My code follows the project's coding standards
+- [ ] I have added tests that prove my fix is effective or that my feature works
+- [ ] All new and existing tests pass
+- [ ] I have updated the documentation accordingly
+- [ ] My commits are properly formatted and descriptive
+- [ ] I have rebased my branch on the latest main branch
+
+## Description
+
+Brief description of changes...
+
+## Type of Change
+
+- [ ] Bug fix (non-breaking change which fixes an issue)
+- [ ] New feature (non-breaking change which adds functionality)
+- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] Documentation update
+- [ ] Performance improvement
+- [ ] Code refactoring
+
+## Testing
+
+Describe the tests you ran and how to reproduce them...
+
+## Screenshots (if applicable)
+
+Add screenshots to help explain your changes...
+```
+
+### Review Process
+
+1. **Automated Checks**: All PRs must pass automated CI checks
+2. **Code Review**: At least one maintainer must review and approve
+3. **Testing**: Changes are tested in our staging environment
+4. **Merge**: Approved PRs are merged by maintainers
+
+### PR Guidelines
+
+- **Title**: Use conventional commit format (feat:, fix:, docs:, etc.)
+- **Description**: Clearly explain what the PR does and why
+- **Scope**: Keep PRs focused on a single concern
+- **Size**: Aim for PRs under 400 lines of code when possible
+- **Commits**: Use clear, descriptive commit messages
+
+## Coding Standards
+
+### General Principles
+
+- **Consistency**: Follow existing code patterns and conventions
+- **Readability**: Write code that is easy to read and understand
+- **Simplicity**: Prefer simple solutions over complex ones
+- **Performance**: Consider performance implications of your changes
+- **Security**: Follow security best practices
+
+{{if .Components.Frontend.NextJS.App}}### Frontend Standards (TypeScript/React)
+
+#### Code Style
+```typescript
+// Use TypeScript for all new code
+interface UserProps {
+  id: string;
+  name: string;
+  email: string;
+}
+
+// Use functional components with hooks
+const UserComponent: React.FC<UserProps> = ({ id, name, email }) => {
+  const [loading, setLoading] = useState(false);
+  
+  return (
+    <div className="user-card">
+      <h3>{name}</h3>
+      <p>{email}</p>
+    </div>
+  );
+};
+```
+
+#### Naming Conventions
+- **Components**: PascalCase (`UserProfile`)
+- **Files**: kebab-case (`user-profile.tsx`)
+- **Variables**: camelCase (`userName`)
+- **Constants**: UPPER_SNAKE_CASE (`API_BASE_URL`)
+
+#### File Organization
+```
+src/
+├── components/          # Reusable UI components
+├── pages/              # Next.js pages
+├── hooks/              # Custom React hooks
+├── utils/              # Utility functions
+├── types/              # TypeScript type definitions
+├── styles/             # Global styles
+└── __tests__/          # Test files
+```{{end}}
+
+{{if .Components.Backend.GoGin}}### Backend Standards (Go)
+
+#### Code Style
+```go
+// Use clear, descriptive names
+type UserService struct {
+    repo UserRepository
+    log  *slog.Logger
+}
+
+// Document public functions
+// CreateUser creates a new user with the provided data
+func (s *UserService) CreateUser(ctx context.Context, req CreateUserRequest) (*User, error) {
+    if err := req.Validate(); err != nil {
+        return nil, fmt.Errorf("invalid request: %w", err)
+    }
+    
+    user := &User{
+        Name:  req.Name,
+        Email: req.Email,
+    }
+    
+    return s.repo.Create(ctx, user)
+}
+```
+
+#### Naming Conventions
+- **Packages**: lowercase (`userservice`)
+- **Types**: PascalCase (`UserService`)
+- **Functions**: PascalCase for public (`CreateUser`), camelCase for private (`validateEmail`)
+- **Variables**: camelCase (`userName`)
+- **Constants**: PascalCase (`DefaultTimeout`)
+
+#### File Organization
+```
+internal/
+├── controllers/        # HTTP handlers
+├── services/          # Business logic
+├── repositories/      # Data access layer
+├── models/           # Data models
+├── middleware/       # HTTP middleware
+└── config/           # Configuration
+```{{end}}
+
+### Documentation Standards
+
+- **Code Comments**: Explain why, not what
+- **Function Documentation**: Document all public functions
+- **README Updates**: Update README for user-facing changes
+- **API Documentation**: Update OpenAPI specs for API changes
+
+### Git Standards
+
+#### Commit Messages
+
+Use [Conventional Commits](https://www.conventionalcommits.org/) format:
+
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+**Types:**
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation changes
+- `style`: Code style changes (formatting, etc.)
+- `refactor`: Code refactoring
+- `test`: Adding or updating tests
+- `chore`: Maintenance tasks
+
+**Examples:**
+```
+feat(auth): add JWT refresh token support
+
+fix(api): handle null values in user profile endpoint
+
+docs(readme): update installation instructions
+
+test(user): add integration tests for user service
+```
+
+#### Branch Naming
+
+- **Feature branches**: `feature/description` or `feature/issue-number`
+- **Bug fixes**: `fix/description` or `fix/issue-number`
+- **Documentation**: `docs/description`
+- **Refactoring**: `refactor/description`
+
+## Testing Guidelines
+
+### Test Requirements
+
+- **Unit Tests**: All new functions must have unit tests
+- **Integration Tests**: Add integration tests for new features
+- **Coverage**: Maintain or improve test coverage
+- **Performance**: Add performance tests for critical paths
+
+### Testing Standards
+
+{{if .Components.Frontend.NextJS.App}}#### Frontend Testing
+```typescript
+// Unit test example
+import { render, screen } from '@testing-library/react';
+import { UserProfile } from './user-profile';
+
+describe('UserProfile', () => {
+  it('displays user information correctly', () => {
+    const user = { id: '1', name: 'John Doe', email: 'john@example.com' };
+    
+    render(<UserProfile user={user} />);
+    
+    expect(screen.getByText('John Doe')).toBeInTheDocument();
+    expect(screen.getByText('john@example.com')).toBeInTheDocument();
+  });
+});
+```{{end}}
+
+{{if .Components.Backend.GoGin}}#### Backend Testing
+```go
+// Unit test example
+func TestUserService_CreateUser(t *testing.T) {
+    // Setup
+    mockRepo := &MockUserRepository{}
+    service := NewUserService(mockRepo, slog.Default())
+    
+    req := CreateUserRequest{
+        Name:  "John Doe",
+        Email: "john@example.com",
+    }
+    
+    // Execute
+    user, err := service.CreateUser(context.Background(), req)
+    
+    // Assert
+    assert.NoError(t, err)
+    assert.Equal(t, "John Doe", user.Name)
+    assert.Equal(t, "john@example.com", user.Email)
+}
+```{{end}}
+
+### Running Tests
+
+```bash
+# Run all tests
+make test
+
+# Run specific test suites
+{{if .Components.Frontend.NextJS.App}}make test-frontend{{end}}
+{{if .Components.Backend.GoGin}}make test-backend{{end}}
+
+# Run tests with coverage
+make test-coverage
+
+# Run tests in watch mode
+make test-watch
+```
+
+## Documentation
+
+### Types of Documentation
+
+1. **Code Documentation**: Inline comments and function documentation
+2. **API Documentation**: OpenAPI/Swagger specifications
+3. **User Documentation**: README, guides, and tutorials
+4. **Developer Documentation**: Architecture decisions, setup guides
+
+### Documentation Standards
+
+- **Clear and Concise**: Write clear, easy-to-understand documentation
+- **Examples**: Include practical examples and code snippets
+- **Up-to-Date**: Keep documentation synchronized with code changes
+- **Accessible**: Use inclusive language and consider accessibility
+
+### Documentation Tools
+
+{{if .Components.Backend.GoGin}}- **API Docs**: Swagger/OpenAPI for REST API documentation{{end}}
+- **Code Docs**: Inline comments and docstrings
+- **Markdown**: Use Markdown for all documentation files
+- **Diagrams**: Use Mermaid for architecture diagrams
+
+## Issue Reporting
+
+### Bug Reports
+
+When reporting bugs, please include:
+
+1. **Clear Title**: Descriptive title summarizing the issue
+2. **Environment**: OS, browser, version information
+3. **Steps to Reproduce**: Detailed steps to reproduce the issue
+4. **Expected Behavior**: What you expected to happen
+5. **Actual Behavior**: What actually happened
+6. **Screenshots**: Visual evidence if applicable
+7. **Logs**: Relevant error messages or logs
+
+### Feature Requests
+
+When requesting features, please include:
+
+1. **Problem Statement**: What problem does this solve?
+2. **Proposed Solution**: How should this feature work?
+3. **Alternatives**: What alternatives have you considered?
+4. **Use Cases**: Specific use cases for this feature
+5. **Priority**: How important is this feature?
+
+### Issue Templates
+
+Use our issue templates:
+- [Bug Report](.github/ISSUE_TEMPLATE/bug_report.yml)
+- [Feature Request](.github/ISSUE_TEMPLATE/feature_request.yml)
+- [Security Vulnerability](.github/ISSUE_TEMPLATE/security_vulnerability.yml)
+
+## Security Issues
+
+**Do not report security vulnerabilities through public GitHub issues.**
+
+Instead, please report them responsibly:
+- **Email**: security@{{.Organization}}.com
+- **Security Advisory**: Use GitHub's private vulnerability reporting
+- **Details**: See our [Security Policy](SECURITY.md) for full details
+
+## Community
+
+### Communication Channels
+
+- **GitHub Discussions**: For general questions and discussions
+- **Discord**: Real-time chat with the community
+- **Twitter**: Follow [@{{.Organization}}](https://twitter.com/{{.Organization}}) for updates
+- **Email**: For private communications
+
+### Community Guidelines
+
+- **Be Respectful**: Treat everyone with respect and kindness
+- **Be Inclusive**: Welcome people of all backgrounds and experience levels
+- **Be Constructive**: Provide helpful feedback and suggestions
+- **Be Patient**: Remember that everyone is learning and growing
+
+### Getting Help
+
+1. **Documentation**: Check existing documentation first
+2. **Search Issues**: Look for existing issues or discussions
+3. **Ask Questions**: Use GitHub Discussions for questions
+4. **Be Specific**: Provide detailed information when asking for help
+
+## Recognition
+
+### Contributors
+
+We recognize contributors in several ways:
+- **Contributors Page**: Listed on our contributors page
+- **Release Notes**: Mentioned in release notes for significant contributions
+- **Social Media**: Highlighted on our social media channels
+- **Swag**: Occasional contributor swag for significant contributions
+
+### Maintainers
+
+Current maintainers:
+- **{{.Organization}} Team**: Core development team
+- **Community Maintainers**: Trusted community members with commit access
+
+To become a maintainer:
+1. **Consistent Contributions**: Regular, high-quality contributions
+2. **Community Involvement**: Active participation in discussions and reviews
+3. **Technical Expertise**: Demonstrated technical knowledge
+4. **Nomination**: Nominated by existing maintainers
+
+## Development Resources
+
+### Useful Links
+
+- **Project Repository**: [https://github.com/{{.Organization}}/{{.Name}}](https://github.com/{{.Organization}}/{{.Name}})
+- **Issue Tracker**: [GitHub Issues](https://github.com/{{.Organization}}/{{.Name}}/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/{{.Organization}}/{{.Name}}/discussions)
+- **CI/CD**: [GitHub Actions](https://github.com/{{.Organization}}/{{.Name}}/actions)
+
+### Learning Resources
+
+{{if .Components.Frontend.NextJS.App}}- **Next.js**: [Next.js Documentation](https://nextjs.org/docs)
+- **React**: [React Documentation](https://react.dev/)
+- **TypeScript**: [TypeScript Handbook](https://www.typescriptlang.org/docs/){{end}}
+{{if .Components.Backend.GoGin}}- **Go**: [Go Documentation](https://golang.org/doc/)
+- **Gin**: [Gin Web Framework](https://gin-gonic.com/docs/){{end}}
+- **Testing**: [Testing Best Practices](https://testing-library.com/docs/)
+- **Git**: [Git Documentation](https://git-scm.com/doc)
+
+## FAQ
+
+### Common Questions
+
+**Q: How do I set up the development environment?**
+A: Follow the [Development Setup](#development-setup) section above.
+
+**Q: What should I work on as a first contribution?**
+A: Look for issues labeled `good first issue` or `help wanted`.
+
+**Q: How long does it take for PRs to be reviewed?**
+A: We aim to review PRs within 2-3 business days.
+
+**Q: Can I work on multiple issues at once?**
+A: It's better to focus on one issue at a time to avoid conflicts.
+
+**Q: How do I update my fork with the latest changes?**
+A: Use `git fetch upstream && git merge upstream/main` to sync your fork.
+
+## Thank You
+
+Thank you for contributing to {{.Name}}! Your contributions help make this project better for everyone. We appreciate your time, effort, and expertise.
+
+---
+
+**Questions?** Feel free to reach out to us at contribute@{{.Organization}}.com or join our [Discord community](https://discord.gg/{{.Name}}).
+
+*Last updated: {{.GeneratedAt.Format "2006-01-02"}}*

@@ -9,6 +9,7 @@ import (
 	texttemplate "text/template"
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/utils"
 )
 
 // DirectoryProcessor handles recursive template directory processing
@@ -55,6 +56,11 @@ func (p *DirectoryProcessor) ProcessTemplateDirectory(templateDir, outputDir str
 			return nil
 		}
 
+		// Skip disabled template files
+		if strings.HasSuffix(path, ".tmpl.disabled") {
+			return nil
+		}
+
 		// Check if this path should be processed based on conditions
 		shouldProcess, err := p.shouldProcessPath(relPath, metadata, config)
 		if err != nil {
@@ -76,8 +82,8 @@ func (p *DirectoryProcessor) ProcessTemplateDirectory(templateDir, outputDir str
 		}
 
 		if d.IsDir() {
-			// Create directory in output
-			return os.MkdirAll(outputPath, 0755)
+			// Create directory in output with secure permissions
+			return utils.SafeMkdirAll(outputPath)
 		}
 
 		// Process file
@@ -100,12 +106,12 @@ func (p *DirectoryProcessor) processFileWithInheritance(srcPath, destPath string
 
 		// Create destination directory if it doesn't exist
 		destDir := filepath.Dir(destPath)
-		if err := os.MkdirAll(destDir, 0755); err != nil {
+		if err := utils.SafeMkdirAll(destDir); err != nil {
 			return fmt.Errorf("failed to create destination directory: %w", err)
 		}
 
-		// Write processed content
-		return os.WriteFile(destPath, content, 0644)
+		// Write processed content with secure permissions
+		return utils.SafeWriteFile(destPath, content)
 	}
 
 	// Handle binary files and assets
@@ -114,8 +120,8 @@ func (p *DirectoryProcessor) processFileWithInheritance(srcPath, destPath string
 
 // processTemplateWithInheritance processes a template file with inheritance and partial includes
 func (p *DirectoryProcessor) processTemplateWithInheritance(templatePath string, config *models.ProjectConfig) ([]byte, error) {
-	// Read template content
-	content, err := os.ReadFile(templatePath)
+	// Read template content with path validation
+	content, err := utils.SafeReadFile(templatePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read template file: %w", err)
 	}
@@ -239,8 +245,8 @@ func (p *DirectoryProcessor) processTemplateExtends(content, templatePath string
 		}
 	}
 
-	// Read base template
-	baseContent, err := os.ReadFile(baseTemplatePath)
+	// Read base template with path validation
+	baseContent, err := utils.SafeReadFile(baseTemplatePath)
 	if err != nil {
 		return "", fmt.Errorf("failed to read base template %s: %w", baseTemplatePath, err)
 	}
@@ -318,8 +324,8 @@ func (p *DirectoryProcessor) processTemplateIncludes(content, templatePath strin
 			}
 		}
 
-		// Read partial template
-		partialContent, err := os.ReadFile(partialPath)
+		// Read partial template with path validation
+		partialContent, err := utils.SafeReadFile(partialPath)
 		if err != nil {
 			return "", fmt.Errorf("failed to read partial template %s: %w", partialPath, err)
 		}
@@ -335,19 +341,19 @@ func (p *DirectoryProcessor) processTemplateIncludes(content, templatePath strin
 func (p *DirectoryProcessor) copyAsset(srcPath, destPath string) error {
 	// Create destination directory if it doesn't exist
 	destDir := filepath.Dir(destPath)
-	if err := os.MkdirAll(destDir, 0755); err != nil {
+	if err := utils.SafeMkdirAll(destDir); err != nil {
 		return fmt.Errorf("failed to create destination directory: %w", err)
 	}
 
-	// Open source file
-	srcFile, err := os.Open(srcPath)
+	// Open source file with path validation
+	srcFile, err := utils.SafeOpen(srcPath)
 	if err != nil {
 		return fmt.Errorf("failed to open source file: %w", err)
 	}
 	defer func() { _ = srcFile.Close() }()
 
-	// Create destination file
-	destFile, err := os.Create(destPath)
+	// Create destination file with secure permissions
+	destFile, err := utils.SafeCreate(destPath)
 	if err != nil {
 		return fmt.Errorf("failed to create destination file: %w", err)
 	}
@@ -388,10 +394,14 @@ func (p *DirectoryProcessor) processPathTemplate(path string, config *models.Pro
 
 	// Replace common template variables in paths
 	replacements := map[string]string{
-		"{{.Name}}":           config.Name,
-		"{{kebabCase .Name}}": toKebabCase(config.Name),
-		"{{snakeCase .Name}}": toSnakeCase(config.Name),
-		"{{.Organization}}":   config.Organization,
+		"{{.Name}}":                 config.Name,
+		"{{.Name | lower}}":         strings.ToLower(config.Name),
+		"{{.Name | upper}}":         strings.ToUpper(config.Name),
+		"{{kebabCase .Name}}":       toKebabCase(config.Name),
+		"{{snakeCase .Name}}":       toSnakeCase(config.Name),
+		"{{.Organization}}":         config.Organization,
+		"{{.Organization | lower}}": strings.ToLower(config.Organization),
+		"{{.Organization | upper}}": strings.ToUpper(config.Organization),
 	}
 
 	for placeholder, value := range replacements {

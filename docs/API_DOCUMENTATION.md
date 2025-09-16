@@ -274,8 +274,8 @@ Templates have access to the complete project configuration:
 // In templates:
 {{.Name}}                    // Project name
 {{.Organization}}            // Organization name
-{{.Versions.Node}}          // Node.js version
-{{.Versions.NextJS}}        // Next.js version
+{{nodeVersion .}}            // Node.js version
+{{nextjsVersion .}}          // Next.js version
 {{.Components.Frontend.NextJS.App}} // Component selection
 ```
 

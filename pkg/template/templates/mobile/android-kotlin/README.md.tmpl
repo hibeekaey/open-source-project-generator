@@ -1,0 +1,184 @@
+# {{.Name}} - Android App
+
+{{.Description}}
+
+## Overview
+
+This is the Android application for {{.Name}}, built with Kotlin and following modern Android development best practices.
+
+## Tech Stack
+
+- **Language**: Kotlin {{kotlinVersion .}}
+- **UI Framework**: Jetpack Compose
+- **Architecture**: MVVM with Clean Architecture
+- **Dependency Injection**: Hilt
+- **Networking**: Retrofit + OkHttp
+- **Local Storage**: Room Database
+- **Image Loading**: Coil
+- **Testing**: JUnit, Espresso, Mockk
+
+## Project Structure
+
+```
+app/
+├── src/
+│   ├── main/
+│   │   ├── java/com/{{.Organization | lower}}/{{.Name | kebabCase}}/
+│   │   │   ├── data/          # Data layer (repositories, data sources)
+│   │   │   ├── domain/        # Domain layer (use cases, entities)
+│   │   │   ├── presentation/  # Presentation layer (UI, ViewModels)
+│   │   │   ├── di/           # Dependency injection modules
+│   │   │   └── MainActivity.kt
+│   │   ├── res/              # Resources (layouts, strings, etc.)
+│   │   └── AndroidManifest.xml
+│   ├── test/                 # Unit tests
+│   └── androidTest/          # Instrumentation tests
+├── build.gradle.kts
+└── proguard-rules.pro
+```
+
+## Getting Started
+
+### Prerequisites
+
+- Android Studio Arctic Fox or later
+- JDK 11 or later
+- Android SDK API 34 or later
+- Kotlin {{kotlinVersion .}}
+
+### Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/{{.Organization}}/{{.Name}}.git
+   cd {{.Name}}/mobile/android
+   ```
+
+2. **Open in Android Studio**
+   - Open Android Studio
+   - Select "Open an existing Android Studio project"
+   - Navigate to the android directory and select it
+
+3. **Configure API endpoints**
+   ```bash
+   cp app/src/main/res/values/config.xml.example app/src/main/res/values/config.xml
+   # Edit config.xml with your API endpoints
+   ```
+
+4. **Build and run**
+   ```bash
+   ./gradlew assembleDebug
+   ./gradlew installDebug
+   ```
+
+## Development
+
+### Build Variants
+
+- **debug**: Development build with debugging disabled // SECURITY FIX: Disabled debug info (use env var for dev)
+- **release**: Production build with optimizations
+
+### Running Tests
+
+```bash
+# Unit tests
+./gradlew test
+
+# Instrumentation tests
+./gradlew connectedAndroidTest
+
+# All tests
+./gradlew check
+```
+
+### Code Style
+
+This project follows the [Kotlin coding conventions](https://kotlinlang.org/docs/coding-conventions.html) and uses:
+
+- **ktlint** for code formatting
+- **detekt** for static code analysis
+- **Android Lint** for Android-specific issues
+
+```bash
+# Format code
+./gradlew ktlintFormat
+
+# Run static analysis
+./gradlew detekt
+
+# Run lint
+./gradlew lint
+```
+
+## Architecture
+
+The app follows Clean Architecture principles with three main layers:
+
+### Data Layer
+- **Repositories**: Coordinate data from multiple sources
+- **Data Sources**: Handle API calls and local database operations
+- **Models**: Data transfer objects and entities
+
+### Domain Layer
+- **Use Cases**: Business logic and application rules
+- **Entities**: Core business objects
+- **Repository Interfaces**: Contracts for data access
+
+### Presentation Layer
+- **UI**: Jetpack Compose screens and components
+- **ViewModels**: Handle UI state and business logic coordination
+- **Navigation**: Screen navigation and deep linking
+
+## Features
+
+- 🎨 **Modern UI**: Built with Jetpack Compose and Material Design 3
+- 🏗️ **Clean Architecture**: Separation of concerns with testable code
+- 🔄 **Offline Support**: Local caching with Room database
+- 🔐 **Authentication**: Secure user authentication and session management
+- 📱 **Responsive Design**: Optimized for phones and tablets
+- 🌙 **Dark Mode**: Full dark mode support
+- 🌍 **Internationalization**: Multi-language support
+- ♿ **Accessibility**: Full accessibility support
+- 🧪 **Testing**: Comprehensive unit and integration tests
+
+## API Integration
+
+The app integrates with the {{.Name}} backend API:
+
+- **Base URL**: Configure in `config.xml`
+- **Authentication**: JWT token-based authentication
+- **Error Handling**: Comprehensive error handling with user-friendly messages
+- **Offline Mode**: Graceful degradation when offline
+
+## Deployment
+
+### Debug Build
+```bash
+./gradlew assembleDebug
+```
+
+### Release Build
+```bash
+./gradlew assembleRelease
+```
+
+### Play Store Deployment
+1. Update version in `build.gradle.kts`
+2. Generate signed APK/AAB
+3. Upload to Google Play Console
+4. Follow the release checklist
+
+## Contributing
+
+Please read [CONTRIBUTING.md](../../CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+
+## License
+
+This project is licensed under the {{.License}} License - see the [LICENSE](../../LICENSE) file for details.
+
+## Support
+
+For support and questions:
+- 📧 Email: support@{{.Organization | lower}}.com
+- 🐛 Issues: [GitHub Issues](https://github.com/{{.Organization}}/{{.Name}}/issues)
+- 📖 Documentation: [Project Wiki](https://github.com/{{.Organization}}/{{.Name}}/wiki)

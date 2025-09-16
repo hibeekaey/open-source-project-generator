@@ -1,0 +1,269 @@
+package services
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"time"
+
+	"{{.Name}}/internal/config"
+	"{{.Name}}/internal/models"
+	"{{.Name}}/pkg/utils"
+	"github.com/redis/go-redis/v9"
+)
+
+// AuthService defines the interface for authentication operations
+type AuthService interface {
+	Login(req *models.LoginRequest) (*models.LoginResponse, error)
+	RefreshToken(req *models.RefreshTokenRequest) (*models.LoginResponse, error)
+	Logout(userID uint, token string) error
+	ChangePassword(userID uint, req *models.ChangePasswordRequest) error
+	ResetPassword(req *models.ResetPasswordRequest) error
+	ConfirmPasswordReset(req *models.ResetPasswordConfirmRequest) error
+}
+
+// authService implements AuthService
+type authService struct {
+	userService UserService
+	cfg         *config.Config
+	redis       *redis.Client
+}
+
+// NewAuthService creates a new auth service
+func NewAuthService(userService UserService, cfg *config.Config, redis *redis.Client) AuthService {
+	return &authService{
+		userService: userService,
+		cfg:         cfg,
+		redis:       redis,
+	}
+}
+
+// Login authenticates a user and returns tokens
+func (s *authService) Login(req *models.LoginRequest) (*models.LoginResponse, error) {
+	// Get user by email
+	user, err := s.userService.GetByEmail(req.Email)
+	if err != nil {
+		return nil, errors.New("invalid credentials")
+	}
+
+	// Check if user is active
+	if !user.IsActive {
+		return nil, errors.New("account is inactive")
+	}
+
+	// Check password
+	if !user.CheckPassword(req.Password) {
+		return nil, errors.New("invalid credentials")
+	}
+
+	// Generate tokens
+	accessToken, err := utils.GenerateJWT(user.ID, s.cfg.JWT.Secret, s.cfg.JWT.ExpirationTime)
+	if err != nil {
+		return nil, err
+	}
+
+	refreshToken, err := utils.GenerateJWT(user.ID, s.cfg.JWT.Secret, s.cfg.JWT.RefreshTime)
+	if err != nil {
+		return nil, err
+	}
+
+	// Store refresh token in Redis
+	err = s.storeRefreshToken(user.ID, refreshToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.LoginResponse{
+		User:         user.ToResponse(),
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		TokenType:    "Bearer",
+		ExpiresIn:    int64(s.cfg.JWT.ExpirationTime.Seconds()),
+	}, nil
+}
+
+// RefreshToken refreshes an access token using a refresh token
+func (s *authService) RefreshToken(req *models.RefreshTokenRequest) (*models.LoginResponse, error) {
+	// Validate refresh token
+	claims, err := utils.ValidateJWT(req.RefreshToken, s.cfg.JWT.Secret)
+	if err != nil {
+		return nil, errors.New("invalid refresh token")
+	}
+
+	// Check if refresh token exists in Redis
+	exists, err := s.refreshTokenExists(claims.UserID, req.RefreshToken)
+	if err != nil || !exists {
+		return nil, errors.New("invalid refresh token")
+	}
+
+	// Get user
+	user, err := s.userService.GetByID(claims.UserID)
+	if err != nil {
+		return nil, errors.New("user not found")
+	}
+
+	// Check if user is active
+	if !user.IsActive {
+		return nil, errors.New("account is inactive")
+	}
+
+	// Generate new tokens
+	accessToken, err := utils.GenerateJWT(user.ID, s.cfg.JWT.Secret, s.cfg.JWT.ExpirationTime)
+	if err != nil {
+		return nil, err
+	}
+
+	refreshToken, err := utils.GenerateJWT(user.ID, s.cfg.JWT.Secret, s.cfg.JWT.RefreshTime)
+	if err != nil {
+		return nil, err
+	}
+
+	// Remove old refresh token and store new one
+	_ = s.removeRefreshToken(claims.UserID, req.RefreshToken) // Ignore error as this is cleanup
+	err = s.storeRefreshToken(user.ID, refreshToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.LoginResponse{
+		User:         user.ToResponse(),
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		TokenType:    "Bearer",
+		ExpiresIn:    int64(s.cfg.JWT.ExpirationTime.Seconds()),
+	}, nil
+}
+
+// Logout logs out a user by invalidating their tokens
+func (s *authService) Logout(userID uint, token string) error {
+	// Remove refresh token from Redis
+	return s.removeRefreshToken(userID, token)
+}
+
+// ChangePassword changes a user's password
+func (s *authService) ChangePassword(userID uint, req *models.ChangePasswordRequest) error {
+	// Get user
+	user, err := s.userService.GetByID(userID)
+	if err != nil {
+		return errors.New("user not found")
+	}
+
+	// Check current password
+	if !user.CheckPassword(req.CurrentPassword) {
+		return errors.New("current password is incorrect")
+	}
+
+	// Update password
+	user.Password = req.NewPassword
+	if err := user.HashPassword(); err != nil {
+		return err
+	}
+
+	// Update user in database
+	_, err = s.userService.Update(userID, &models.UserUpdateRequest{})
+	return err
+}
+
+// ResetPassword initiates a password reset process
+func (s *authService) ResetPassword(req *models.ResetPasswordRequest) error {
+	// Get user by email
+	user, err := s.userService.GetByEmail(req.Email)
+	if err != nil {
+		// Don't reveal if email exists or not
+		return nil
+	}
+
+	// Generate reset token
+	resetToken, err := utils.GenerateJWT(user.ID, s.cfg.JWT.Secret, 1*time.Hour)
+	if err != nil {
+		return err
+	}
+
+	// Store reset token in Redis with 1 hour expiration
+	err = s.storeResetToken(user.ID, resetToken)
+	if err != nil {
+		return err
+	}
+
+	// TODO: Send email with reset token
+	// In a real application, you would send an email here
+
+	return nil
+}
+
+// ConfirmPasswordReset confirms a password reset with a token
+func (s *authService) ConfirmPasswordReset(req *models.ResetPasswordConfirmRequest) error {
+	// Validate reset token
+	claims, err := utils.ValidateJWT(req.Token, s.cfg.JWT.Secret)
+	if err != nil {
+		return errors.New("invalid reset token")
+	}
+
+	// Check if reset token exists in Redis
+	exists, err := s.resetTokenExists(claims.UserID, req.Token)
+	if err != nil || !exists {
+		return errors.New("invalid or expired reset token")
+	}
+
+	// Get user
+	user, err := s.userService.GetByID(claims.UserID)
+	if err != nil {
+		return errors.New("user not found")
+	}
+
+	// Update password
+	user.Password = req.NewPassword
+	if err := user.HashPassword(); err != nil {
+		return err
+	}
+
+	// Update user in database
+	_, err = s.userService.Update(claims.UserID, &models.UserUpdateRequest{})
+	if err != nil {
+		return err
+	}
+
+	// Remove reset token
+	_ = s.removeResetToken(claims.UserID, req.Token) // Ignore error as this is cleanup
+
+	return nil
+}
+
+// Helper methods for Redis operations
+func (s *authService) storeRefreshToken(userID uint, token string) error {
+	ctx := context.Background()
+	key := fmt.Sprintf("refresh_token:%d:%s", userID, token)
+	return s.redis.Set(ctx, key, "1", s.cfg.JWT.RefreshTime).Err()
+}
+
+func (s *authService) refreshTokenExists(userID uint, token string) (bool, error) {
+	ctx := context.Background()
+	key := fmt.Sprintf("refresh_token:%d:%s", userID, token)
+	result := s.redis.Exists(ctx, key)
+	return result.Val() > 0, result.Err()
+}
+
+func (s *authService) removeRefreshToken(userID uint, token string) error {
+	ctx := context.Background()
+	key := fmt.Sprintf("refresh_token:%d:%s", userID, token)
+	return s.redis.Del(ctx, key).Err()
+}
+
+func (s *authService) storeResetToken(userID uint, token string) error {
+	ctx := context.Background()
+	key := fmt.Sprintf("reset_token:%d:%s", userID, token)
+	return s.redis.Set(ctx, key, "1", 1*time.Hour).Err()
+}
+
+func (s *authService) resetTokenExists(userID uint, token string) (bool, error) {
+	ctx := context.Background()
+	key := fmt.Sprintf("reset_token:%d:%s", userID, token)
+	result := s.redis.Exists(ctx, key)
+	return result.Val() > 0, result.Err()
+}
+
+func (s *authService) removeResetToken(userID uint, token string) error {
+	ctx := context.Background()
+	key := fmt.Sprintf("reset_token:%d:%s", userID, token)
+	return s.redis.Del(ctx, key).Err()
+}
