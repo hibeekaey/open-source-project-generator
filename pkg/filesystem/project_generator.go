@@ -1090,7 +1090,7 @@ jobs:
         cache: 'npm'
     
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v6
       with:
         go-version: ${{ matrix.go-version }}
     
