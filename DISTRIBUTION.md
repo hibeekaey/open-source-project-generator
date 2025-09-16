@@ -153,11 +153,11 @@ docker pull ghcr.io/cuesoftinc/open-source-project-generator:v1.0.0
 **Fork Images (automatically adapts to your GitHub username):**
 
 ```bash
-# Pull from your fork (replace 'yourusername')
-docker pull ghcr.io/yourusername/open-source-project-generator:latest
+# Pull from your fork (replace 'your-username')
+docker pull ghcr.io/your-username/open-source-project-generator:latest
 
 # Pull specific version from your fork
-docker pull ghcr.io/yourusername/open-source-project-generator:v1.0.0
+docker pull ghcr.io/your-username/open-source-project-generator:v1.0.0
 ```
 
 **Dynamic Configuration:**
@@ -386,7 +386,7 @@ curl -sL https://github.com/open-source-template-generator/generator/releases/la
 3. Test on target platform
 4. Update documentation
 
-### Package Managers
+### Adding Package Managers
 
 1. Create package definition (formula, spec, etc.)
 2. Submit to package repository

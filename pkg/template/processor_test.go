@@ -1019,7 +1019,7 @@ Content here`
 
 		// Create template with malformed syntax
 		malformedTemplate := `{{.Name}
-{{if .Components.Frontend.MainApp}
+{{if .Components.Frontend.NextJS.App}
 Content without closing tags`
 
 		err = os.WriteFile(filepath.Join(templateDir, "malformed.tmpl"), []byte(malformedTemplate), 0644)

@@ -173,28 +173,28 @@ comprehensive_health_check() {
         ((failed_checks++))
     fi
     
-    {{if .Components.Frontend.MainApp}}
+    {{if .Components.Frontend.NextJS.App}}
     # Check App frontend
     if ! check_service_health "App Frontend" "http://localhost:3000/api/health"; then
         ((failed_checks++))
     fi
     {{end}}
     
-    {{if .Components.Frontend.Home}}
+    {{if .Components.Frontend.NextJS.Home}}
     # Check Home frontend
     if ! check_service_health "Home Frontend" "http://localhost:3001/api/health"; then
         ((failed_checks++))
     fi
     {{end}}
     
-    {{if .Components.Frontend.Admin}}
+    {{if .Components.Frontend.NextJS.Admin}}
     # Check Admin frontend
     if ! check_service_health "Admin Frontend" "http://localhost:3002/api/health"; then
         ((failed_checks++))
     fi
     {{end}}
     
-    {{if .Components.Backend.API}}
+    {{if .Components.Backend.GoGin}}
     # Check Backend API
     if ! check_service_health "Backend API" "http://localhost:8080/health"; then
         ((failed_checks++))

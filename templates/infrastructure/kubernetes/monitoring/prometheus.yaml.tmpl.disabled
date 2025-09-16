@@ -90,7 +90,7 @@ data:
             target_label: kubernetes_pod_name
 
       # Application services
-      {{if .Components.Backend.API}}
+      {{if .Components.Backend.GoGin}}
       - job_name: '{{.Name}}-api'
         kubernetes_sd_configs:
           - role: endpoints
@@ -184,7 +184,7 @@ data:
               description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is crash looping"
 
           # Service down
-          {{if .Components.Backend.API}}
+          {{if .Components.Backend.GoGin}}
           - alert: APIServiceDown
             expr: up{job="{{.Name}}-api"} == 0
             for: 1m
@@ -206,7 +206,7 @@ data:
               description: "PostgreSQL database has been down for more than 1 minute"
 
           # High error rate
-          {{if .Components.Backend.API}}
+          {{if .Components.Backend.GoGin}}
           - alert: HighErrorRate
             expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.1
             for: 5m

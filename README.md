@@ -40,7 +40,7 @@ make build
 
 ## Project Structure
 
-```
+```text
 open-source-template-generator/
 ├── cmd/generator/          # Main application entry point
 ├── internal/               # Internal application components

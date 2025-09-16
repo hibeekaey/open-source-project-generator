@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-{{if or .Components.Backend.API .Components.Backend.GoGin}}
+{{if .Components.Backend.GoGin}}
   # Database
   postgres:
     image: postgres:15-alpine
@@ -64,7 +64,7 @@ services:
     command: ["go", "run", "main.go"]
 {{end}}
 
-{{if or .Components.Frontend.MainApp .Components.Frontend.NextJS.App}}
+{{if .Components.Frontend.NextJS.App}}
   # Frontend - Main App
   app:
     build:
@@ -76,7 +76,7 @@ services:
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8080
       - NODE_ENV=development
-    {{if or .Components.Backend.API .Components.Backend.GoGin}}
+    {{if .Components.Backend.GoGin}}
     depends_on:
       - api
     {{end}}
@@ -88,7 +88,7 @@ services:
       - /app/.next
 {{end}}
 
-{{if or .Components.Frontend.Home .Components.Frontend.NextJS.Home}}
+{{if .Components.Frontend.NextJS.Home}}
   # Frontend - Home/Landing
   home:
     build:
@@ -100,7 +100,7 @@ services:
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8080
       - NODE_ENV=development
-    {{if or .Components.Backend.API .Components.Backend.GoGin}}
+    {{if .Components.Backend.GoGin}}
     depends_on:
       - api
     {{end}}
@@ -112,7 +112,7 @@ services:
       - /app/.next
 {{end}}
 
-{{if or .Components.Frontend.Admin .Components.Frontend.NextJS.Admin}}
+{{if .Components.Frontend.NextJS.Admin}}
   # Frontend - Admin Dashboard
   admin:
     build:
@@ -124,7 +124,7 @@ services:
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8080
       - NODE_ENV=development
-    {{if or .Components.Backend.API .Components.Backend.GoGin}}
+    {{if .Components.Backend.GoGin}}
     depends_on:
       - api
     {{end}}
@@ -137,7 +137,7 @@ services:
 {{end}}
 
 volumes:
-{{if or .Components.Backend.API .Components.Backend.GoGin}}
+{{if .Components.Backend.GoGin}}
   postgres_data:
     driver: local
   redis_data:

@@ -1,0 +1,31 @@
+# Infrastructure-focused configuration
+name: infrastructure-project
+organization: test-org
+description: An infrastructure-focused project with full DevOps setup
+license: Apache-2.0
+author: Test Author
+email: test@example.com
+output_path: ./output/infrastructure
+
+components:
+  frontend:
+    nextjs:
+      app: false
+      home: false
+      admin: false
+      shared: false
+  
+  backend:
+    go_gin: true
+  
+  mobile:
+    android: false
+    ios: false
+  
+  infrastructure:
+    docker: true
+    kubernetes: true
+    terraform: true
+
+versions:
+  go: "1.22"

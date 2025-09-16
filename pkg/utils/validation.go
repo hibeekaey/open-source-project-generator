@@ -180,6 +180,30 @@ func (v *Validator) ValidateURL(urlStr, field string) {
 	}
 }
 
+// ValidateLicenseType validates license type against supported licenses
+func (v *Validator) ValidateLicenseType(license, field string) {
+	if license == "" {
+		// Use default license if not specified
+		return
+	}
+
+	supportedLicenses := []string{
+		"MIT",
+		"Apache-2.0",
+		"GPL-3.0",
+		"BSD-3-Clause",
+	}
+
+	for _, supported := range supportedLicenses {
+		if license == supported {
+			return // Valid license found
+		}
+	}
+
+	// License not supported - add error with suggestion
+	v.AddError(field, fmt.Sprintf("License '%s' is not supported. Supported licenses are: %s. Will default to Apache-2.0", license, strings.Join(supportedLicenses, ", ")), "unsupported_license", license)
+}
+
 // Path validation methods
 
 // ValidateDirectoryPath validates directory path format and security
@@ -362,6 +386,9 @@ func (v *Validator) ValidateProjectConfig(config *models.ProjectConfig) {
 	if config.Email != "" {
 		v.ValidateEmail(config.Email, "email")
 	}
+
+	// Validate license type
+	v.ValidateLicenseType(config.License, "license")
 
 	// Repository field removed
 

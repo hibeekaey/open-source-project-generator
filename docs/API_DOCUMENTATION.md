@@ -9,12 +9,13 @@ This document provides comprehensive API documentation for the Open Source Templ
 - [Package Structure](#package-structure)
 - [CLI Interface](#cli-interface)
 - [Template Engine](#template-engine)
-- [Validation Engine](#validation-engine)
 - [Version Management](#version-management)
 - [Configuration Management](#configuration-management)
 - [File System Operations](#file-system-operations)
 - [Usage Examples](#usage-examples)
 - [Error Handling](#error-handling)
+- [Performance Considerations](#performance-considerations)
+- [Security Considerations](#security-considerations)
 
 ## Overview
 
@@ -62,7 +63,7 @@ if cli.ConfirmGeneration(config) {
 }
 ```
 
-### TemplateEngine
+### TemplateEngine Interface
 
 The `TemplateEngine` handles template processing, rendering, and directory operations.
 
@@ -275,7 +276,7 @@ Templates have access to the complete project configuration:
 {{.Organization}}            // Organization name
 {{.Versions.Node}}          // Node.js version
 {{.Versions.NextJS}}        // Next.js version
-{{.Components.Frontend.MainApp}} // Component selection
+{{.Components.Frontend.NextJS.App}} // Component selection
 ```
 
 ### Conditional Rendering
@@ -283,11 +284,11 @@ Templates have access to the complete project configuration:
 Templates support conditional rendering based on selected components:
 
 ```go
-{{if .Components.Frontend.MainApp}}
+{{if .Components.Frontend.NextJS.App}}
 // Frontend-specific configuration
 {{end}}
 
-{{if .Components.Backend.API}}
+{{if .Components.Backend.GoGin}}
 // Backend-specific configuration
 {{end}}
 ```
@@ -487,7 +488,7 @@ func main() {
 }
 ```
 
-### Custom Template Functions
+### Custom Template Function Registration
 
 ```go
 // Register custom template functions

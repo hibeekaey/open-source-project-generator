@@ -415,10 +415,10 @@ func TestUtilityFunctions(t *testing.T) {
 		t.Errorf("indent(2, %q) expected %q, got %q", text, expected, indented)
 	}
 
-	nindented := nindent(2, text)
+	nIndented := nindent(2, text)
 	expectedN := "\n  line1\n  line2"
-	if nindented != expectedN {
-		t.Errorf("nindent(2, %q) expected %q, got %q", text, expectedN, nindented)
+	if nIndented != expectedN {
+		t.Errorf("nindent(2, %q) expected %q, got %q", text, expectedN, nIndented)
 	}
 
 	// Test formatTime function

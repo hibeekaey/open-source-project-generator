@@ -370,9 +370,6 @@ func (a *App) generateProject(config *models.ProjectConfig) error {
 	config.GeneratedAt = time.Now()
 	config.GeneratorVersion = "1.0.0"
 
-	// Normalize configuration for template compatibility
-	a.normalizeConfig(config)
-
 	// Create the project directory structure
 	if err := a.generator.CreateProject(config, config.OutputPath); err != nil {
 		return fmt.Errorf("failed to create project structure: %w", err)
@@ -411,7 +408,7 @@ func (a *App) processTemplates(config *models.ProjectConfig) error {
 	}
 
 	// Process backend templates
-	if config.Components.Backend.API || config.Components.Backend.GoGin {
+	if config.Components.Backend.GoGin {
 		backendTemplateDir := filepath.Join(templateDir, "backend", "go-gin")
 		backendOutputDir := filepath.Join(projectOutputDir, "CommonServer")
 		if err := a.templateEngine.ProcessDirectory(backendTemplateDir, backendOutputDir, config); err != nil {
@@ -460,23 +457,22 @@ func (a *App) showDryRunPreview(config *models.ProjectConfig) {
 	fmt.Printf("%s/\n", config.Name)
 
 	// Show what would be generated based on components
-	hasFrontend := config.Components.Frontend.MainApp || config.Components.Frontend.Home || config.Components.Frontend.Admin ||
-		config.Components.Frontend.NextJS.App || config.Components.Frontend.NextJS.Home || config.Components.Frontend.NextJS.Admin
+	hasFrontend := config.Components.Frontend.NextJS.App || config.Components.Frontend.NextJS.Home || config.Components.Frontend.NextJS.Admin
 	if hasFrontend {
 		fmt.Println("├── App/                    # Frontend applications")
-		if config.Components.Frontend.MainApp || config.Components.Frontend.NextJS.App {
+		if config.Components.Frontend.NextJS.App {
 			fmt.Println("│   ├── main/              # Main Next.js application")
 		}
-		if config.Components.Frontend.Home || config.Components.Frontend.NextJS.Home {
+		if config.Components.Frontend.NextJS.Home {
 			fmt.Println("│   ├── home/              # Landing page")
 		}
-		if config.Components.Frontend.Admin || config.Components.Frontend.NextJS.Admin {
+		if config.Components.Frontend.NextJS.Admin {
 			fmt.Println("│   ├── admin/             # Admin dashboard")
 		}
 		fmt.Println("│   └── shared-components/ # Reusable components")
 	}
 
-	if config.Components.Backend.API || config.Components.Backend.GoGin {
+	if config.Components.Backend.GoGin {
 		fmt.Println("├── CommonServer/          # Backend API server")
 		fmt.Println("│   ├── cmd/               # Application entry points")
 		fmt.Println("│   ├── internal/          # Private application code")
@@ -518,42 +514,6 @@ func (a *App) showDryRunPreview(config *models.ProjectConfig) {
 	fmt.Println("├── SECURITY.md            # Security policy")
 	fmt.Println("├── LICENSE                # Project license")
 	fmt.Println("└── .gitignore             # Git ignore patterns")
-}
-
-// normalizeConfig converts new configuration format to legacy format for template compatibility
-func (a *App) normalizeConfig(config *models.ProjectConfig) {
-	// Map new frontend format to legacy format
-	if config.Components.Frontend.MainApp {
-		config.Components.Frontend.NextJS.App = true
-	}
-	if config.Components.Frontend.Home {
-		config.Components.Frontend.NextJS.Home = true
-	}
-	if config.Components.Frontend.Admin {
-		config.Components.Frontend.NextJS.Admin = true
-	}
-
-	// Map new backend format to legacy format
-	if config.Components.Backend.API {
-		config.Components.Backend.GoGin = true
-	}
-}
-
-// processComponentTemplates processes templates for a specific component
-func (a *App) processComponentTemplates(component, templateDir, projectOutputDir, outputSubDir string, config *models.ProjectConfig) error {
-	componentDir := filepath.Join(templateDir, component)
-	if _, err := os.Stat(componentDir); os.IsNotExist(err) {
-		return nil // Skip if component directory doesn't exist
-	}
-
-	var outputDir string
-	if outputSubDir == "" {
-		outputDir = projectOutputDir
-	} else {
-		outputDir = filepath.Join(projectOutputDir, outputSubDir)
-	}
-
-	return a.templateEngine.ProcessDirectory(componentDir, outputDir, config)
 }
 
 // processBaseTemplates processes base templates with proper directory mapping
@@ -608,7 +568,7 @@ func (a *App) processFrontendTemplates(templateDir, projectOutputDir string, con
 	appDir := filepath.Join(projectOutputDir, "App")
 
 	// Process main app
-	if config.Components.Frontend.MainApp || config.Components.Frontend.NextJS.App {
+	if config.Components.Frontend.NextJS.App {
 		mainAppTemplateDir := filepath.Join(frontendDir, "nextjs-app")
 		mainAppOutputDir := filepath.Join(appDir, "main")
 		if err := a.templateEngine.ProcessDirectory(mainAppTemplateDir, mainAppOutputDir, config); err != nil {
@@ -617,7 +577,7 @@ func (a *App) processFrontendTemplates(templateDir, projectOutputDir string, con
 	}
 
 	// Process home page
-	if config.Components.Frontend.Home || config.Components.Frontend.NextJS.Home {
+	if config.Components.Frontend.NextJS.Home {
 		homeTemplateDir := filepath.Join(frontendDir, "nextjs-home")
 		homeOutputDir := filepath.Join(appDir, "home")
 		if err := a.templateEngine.ProcessDirectory(homeTemplateDir, homeOutputDir, config); err != nil {
@@ -626,7 +586,7 @@ func (a *App) processFrontendTemplates(templateDir, projectOutputDir string, con
 	}
 
 	// Process admin dashboard
-	if config.Components.Frontend.Admin || config.Components.Frontend.NextJS.Admin {
+	if config.Components.Frontend.NextJS.Admin {
 		adminTemplateDir := filepath.Join(frontendDir, "nextjs-admin")
 		adminOutputDir := filepath.Join(appDir, "admin")
 		if err := a.templateEngine.ProcessDirectory(adminTemplateDir, adminOutputDir, config); err != nil {

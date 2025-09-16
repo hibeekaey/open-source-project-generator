@@ -225,7 +225,7 @@ output_path: "./my-awesome-project"
 
 The generator creates a standardized, modern project structure following best practices:
 
-```
+```text
 my-awesome-project/
 ├── App/                    # Frontend applications (Next.js 15+, React 19+)
 │   ├── main/              # Main application with TypeScript and Tailwind CSS
