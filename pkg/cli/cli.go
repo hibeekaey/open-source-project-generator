@@ -46,7 +46,7 @@ func NewCLI(configManager interfaces.ConfigManager, validator interfaces.Validat
 	return &CLI{
 		configManager:    configManager,
 		validator:        validator,
-		generatorVersion: "1.0.0", // Default version
+		generatorVersion: "1.2.0", // Default version
 	}
 }
 

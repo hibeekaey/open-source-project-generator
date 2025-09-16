@@ -58,6 +58,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Path validation and traversal protection
   - Proper error handling in generated code
 
+### Testing
+
+- **Comprehensive Testing**: Full component integration testing completed
+  - All components (Frontend, Backend, Mobile, Infrastructure) generate successfully
+  - Package dependency resolution verified for all templates
+  - Cross-platform compatibility maintained
+  - Zero regressions in existing functionality
+
+### Migration Notes
+
+- **Default Output Path**: Projects now generate to `output/generated/` by default instead of requiring manual specification
+- **Version Requirements**: Version specifications in config files are now optional - sensible defaults are provided
+- **iOS/Android Projects**: Existing projects with `{{.Name}}` in directory names should be regenerated for proper structure
+- **Security**: All generated projects now follow enhanced security practices automatically
+
 ## [1.0.0] - 2025-09-16 - First Stable Release
 
 ### Added

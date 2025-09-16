@@ -355,7 +355,7 @@ func (a *App) runValidate(cmd *cobra.Command, args []string) error {
 func (a *App) generateProject(config *models.ProjectConfig) error {
 	// Set generation timestamp
 	config.GeneratedAt = time.Now()
-	config.GeneratorVersion = "1.0.0"
+	config.GeneratorVersion = "1.2.0"
 
 	// Create the project directory structure
 	if err := a.generator.CreateProject(config, config.OutputPath); err != nil {
