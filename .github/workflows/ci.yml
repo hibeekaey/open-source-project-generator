@@ -1,6 +1,7 @@
 name: CI
 permissions:
   contents: read
+  security-events: write
 
 on:
   push:
@@ -92,6 +93,9 @@ jobs:
   security:
     name: Security Scan
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
 
     steps:
       - name: Checkout code
@@ -109,6 +113,7 @@ jobs:
         run: gosec -no-fail -fmt sarif -out results.sarif ./...
 
       - name: Upload SARIF file
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: results.sarif
