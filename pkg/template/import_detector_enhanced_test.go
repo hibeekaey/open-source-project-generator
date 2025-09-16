@@ -14,7 +14,7 @@ func TestImportDetector_AnalyzeDirectory(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create test template files
 	testFiles := map[string]string{
@@ -194,13 +194,13 @@ func main() {
 	if err != nil {
 		t.Fatalf("Failed to create temp file: %v", err)
 	}
-	defer os.Remove(tempFile.Name())
+	defer func() { _ = os.Remove(tempFile.Name()) }()
 
 	_, err = tempFile.WriteString(templateContent)
 	if err != nil {
 		t.Fatalf("Failed to write temp file: %v", err)
 	}
-	tempFile.Close()
+	_ = tempFile.Close()
 
 	report, err := detector.AnalyzeTemplateFile(tempFile.Name())
 	if err != nil {
@@ -259,7 +259,7 @@ func TestImportDetector_EmptyDirectory(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	detector := NewImportDetector()
 	analysis, err := detector.AnalyzeDirectory(tempDir)

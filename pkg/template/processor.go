@@ -153,7 +153,7 @@ func (p *DirectoryProcessor) processTemplateExtends(content, templatePath string
 	lines := strings.Split(content, "\n")
 	var baseTemplate string
 	var childContent strings.Builder
-	var blocks map[string]string = make(map[string]string)
+	var blocks = make(map[string]string)
 
 	// Parse child template for extends directive and named blocks
 	for i, line := range lines {

@@ -1,15 +1,14 @@
+version: "2"
+
 linters:
   disable:
     - gocyclo
-    - gofmt
   enable:
     - errcheck
     - govet
-    - gosimple
     - misspell
     - staticcheck
-    - typecheck
 
-linters-settings:
-  gocyclo:
-    min-complexity: 20
+run:
+  timeout: 5m
+  go: "1.25"
