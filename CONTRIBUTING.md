@@ -44,7 +44,7 @@ This project and everyone participating in it is governed by our Code of Conduct
 
 Ensure you have the required tools installed:
 
-- **Go**: 1.24 or later
+- **Go**: 1.25 or later
 - **Make**: Build automation tool
 - **Git**: Latest stable version
 - **Docker**: Latest stable version (optional, for testing)
@@ -127,7 +127,7 @@ git push origin feature/your-feature-name
 - Include comprehensive tests
 - Update documentation and examples
 
-#### 📝 Documentation
+#### 📝 Documentation Contributions
 
 - Improve existing documentation
 - Add missing documentation
@@ -256,7 +256,7 @@ func (e *TemplateEngine) ProcessTemplate(templatePath string, config *models.Pro
 
 #### File Organization
 
-```
+```text
 cmd/                    # Command-line applications
 ├── generator/          # Main generator CLI
 └── standards/          # Standards validation CLI
@@ -314,7 +314,7 @@ Key requirements for template changes:
 - Run validation tools before committing: `go run scripts/validate-templates/main.go --check-imports`
 - Test template compilation with sample data: `go run cmd/generator/main.go --config config/test-configs/test-config.yaml --output test-validation`
 
-### Documentation Standards
+### Code Documentation Standards
 
 - **Code Comments**: Explain why, not what
 - **Function Documentation**: Document all public functions
@@ -327,7 +327,7 @@ Key requirements for template changes:
 
 Use [Conventional Commits](https://www.conventionalcommits.org/) format:
 
-```
+```text
 <type>[optional scope]: <description>
 
 [optional body]
@@ -348,7 +348,7 @@ Use [Conventional Commits](https://www.conventionalcommits.org/) format:
 
 **Examples:**
 
-```
+```text
 feat(cli): add interactive component selection
 
 fix(template): handle null values in package.json generation

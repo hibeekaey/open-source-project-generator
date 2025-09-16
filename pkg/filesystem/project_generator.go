@@ -268,7 +268,7 @@ func (pg *ProjectGenerator) validateContentCrossReferences(projectPath string, c
 	}
 
 	// Validate package.json dependencies are consistent across frontend apps
-	if config.Components.Frontend.MainApp && config.Components.Frontend.Admin {
+	if config.Components.Frontend.NextJS.App && config.Components.Frontend.NextJS.Admin {
 		mainAppPackageJson := filepath.Join(projectPath, "App/package.json")
 		adminPackageJson := filepath.Join(projectPath, "Admin/package.json")
 
@@ -300,14 +300,14 @@ func (pg *ProjectGenerator) createDirectories(projectPath string, dirs []string)
 // createComponentDirectories creates directories based on selected components
 func (pg *ProjectGenerator) createComponentDirectories(projectPath string, config *models.ProjectConfig) error {
 	// Create frontend directories if any frontend component is selected
-	if config.Components.Frontend.MainApp || config.Components.Frontend.Home || config.Components.Frontend.Admin {
+	if config.Components.Frontend.NextJS.App || config.Components.Frontend.NextJS.Home || config.Components.Frontend.NextJS.Admin {
 		if err := pg.createDirectories(projectPath, pg.structure.FrontendDirs); err != nil {
 			return fmt.Errorf("failed to create frontend directories: %w", err)
 		}
 	}
 
 	// Create backend directories if backend is selected
-	if config.Components.Backend.API {
+	if config.Components.Backend.GoGin {
 		if err := pg.createDirectories(projectPath, pg.structure.BackendDirs); err != nil {
 			return fmt.Errorf("failed to create backend directories: %w", err)
 		}
@@ -366,14 +366,14 @@ func (pg *ProjectGenerator) generateRootFiles(projectPath string, config *models
 // generateComponentFiles creates component-specific files
 func (pg *ProjectGenerator) generateComponentFiles(projectPath string, config *models.ProjectConfig) error {
 	// Generate frontend component files
-	if config.Components.Frontend.MainApp || config.Components.Frontend.Home || config.Components.Frontend.Admin {
+	if config.Components.Frontend.NextJS.App || config.Components.Frontend.NextJS.Home || config.Components.Frontend.NextJS.Admin {
 		if err := pg.generateFrontendFiles(projectPath, config); err != nil {
 			return fmt.Errorf("failed to generate frontend files: %w", err)
 		}
 	}
 
 	// Generate backend component files
-	if config.Components.Backend.API {
+	if config.Components.Backend.GoGin {
 		if err := pg.generateBackendFiles(projectPath, config); err != nil {
 			return fmt.Errorf("failed to generate backend files: %w", err)
 		}
@@ -409,7 +409,7 @@ func (pg *ProjectGenerator) generateComponentFiles(projectPath string, config *m
 // validateComponentDirectories validates component-specific directories
 func (pg *ProjectGenerator) validateComponentDirectories(projectPath string, config *models.ProjectConfig) error {
 	// Validate frontend directories
-	if config.Components.Frontend.MainApp || config.Components.Frontend.Home || config.Components.Frontend.Admin {
+	if config.Components.Frontend.NextJS.App || config.Components.Frontend.NextJS.Home || config.Components.Frontend.NextJS.Admin {
 		for _, dir := range pg.structure.FrontendDirs {
 			dirPath := filepath.Join(projectPath, dir)
 			if !pg.fsGen.FileExists(dirPath) {
@@ -419,7 +419,7 @@ func (pg *ProjectGenerator) validateComponentDirectories(projectPath string, con
 	}
 
 	// Validate backend directories
-	if config.Components.Backend.API {
+	if config.Components.Backend.GoGin {
 		for _, dir := range pg.structure.BackendDirs {
 			dirPath := filepath.Join(projectPath, dir)
 			if !pg.fsGen.FileExists(dirPath) {
@@ -454,7 +454,7 @@ func (pg *ProjectGenerator) validateComponentDirectories(projectPath string, con
 // validateComponentCrossReferences validates cross-references between component files
 func (pg *ProjectGenerator) validateComponentCrossReferences(projectPath string, config *models.ProjectConfig) error {
 	// Validate frontend cross-references
-	if config.Components.Frontend.MainApp {
+	if config.Components.Frontend.NextJS.App {
 		packageJsonPath := filepath.Join(projectPath, "App/package.json")
 		if !pg.fsGen.FileExists(packageJsonPath) {
 			return fmt.Errorf("main app package.json missing")
@@ -462,7 +462,7 @@ func (pg *ProjectGenerator) validateComponentCrossReferences(projectPath string,
 	}
 
 	// Validate backend cross-references
-	if config.Components.Backend.API {
+	if config.Components.Backend.GoGin {
 		goModPath := filepath.Join(projectPath, "CommonServer/go.mod")
 		if !pg.fsGen.FileExists(goModPath) {
 			return fmt.Errorf("backend go.mod missing")
@@ -585,7 +585,7 @@ This project is licensed under the %s License - see the [LICENSE](LICENSE) file 
 ## Contributing
 
 Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
-`, config.Name, config.Organization, config.Description, config.Repository, config.Name, config.License)
+`, config.Name, config.Organization, config.Description, "", config.Name, config.License)
 }
 
 func (pg *ProjectGenerator) generateDockerComposeContent(config *models.ProjectConfig) string {
@@ -653,7 +653,7 @@ temp/
 // generateFrontendFiles creates frontend component files
 func (pg *ProjectGenerator) generateFrontendFiles(projectPath string, config *models.ProjectConfig) error {
 	// Generate package.json for main app if selected
-	if config.Components.Frontend.MainApp {
+	if config.Components.Frontend.NextJS.App {
 		packageJsonContent := fmt.Sprintf(`{
   "name": "%s-app",
   "version": "0.1.0",
@@ -687,7 +687,7 @@ func (pg *ProjectGenerator) generateFrontendFiles(projectPath string, config *mo
     "@testing-library/react": "^14.0.0",
     "@testing-library/jest-dom": "^6.0.0"
   }
-}`, config.Name, config.Versions.NextJS, config.Versions.React, config.Versions.React, config.Versions.NextJS)
+}`, config.Name, config.Versions.Packages["next"], config.Versions.Packages["react"], config.Versions.Packages["react"], config.Versions.Packages["next"])
 
 		packageJsonPath := filepath.Join(projectPath, "App/package.json")
 		if err := pg.fsGen.WriteFile(packageJsonPath, []byte(packageJsonContent), 0644); err != nil {
@@ -745,7 +745,7 @@ module.exports = {
 	}
 
 	// Generate package.json for home app if selected
-	if config.Components.Frontend.Home {
+	if config.Components.Frontend.NextJS.Home {
 		homePackageJsonContent := fmt.Sprintf(`{
   "name": "%s-home",
   "version": "0.1.0",
@@ -770,7 +770,7 @@ module.exports = {
     "typescript": "^5.0.0",
     "tailwindcss": "^3.4.0"
   }
-}`, config.Name, config.Versions.NextJS, config.Versions.React, config.Versions.React, config.Versions.NextJS)
+}`, config.Name, config.Versions.Packages["next"], config.Versions.Packages["react"], config.Versions.Packages["react"], config.Versions.Packages["next"])
 
 		homePackageJsonPath := filepath.Join(projectPath, "Home/package.json")
 		if err := pg.fsGen.WriteFile(homePackageJsonPath, []byte(homePackageJsonContent), 0644); err != nil {
@@ -779,7 +779,7 @@ module.exports = {
 	}
 
 	// Generate package.json for admin app if selected
-	if config.Components.Frontend.Admin {
+	if config.Components.Frontend.NextJS.Admin {
 		adminPackageJsonContent := fmt.Sprintf(`{
   "name": "%s-admin",
   "version": "0.1.0",
@@ -806,7 +806,7 @@ module.exports = {
     "typescript": "^5.0.0",
     "tailwindcss": "^3.4.0"
   }
-}`, config.Name, config.Versions.NextJS, config.Versions.React, config.Versions.React, config.Versions.NextJS)
+}`, config.Name, config.Versions.Packages["next"], config.Versions.Packages["react"], config.Versions.Packages["react"], config.Versions.Packages["next"])
 
 		adminPackageJsonPath := filepath.Join(projectPath, "Admin/package.json")
 		if err := pg.fsGen.WriteFile(adminPackageJsonPath, []byte(adminPackageJsonContent), 0644); err != nil {
@@ -998,7 +998,7 @@ This project follows the [Contributor Covenant Code of Conduct](https://www.cont
 ## License
 
 By contributing to %s, you agree that your contributions will be licensed under the %s License.
-`, config.Name, config.Name, config.Repository, config.Name, config.Name, config.License)
+`, config.Name, config.Name, "", config.Name, config.Name, config.License)
 
 	contributingPath := filepath.Join(projectPath, "CONTRIBUTING.md")
 	if err := pg.fsGen.WriteFile(contributingPath, []byte(contributingContent), 0644); err != nil {

@@ -26,8 +26,8 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 BUILD_DIR="$PROJECT_ROOT/build"
 DIST_DIR="$PROJECT_ROOT/dist"
 
-{{if .Components.Frontend.MainApp}}FRONTEND_DIRS=("App"{{if .Components.Frontend.Home}} "Home"{{end}}{{if .Components.Frontend.Admin}} "Admin"{{end}}){{end}}
-{{if .Components.Backend.API}}BACKEND_DIR="CommonServer"{{end}}
+{{if .Components.Frontend.NextJS.App}}FRONTEND_DIRS=("App"{{if .Components.Frontend.NextJS.Home}} "Home"{{end}}{{if .Components.Frontend.NextJS.Admin}} "Admin"{{end}}){{end}}
+{{if .Components.Backend.GoGin}}BACKEND_DIR="CommonServer"{{end}}
 
 # Build configuration
 BUILD_MODE="${BUILD_MODE:-production}"
@@ -111,7 +111,7 @@ pre_build_checks() {
     fi
     
     # Check required tools
-{{if .Components.Frontend.MainApp}}    if ! command_exists node; then
+{{if .Components.Frontend.NextJS.App}}    if ! command_exists node; then
         log_error "Node.js is required but not installed"
         exit 1
     fi
@@ -121,7 +121,7 @@ pre_build_checks() {
         exit 1
     fi{{end}}
     
-{{if .Components.Backend.API}}    if ! command_exists go; then
+{{if .Components.Backend.GoGin}}    if ! command_exists go; then
         log_error "Go is required but not installed"
         exit 1
     fi{{end}}
@@ -140,7 +140,7 @@ run_linting() {
     
     cd "$PROJECT_ROOT"
     
-{{if .Components.Frontend.MainApp}}    # Frontend linting
+{{if .Components.Frontend.NextJS.App}}    # Frontend linting
     for dir in "${FRONTEND_DIRS[@]}"; do
         if [[ -d "$dir" ]]; then
             log_info "Linting $dir..."
@@ -151,7 +151,7 @@ run_linting() {
         fi
     done{{end}}
     
-{{if .Components.Backend.API}}    # Backend linting
+{{if .Components.Backend.GoGin}}    # Backend linting
     if [[ -d "$BACKEND_DIR" ]]; then
         log_info "Linting backend..."
         cd "$BACKEND_DIR"
@@ -178,7 +178,7 @@ run_tests() {
     
     cd "$PROJECT_ROOT"
     
-{{if .Components.Frontend.MainApp}}    # Frontend tests
+{{if .Components.Frontend.NextJS.App}}    # Frontend tests
     for dir in "${FRONTEND_DIRS[@]}"; do
         if [[ -d "$dir" ]]; then
             log_info "Testing $dir..."
@@ -189,7 +189,7 @@ run_tests() {
         fi
     done{{end}}
     
-{{if .Components.Backend.API}}    # Backend tests
+{{if .Components.Backend.GoGin}}    # Backend tests
     if [[ -d "$BACKEND_DIR" ]]; then
         log_info "Testing backend..."
         cd "$BACKEND_DIR"
@@ -201,7 +201,7 @@ run_tests() {
     log_success "All tests passed"
 }
 
-{{if .Components.Frontend.MainApp}}# Build frontend applications
+{{if .Components.Frontend.NextJS.App}}# Build frontend applications
 build_frontend() {
     log_step "Building frontend applications..."
     
@@ -299,7 +299,7 @@ build_frontend() {
     log_success "Frontend builds completed"
 }{{end}}
 
-{{if .Components.Backend.API}}# Build backend application
+{{if .Components.Backend.GoGin}}# Build backend application
 build_backend() {
     log_step "Building backend application..."
     
@@ -382,7 +382,7 @@ build_docker_images() {
     
     cd "$PROJECT_ROOT"
     
-{{if .Components.Frontend.MainApp}}    # Frontend Docker images
+{{if .Components.Frontend.NextJS.App}}    # Frontend Docker images
     for dir in "${FRONTEND_DIRS[@]}"; do
         if [[ -d "$dir" && -f "$dir/Dockerfile" ]]; then
             log_info "Building Docker image for $dir..."
@@ -401,7 +401,7 @@ build_docker_images() {
         fi
     done{{end}}
     
-{{if .Components.Backend.API}}    # Backend Docker image
+{{if .Components.Backend.GoGin}}    # Backend Docker image
     if [[ -d "$BACKEND_DIR" && -f "$BACKEND_DIR/Dockerfile" ]]; then
         log_info "Building Docker image for backend..."
         
@@ -506,7 +506,7 @@ generate_build_report() {
 
 EOF
 
-{{if .Components.Frontend.MainApp}}    echo "### Frontend Applications" >> "$report_file"
+{{if .Components.Frontend.NextJS.App}}    echo "### Frontend Applications" >> "$report_file"
     echo "" >> "$report_file"
     for dir in "${FRONTEND_DIRS[@]}"; do
         if [[ -d "$dir" ]]; then
@@ -517,7 +517,7 @@ EOF
     done
     echo "" >> "$report_file"{{end}}
 
-{{if .Components.Backend.API}}    echo "### Backend Services" >> "$report_file"
+{{if .Components.Backend.GoGin}}    echo "### Backend Services" >> "$report_file"
     echo "" >> "$report_file"
     if [[ -d "$BACKEND_DIR" ]]; then
         echo "- ✅ $BACKEND_DIR" >> "$report_file"
@@ -581,8 +581,8 @@ main() {
     pre_build_checks
     run_linting
     run_tests
-{{if .Components.Frontend.MainApp}}    build_frontend{{end}}
-{{if .Components.Backend.API}}    build_backend{{end}}
+{{if .Components.Frontend.NextJS.App}}    build_frontend{{end}}
+{{if .Components.Backend.GoGin}}    build_backend{{end}}
     build_docker_images
     create_distribution
     generate_build_report

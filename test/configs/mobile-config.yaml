@@ -1,0 +1,33 @@
+# Mobile-focused configuration
+name: mobile-focused-project
+organization: test-org
+description: A mobile-focused project with Android and iOS applications
+license: BSD-3-Clause
+author: Test Author
+email: test@example.com
+output_path: ./output/mobile
+
+components:
+  frontend:
+    nextjs:
+      app: false
+      home: false
+      admin: false
+      shared: false
+  
+  backend:
+    go_gin: true
+  
+  mobile:
+    android: true
+    ios: true
+  
+  infrastructure:
+    docker: true
+    kubernetes: false
+    terraform: false
+
+versions:
+  go: "1.22"
+  kotlin: "2.0.0"
+  swift: "5.9.0"

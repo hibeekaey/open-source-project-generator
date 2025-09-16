@@ -23,7 +23,7 @@ data:
   GO_ENV: "production"
   
   # API Configuration
-  {{if .Components.Backend.API}}
+  {{if .Components.Backend.GoGin}}
   API_URL: "http://{{.Name}}-api-service:8080"
   {{end}}
   
@@ -93,28 +93,28 @@ data:
         limit_req_zone $binary_remote_addr zone=login:10m rate=1r/s;
 
         # Upstream servers
-        {{if .Components.Backend.API}}
+        {{if .Components.Backend.GoGin}}
         upstream api_backend {
             least_conn;
             server {{.Name}}-api-service:8080 max_fails=3 fail_timeout=30s;
         }
         {{end}}
 
-        {{if .Components.Frontend.MainApp}}
+        {{if .Components.Frontend.NextJS.App}}
         upstream app_frontend {
             least_conn;
             server {{.Name}}-app-service:3000 max_fails=3 fail_timeout=30s;
         }
         {{end}}
 
-        {{if .Components.Frontend.Home}}
+        {{if .Components.Frontend.NextJS.Home}}
         upstream home_frontend {
             least_conn;
             server {{.Name}}-home-service:3000 max_fails=3 fail_timeout=30s;
         }
         {{end}}
 
-        {{if .Components.Frontend.Admin}}
+        {{if .Components.Frontend.NextJS.Admin}}
         upstream admin_frontend {
             least_conn;
             server {{.Name}}-admin-service:3000 max_fails=3 fail_timeout=30s;
@@ -129,7 +129,7 @@ data:
         }
 
         # Main application
-        {{if .Components.Frontend.MainApp}}
+        {{if .Components.Frontend.NextJS.App}}
         server {
             listen 80;
             server_name {{.Name}}.{{.Organization}}.com;
@@ -145,7 +145,7 @@ data:
                 proxy_read_timeout 30s;
             }
 
-            {{if .Components.Backend.API}}
+            {{if .Components.Backend.GoGin}}
             location /api/ {
                 limit_req zone=api burst=20 nodelay;
                 proxy_pass http://api_backend;
@@ -168,7 +168,7 @@ data:
         }
         {{end}}
 
-        {{if .Components.Frontend.Home}}
+        {{if .Components.Frontend.NextJS.Home}}
         # Home/Landing page
         server {
             listen 80;
@@ -184,7 +184,7 @@ data:
         }
         {{end}}
 
-        {{if .Components.Frontend.Admin}}
+        {{if .Components.Frontend.NextJS.Admin}}
         # Admin dashboard
         server {
             listen 80;
@@ -198,7 +198,7 @@ data:
                 proxy_set_header X-Forwarded-Proto $scheme;
             }
 
-            {{if .Components.Backend.API}}
+            {{if .Components.Backend.GoGin}}
             location /api/ {
                 limit_req zone=api burst=10 nodelay;
                 proxy_pass http://api_backend;

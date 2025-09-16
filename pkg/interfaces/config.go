@@ -10,12 +10,6 @@ type ConfigManager interface {
 	// ValidateConfig validates the provided project configuration
 	ValidateConfig(*models.ProjectConfig) error
 
-	// GetLatestVersions fetches the latest versions of packages and frameworks
-	GetLatestVersions() (*models.VersionConfig, error)
-
-	// MergeConfigs merges base configuration with override values
-	MergeConfigs(base, override *models.ProjectConfig) *models.ProjectConfig
-
 	// SaveConfig saves configuration to a file
 	SaveConfig(config *models.ProjectConfig, path string) error
 

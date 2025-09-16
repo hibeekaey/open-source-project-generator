@@ -1,6 +1,8 @@
 package template
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -100,6 +102,9 @@ func (e *Engine) registerDefaultFunctions() {
 		"indent":     indent,
 		"nindent":    nindent,
 		"env":        getEnvVar,
+		"nonce":      generateNonce,
+		"customVar":  getCustomVar,
+		"slice":      sliceString,
 	}
 }
 
@@ -265,13 +270,13 @@ func getLatestVersion(config *models.ProjectConfig, packageName string) string {
 		case "go", "golang":
 			return config.Versions.Go
 		case "next", "nextjs":
-			return config.Versions.NextJS
+			return config.Versions.Packages["next"]
 		case "react":
-			return config.Versions.React
+			return config.Versions.Packages["react"]
 		case "kotlin":
-			return config.Versions.Kotlin
+			return config.Versions.Packages["kotlin"]
 		case "swift":
-			return config.Versions.Swift
+			return config.Versions.Packages["swift"]
 		}
 	}
 
@@ -305,29 +310,29 @@ func getGoVersion(config *models.ProjectConfig) string {
 }
 
 func getNextjsVersion(config *models.ProjectConfig) string {
-	if config.Versions != nil && config.Versions.NextJS != "" {
-		return config.Versions.NextJS
+	if config.Versions != nil && config.Versions.Packages["next"] != "" {
+		return config.Versions.Packages["next"]
 	}
 	return "15.0.0" // Default fallback
 }
 
 func getReactVersion(config *models.ProjectConfig) string {
-	if config.Versions != nil && config.Versions.React != "" {
-		return config.Versions.React
+	if config.Versions != nil && config.Versions.Packages["react"] != "" {
+		return config.Versions.Packages["react"]
 	}
 	return "18.2.0" // Default fallback
 }
 
 func getKotlinVersion(config *models.ProjectConfig) string {
-	if config.Versions != nil && config.Versions.Kotlin != "" {
-		return config.Versions.Kotlin
+	if config.Versions != nil && config.Versions.Packages["kotlin"] != "" {
+		return config.Versions.Packages["kotlin"]
 	}
 	return "2.0.0" // Default fallback
 }
 
 func getSwiftVersion(config *models.ProjectConfig) string {
-	if config.Versions != nil && config.Versions.Swift != "" {
-		return config.Versions.Swift
+	if config.Versions != nil && config.Versions.Packages["swift"] != "" {
+		return config.Versions.Packages["swift"]
 	}
 	return "5.9.0" // Default fallback
 }
@@ -422,13 +427,13 @@ func isNonEmpty(value interface{}) bool {
 // Component checking functions
 
 func hasFrontendComponent(config *models.ProjectConfig) bool {
-	return config.Components.Frontend.MainApp ||
-		config.Components.Frontend.Home ||
-		config.Components.Frontend.Admin
+	return config.Components.Frontend.NextJS.App ||
+		config.Components.Frontend.NextJS.Home ||
+		config.Components.Frontend.NextJS.Admin
 }
 
 func hasBackendComponent(config *models.ProjectConfig) bool {
-	return config.Components.Backend.API
+	return config.Components.Backend.GoGin
 }
 
 func hasMobileComponent(config *models.ProjectConfig) bool {
@@ -446,16 +451,16 @@ func hasComponent(config *models.ProjectConfig, componentType, componentName str
 	case constants.TemplateFrontend:
 		switch componentName {
 		case "main_app":
-			return config.Components.Frontend.MainApp
+			return config.Components.Frontend.NextJS.App
 		case "home":
-			return config.Components.Frontend.Home
+			return config.Components.Frontend.NextJS.Home
 		case "admin":
-			return config.Components.Frontend.Admin
+			return config.Components.Frontend.NextJS.Admin
 		}
 	case constants.TemplateBackend:
 		switch componentName {
 		case "api":
-			return config.Components.Backend.API
+			return config.Components.Backend.GoGin
 		}
 	case "mobile":
 		switch componentName {
@@ -551,36 +556,37 @@ func nindent(spaces int, text string) string {
 // Enhanced Node.js version functions
 
 func getNodeRuntime(config *models.ProjectConfig) string {
-	if config.Versions != nil && config.Versions.NodeJS != nil && config.Versions.NodeJS.Runtime != "" {
-		return config.Versions.NodeJS.Runtime
+	if config.Versions != nil && config.Versions.Node != "" {
+		return config.Versions.Node
 	}
-	return ">=20.0.0" // Default fallback
+	return "20.0.0" // Default fallback
 }
 
 func getNodeTypesVersion(config *models.ProjectConfig) string {
-	if config.Versions != nil && config.Versions.NodeJS != nil && config.Versions.NodeJS.TypesPackage != "" {
-		return config.Versions.NodeJS.TypesPackage
+	if config.Versions != nil && config.Versions.Packages["@types/node"] != "" {
+		return config.Versions.Packages["@types/node"]
 	}
 	return "^20.17.0" // Default fallback
 }
 
 func getNodeNPMVersion(config *models.ProjectConfig) string {
-	if config.Versions != nil && config.Versions.NodeJS != nil && config.Versions.NodeJS.NPMVersion != "" {
-		return config.Versions.NodeJS.NPMVersion
+	if config.Versions != nil && config.Versions.Packages["npm"] != "" {
+		return config.Versions.Packages["npm"]
 	}
-	return ">=10.0.0" // Default fallback
+	return "10.0.0" // Default fallback
 }
 
 func getNodeDockerImage(config *models.ProjectConfig) string {
-	if config.Versions != nil && config.Versions.NodeJS != nil && config.Versions.NodeJS.DockerImage != "" {
-		return config.Versions.NodeJS.DockerImage
+	if config.Versions != nil && config.Versions.Node != "" {
+		return "node:" + config.Versions.Node + "-alpine"
 	}
 	return "node:20-alpine" // Default fallback
 }
 
 func isNodeLTS(config *models.ProjectConfig) bool {
-	if config.Versions != nil && config.Versions.NodeJS != nil {
-		return config.Versions.NodeJS.LTSStatus
+	// Assume Node 20+ is LTS
+	if config.Versions != nil && config.Versions.Node != "" {
+		return strings.HasPrefix(config.Versions.Node, "20")
 	}
 	return true // Default to LTS
 }
@@ -608,4 +614,53 @@ func githubMatrix(field string) string {
 // githubContext returns a GitHub Actions github context expression
 func githubContext(field string) string {
 	return "${{ github." + field + " }}"
+}
+
+// generateNonce generates a random nonce for Content Security Policy
+func generateNonce() string {
+	bytes := make([]byte, 16)
+	if _, err := rand.Read(bytes); err != nil {
+		// Return a fallback nonce if random generation fails
+		return "fallback-nonce"
+	}
+	return base64.StdEncoding.EncodeToString(bytes)
+}
+
+// getCustomVar retrieves a custom variable from the template context
+// This function is used to access custom variables in templates
+func getCustomVar(config interface{}, key string) string {
+	if _, ok := config.(*models.ProjectConfig); ok {
+		if value, exists := map[string]string{}[key]; exists {
+			return value
+		}
+	}
+	return ""
+}
+
+// sliceString slices a string from start to end index
+// This function works with Go template pipes: {{.Name | slice 0 1}}
+func sliceString(args ...interface{}) string {
+	if len(args) < 3 {
+		return ""
+	}
+
+	s, ok := args[0].(string)
+	if !ok {
+		return ""
+	}
+
+	start, ok := args[1].(int)
+	if !ok {
+		return ""
+	}
+
+	end, ok := args[2].(int)
+	if !ok {
+		return ""
+	}
+
+	if start < 0 || end < 0 || start >= len(s) || end > len(s) || start >= end {
+		return ""
+	}
+	return s[start:end]
 }

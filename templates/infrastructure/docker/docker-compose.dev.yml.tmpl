@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   # Frontend Applications
-  {{if .Components.Frontend.MainApp}}
+  {{if .Components.Frontend.NextJS.App}}
   app:
     build:
       context: ./App
@@ -24,7 +24,7 @@ services:
     restart: unless-stopped
   {{end}}
 
-  {{if .Components.Frontend.Home}}
+  {{if .Components.Frontend.NextJS.Home}}
   home:
     build:
       context: ./Home
@@ -44,7 +44,7 @@ services:
     restart: unless-stopped
   {{end}}
 
-  {{if .Components.Frontend.Admin}}
+  {{if .Components.Frontend.NextJS.Admin}}
   admin:
     build:
       context: ./Admin
@@ -67,7 +67,7 @@ services:
   {{end}}
 
   # Backend API
-  {{if .Components.Backend.API}}
+  {{if .Components.Backend.GoGin}}
   api:
     build:
       context: ./CommonServer

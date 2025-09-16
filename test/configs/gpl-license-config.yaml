@@ -1,0 +1,28 @@
+# GPL-3.0 License test configuration
+name: gpl-license-project
+organization: test-org
+description: A test project using GPL-3.0 license
+license: GPL-3.0
+author: Test Author
+email: test@example.com
+output_path: ./output/gpl-license
+
+components:
+  frontend:
+    nextjs:
+      app: true
+      home: true
+      admin: false
+      shared: true
+  
+  backend:
+    go_gin: true
+  
+  mobile:
+    android: false
+    ios: false
+  
+  infrastructure:
+    docker: true
+    kubernetes: false
+    terraform: false

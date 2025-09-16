@@ -71,7 +71,7 @@ func TestNPMClient_GetLatestVersion(t *testing.T) {
 
 				w.WriteHeader(tt.expectedStatus)
 				if tt.expectedStatus == http.StatusOK {
-					json.NewEncoder(w).Encode(tt.mockResponse)
+					_ = json.NewEncoder(w).Encode(tt.mockResponse)
 				}
 			}))
 			defer server.Close()
@@ -139,7 +139,7 @@ func TestNPMClient_GetVersionInfo(t *testing.T) {
 
 				w.WriteHeader(tt.expectedStatus)
 				if tt.expectedStatus == http.StatusOK {
-					json.NewEncoder(w).Encode(tt.mockResponse)
+					_ = json.NewEncoder(w).Encode(tt.mockResponse)
 				}
 			}))
 			defer server.Close()

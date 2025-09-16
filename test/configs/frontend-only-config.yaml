@@ -1,0 +1,33 @@
+# Frontend-only configuration
+name: frontend-only-project
+organization: test-org
+description: A frontend-only project with multiple NextJS applications
+license: MIT
+author: Test Author
+email: test@example.com
+output_path: ./output/frontend-only
+
+components:
+  frontend:
+    nextjs:
+      app: true
+      home: true
+      admin: true
+      shared: true
+  
+  backend:
+    go_gin: false
+  
+  mobile:
+    android: false
+    ios: false
+  
+  infrastructure:
+    docker: true
+    kubernetes: false
+    terraform: false
+
+versions:
+  node: "20.11.0"
+  nextjs: "15.0.0"
+  react: "18.2.0"

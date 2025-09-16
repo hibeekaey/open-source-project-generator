@@ -109,7 +109,7 @@ main() {
     local built=0
     local failed=0
     
-    {{if .Components.Frontend.MainApp}}
+    {{if .Components.Frontend.NextJS.App}}
     # Build App frontend
     if build_image "app" "templates/infrastructure/docker/frontend.Dockerfile.tmpl" "./App"; then
         ((built++))
@@ -118,7 +118,7 @@ main() {
     fi
     {{end}}
     
-    {{if .Components.Frontend.Home}}
+    {{if .Components.Frontend.NextJS.Home}}
     # Build Home frontend
     if build_image "home" "templates/infrastructure/docker/frontend.Dockerfile.tmpl" "./Home"; then
         ((built++))
@@ -127,7 +127,7 @@ main() {
     fi
     {{end}}
     
-    {{if .Components.Frontend.Admin}}
+    {{if .Components.Frontend.NextJS.Admin}}
     # Build Admin frontend
     if build_image "admin" "templates/infrastructure/docker/frontend.Dockerfile.tmpl" "./Admin"; then
         ((built++))
@@ -136,7 +136,7 @@ main() {
     fi
     {{end}}
     
-    {{if .Components.Backend.API}}
+    {{if .Components.Backend.GoGin}}
     # Build Backend API
     if build_image "api" "templates/infrastructure/docker/backend.Dockerfile.tmpl" "./CommonServer"; then
         ((built++))

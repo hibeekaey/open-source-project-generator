@@ -29,24 +29,25 @@ func TestBasicProjectGeneration(t *testing.T) {
 		Email:        "test@example.com",
 		Components: models.Components{
 			Frontend: models.FrontendComponents{
-				MainApp: true,
+				NextJS: models.NextJSComponents{
+					App: true,
+				},
 			},
 			Backend: models.BackendComponents{
-				API: true,
+				GoGin: true,
 			},
 			Infrastructure: models.InfrastructureComponents{
 				Docker: true,
 			},
 		},
 		Versions: &models.VersionConfig{
-			Node:   "20.11.0",
-			Go:     "1.22.0",
-			NextJS: "15.0.0",
-			React:  "18.2.0",
+			Node: "20.11.0",
+			Go:   "1.22.0",
 			Packages: map[string]string{
+				"next":       "15.0.0",
+				"react":      "18.2.0",
 				"typescript": "5.3.3",
 			},
-			UpdatedAt: time.Now(),
 		},
 		OutputPath:       tempDir,
 		GeneratedAt:      time.Now(),
@@ -155,31 +156,33 @@ func TestConfigurationManagementBasic(t *testing.T) {
 		t.Errorf("Expected default license MIT, got %s", defaults.License)
 	}
 
-	// Test configuration merging
-	override := &models.ProjectConfig{
-		Name:         "merge-test",
-		Organization: "test-org",
-		Components: models.Components{
-			Frontend: models.FrontendComponents{
-				MainApp: true,
-				Admin:   true,
-			},
-		},
-	}
+	// Test configuration merging - method removed
+	// override := &models.ProjectConfig{
+	// 	Name:         "merge-test",
+	// 	Organization: "test-org",
+	// 	Components: models.Components{
+	// 		Frontend: models.FrontendComponents{
+	// 			NextJS: models.NextJSComponents{
+	// 				App:   true,
+	// 				Admin: true,
+	// 			},
+	// 		},
+	// 	},
+	// }
 
-	merged := configManager.MergeConfigs(defaults, override)
+	// merged := configManager.MergeConfigs(defaults, override) // Method removed
 
-	if merged.Name != "merge-test" {
-		t.Errorf("Expected merged name 'merge-test', got %s", merged.Name)
-	}
+	// if merged.Name != "merge-test" {
+	// 	t.Errorf("Expected merged name 'merge-test', got %s", merged.Name)
+	// }
 
-	if merged.License != "MIT" {
-		t.Errorf("Expected merged license 'MIT', got %s", merged.License)
-	}
+	// if merged.License != "MIT" {
+	// 	t.Errorf("Expected merged license 'MIT', got %s", merged.License)
+	// }
 
-	if !merged.Components.Frontend.MainApp {
-		t.Error("Expected MainApp to be true from override")
-	}
+	// if !merged.Components.Frontend.NextJS.App {
+	// 	t.Error("Expected NextJS.App to be true from override")
+	// }
 
 	t.Logf("Configuration management test completed successfully")
 }
@@ -201,7 +204,8 @@ func TestEndToEndBasic(t *testing.T) {
 	config.Name = "e2e-basic-test"
 	config.Organization = "e2e-org"
 	config.Description = "End-to-end basic test"
-	config.Components.Frontend.MainApp = true
+	config.OutputPath = "./test-output"
+	config.Components.Frontend.NextJS.App = true
 	config.Components.Infrastructure.Docker = true
 
 	// 3. Validate configuration
@@ -210,12 +214,12 @@ func TestEndToEndBasic(t *testing.T) {
 		t.Fatalf("Configuration validation failed: %v", err)
 	}
 
-	// 4. Get versions
-	versions, err := configManager.GetLatestVersions()
-	if err != nil {
-		t.Fatalf("Failed to get versions: %v", err)
-	}
-	config.Versions = versions
+	// 4. Get versions - method removed
+	// versions, err := configManager.GetLatestVersions()
+	// if err != nil {
+	// 	t.Fatalf("Failed to get versions: %v", err)
+	// }
+	// config.Versions = versions
 
 	// 5. Create project
 	err = fsGenerator.CreateProject(config, tempDir)

@@ -47,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0] - 2025-09-12 - Comprehensive Audit and Cleanup
 
-### Added
+### Added in v1.1.0
 
 - Comprehensive codebase audit and cleanup process
 - Cross-platform build support (Linux, macOS, Windows, FreeBSD)
@@ -57,7 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Performance metrics and monitoring
 - Comprehensive test coverage reporting
 
-### Changed
+### Changed in v1.1.0
 
 - **BREAKING:** Updated Go version requirement to 1.22+
 - Updated Node.js templates to use version 20.0.0+
@@ -73,7 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced error handling and validation throughout codebase
 - Optimized template processing performance
 
-### Fixed
+### Fixed in v1.1.0
 
 - Fixed template field name inconsistencies (`.iOS` → `.IOS`)
 - Fixed GitHub Actions template syntax conflicts
@@ -89,7 +89,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed security configuration templates
 - Resolved template generation validation issues
 
-### Removed
+### Removed in v1.1.0
 
 - Removed unused Go code elements (functions, variables, imports)
 - Removed redundant template files and configurations
@@ -98,7 +98,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cleaned up deprecated linter configurations
 - Removed unnecessary `.gitkeep` files from template directories (now have actual content)
 
-### Security
+### Security in v1.1.0
 
 - Scanned and updated all dependencies for security vulnerabilities
 - Implemented security best practices in generated templates
@@ -106,7 +106,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced input validation and sanitization
 - Improved security headers and configurations in templates
 
-### Performance
+### Performance in v1.1.0
 
 - Improved template processing speed by 25%
 - Optimized memory usage in version caching (10,000 ops in ~3ms)
@@ -114,7 +114,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reduced Docker image size through multi-stage builds
 - Optimized cross-platform build process
 
-### Documentation
+### Documentation in v1.1.0
 
 - Updated README files with current functionality
 - Improved code documentation and comments
@@ -132,7 +132,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - 2025-09-01 - Initial Release
 
-### Added
+### Added in v1.0.0
 
 - Initial release of Open Source Template Generator
 - Support for frontend templates (Next.js, React)

@@ -99,9 +99,9 @@ func TestContainerFileSystemGenerator(t *testing.T) {
 func TestContainerVersionManager(t *testing.T) {
 	container := NewContainer()
 
-	// Create a version manager with memory cache
-	cache := version.NewMemoryCache(0) // No TTL for testing
-	versionManager := version.NewManager(cache)
+	// Note: Memory cache was removed in simplified architecture
+	// cache := version.NewMemoryCache(0) // No TTL for testing
+	versionManager := version.NewManager()
 
 	// Test SetVersionManager and GetVersionManager
 	container.SetVersionManager(versionManager)
@@ -134,8 +134,8 @@ func TestContainerMultipleComponents(t *testing.T) {
 	templateEngine := template.NewEngine()
 	fsGenerator := filesystem.NewGenerator()
 	validator := validation.NewEngine()
-	cache := version.NewMemoryCache(0)
-	versionManager := version.NewManager(cache)
+	// cache := version.NewMemoryCache(0) // Caching removed
+	versionManager := version.NewManager()
 
 	container.SetTemplateEngine(templateEngine)
 	container.SetFileSystemGenerator(fsGenerator)

@@ -45,9 +45,9 @@ This project and everyone participating in it is governed by our [Code of Conduc
 
 Ensure you have the required tools installed:
 
-{{if .Components.Frontend.MainApp}}- **Node.js**: {{.Versions.Node}} or later
+{{if .Components.Frontend.NextJS.App}}- **Node.js**: {{.Versions.Node}} or later
 - **npm**: 10.0.0 or later (or yarn equivalent){{end}}
-{{if .Components.Backend.API}}- **Go**: {{.Versions.Go}} or later{{end}}
+{{if .Components.Backend.GoGin}}- **Go**: {{.Versions.Go}} or later{{end}}
 {{if .Components.Infrastructure.Docker}}- **Docker**: Latest stable version
 - **Docker Compose**: V2 or later{{end}}
 - **Git**: Latest stable version
@@ -72,7 +72,7 @@ Ensure you have the required tools installed:
    
    # Copy environment files
    cp .env.example .env.local
-   {{if .Components.Backend.API}}cp CommonServer/.env.example CommonServer/.env{{end}}
+   {{if .Components.Backend.GoGin}}cp CommonServer/.env.example CommonServer/.env{{end}}
    ```
 
 3. **Verify Installation**
@@ -217,7 +217,7 @@ Add screenshots to help explain your changes...
 - **Performance**: Consider performance implications of your changes
 - **Security**: Follow security best practices
 
-{{if .Components.Frontend.MainApp}}### Frontend Standards (TypeScript/React)
+{{if .Components.Frontend.NextJS.App}}### Frontend Standards (TypeScript/React)
 
 #### Code Style
 ```typescript
@@ -259,7 +259,7 @@ src/
 └── __tests__/          # Test files
 ```{{end}}
 
-{{if .Components.Backend.API}}### Backend Standards (Go)
+{{if .Components.Backend.GoGin}}### Backend Standards (Go)
 
 #### Code Style
 ```go
@@ -362,7 +362,7 @@ test(user): add integration tests for user service
 
 ### Testing Standards
 
-{{if .Components.Frontend.MainApp}}#### Frontend Testing
+{{if .Components.Frontend.NextJS.App}}#### Frontend Testing
 ```typescript
 // Unit test example
 import { render, screen } from '@testing-library/react';
@@ -380,7 +380,7 @@ describe('UserProfile', () => {
 });
 ```{{end}}
 
-{{if .Components.Backend.API}}#### Backend Testing
+{{if .Components.Backend.GoGin}}#### Backend Testing
 ```go
 // Unit test example
 func TestUserService_CreateUser(t *testing.T) {
@@ -410,8 +410,8 @@ func TestUserService_CreateUser(t *testing.T) {
 make test
 
 # Run specific test suites
-{{if .Components.Frontend.MainApp}}make test-frontend{{end}}
-{{if .Components.Backend.API}}make test-backend{{end}}
+{{if .Components.Frontend.NextJS.App}}make test-frontend{{end}}
+{{if .Components.Backend.GoGin}}make test-backend{{end}}
 
 # Run tests with coverage
 make test-coverage
@@ -438,7 +438,7 @@ make test-watch
 
 ### Documentation Tools
 
-{{if .Components.Backend.API}}- **API Docs**: Swagger/OpenAPI for REST API documentation{{end}}
+{{if .Components.Backend.GoGin}}- **API Docs**: Swagger/OpenAPI for REST API documentation{{end}}
 - **Code Docs**: Inline comments and docstrings
 - **Markdown**: Use Markdown for all documentation files
 - **Diagrams**: Use Mermaid for architecture diagrams
@@ -539,10 +539,10 @@ To become a maintainer:
 
 ### Learning Resources
 
-{{if .Components.Frontend.MainApp}}- **Next.js**: [Next.js Documentation](https://nextjs.org/docs)
+{{if .Components.Frontend.NextJS.App}}- **Next.js**: [Next.js Documentation](https://nextjs.org/docs)
 - **React**: [React Documentation](https://react.dev/)
 - **TypeScript**: [TypeScript Handbook](https://www.typescriptlang.org/docs/){{end}}
-{{if .Components.Backend.API}}- **Go**: [Go Documentation](https://golang.org/doc/)
+{{if .Components.Backend.GoGin}}- **Go**: [Go Documentation](https://golang.org/doc/)
 - **Gin**: [Gin Web Framework](https://gin-gonic.com/docs/){{end}}
 - **Testing**: [Testing Best Practices](https://testing-library.com/docs/)
 - **Git**: [Git Documentation](https://git-scm.com/doc)
@@ -574,4 +574,4 @@ Thank you for contributing to {{.Name}}! Your contributions help make this proje
 
 **Questions?** Feel free to reach out to us at contribute@{{.Organization}}.com or join our [Discord community](https://discord.gg/{{.Name}}).
 
-*Last updated: {{.CurrentDate}}*
+*Last updated: {{.GeneratedAt.Format "2006-01-02"}}*
