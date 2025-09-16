@@ -79,7 +79,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v4
         with:
-          go-version: '1.24'
+          go-version: '1.25'
       
       # Run unified test suite
       - name: Run tests
@@ -95,7 +95,7 @@ jobs:
 ```yaml
 test:
   stage: test
-  image: golang:1.24
+  image: golang:1.25
   script:
     - make test
     - make build
@@ -293,7 +293,7 @@ If you're migrating from the previous dual-mode test system:
 If you encounter issues with the test suite:
 
 1. Check this documentation for guidance
-2. Verify your Go version (1.24+ required)
+2. Verify your Go version (1.25+ required)
 3. Ensure all dependencies are available
 4. Try running locally to isolate CI-specific issues
 5. Review resource allocation in CI environment

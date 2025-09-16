@@ -15,7 +15,7 @@ templates/
 │   ├── nextjs-home/        # Landing page template with modern design
 │   ├── nextjs-admin/       # Admin dashboard with comprehensive UI components
 │   └── shared-components/  # Reusable component library
-├── backend/                # Backend service templates (Go 1.24+)
+├── backend/                # Backend service templates (Go 1.25+)
 │   └── go-gin/             # Go + Gin API server with JWT, GORM, Redis
 ├── mobile/                 # Mobile application templates
 │   ├── android-kotlin/     # Android Kotlin 2.0+ with Jetpack Compose
@@ -51,7 +51,7 @@ Templates use Go's text/template syntax with custom functions for:
 
 ### Backend Templates
 
-- **Go 1.24+** with latest language features and performance improvements
+- **Go 1.25+** with latest language features and performance improvements
 - **Gin framework** with middleware for logging, CORS, and security
 - **GORM** for database operations with PostgreSQL support
 - **JWT authentication** with secure token handling
@@ -79,7 +79,7 @@ Templates use Go's text/template syntax with custom functions for:
 
 All templates automatically use the latest stable versions:
 
-- **Go**: 1.24+ (latest stable)
+- **Go**: 1.25+ (latest stable)
 - **Node.js**: 20+ LTS
 - **Next.js**: 15+ (latest stable)
 - **React**: 19+ (latest stable)

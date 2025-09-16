@@ -223,7 +223,7 @@ docker build -t generator:local .
 
 ### Prerequisites
 
-- Go 1.24 or later
+- Go 1.25 or later
 - Git
 - Make (optional, for using Makefile)
 
@@ -309,7 +309,7 @@ templates:
 # Version preferences
 versions:
   node: "20"
-  go: "1.24"
+  go: "1.25"
   
 # Cache settings
 cache:
