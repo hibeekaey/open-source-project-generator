@@ -9,7 +9,7 @@ import (
 // TemplateEngine defines the contract for template processing operations.
 //
 // The TemplateEngine interface provides comprehensive template processing capabilities
-// for the Open Source Template Generator. It handles:
+// for the Open Source Project Generator. It handles:
 //   - Single template file processing with variable substitution
 //   - Recursive directory processing for complete project generation
 //   - Custom function registration for extended template functionality

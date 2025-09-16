@@ -1,5 +1,5 @@
 // Package version provides basic package version management capabilities
-// for the Open Source Template Generator.
+// for the Open Source Project Generator.
 //
 // This package implements the VersionManager interface and provides:
 //   - Basic version fetching from NPM, Go modules, and GitHub releases

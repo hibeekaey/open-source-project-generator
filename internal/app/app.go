@@ -1,4 +1,4 @@
-// Package app provides the core application logic for the Open Source Template Generator.
+// Package app provides the core application logic for the Open Source Project Generator.
 //
 // This package implements the main application structure, CLI command handling,
 // and orchestrates the interaction between different components like template
@@ -25,6 +25,8 @@ import (
 	"github.com/cuesoftinc/open-source-project-generator/pkg/validation"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/version"
 	"github.com/spf13/cobra"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // App represents the main application instance that orchestrates all CLI operations.
@@ -68,7 +70,7 @@ func NewApp(appVersion, gitCommit, buildTime string) (*App, error) {
 	versionManager := version.NewManager()
 
 	// Initialize CLI
-	cli := cli.NewCLI(configManager, validator)
+	cli := cli.NewCLI(configManager, validator, appVersion)
 
 	return &App{
 		configManager:  configManager,
@@ -93,7 +95,7 @@ func NewApp(appVersion, gitCommit, buildTime string) (*App, error) {
 func (a *App) Run(args []string) error {
 	rootCmd := &cobra.Command{
 		Use:   "generator",
-		Short: "Open Source Template Generator",
+		Short: "Open Source Project Generator",
 		Long:  "A tool for generating production-ready project templates",
 	}
 
@@ -231,7 +233,7 @@ func (a *App) runGenerate(cmd *cobra.Command, args []string) error {
 
 // runVersion handles the version command
 func (a *App) runVersion(cmd *cobra.Command, args []string) error {
-	fmt.Printf("Open Source Template Generator %s\n", a.version)
+	fmt.Printf("Open Source Project Generator %s\n", a.version)
 
 	packages, _ := cmd.Flags().GetBool("packages")
 	checkUpdates, _ := cmd.Flags().GetBool("check-updates")
@@ -355,7 +357,7 @@ func (a *App) runValidate(cmd *cobra.Command, args []string) error {
 func (a *App) generateProject(config *models.ProjectConfig) error {
 	// Set generation timestamp
 	config.GeneratedAt = time.Now()
-	config.GeneratorVersion = "1.2.0"
+	config.GeneratorVersion = a.version
 
 	// Create the project directory structure
 	if err := a.generator.CreateProject(config, config.OutputPath); err != nil {
@@ -590,13 +592,11 @@ func (a *App) processMobileTemplates(templateDir, projectOutputDir string, confi
 		androidTemplateDir := mobileDir + "/android-kotlin"
 		androidOutputDir := filepath.Join(mobileOutputDir, "android")
 
-		// Use DirectoryProcessor for Android templates due to template variables in directory names
-		regularEngine := template.NewEngine()
-		processor := template.NewDirectoryProcessor(regularEngine.(*template.Engine))
-		if err := processor.ProcessTemplateDirectory(androidTemplateDir, androidOutputDir, config); err != nil {
-			if !strings.Contains(err.Error(), "file does not exist") && !strings.Contains(err.Error(), "no such file or directory") {
-				return fmt.Errorf("failed to process Android templates: %w", err)
-			}
+		// Android templates have template variables in directory names which can't be embedded
+		// So we need to use a different approach - process what we can with embedded engine
+		// and handle the Java package structure manually
+		if err := a.processAndroidTemplates(androidTemplateDir, androidOutputDir, config); err != nil {
+			return fmt.Errorf("failed to process Android templates: %w", err)
 		}
 	}
 
@@ -674,6 +674,88 @@ func (a *App) processInfrastructureTemplates(templateDir, projectOutputDir strin
 			if !strings.Contains(err.Error(), "file does not exist") {
 				return fmt.Errorf("failed to process monitoring templates: %w", err)
 			}
+		}
+	}
+
+	return nil
+}
+
+// processAndroidTemplates processes Android templates with special handling for template variables in paths
+func (a *App) processAndroidTemplates(templateDir, outputDir string, config *models.ProjectConfig) error {
+	// First, process all the regular templates that don't have template variables in paths
+	if err := a.templateEngine.ProcessDirectory(templateDir, outputDir, config); err != nil {
+		if !strings.Contains(err.Error(), "file does not exist") && !strings.Contains(err.Error(), "no such file or directory") {
+			return fmt.Errorf("failed to process Android base templates: %w", err)
+		}
+	}
+
+	// Now manually create the Java package structure and process the Java files
+	javaPackageDir := filepath.Join(outputDir, "app", "src", "main", "java", config.Organization, strings.ToLower(config.Name), "mobile")
+	if err := os.MkdirAll(javaPackageDir, 0750); err != nil {
+		return fmt.Errorf("failed to create Java package directory: %w", err)
+	}
+
+	// Process the Application.kt file
+	appKtContent := fmt.Sprintf(`package %s.%s.mobile
+
+import android.app.Application
+import dagger.hilt.android.HiltAndroidApp
+
+/**
+ * %s Android Application class
+ * 
+ * This class serves as the entry point for the Android application.
+ * It's annotated with @HiltAndroidApp to enable Hilt dependency injection.
+ */
+@HiltAndroidApp
+class %sApplication : Application() {
+    
+    override fun onCreate() {
+        super.onCreate()
+        
+        // Initialize application-level components here
+        initializeLogging()
+        initializeNetworking()
+    }
+    
+    private fun initializeLogging() {
+        // Initialize logging framework (e.g., Timber)
+        // Timber.plant(Timber.DebugTree())
+    }
+    
+    private fun initializeNetworking() {
+        // Initialize networking components
+        // Configure OkHttp, Retrofit, etc.
+    }
+}
+`, config.Organization, strings.ToLower(config.Name), config.Name, config.Name)
+
+	appKtPath := filepath.Join(javaPackageDir, config.Name+"Application.kt")
+	if err := utils.SafeWriteFile(appKtPath, []byte(appKtContent)); err != nil {
+		return fmt.Errorf("failed to write Application.kt: %w", err)
+	}
+
+	// Create additional package directories
+	packageDirs := []string{"core", "data", "di", "domain", "presentation"}
+	for _, dir := range packageDirs {
+		dirPath := filepath.Join(javaPackageDir, dir)
+		if err := os.MkdirAll(dirPath, 0750); err != nil {
+			return fmt.Errorf("failed to create package directory %s: %w", dir, err)
+		}
+
+		// Create a basic package info file
+		caser := cases.Title(language.English)
+		packageInfoContent := fmt.Sprintf(`/**
+ * %s package for %s
+ * 
+ * This package contains %s-related classes and interfaces.
+ */
+package %s.%s.mobile.%s;
+`, caser.String(dir), config.Name, dir, config.Organization, strings.ToLower(config.Name), dir)
+
+		packageInfoPath := filepath.Join(dirPath, "package-info.java")
+		if err := utils.SafeWriteFile(packageInfoPath, []byte(packageInfoContent)); err != nil {
+			return fmt.Errorf("failed to write package-info.java for %s: %w", dir, err)
 		}
 	}
 

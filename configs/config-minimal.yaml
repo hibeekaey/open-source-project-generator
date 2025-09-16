@@ -1,0 +1,25 @@
+# Minimal Configuration Example
+# This shows the minimum required fields for project generation
+
+name: "simple-project"
+organization: "my-org"
+description: "A simple project with basic components"
+output_path: "output/simple"
+
+# Minimal component selection
+components:
+  frontend:
+    nextjs:
+      app: true
+      home: false
+      admin: false
+      shared: false
+  backend:
+    go_gin: true
+  mobile:
+    android: false
+    ios: false
+  infrastructure:
+    docker: true
+    kubernetes: false
+    terraform: false

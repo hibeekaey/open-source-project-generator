@@ -1,6 +1,6 @@
-# Contributing to Open Source Template Generator
+# Contributing to Open Source Project Generator
 
-Thank you for your interest in contributing to the Open Source Template Generator! We welcome contributions from everyone and are grateful for every pull request, bug report, and feature suggestion.
+Thank you for your interest in contributing to the Open Source Project Generator! We welcome contributions from everyone and are grateful for every pull request, bug report, and feature suggestion.
 
 ## 📋 Table of Contents
 
@@ -546,7 +546,7 @@ A: Yes! Create an issue first to discuss the approach, then add the necessary te
 
 ## Thank You
 
-Thank you for contributing to the Open Source Template Generator! Your contributions help developers worldwide create better projects with modern best practices.
+Thank you for contributing to the Open Source Project Generator! Your contributions help developers worldwide create better projects with modern best practices.
 
 ---
 

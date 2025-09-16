@@ -1,6 +1,6 @@
 # Usage Examples
 
-This document provides practical examples of using the Open Source Template Generator for different types of projects.
+This document provides practical examples of using the Open Source Project Generator for different types of projects.
 
 ## Example 1: Full-Stack Web Application
 
@@ -270,7 +270,7 @@ generator version --packages
 **Example Output:**
 
 ```text
-Open Source Template Generator v1.0.0
+Open Source Project Generator v1.0.0
 Built with Go 1.22+
 
 ⏳ Fetching latest package versions...
@@ -397,4 +397,4 @@ output_path: "./full-project"
 5. **Keep configurations in version control** for team consistency
 6. **Use verbose logging** when troubleshooting issues
 
-These examples demonstrate the flexibility and power of the Open Source Template Generator for various project types and development workflows.
+These examples demonstrate the flexibility and power of the Open Source Project Generator for various project types and development workflows.

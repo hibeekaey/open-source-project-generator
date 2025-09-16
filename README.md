@@ -1,4 +1,4 @@
-# Open Source Template Generator
+# Open Source Project Generator
 
 A simple CLI tool for generating production-ready project structures with modern technology stacks.
 

@@ -1,4 +1,4 @@
-# Open Source Template Generator Makefile
+# Open Source Project Generator Makefile
 
 # Configuration
 GITHUB_ACTOR ?= $(shell git config user.name || echo "unknown")

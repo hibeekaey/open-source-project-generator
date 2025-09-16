@@ -1,5 +1,5 @@
 // Package validation provides basic validation capabilities for generated
-// projects, templates, and configurations in the Open Source Template Generator.
+// projects, templates, and configurations in the Open Source Project Generator.
 //
 // This package implements the ValidationEngine interface and provides:
 //   - Basic project structure validation

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Open Source Template Generator is a command-line tool that creates production-ready, enterprise-grade project structures following modern best practices. This guide covers all available commands and options.
+The Open Source Project Generator is a command-line tool that creates production-ready, enterprise-grade project structures following modern best practices. This guide covers all available commands and options.
 
 ## Installation
 

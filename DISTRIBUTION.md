@@ -1,6 +1,6 @@
 # Distribution Guide
 
-This document describes the distribution and release process for the Open Source Template Generator.
+This document describes the distribution and release process for the Open Source Project Generator.
 
 ## Overview
 

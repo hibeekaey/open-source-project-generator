@@ -1,5 +1,5 @@
 // Package cli provides basic command-line interface functionality for the
-// Open Source Template Generator.
+// Open Source Project Generator.
 //
 // This package handles essential user interactions including:
 //   - Basic project configuration collection
@@ -39,14 +39,15 @@ type CLI struct {
 // Parameters:
 //   - configManager: Handles configuration loading and validation
 //   - validator: Provides input validation
+//   - version: Generator version string
 //
 // Returns:
 //   - *CLI: New CLI instance ready for use
-func NewCLI(configManager interfaces.ConfigManager, validator interfaces.ValidationEngine) interfaces.CLIInterface {
+func NewCLI(configManager interfaces.ConfigManager, validator interfaces.ValidationEngine, version string) interfaces.CLIInterface {
 	return &CLI{
 		configManager:    configManager,
 		validator:        validator,
-		generatorVersion: "1.2.0", // Default version
+		generatorVersion: version,
 	}
 }
 
@@ -69,7 +70,7 @@ func (c *CLI) Run() error {
 
 // PromptProjectDetails collects basic project configuration from user input.
 func (c *CLI) PromptProjectDetails() (*models.ProjectConfig, error) {
-	fmt.Println("Welcome to the Open Source Template Generator!")
+	fmt.Println("Welcome to the Open Source Project Generator!")
 	fmt.Println("Let's set up your project...")
 
 	config := &models.ProjectConfig{}

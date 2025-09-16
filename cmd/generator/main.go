@@ -1,4 +1,4 @@
-// Package main provides the entry point for the Open Source Template Generator CLI.
+// Package main provides the entry point for the Open Source Project Generator CLI.
 //
 // The generator is a comprehensive tool for creating production-ready, enterprise-grade
 // open source project structures following modern best practices. It supports multiple
@@ -30,7 +30,7 @@ var (
 	BuildTime = "unknown"
 )
 
-// main is the entry point for the Open Source Template Generator CLI application.
+// main is the entry point for the Open Source Project Generator CLI application.
 // It initializes the dependency injection container, creates the application instance,
 // and handles proper cleanup and error reporting.
 func main() {

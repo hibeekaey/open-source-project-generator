@@ -1,6 +1,6 @@
 # Installation Guide
 
-This guide provides comprehensive installation instructions for the Open Source Template Generator across different platforms and package managers.
+This guide provides comprehensive installation instructions for the Open Source Project Generator across different platforms and package managers.
 
 ## Quick Install
 

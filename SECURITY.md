@@ -1,6 +1,6 @@
 # Security
 
-This document outlines the security measures implemented in the Open Source Template Generator.
+This document outlines the security measures implemented in the Open Source Project Generator.
 
 ## Security Fixes Applied
 
