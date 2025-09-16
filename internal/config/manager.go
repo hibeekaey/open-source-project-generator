@@ -39,7 +39,7 @@ func (m *Manager) LoadDefaults() (*models.ProjectConfig, error) {
 
 	// Return hardcoded defaults
 	return &models.ProjectConfig{
-		License: "Apache-2.0",
+		License: "MIT",
 		Components: models.Components{
 			Frontend: models.FrontendComponents{
 				NextJS: models.NextJSComponents{
@@ -163,7 +163,7 @@ func (m *Manager) normalizeLicense(config *models.ProjectConfig) {
 
 	// Set default if empty
 	if config.License == "" {
-		config.License = "Apache-2.0"
+		config.License = "MIT"
 		return
 	}
 
@@ -175,7 +175,7 @@ func (m *Manager) normalizeLicense(config *models.ProjectConfig) {
 	}
 
 	// License not supported - set to default
-	config.License = "Apache-2.0"
+	config.License = "MIT"
 }
 
 // Helper function to check if file exists
