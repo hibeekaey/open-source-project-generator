@@ -21,6 +21,7 @@ import (
 
 	"github.com/open-source-template-generator/pkg/interfaces"
 	"github.com/open-source-template-generator/pkg/models"
+	"github.com/open-source-template-generator/pkg/utils"
 )
 
 // Engine implements the TemplateEngine interface
@@ -124,7 +125,12 @@ func (e *Engine) RegisterFunctions(funcMap template.FuncMap) {
 
 // LoadTemplate loads and parses a template from the given path
 func (e *Engine) LoadTemplate(templatePath string) (*template.Template, error) {
-	content, err := os.ReadFile(templatePath)
+	// Validate path to prevent directory traversal
+	if err := utils.ValidatePath(templatePath); err != nil {
+		return nil, fmt.Errorf("invalid template path: %w", err)
+	}
+
+	content, err := utils.SafeReadFile(templatePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read template file: %w", err)
 	}

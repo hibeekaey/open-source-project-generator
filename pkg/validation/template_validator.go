@@ -8,17 +8,18 @@ import (
 	"strings"
 
 	"github.com/open-source-template-generator/pkg/models"
+	"github.com/open-source-template-generator/pkg/utils"
 )
 
 // TemplateValidator handles template consistency validation
 type TemplateValidator struct {
-	standardConfigs map[string]interface{}
+	standardConfigs map[string]any
 }
 
 // NewTemplateValidator creates a new template validator
 func NewTemplateValidator() *TemplateValidator {
 	return &TemplateValidator{
-		standardConfigs: make(map[string]interface{}),
+		standardConfigs: make(map[string]any),
 	}
 }
 
@@ -79,7 +80,12 @@ func (tv *TemplateValidator) validateTemplateFiles(templatePath string, result *
 
 // validateTemplateFile performs basic validation on a single template file
 func (tv *TemplateValidator) validateTemplateFile(filePath string, result *models.ValidationResult) error {
-	content, err := os.ReadFile(filePath)
+	// Validate path to prevent directory traversal
+	if err := utils.ValidatePath(filePath); err != nil {
+		return fmt.Errorf("invalid file path: %w", err)
+	}
+
+	content, err := utils.SafeReadFile(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to read template file: %w", err)
 	}
@@ -103,12 +109,17 @@ func (tv *TemplateValidator) validateTemplateFile(filePath string, result *model
 
 // ValidatePackageJSON validates package.json consistency
 func (tv *TemplateValidator) ValidatePackageJSON(packageJsonPath string) error {
-	content, err := os.ReadFile(packageJsonPath)
+	// Validate path to prevent directory traversal
+	if err := utils.ValidatePath(packageJsonPath); err != nil {
+		return fmt.Errorf("invalid package.json path: %w", err)
+	}
+
+	content, err := utils.SafeReadFile(packageJsonPath)
 	if err != nil {
 		return fmt.Errorf("failed to read package.json: %w", err)
 	}
 
-	var pkg map[string]interface{}
+	var pkg map[string]any
 	if err := json.Unmarshal(content, &pkg); err != nil {
 		return fmt.Errorf("invalid JSON syntax: %w", err)
 	}

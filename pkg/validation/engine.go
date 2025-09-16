@@ -33,6 +33,7 @@ import (
 
 	"github.com/open-source-template-generator/pkg/interfaces"
 	"github.com/open-source-template-generator/pkg/models"
+	"github.com/open-source-template-generator/pkg/utils"
 	"gopkg.in/yaml.v3"
 )
 
@@ -80,7 +81,12 @@ func (e *Engine) ValidateProject(projectPath string) (*models.ValidationResult, 
 
 // ValidatePackageJSON validates a package.json file
 func (e *Engine) ValidatePackageJSON(path string) error {
-	content, err := os.ReadFile(path)
+	// Validate path to prevent directory traversal
+	if err := utils.ValidatePath(path); err != nil {
+		return fmt.Errorf("invalid package.json path: %w", err)
+	}
+
+	content, err := utils.SafeReadFile(path)
 	if err != nil {
 		return fmt.Errorf("failed to read package.json: %w", err)
 	}
@@ -121,7 +127,12 @@ func (e *Engine) ValidatePackageJSON(path string) error {
 
 // ValidateGoMod validates a go.mod file
 func (e *Engine) ValidateGoMod(path string) error {
-	content, err := os.ReadFile(path)
+	// Validate path to prevent directory traversal
+	if err := utils.ValidatePath(path); err != nil {
+		return fmt.Errorf("invalid go.mod path: %w", err)
+	}
+
+	content, err := utils.SafeReadFile(path)
 	if err != nil {
 		return fmt.Errorf("failed to read go.mod: %w", err)
 	}
@@ -154,7 +165,12 @@ func (e *Engine) ValidateGoMod(path string) error {
 
 // ValidateDockerfile validates a Dockerfile
 func (e *Engine) ValidateDockerfile(path string) error {
-	content, err := os.ReadFile(path)
+	// Validate path to prevent directory traversal
+	if err := utils.ValidatePath(path); err != nil {
+		return fmt.Errorf("invalid Dockerfile path: %w", err)
+	}
+
+	content, err := utils.SafeReadFile(path)
 	if err != nil {
 		return fmt.Errorf("failed to read Dockerfile: %w", err)
 	}
@@ -181,7 +197,12 @@ func (e *Engine) ValidateDockerfile(path string) error {
 
 // ValidateYAML validates a YAML file
 func (e *Engine) ValidateYAML(path string) error {
-	content, err := os.ReadFile(path)
+	// Validate path to prevent directory traversal
+	if err := utils.ValidatePath(path); err != nil {
+		return fmt.Errorf("invalid YAML file path: %w", err)
+	}
+
+	content, err := utils.SafeReadFile(path)
 	if err != nil {
 		return fmt.Errorf("failed to read YAML file: %w", err)
 	}
@@ -196,7 +217,12 @@ func (e *Engine) ValidateYAML(path string) error {
 
 // ValidateJSON validates a JSON file
 func (e *Engine) ValidateJSON(path string) error {
-	content, err := os.ReadFile(path)
+	// Validate path to prevent directory traversal
+	if err := utils.ValidatePath(path); err != nil {
+		return fmt.Errorf("invalid JSON file path: %w", err)
+	}
+
+	content, err := utils.SafeReadFile(path)
 	if err != nil {
 		return fmt.Errorf("failed to read JSON file: %w", err)
 	}
@@ -211,7 +237,12 @@ func (e *Engine) ValidateJSON(path string) error {
 
 // ValidateTemplate validates a template file
 func (e *Engine) ValidateTemplate(path string) error {
-	content, err := os.ReadFile(path)
+	// Validate path to prevent directory traversal
+	if err := utils.ValidatePath(path); err != nil {
+		return fmt.Errorf("invalid template file path: %w", err)
+	}
+
+	content, err := utils.SafeReadFile(path)
 	if err != nil {
 		return fmt.Errorf("failed to read template file: %w", err)
 	}
