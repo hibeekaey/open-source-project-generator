@@ -587,7 +587,7 @@ func (a *App) processMobileTemplates(templateDir, projectOutputDir string, confi
 
 	// Process Android
 	if config.Components.Mobile.Android {
-		androidTemplateDir := "pkg/template/templates/mobile/android-kotlin"
+		androidTemplateDir := mobileDir + "/android-kotlin"
 		androidOutputDir := filepath.Join(mobileOutputDir, "android")
 
 		// Use DirectoryProcessor for Android templates due to template variables in directory names
