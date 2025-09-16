@@ -5,7 +5,7 @@ import (
 )
 
 func TestNewApp(t *testing.T) {
-	app, err := NewApp()
+	app, err := NewApp("test-version", "test-commit", "test-time")
 	if err != nil {
 		t.Fatalf("NewApp() returned error: %v", err)
 	}

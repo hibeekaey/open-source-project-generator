@@ -412,6 +412,8 @@ jobs:
           platforms: linux/amd64
           build-args: |
             VERSION=${{ steps.version.outputs.version }}
+            GIT_COMMIT=${{ github.sha }}
+            BUILD_TIME=${{ github.event.head_commit.timestamp }}
 
   notify:
     name: Notify Release

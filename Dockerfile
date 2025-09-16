@@ -1,6 +1,11 @@
 # Build stage
 FROM golang:1.25-alpine AS builder
 
+# Build arguments
+ARG VERSION=dev
+ARG GIT_COMMIT=unknown
+ARG BUILD_TIME=unknown
+
 # Install build dependencies
 RUN apk add --no-cache git ca-certificates tzdata
 
@@ -16,9 +21,9 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Build the binary
+# Build the binary with version information
 RUN CGO_ENABLED=0 GOOS=linux go build \
-    -ldflags='-w -s -extldflags "-static"' \
+    -ldflags="-w -s -extldflags '-static' -X main.Version=${VERSION} -X main.GitCommit=${GIT_COMMIT} -X main.BuildTime=${BUILD_TIME}" \
     -a -installsuffix cgo \
     -o generator ./cmd/generator
 
