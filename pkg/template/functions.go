@@ -11,8 +11,8 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/open-source-template-generator/pkg/constants"
-	"github.com/open-source-template-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/constants"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )

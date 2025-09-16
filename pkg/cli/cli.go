@@ -17,8 +17,8 @@ import (
 	"strings"
 
 	survey "github.com/AlecAivazis/survey/v2"
-	"github.com/open-source-template-generator/pkg/interfaces"
-	"github.com/open-source-template-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/interfaces"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
 )
 
 // CLI implements the CLIInterface for basic user operations.

@@ -9,8 +9,8 @@ The Open Source Template Generator is a command-line tool that creates productio
 ### From Source
 
 ```bash
-git clone https://github.com/your-org/open-source-template-generator
-cd open-source-template-generator
+git clone https://github.com/cuesoftinc/open-source-project-generator
+cd open-source-project-generator
 make setup
 make build
 ```
@@ -18,13 +18,13 @@ make build
 ### Using Go Install
 
 ```bash
-go install github.com/open-source-template-generator/cmd/generator@latest
+go install github.com/cuesoftinc/open-source-template-generator/cmd/generator@latest
 ```
 
 ### Using Installation Script
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/your-org/open-source-template-generator/main/scripts/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/cuesoftinc/open-source-project-generator/main/scripts/install.sh | bash
 ```
 
 ### Requirements

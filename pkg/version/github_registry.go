@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/open-source-template-generator/pkg/constants"
-	"github.com/open-source-template-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/constants"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
 )
 
 // GitHubRegistry implements VersionRegistry for GitHub releases

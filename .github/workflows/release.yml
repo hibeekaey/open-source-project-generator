@@ -317,7 +317,7 @@ jobs:
 
           ### Quick Install (Linux/macOS)
           \`\`\`bash
-          curl -sSL https://raw.githubusercontent.com/open-source-template-generator/generator/main/scripts/install.sh | bash
+          curl -sSL https://raw.githubusercontent.com/cuesoftinc/open-source-project-generator/main/scripts/install.sh | bash
           \`\`\`
 
           ### Manual Installation

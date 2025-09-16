@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/open-source-template-generator/internal/config"
-	"github.com/open-source-template-generator/pkg/filesystem"
-	"github.com/open-source-template-generator/pkg/models"
-	"github.com/open-source-template-generator/pkg/template"
+	"github.com/cuesoftinc/open-source-project-generator/internal/config"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/filesystem"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/template"
 )
 
 func TestBasicProjectGeneration(t *testing.T) {

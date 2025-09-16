@@ -20,7 +20,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/open-source-template-generator/internal/app"
+	"github.com/cuesoftinc/open-source-project-generator/internal/app"
 )
 
 // Version information set by build

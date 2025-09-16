@@ -1,6 +1,6 @@
 package interfaces
 
-import "github.com/open-source-template-generator/pkg/models"
+import "github.com/cuesoftinc/open-source-project-generator/pkg/models"
 
 // VersionManager defines the contract for package version management operations
 type VersionManager interface {

@@ -8,7 +8,7 @@ import (
 	"strings"
 	texttemplate "text/template"
 
-	"github.com/open-source-template-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
 )
 
 // DirectoryProcessor handles recursive template directory processing

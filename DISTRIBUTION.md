@@ -106,7 +106,7 @@ VERSION=v1.2.0 ./scripts/build.sh
 
 Primary distribution method:
 
-- **URL**: `https://github.com/open-source-template-generator/generator/releases`
+- **URL**: `https://github.com/cuesoftinc/open-source-project-generator/releases`
 - **Assets**: Binaries, packages, checksums
 - **Automation**: Fully automated via GitHub Actions
 
@@ -116,7 +116,7 @@ Primary distribution method:
 
 ```bash
 # Install from release
-wget https://github.com/open-source-template-generator/generator/releases/latest/download/generator_1.0.0_amd64.deb
+wget https://github.com/cuesoftinc/open-source-project-generator/releases/latest/download/generator_1.0.0_amd64.deb
 sudo dpkg -i generator_1.0.0_amd64.deb
 ```
 
@@ -124,7 +124,7 @@ sudo dpkg -i generator_1.0.0_amd64.deb
 
 ```bash
 # Install from release
-sudo yum install https://github.com/open-source-template-generator/generator/releases/latest/download/generator-1.0.0-1.x86_64.rpm
+sudo yum install https://github.com/cuesoftinc/open-source-project-generator/releases/latest/download/generator-1.0.0-1.x86_64.rpm
 ```
 
 #### Arch Linux (AUR)
@@ -192,10 +192,10 @@ scoop install generator
 
 ```bash
 # Linux/macOS
-curl -sSL https://raw.githubusercontent.com/open-source-template-generator/generator/main/scripts/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/cuesoftinc/open-source-project-generator/main/scripts/install.sh | bash
 
 # With options
-curl -sSL https://raw.githubusercontent.com/open-source-template-generator/generator/main/scripts/install.sh | bash -s -- --version v1.0.0
+curl -sSL https://raw.githubusercontent.com/cuesoftinc/open-source-project-generator/main/scripts/install.sh | bash -s -- --version v1.0.0
 ```
 
 ### Manual Installation
@@ -312,7 +312,7 @@ Monitor release downloads via GitHub API:
 
 ```bash
 # Get download stats
-curl -s https://api.github.com/repos/open-source-template-generator/generator/releases | jq '.[].assets[].download_count'
+curl -s https://api.github.com/repos/cuesoftinc/open-source-project-generator/releases | jq '.[].assets[].download_count'
 ```
 
 ### Usage Analytics
@@ -371,10 +371,10 @@ docker run --rm -v $(pwd):/packages ubuntu:22.04 bash -c "apt update && dpkg -i 
 
 ```bash
 # Test download URLs
-curl -I https://github.com/open-source-template-generator/generator/releases/latest/download/generator-linux-amd64.tar.gz
+curl -I https://github.com/cuesoftinc/open-source-project-generator/releases/latest/download/generator-linux-amd64.tar.gz
 
 # Verify checksums
-curl -sL https://github.com/open-source-template-generator/generator/releases/latest/download/checksums.txt | sha256sum -c
+curl -sL https://github.com/cuesoftinc/open-source-project-generator/releases/latest/download/checksums.txt | sha256sum -c
 ```
 
 ## Contributing
@@ -405,6 +405,6 @@ curl -sL https://github.com/open-source-template-generator/generator/releases/la
 For distribution-related issues:
 
 - 📖 [Installation Guide](docs/INSTALLATION.md)
-- 🐛 [Issue Tracker](https://github.com/open-source-template-generator/generator/issues)
-- 💬 [Discussions](https://github.com/open-source-template-generator/generator/discussions)
+- 🐛 [Issue Tracker](https://github.com/cuesoftinc/open-source-project-generator/issues)
+- 💬 [Discussions](https://github.com/cuesoftinc/open-source-project-generator/discussions)
 - 📧 [Email Support](mailto:support@generator.dev)

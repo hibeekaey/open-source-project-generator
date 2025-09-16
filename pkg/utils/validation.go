@@ -9,7 +9,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/open-source-template-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
 )
 
 // ValidationResult represents the result of a validation operation

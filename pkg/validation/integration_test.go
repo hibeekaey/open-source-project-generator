@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/open-source-template-generator/pkg/interfaces"
-	"github.com/open-source-template-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/interfaces"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
 )
 
 func TestValidationEngineIntegration(t *testing.T) {

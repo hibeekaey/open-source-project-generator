@@ -53,7 +53,7 @@ func (c *GoClient) GetLatestVersion(moduleName string) (string, error) {
 	}
 
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", "open-source-template-generator/1.0")
+	req.Header.Set("User-Agent", "open-source-project-generator/1.0")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -83,7 +83,7 @@ func (c *GoClient) getLatestFromVersionList(encodedModule string) (string, error
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.Header.Set("User-Agent", "open-source-template-generator/1.0")
+	req.Header.Set("User-Agent", "open-source-project-generator/1.0")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -133,7 +133,7 @@ func (c *GoClient) GetVersionInfo(moduleName, version string) (*GoModuleInfo, er
 	}
 
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", "open-source-template-generator/1.0")
+	req.Header.Set("User-Agent", "open-source-project-generator/1.0")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

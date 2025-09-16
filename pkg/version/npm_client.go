@@ -55,7 +55,7 @@ func (c *NPMClient) GetLatestVersion(packageName string) (string, error) {
 	}
 
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", "open-source-template-generator/1.0")
+	req.Header.Set("User-Agent", "open-source-project-generator/1.0")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -89,7 +89,7 @@ func (c *NPMClient) GetVersionInfo(packageName, version string) (*NPMVersionInfo
 	}
 
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", "open-source-template-generator/1.0")
+	req.Header.Set("User-Agent", "open-source-project-generator/1.0")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

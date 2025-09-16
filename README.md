@@ -17,8 +17,8 @@ A simple CLI tool for generating production-ready project structures with modern
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/open-source-template-generator
-cd open-source-template-generator
+git clone https://github.com/cuesoftinc/open-source-project-generator
+cd open-source-project-generator
 
 # Install dependencies and build
 make setup
@@ -41,7 +41,7 @@ make build
 ## Project Structure
 
 ```text
-open-source-template-generator/
+open-source-project-generator/
 ├── cmd/generator/          # Main application entry point
 ├── internal/               # Internal application components
 │   ├── app/               # Core application logic

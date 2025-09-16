@@ -55,7 +55,7 @@ func (c *GitHubClient) GetLatestRelease(owner, repo string) (string, error) {
 	}
 
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
-	req.Header.Set("User-Agent", "open-source-template-generator/1.0")
+	req.Header.Set("User-Agent", "open-source-project-generator/1.0")
 
 	// Add authorization header if token is available
 	if c.apiToken != "" {
@@ -101,7 +101,7 @@ func (c *GitHubClient) GetReleases(owner, repo string, limit int) ([]GitHubRelea
 	}
 
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
-	req.Header.Set("User-Agent", "open-source-template-generator/1.0")
+	req.Header.Set("User-Agent", "open-source-project-generator/1.0")
 
 	// Add authorization header if token is available
 	if c.apiToken != "" {

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/open-source-template-generator/pkg/constants"
-	"github.com/open-source-template-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/constants"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
 )
 
 // NPMRegistry implements VersionRegistry for NPM packages

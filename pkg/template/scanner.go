@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/open-source-template-generator/pkg/constants"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/constants"
 )
 
 // TemplateScanner analyzes template configurations and identifies inconsistencies
