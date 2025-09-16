@@ -110,21 +110,45 @@ Primary distribution method:
 - **Assets**: Binaries, packages, checksums
 - **Automation**: Fully automated via GitHub Actions
 
+#### Asset Naming Convention
+
+The following assets are automatically generated for each release:
+
+**Binary Archives:**
+
+- `generator-linux-amd64.tar.gz` - Linux 64-bit
+- `generator-linux-arm64.tar.gz` - Linux ARM64  
+- `generator-darwin-amd64.tar.gz` - macOS Intel
+- `generator-darwin-arm64.tar.gz` - macOS Apple Silicon
+- `generator-windows-amd64.zip` - Windows 64-bit
+- `generator-freebsd-amd64.tar.gz` - FreeBSD 64-bit
+
+**Package Files:**
+
+- `generator_VERSION_amd64.deb` - Debian/Ubuntu package
+- `generator-VERSION-1.x86_64.rpm` - Red Hat/CentOS package
+
+**Additional Files:**
+
+- `checksums.txt` - SHA256 checksums for all assets
+
+> **Note**: Replace `VERSION` with the actual release version (e.g., `1.0.0`)
+
 ### Package Repositories
 
 #### Debian/Ubuntu (APT)
 
 ```bash
 # Install from release
-wget https://github.com/cuesoftinc/open-source-project-generator/releases/latest/download/generator_1.0.0_amd64.deb
-sudo dpkg -i generator_1.0.0_amd64.deb
+wget https://github.com/cuesoftinc/open-source-project-generator/releases/latest/download/generator_VERSION_amd64.deb
+sudo dpkg -i generator_VERSION_amd64.deb
 ```
 
 #### Red Hat/CentOS/Fedora (YUM/DNF)
 
 ```bash
 # Install from release
-sudo yum install https://github.com/cuesoftinc/open-source-project-generator/releases/latest/download/generator-1.0.0-1.x86_64.rpm
+sudo yum install https://github.com/cuesoftinc/open-source-project-generator/releases/latest/download/generator-VERSION-1.x86_64.rpm
 ```
 
 #### Arch Linux (AUR)
@@ -283,8 +307,8 @@ make test-install
 
 ```bash
 # Validate packages
-dpkg -I packages/generator_1.0.0_amd64.deb
-rpm -qip packages/generator-1.0.0-1.x86_64.rpm
+dpkg -I packages/generator_VERSION_amd64.deb
+rpm -qip packages/generator-VERSION-1.x86_64.rpm
 
 # Test binaries
 ./dist/generator-linux-amd64/generator --version
@@ -360,11 +384,11 @@ go build -v -x ./cmd/generator
 
 ```bash
 # Validate package structure
-dpkg-deb --contents generator_1.0.0_amd64.deb
-rpm2cpio generator-1.0.0-1.x86_64.rpm | cpio -tv
+dpkg-deb --contents generator_VERSION_amd64.deb
+rpm2cpio generator-VERSION-1.x86_64.rpm | cpio -tv
 
 # Test package installation
-docker run --rm -v $(pwd):/packages ubuntu:22.04 bash -c "apt update && dpkg -i /packages/generator_1.0.0_amd64.deb"
+docker run --rm -v $(pwd):/packages ubuntu:22.04 bash -c "apt update && dpkg -i /packages/generator_VERSION_amd64.deb"
 ```
 
 ### Distribution Issues

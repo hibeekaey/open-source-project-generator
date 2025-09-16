@@ -20,8 +20,8 @@ Download the Windows binary from the [releases page](https://github.com/cuesofti
 
 ```bash
 # Download and install the DEB package
-wget https://github.com/cuesoftinc/open-source-template-generator/releases/latest/download/generator_1.0.0_amd64.deb
-sudo dpkg -i generator_1.0.0_amd64.deb
+wget https://github.com/cuesoftinc/open-source-template-generator/releases/latest/download/generator_VERSION_amd64.deb
+sudo dpkg -i generator_VERSION_amd64.deb
 
 # Fix dependencies if needed
 sudo apt-get install -f
@@ -31,10 +31,10 @@ sudo apt-get install -f
 
 ```bash
 # Using YUM
-sudo yum install https://github.com/cuesoftinc/open-source-project-generator/releases/latest/download/generator-1.0.0-1.x86_64.rpm
+sudo yum install https://github.com/cuesoftinc/open-source-project-generator/releases/latest/download/generator-VERSION-1.x86_64.rpm
 
 # Using DNF
-sudo dnf install https://github.com/cuesoftinc/open-source-project-generator/releases/latest/download/generator-1.0.0-1.x86_64.rpm
+sudo dnf install https://github.com/cuesoftinc/open-source-project-generator/releases/latest/download/generator-VERSION-1.x86_64.rpm
 ```
 
 ### Arch Linux (AUR)

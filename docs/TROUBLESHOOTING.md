@@ -99,7 +99,7 @@ This guide helps you resolve common issues with the Open Source Template Generat
 
    ```bash
    # Check what's missing
-   dpkg -I generator_1.0.0_amd64.deb
+   dpkg -I generator_VERSION_amd64.deb
    
    # Install dependencies
    sudo apt install <missing-packages>
@@ -381,7 +381,7 @@ This guide helps you resolve common issues with the Open Source Template Generat
 
    ```bash
    # Download static build
-   wget https://github.com/cuesoftinc/open-source-project-generator/releases/latest/download/generator-linux-amd64-static.tar.gz
+   wget https://github.com/cuesoftinc/open-source-project-generator/releases/latest/download/generator-linux-amd64.tar.gz
    ```
 
 3. **Build from source**:
