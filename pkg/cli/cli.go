@@ -13,6 +13,9 @@ package cli
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
+	"strconv"
 	"strings"
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/interfaces"
@@ -1314,23 +1317,305 @@ func (c *CLI) ValidateTemplate(path string) (*interfaces.TemplateValidationResul
 }
 
 func (c *CLI) ShowConfig() error {
-	return fmt.Errorf("ShowConfig implementation pending - will be implemented in task 3")
+	// Get configuration sources
+	sources, err := c.configManager.GetConfigSources()
+	if err != nil {
+		return fmt.Errorf("failed to get configuration sources: %w", err)
+	}
+
+	fmt.Println("Configuration Sources:")
+	fmt.Println("=====================")
+	for _, source := range sources {
+		status := "✓"
+		if !source.Valid {
+			status = "✗"
+		}
+		fmt.Printf("%s [%s] %s (priority: %d)\n", status, source.Type, source.Location, source.Priority)
+	}
+
+	// Load and display current configuration
+	fmt.Println("\nCurrent Configuration:")
+	fmt.Println("=====================")
+
+	// Try to load defaults first
+	config, err := c.configManager.LoadDefaults()
+	if err != nil {
+		return fmt.Errorf("failed to load configuration: %w", err)
+	}
+
+	// Try to merge with environment variables
+	envConfig, err := c.configManager.LoadFromEnvironment()
+	if err == nil {
+		config = c.configManager.MergeConfigurations(config, envConfig)
+	}
+
+	// Display configuration values
+	fmt.Printf("Name: %s\n", config.Name)
+	fmt.Printf("Organization: %s\n", config.Organization)
+	fmt.Printf("Description: %s\n", config.Description)
+	fmt.Printf("License: %s\n", config.License)
+	fmt.Printf("Author: %s\n", config.Author)
+	fmt.Printf("Email: %s\n", config.Email)
+	fmt.Printf("Repository: %s\n", config.Repository)
+	fmt.Printf("Output Path: %s\n", config.OutputPath)
+
+	// Display components
+	fmt.Println("\nComponents:")
+	fmt.Printf("  Frontend - NextJS App: %t\n", config.Components.Frontend.NextJS.App)
+	fmt.Printf("  Frontend - NextJS Home: %t\n", config.Components.Frontend.NextJS.Home)
+	fmt.Printf("  Frontend - NextJS Admin: %t\n", config.Components.Frontend.NextJS.Admin)
+	fmt.Printf("  Frontend - NextJS Shared: %t\n", config.Components.Frontend.NextJS.Shared)
+	fmt.Printf("  Backend - Go Gin: %t\n", config.Components.Backend.GoGin)
+	fmt.Printf("  Mobile - Android: %t\n", config.Components.Mobile.Android)
+	fmt.Printf("  Mobile - iOS: %t\n", config.Components.Mobile.IOS)
+	fmt.Printf("  Infrastructure - Docker: %t\n", config.Components.Infrastructure.Docker)
+	fmt.Printf("  Infrastructure - Kubernetes: %t\n", config.Components.Infrastructure.Kubernetes)
+	fmt.Printf("  Infrastructure - Terraform: %t\n", config.Components.Infrastructure.Terraform)
+
+	// Display versions if available
+	if config.Versions != nil {
+		fmt.Println("\nVersions:")
+		fmt.Printf("  Node.js: %s\n", config.Versions.Node)
+		fmt.Printf("  Go: %s\n", config.Versions.Go)
+		if len(config.Versions.Packages) > 0 {
+			fmt.Println("  Packages:")
+			for pkg, version := range config.Versions.Packages {
+				fmt.Printf("    %s: %s\n", pkg, version)
+			}
+		}
+	}
+
+	// Display environment variables
+	fmt.Println("\nEnvironment Variables:")
+	envVars := c.configManager.LoadEnvironmentVariables()
+	if len(envVars) > 0 {
+		for key, value := range envVars {
+			fmt.Printf("  %s: %s\n", key, value)
+		}
+	} else {
+		fmt.Println("  No relevant environment variables set")
+	}
+
+	return nil
 }
 
 func (c *CLI) SetConfig(key, value string) error {
-	return fmt.Errorf("SetConfig implementation pending - will be implemented in task 3")
+	// Set the configuration value
+	err := c.configManager.SetSetting(key, value)
+	if err != nil {
+		return fmt.Errorf("failed to set configuration value: %w", err)
+	}
+
+	// Validate the updated settings
+	err = c.configManager.ValidateSettings()
+	if err != nil {
+		return fmt.Errorf("configuration validation failed after update: %w", err)
+	}
+
+	// Save the configuration to file if possible
+	configLocation := c.configManager.GetConfigLocation()
+	if configLocation != "" {
+		// Load current config, update it, and save
+		config, err := c.configManager.LoadDefaults()
+		if err != nil {
+			// If we can't load defaults, create a new config
+			config = &models.ProjectConfig{}
+		}
+
+		// Apply the setting to the config struct
+		err = c.applySettingToConfig(config, key, value)
+		if err != nil {
+			return fmt.Errorf("failed to apply setting to configuration: %w", err)
+		}
+
+		// Save the updated configuration
+		err = c.configManager.SaveConfig(config, configLocation)
+		if err != nil {
+			return fmt.Errorf("failed to save configuration: %w", err)
+		}
+	}
+
+	return nil
 }
 
 func (c *CLI) EditConfig() error {
-	return fmt.Errorf("EditConfig implementation pending - will be implemented in task 3")
+	configLocation := c.configManager.GetConfigLocation()
+	if configLocation == "" {
+		// Create a default config file if none exists
+		configLocation = "./generator-config.yaml"
+		err := c.configManager.CreateDefaultConfig(configLocation)
+		if err != nil {
+			return fmt.Errorf("failed to create default configuration file: %w", err)
+		}
+		fmt.Printf("Created default configuration file: %s\n", configLocation)
+	}
+
+	// Create backup before editing
+	err := c.configManager.BackupConfig(configLocation)
+	if err != nil {
+		fmt.Printf("Warning: failed to create backup: %v\n", err)
+	}
+
+	// Try to open with various editors
+	allowedEditors := map[string]bool{
+		"code":    true, // VS Code
+		"vim":     true, // Vim
+		"nano":    true, // Nano
+		"notepad": true, // Windows Notepad
+		"vi":      true, // Vi
+		"emacs":   true, // Emacs
+	}
+
+	editors := []string{
+		os.Getenv("EDITOR"),
+		"code",    // VS Code
+		"vim",     // Vim
+		"nano",    // Nano
+		"notepad", // Windows Notepad
+	}
+
+	var editorCmd string
+	for _, editor := range editors {
+		if editor != "" && allowedEditors[editor] {
+			// Check if editor exists
+			if _, err := exec.LookPath(editor); err == nil {
+				editorCmd = editor
+				break
+			}
+		}
+	}
+
+	if editorCmd == "" {
+		return fmt.Errorf("no suitable editor found. Please set the EDITOR environment variable to one of: code, vim, nano, vi, emacs")
+	}
+
+	// Open the configuration file in the editor
+	fmt.Printf("Opening configuration file in %s...\n", editorCmd)
+	// #nosec G204 - editorCmd is validated against allowedEditors whitelist
+	cmd := exec.Command(editorCmd, configLocation)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	err = cmd.Run()
+	if err != nil {
+		return fmt.Errorf("failed to open editor: %w", err)
+	}
+
+	// Validate the configuration after editing
+	fmt.Println("Validating configuration...")
+	result, err := c.configManager.ValidateConfigFromFile(configLocation)
+	if err != nil {
+		return fmt.Errorf("failed to validate configuration: %w", err)
+	}
+
+	if !result.Valid {
+		fmt.Println("Configuration validation failed:")
+		for _, validationError := range result.Errors {
+			fmt.Printf("  Error: %s - %s\n", validationError.Field, validationError.Message)
+		}
+		for _, warning := range result.Warnings {
+			fmt.Printf("  Warning: %s - %s\n", warning.Field, warning.Message)
+		}
+		return fmt.Errorf("configuration contains %d errors", len(result.Errors))
+	}
+
+	fmt.Println("Configuration updated successfully!")
+	return nil
 }
 
 func (c *CLI) ValidateConfig() error {
-	return fmt.Errorf("ValidateConfig implementation pending - will be implemented in task 3")
+	configLocation := c.configManager.GetConfigLocation()
+	if configLocation == "" {
+		return fmt.Errorf("no configuration file found")
+	}
+
+	// Validate the configuration file
+	result, err := c.configManager.ValidateConfigFromFile(configLocation)
+	if err != nil {
+		return fmt.Errorf("failed to validate configuration: %w", err)
+	}
+
+	// Display validation results
+	fmt.Printf("Configuration file: %s\n", configLocation)
+	fmt.Printf("Valid: %t\n", result.Valid)
+
+	if len(result.Errors) > 0 {
+		fmt.Println("\nErrors:")
+		for _, validationError := range result.Errors {
+			fmt.Printf("  ✗ %s: %s\n", validationError.Field, validationError.Message)
+			if validationError.Suggestion != "" {
+				fmt.Printf("    Suggestion: %s\n", validationError.Suggestion)
+			}
+		}
+	}
+
+	if len(result.Warnings) > 0 {
+		fmt.Println("\nWarnings:")
+		for _, warning := range result.Warnings {
+			fmt.Printf("  ⚠ %s: %s\n", warning.Field, warning.Message)
+			if warning.Suggestion != "" {
+				fmt.Printf("    Suggestion: %s\n", warning.Suggestion)
+			}
+		}
+	}
+
+	// Display summary
+	fmt.Printf("\nSummary:\n")
+	fmt.Printf("  Total properties: %d\n", result.Summary.TotalProperties)
+	fmt.Printf("  Valid properties: %d\n", result.Summary.ValidProperties)
+	fmt.Printf("  Errors: %d\n", result.Summary.ErrorCount)
+	fmt.Printf("  Warnings: %d\n", result.Summary.WarningCount)
+	fmt.Printf("  Missing required: %d\n", result.Summary.MissingRequired)
+
+	if !result.Valid {
+		return fmt.Errorf("configuration validation failed with %d errors", result.Summary.ErrorCount)
+	}
+
+	return nil
 }
 
 func (c *CLI) ExportConfig(path string) error {
-	return fmt.Errorf("ExportConfig implementation pending - will be implemented in task 3")
+	// Load current configuration from all sources
+	config, err := c.configManager.LoadDefaults()
+	if err != nil {
+		return fmt.Errorf("failed to load default configuration: %w", err)
+	}
+
+	// Merge with environment variables
+	envConfig, err := c.configManager.LoadFromEnvironment()
+	if err == nil {
+		config = c.configManager.MergeConfigurations(config, envConfig)
+	}
+
+	// Validate the configuration before export
+	err = c.configManager.ValidateConfig(config)
+	if err != nil {
+		fmt.Printf("Warning: configuration has validation issues: %v\n", err)
+	}
+
+	// Save the merged configuration to the specified path
+	err = c.configManager.SaveConfig(config, path)
+	if err != nil {
+		return fmt.Errorf("failed to export configuration: %w", err)
+	}
+
+	// Display export information
+	fmt.Printf("Configuration exported successfully!\n")
+	fmt.Printf("File: %s\n", path)
+
+	// Show basic stats
+	sources, err := c.configManager.GetConfigSources()
+	if err == nil {
+		fmt.Printf("Sources merged: %d\n", len(sources))
+		for _, source := range sources {
+			if source.Valid {
+				fmt.Printf("  - %s (%s)\n", source.Type, source.Location)
+			}
+		}
+	}
+
+	return nil
 }
 
 func (c *CLI) ShowVersion(options interfaces.VersionOptions) error {
@@ -1477,4 +1762,117 @@ func (c *CLI) GenerateReport(reportType string, format string, outputFile string
 
 func (c *CLI) GetExitCode() int {
 	return 0
+}
+
+// applySettingToConfig applies a configuration setting to a ProjectConfig struct
+func (c *CLI) applySettingToConfig(config *models.ProjectConfig, key, value string) error {
+	switch key {
+	case "name":
+		config.Name = value
+	case "organization":
+		config.Organization = value
+	case "description":
+		config.Description = value
+	case "license":
+		config.License = value
+	case "author":
+		config.Author = value
+	case "email":
+		config.Email = value
+	case "repository":
+		config.Repository = value
+	case "output_path":
+		config.OutputPath = value
+
+	// Component settings
+	case "components.frontend.nextjs.app":
+		if val, err := strconv.ParseBool(value); err == nil {
+			config.Components.Frontend.NextJS.App = val
+		} else {
+			return fmt.Errorf("invalid boolean value for %s: %s", key, value)
+		}
+	case "components.frontend.nextjs.home":
+		if val, err := strconv.ParseBool(value); err == nil {
+			config.Components.Frontend.NextJS.Home = val
+		} else {
+			return fmt.Errorf("invalid boolean value for %s: %s", key, value)
+		}
+	case "components.frontend.nextjs.admin":
+		if val, err := strconv.ParseBool(value); err == nil {
+			config.Components.Frontend.NextJS.Admin = val
+		} else {
+			return fmt.Errorf("invalid boolean value for %s: %s", key, value)
+		}
+	case "components.frontend.nextjs.shared":
+		if val, err := strconv.ParseBool(value); err == nil {
+			config.Components.Frontend.NextJS.Shared = val
+		} else {
+			return fmt.Errorf("invalid boolean value for %s: %s", key, value)
+		}
+	case "components.backend.go_gin":
+		if val, err := strconv.ParseBool(value); err == nil {
+			config.Components.Backend.GoGin = val
+		} else {
+			return fmt.Errorf("invalid boolean value for %s: %s", key, value)
+		}
+	case "components.mobile.android":
+		if val, err := strconv.ParseBool(value); err == nil {
+			config.Components.Mobile.Android = val
+		} else {
+			return fmt.Errorf("invalid boolean value for %s: %s", key, value)
+		}
+	case "components.mobile.ios":
+		if val, err := strconv.ParseBool(value); err == nil {
+			config.Components.Mobile.IOS = val
+		} else {
+			return fmt.Errorf("invalid boolean value for %s: %s", key, value)
+		}
+	case "components.infrastructure.docker":
+		if val, err := strconv.ParseBool(value); err == nil {
+			config.Components.Infrastructure.Docker = val
+		} else {
+			return fmt.Errorf("invalid boolean value for %s: %s", key, value)
+		}
+	case "components.infrastructure.kubernetes":
+		if val, err := strconv.ParseBool(value); err == nil {
+			config.Components.Infrastructure.Kubernetes = val
+		} else {
+			return fmt.Errorf("invalid boolean value for %s: %s", key, value)
+		}
+	case "components.infrastructure.terraform":
+		if val, err := strconv.ParseBool(value); err == nil {
+			config.Components.Infrastructure.Terraform = val
+		} else {
+			return fmt.Errorf("invalid boolean value for %s: %s", key, value)
+		}
+
+	// Version settings
+	case "versions.node":
+		if config.Versions == nil {
+			config.Versions = &models.VersionConfig{Packages: make(map[string]string)}
+		}
+		config.Versions.Node = value
+	case "versions.go":
+		if config.Versions == nil {
+			config.Versions = &models.VersionConfig{Packages: make(map[string]string)}
+		}
+		config.Versions.Go = value
+
+	default:
+		// Check if it's a package version setting
+		if strings.HasPrefix(key, "versions.packages.") {
+			packageName := strings.TrimPrefix(key, "versions.packages.")
+			if config.Versions == nil {
+				config.Versions = &models.VersionConfig{Packages: make(map[string]string)}
+			}
+			if config.Versions.Packages == nil {
+				config.Versions.Packages = make(map[string]string)
+			}
+			config.Versions.Packages[packageName] = value
+		} else {
+			return fmt.Errorf("unknown configuration key: %s", key)
+		}
+	}
+
+	return nil
 }

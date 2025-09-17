@@ -22,6 +22,7 @@ type ConfigManager interface {
 
 	// Configuration validation
 	GetConfigSchema() *ConfigSchema
+	ValidateConfigFromFile(path string) (*ConfigValidationResult, error)
 
 	// Configuration management
 	GetConfigSources() ([]ConfigSource, error)

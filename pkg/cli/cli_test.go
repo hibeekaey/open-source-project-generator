@@ -114,6 +114,15 @@ func (m *MockConfigManager) GetEnvironmentPrefix() string {
 	return "GENERATOR"
 }
 
+func (m *MockConfigManager) ValidateConfigFromFile(path string) (*interfaces.ConfigValidationResult, error) {
+	return &interfaces.ConfigValidationResult{
+		Valid:    m.err == nil,
+		Errors:   []interfaces.ConfigValidationError{},
+		Warnings: []interfaces.ConfigValidationError{},
+		Summary:  interfaces.ConfigValidationSummary{},
+	}, m.err
+}
+
 // MockValidationEngine implements the ValidationEngine interface for testing
 type MockValidationEngine struct {
 	result *models.ValidationResult
