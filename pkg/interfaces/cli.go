@@ -230,9 +230,10 @@ type FixSuggestion struct {
 
 // TemplateValidationResult contains the result of template validation
 type TemplateValidationResult struct {
-	Valid   bool              `json:"valid"`
-	Issues  []ValidationIssue `json:"issues"`
-	Summary ValidationSummary `json:"summary"`
+	Valid    bool              `json:"valid"`
+	Issues   []ValidationIssue `json:"issues"`
+	Warnings []ValidationIssue `json:"warnings"`
+	Summary  ValidationSummary `json:"summary"`
 }
 
 // AuditResult contains the result of project auditing

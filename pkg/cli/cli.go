@@ -145,6 +145,7 @@ For more information about a specific command, use:
 	c.setupVersionCommand()
 	c.setupConfigCommand()
 	c.setupListTemplatesCommand()
+	c.setupTemplateCommand()
 	c.setupUpdateCommand()
 	c.setupCacheCommand()
 	c.setupLogsCommand()
@@ -604,6 +605,79 @@ Each template includes comprehensive documentation and examples.`,
 	listTemplatesCmd.Flags().Bool("detailed", false, "Show detailed template information")
 
 	c.rootCmd.AddCommand(listTemplatesCmd)
+}
+
+// setupTemplateCommand sets up the template command with subcommands
+func (c *CLI) setupTemplateCommand() {
+	templateCmd := &cobra.Command{
+		Use:   "template",
+		Short: "Template management operations",
+		Long: `Manage templates including viewing detailed information and validation.
+
+The template command provides operations for:
+  • Viewing detailed template information
+  • Validating custom templates
+  • Managing template dependencies
+  • Checking template compatibility
+
+Template Operations:
+  • info: Show detailed information about a specific template
+  • validate: Validate template structure and metadata
+  • dependencies: Show template dependencies
+  • compatibility: Check template compatibility
+
+Use these commands to inspect templates before using them
+or to validate custom templates you've created.`,
+	}
+
+	// template info
+	templateInfoCmd := &cobra.Command{
+		Use:   "info <template-name>",
+		Short: "Show detailed information about a template",
+		Long: `Display comprehensive information about a specific template including:
+  • Template metadata and description
+  • Version and compatibility information
+  • Dependencies and requirements
+  • Variables and configuration options
+  • File structure and components`,
+		RunE: c.runTemplateInfo,
+		Args: cobra.ExactArgs(1),
+		Example: `  # Show info for go-gin template
+  generator template info go-gin
+
+  # Show info for nextjs-app template
+  generator template info nextjs-app`,
+	}
+	templateInfoCmd.Flags().Bool("detailed", false, "Show detailed template information")
+	templateInfoCmd.Flags().Bool("variables", false, "Show template variables")
+	templateInfoCmd.Flags().Bool("dependencies", false, "Show template dependencies")
+	templateInfoCmd.Flags().Bool("compatibility", false, "Show compatibility information")
+	templateCmd.AddCommand(templateInfoCmd)
+
+	// template validate
+	templateValidateCmd := &cobra.Command{
+		Use:   "validate <template-path>",
+		Short: "Validate template structure and metadata",
+		Long: `Validate a custom template directory for:
+  • Proper template structure
+  • Valid metadata files
+  • Template syntax correctness
+  • Required files and directories
+  • Best practices compliance`,
+		RunE: c.runTemplateValidate,
+		Args: cobra.ExactArgs(1),
+		Example: `  # Validate custom template
+  generator template validate ./my-custom-template
+
+  # Validate with detailed output
+  generator template validate ./my-template --detailed`,
+	}
+	templateValidateCmd.Flags().Bool("detailed", false, "Show detailed validation results")
+	templateValidateCmd.Flags().Bool("fix", false, "Attempt to fix validation issues")
+	templateValidateCmd.Flags().String("output-format", "text", "Output format (text, json)")
+	templateCmd.AddCommand(templateValidateCmd)
+
+	c.rootCmd.AddCommand(templateCmd)
 }
 
 // setupUpdateCommand sets up the update command
@@ -1305,15 +1379,209 @@ func (c *CLI) AuditProject(path string, options interfaces.AuditOptions) (*inter
 }
 
 func (c *CLI) ListTemplates(filter interfaces.TemplateFilter) ([]interfaces.TemplateInfo, error) {
-	return nil, fmt.Errorf("ListTemplates implementation pending - will be implemented in task 4")
+	return c.templateManager.ListTemplates(filter)
 }
 
 func (c *CLI) GetTemplateInfo(name string) (*interfaces.TemplateInfo, error) {
-	return nil, fmt.Errorf("GetTemplateInfo implementation pending - will be implemented in task 4")
+	return c.templateManager.GetTemplateInfo(name)
 }
 
 func (c *CLI) ValidateTemplate(path string) (*interfaces.TemplateValidationResult, error) {
-	return nil, fmt.Errorf("ValidateTemplate implementation pending - will be implemented in task 4")
+	return c.templateManager.ValidateTemplate(path)
+}
+
+// runTemplateInfo handles the template info command
+func (c *CLI) runTemplateInfo(cmd *cobra.Command, args []string) error {
+	templateName := args[0]
+
+	// Get flags
+	detailed, _ := cmd.Flags().GetBool("detailed")
+	showVariables, _ := cmd.Flags().GetBool("variables")
+	showDependencies, _ := cmd.Flags().GetBool("dependencies")
+	showCompatibility, _ := cmd.Flags().GetBool("compatibility")
+
+	// Get template info
+	templateInfo, err := c.GetTemplateInfo(templateName)
+	if err != nil {
+		return fmt.Errorf("failed to get template info: %w", err)
+	}
+
+	// Display basic information
+	fmt.Printf("Template: %s\n", templateInfo.Name)
+	fmt.Printf("Display Name: %s\n", templateInfo.DisplayName)
+	fmt.Printf("Description: %s\n", templateInfo.Description)
+	fmt.Printf("Category: %s\n", templateInfo.Category)
+	fmt.Printf("Technology: %s\n", templateInfo.Technology)
+	fmt.Printf("Version: %s\n", templateInfo.Version)
+
+	if len(templateInfo.Tags) > 0 {
+		fmt.Printf("Tags: %s\n", strings.Join(templateInfo.Tags, ", "))
+	}
+
+	// Show detailed information if requested
+	if detailed || showDependencies {
+		if len(templateInfo.Dependencies) > 0 {
+			fmt.Printf("\nDependencies:\n")
+			for _, dep := range templateInfo.Dependencies {
+				fmt.Printf("  - %s\n", dep)
+			}
+		} else {
+			fmt.Printf("\nDependencies: None\n")
+		}
+	}
+
+	if detailed {
+		fmt.Printf("\nMetadata:\n")
+		fmt.Printf("  Author: %s\n", templateInfo.Metadata.Author)
+		fmt.Printf("  License: %s\n", templateInfo.Metadata.License)
+		if templateInfo.Metadata.Repository != "" {
+			fmt.Printf("  Repository: %s\n", templateInfo.Metadata.Repository)
+		}
+		if templateInfo.Metadata.Homepage != "" {
+			fmt.Printf("  Homepage: %s\n", templateInfo.Metadata.Homepage)
+		}
+		if len(templateInfo.Metadata.Keywords) > 0 {
+			fmt.Printf("  Keywords: %s\n", strings.Join(templateInfo.Metadata.Keywords, ", "))
+		}
+	}
+
+	// Show variables if requested
+	if showVariables || detailed {
+		variables, err := c.templateManager.GetTemplateVariables(templateName)
+		if err != nil {
+			fmt.Printf("\nVariables: Error retrieving variables: %v\n", err)
+		} else if len(variables) > 0 {
+			fmt.Printf("\nVariables:\n")
+			for name, variable := range variables {
+				fmt.Printf("  %s (%s):\n", name, variable.Type)
+				fmt.Printf("    Description: %s\n", variable.Description)
+				if variable.Default != nil {
+					fmt.Printf("    Default: %v\n", variable.Default)
+				}
+				fmt.Printf("    Required: %t\n", variable.Required)
+				if variable.Validation != nil && variable.Validation.Pattern != "" {
+					fmt.Printf("    Pattern: %s\n", variable.Validation.Pattern)
+				}
+				fmt.Println()
+			}
+		} else {
+			fmt.Printf("\nVariables: None defined\n")
+		}
+	}
+
+	// Show compatibility if requested
+	if showCompatibility || detailed {
+		compatibility, err := c.templateManager.GetTemplateCompatibility(templateName)
+		if err != nil {
+			fmt.Printf("\nCompatibility: Error retrieving compatibility info: %v\n", err)
+		} else {
+			fmt.Printf("\nCompatibility:\n")
+			if compatibility.MinGeneratorVersion != "" {
+				fmt.Printf("  Min Generator Version: %s\n", compatibility.MinGeneratorVersion)
+			}
+			if compatibility.MaxGeneratorVersion != "" {
+				fmt.Printf("  Max Generator Version: %s\n", compatibility.MaxGeneratorVersion)
+			}
+			if len(compatibility.SupportedPlatforms) > 0 {
+				fmt.Printf("  Supported Platforms: %s\n", strings.Join(compatibility.SupportedPlatforms, ", "))
+			}
+			if len(compatibility.RequiredFeatures) > 0 {
+				fmt.Printf("  Required Features: %s\n", strings.Join(compatibility.RequiredFeatures, ", "))
+			}
+		}
+	}
+
+	return nil
+}
+
+// runTemplateValidate handles the template validate command
+func (c *CLI) runTemplateValidate(cmd *cobra.Command, args []string) error {
+	templatePath := args[0]
+
+	// Get flags
+	detailed, _ := cmd.Flags().GetBool("detailed")
+	fix, _ := cmd.Flags().GetBool("fix")
+	outputFormat, _ := cmd.Flags().GetString("output-format")
+
+	// Validate template
+	result, err := c.ValidateTemplate(templatePath)
+	if err != nil {
+		return fmt.Errorf("validation failed: %w", err)
+	}
+
+	// Output results based on format
+	switch outputFormat {
+	case "json":
+		// For JSON output, we would marshal the result
+		fmt.Printf("{\n")
+		fmt.Printf("  \"valid\": %t,\n", result.Valid)
+		fmt.Printf("  \"issues\": %d,\n", len(result.Issues))
+		fmt.Printf("  \"warnings\": %d\n", len(result.Warnings))
+		fmt.Printf("}\n")
+	default:
+		// Text output
+		fmt.Printf("Template validation for: %s\n", templatePath)
+		fmt.Printf("Valid: %t\n", result.Valid)
+		fmt.Printf("Issues: %d\n", len(result.Issues))
+		fmt.Printf("Warnings: %d\n", len(result.Warnings))
+
+		if len(result.Issues) > 0 {
+			fmt.Println("\nIssues:")
+			for _, issue := range result.Issues {
+				if detailed {
+					fmt.Printf("  [%s] %s: %s", issue.Severity, issue.Type, issue.Message)
+					if issue.File != "" {
+						fmt.Printf(" (File: %s", issue.File)
+						if issue.Line > 0 {
+							fmt.Printf(":%d", issue.Line)
+						}
+						fmt.Printf(")")
+					}
+					fmt.Printf(" [Rule: %s]", issue.Rule)
+					if issue.Fixable {
+						fmt.Printf(" [Fixable]")
+					}
+					fmt.Println()
+				} else {
+					fmt.Printf("  - %s: %s\n", issue.Severity, issue.Message)
+				}
+			}
+		}
+
+		if len(result.Warnings) > 0 {
+			fmt.Println("\nWarnings:")
+			for _, warning := range result.Warnings {
+				if detailed {
+					fmt.Printf("  [%s] %s: %s", warning.Severity, warning.Type, warning.Message)
+					if warning.File != "" {
+						fmt.Printf(" (File: %s", warning.File)
+						if warning.Line > 0 {
+							fmt.Printf(":%d", warning.Line)
+						}
+						fmt.Printf(")")
+					}
+					fmt.Printf(" [Rule: %s]", warning.Rule)
+					if warning.Fixable {
+						fmt.Printf(" [Fixable]")
+					}
+					fmt.Println()
+				} else {
+					fmt.Printf("  - %s: %s\n", warning.Severity, warning.Message)
+				}
+			}
+		}
+
+		if fix {
+			fmt.Println("\nNote: Auto-fix functionality is not yet implemented")
+		}
+	}
+
+	// Return error if validation failed
+	if !result.Valid {
+		return fmt.Errorf("template validation failed")
+	}
+
+	return nil
 }
 
 func (c *CLI) ShowConfig() error {
@@ -1673,19 +1941,19 @@ func (c *CLI) AuditProjectAdvanced(path string, options *interfaces.AuditOptions
 }
 
 func (c *CLI) SearchTemplates(query string) ([]interfaces.TemplateInfo, error) {
-	return nil, fmt.Errorf("SearchTemplates implementation pending")
+	return c.templateManager.SearchTemplates(query)
 }
 
 func (c *CLI) GetTemplateMetadata(name string) (*interfaces.TemplateMetadata, error) {
-	return nil, fmt.Errorf("GetTemplateMetadata implementation pending")
+	return c.templateManager.GetTemplateMetadata(name)
 }
 
 func (c *CLI) GetTemplateDependencies(name string) ([]string, error) {
-	return nil, fmt.Errorf("GetTemplateDependencies implementation pending")
+	return c.templateManager.GetTemplateDependencies(name)
 }
 
 func (c *CLI) ValidateCustomTemplate(path string) (*interfaces.TemplateValidationResult, error) {
-	return nil, fmt.Errorf("ValidateCustomTemplate implementation pending")
+	return c.templateManager.ValidateCustomTemplate(path)
 }
 
 func (c *CLI) LoadConfiguration(sources []string) (*models.ProjectConfig, error) {
