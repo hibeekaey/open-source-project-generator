@@ -33,15 +33,31 @@ type CLIInterface interface {
 	SelectComponents() ([]string, error)
 	ConfirmGeneration(*models.ProjectConfig) bool
 
+	// Advanced interactive operations
+	PromptAdvancedOptions() (*AdvancedOptions, error)
+	ConfirmAdvancedGeneration(*models.ProjectConfig, *AdvancedOptions) bool
+	SelectTemplateInteractively(filter TemplateFilter) (*TemplateInfo, error)
+
 	// Non-interactive operations
-	GenerateFromConfig(configPath string, options GenerateOptions) error
+	GenerateFromConfig(path string, options GenerateOptions) error
 	ValidateProject(path string, options ValidationOptions) (*ValidationResult, error)
 	AuditProject(path string, options AuditOptions) (*AuditResult, error)
+
+	// Advanced non-interactive operations
+	GenerateWithAdvancedOptions(config *models.ProjectConfig, options *AdvancedOptions) error
+	ValidateProjectAdvanced(path string, options *ValidationOptions) (*ValidationResult, error)
+	AuditProjectAdvanced(path string, options *AuditOptions) (*AuditResult, error)
 
 	// Template operations
 	ListTemplates(filter TemplateFilter) ([]TemplateInfo, error)
 	GetTemplateInfo(name string) (*TemplateInfo, error)
 	ValidateTemplate(path string) (*TemplateValidationResult, error)
+
+	// Template management operations
+	SearchTemplates(query string) ([]TemplateInfo, error)
+	GetTemplateMetadata(name string) (*TemplateMetadata, error)
+	GetTemplateDependencies(name string) ([]string, error)
+	ValidateCustomTemplate(path string) (*TemplateValidationResult, error)
 
 	// Configuration operations
 	ShowConfig() error
@@ -50,18 +66,47 @@ type CLIInterface interface {
 	ValidateConfig() error
 	ExportConfig(path string) error
 
+	// Configuration management operations
+	LoadConfiguration(sources []string) (*models.ProjectConfig, error)
+	MergeConfigurations(configs []*models.ProjectConfig) (*models.ProjectConfig, error)
+	ValidateConfigurationSchema(config *models.ProjectConfig) error
+	GetConfigurationSources() ([]ConfigSource, error)
+
 	// Version and update operations
 	ShowVersion(options VersionOptions) error
 	CheckUpdates() (*UpdateInfo, error)
 	InstallUpdates() error
+
+	// Advanced version operations
+	GetPackageVersions() (map[string]string, error)
+	GetLatestPackageVersions() (map[string]string, error)
+	CheckCompatibility(path string) (*CompatibilityResult, error)
 
 	// Cache operations
 	ShowCache() error
 	ClearCache() error
 	CleanCache() error
 
+	// Cache management operations
+	GetCacheStats() (*CacheStats, error)
+	ValidateCache() error
+	RepairCache() error
+	EnableOfflineMode() error
+	DisableOfflineMode() error
+
 	// Utility operations
 	ShowLogs() error
+
+	// Logging and debugging operations
+	SetLogLevel(level string) error
+	GetLogLevel() string
+	ShowRecentLogs(lines int, level string) error
+	GetLogFileLocations() ([]string, error)
+
+	// Automation and integration operations
+	RunNonInteractive(config *models.ProjectConfig, options *AdvancedOptions) error
+	GenerateReport(reportType string, format string, outputFile string) error
+	GetExitCode() int
 }
 
 // GenerateOptions defines options for project generation
@@ -299,4 +344,175 @@ type UpdateInfo struct {
 	DownloadURL     string    `json:"download_url"`
 	ReleaseDate     time.Time `json:"release_date"`
 	Breaking        bool      `json:"breaking"`
+}
+
+// AdvancedOptions contains advanced options for project generation
+type AdvancedOptions struct {
+	GenerateOptions
+
+	// Security options
+	EnableSecurityScanning bool     `json:"enable_security_scanning" yaml:"enable_security_scanning"`
+	SecurityPolicies       []string `json:"security_policies" yaml:"security_policies"`
+
+	// Quality options
+	EnableQualityChecks bool     `json:"enable_quality_checks" yaml:"enable_quality_checks"`
+	QualityRules        []string `json:"quality_rules" yaml:"quality_rules"`
+
+	// Performance options
+	EnablePerformanceOptimization bool `json:"enable_performance_optimization" yaml:"enable_performance_optimization"`
+	BundleOptimization            bool `json:"bundle_optimization" yaml:"bundle_optimization"`
+
+	// Documentation options
+	GenerateDocumentation bool     `json:"generate_documentation" yaml:"generate_documentation"`
+	DocumentationFormats  []string `json:"documentation_formats" yaml:"documentation_formats"`
+
+	// CI/CD options
+	EnableCICD     bool     `json:"enable_cicd" yaml:"enable_cicd"`
+	CICDProviders  []string `json:"cicd_providers" yaml:"cicd_providers"`
+	DeploymentType string   `json:"deployment_type" yaml:"deployment_type"`
+
+	// Monitoring options
+	EnableMonitoring  bool     `json:"enable_monitoring" yaml:"enable_monitoring"`
+	MonitoringTools   []string `json:"monitoring_tools" yaml:"monitoring_tools"`
+	LoggingFrameworks []string `json:"logging_frameworks" yaml:"logging_frameworks"`
+}
+
+// ConfigSource represents a configuration source
+type ConfigSource struct {
+	Type     string `json:"type"`     // file, environment, defaults
+	Location string `json:"location"` // file path or environment variable name
+	Priority int    `json:"priority"` // higher number = higher priority
+	Valid    bool   `json:"valid"`    // whether the source is valid
+}
+
+// CompatibilityResult contains compatibility check results
+type CompatibilityResult struct {
+	Compatible       bool                    `json:"compatible"`
+	GeneratorVersion string                  `json:"generator_version"`
+	ProjectVersion   string                  `json:"project_version"`
+	Issues           []CompatibilityIssue    `json:"issues"`
+	Recommendations  []string                `json:"recommendations"`
+	PackageVersions  map[string]VersionCheck `json:"package_versions"`
+}
+
+// CompatibilityIssue represents a compatibility issue
+type CompatibilityIssue struct {
+	Type        string `json:"type"`        // version, dependency, configuration
+	Severity    string `json:"severity"`    // error, warning, info
+	Component   string `json:"component"`   // component name
+	Current     string `json:"current"`     // current version
+	Required    string `json:"required"`    // required version
+	Description string `json:"description"` // issue description
+	Fixable     bool   `json:"fixable"`     // whether automatically fixable
+}
+
+// VersionCheck represents a version compatibility check
+type VersionCheck struct {
+	Current    string `json:"current"`
+	Latest     string `json:"latest"`
+	Compatible bool   `json:"compatible"`
+	UpdateType string `json:"update_type"` // major, minor, patch
+}
+
+// CacheStats contains cache statistics and information
+type CacheStats struct {
+	TotalEntries   int       `json:"total_entries"`
+	TotalSize      int64     `json:"total_size"`
+	HitRate        float64   `json:"hit_rate"`
+	ExpiredEntries int       `json:"expired_entries"`
+	LastCleanup    time.Time `json:"last_cleanup"`
+	CacheLocation  string    `json:"cache_location"`
+	OfflineMode    bool      `json:"offline_mode"`
+	CacheHealth    string    `json:"cache_health"` // healthy, corrupted, missing
+}
+
+// CLIError represents a CLI error with detailed information
+type CLIError struct {
+	Type        string         `json:"type"`
+	Message     string         `json:"message"`
+	Code        int            `json:"code"`
+	Details     map[string]any `json:"details,omitempty"`
+	Suggestions []string       `json:"suggestions,omitempty"`
+	Context     *ErrorContext  `json:"context,omitempty"`
+}
+
+// ErrorContext provides context information for errors
+type ErrorContext struct {
+	Command     string            `json:"command"`
+	Arguments   []string          `json:"arguments"`
+	Flags       map[string]string `json:"flags"`
+	WorkingDir  string            `json:"working_dir"`
+	Timestamp   time.Time         `json:"timestamp"`
+	Environment map[string]string `json:"environment,omitempty"`
+}
+
+// Error types for categorization
+const (
+	ErrorTypeValidation    = "validation"
+	ErrorTypeConfiguration = "configuration"
+	ErrorTypeTemplate      = "template"
+	ErrorTypeNetwork       = "network"
+	ErrorTypeFileSystem    = "filesystem"
+	ErrorTypePermission    = "permission"
+	ErrorTypeCache         = "cache"
+	ErrorTypeVersion       = "version"
+	ErrorTypeAudit         = "audit"
+	ErrorTypeGeneration    = "generation"
+	ErrorTypeInternal      = "internal"
+)
+
+// Error codes for programmatic handling
+const (
+	ErrorCodeSuccess              = 0
+	ErrorCodeGeneral              = 1
+	ErrorCodeValidationFailed     = 2
+	ErrorCodeConfigurationInvalid = 3
+	ErrorCodeTemplateNotFound     = 4
+	ErrorCodeNetworkError         = 5
+	ErrorCodeFileSystemError      = 6
+	ErrorCodePermissionDenied     = 7
+	ErrorCodeCacheError           = 8
+	ErrorCodeVersionError         = 9
+	ErrorCodeAuditFailed          = 10
+	ErrorCodeGenerationFailed     = 11
+	ErrorCodeInternalError        = 99
+)
+
+// Implement error interface for CLIError
+func (e *CLIError) Error() string {
+	return e.Message
+}
+
+// NewCLIError creates a new CLI error with the specified type and message
+func NewCLIError(errorType, message string, code int) *CLIError {
+	return &CLIError{
+		Type:    errorType,
+		Message: message,
+		Code:    code,
+		Details: make(map[string]any),
+		Context: &ErrorContext{
+			Timestamp: time.Now(),
+		},
+	}
+}
+
+// WithDetails adds details to a CLI error
+func (e *CLIError) WithDetails(key string, value any) *CLIError {
+	if e.Details == nil {
+		e.Details = make(map[string]any)
+	}
+	e.Details[key] = value
+	return e
+}
+
+// WithSuggestions adds suggestions to a CLI error
+func (e *CLIError) WithSuggestions(suggestions ...string) *CLIError {
+	e.Suggestions = append(e.Suggestions, suggestions...)
+	return e
+}
+
+// WithContext adds context to a CLI error
+func (e *CLIError) WithContext(ctx *ErrorContext) *CLIError {
+	e.Context = ctx
+	return e
 }

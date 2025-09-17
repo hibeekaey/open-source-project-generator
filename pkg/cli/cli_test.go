@@ -7,6 +7,7 @@ import (
 	"github.com/cuesoftinc/open-source-project-generator/internal/config"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/audit"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/cache"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/interfaces"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/template"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/validation"
@@ -49,6 +50,70 @@ func (m *MockConfigManager) SaveConfig(config *models.ProjectConfig, path string
 	return m.err
 }
 
+// Additional methods required by the enhanced ConfigManager interface
+func (m *MockConfigManager) GetSetting(key string) (any, error) {
+	return nil, m.err
+}
+
+func (m *MockConfigManager) SetSetting(key string, value any) error {
+	return m.err
+}
+
+func (m *MockConfigManager) ValidateSettings() error {
+	return m.err
+}
+
+func (m *MockConfigManager) LoadFromFile(path string) (*models.ProjectConfig, error) {
+	return m.LoadConfig(path)
+}
+
+func (m *MockConfigManager) LoadFromEnvironment() (*models.ProjectConfig, error) {
+	return &models.ProjectConfig{}, m.err
+}
+
+func (m *MockConfigManager) MergeConfigurations(configs ...*models.ProjectConfig) *models.ProjectConfig {
+	if len(configs) > 0 {
+		return configs[0]
+	}
+	return &models.ProjectConfig{}
+}
+
+func (m *MockConfigManager) GetConfigSchema() *interfaces.ConfigSchema {
+	return nil
+}
+
+func (m *MockConfigManager) GetConfigSources() ([]interfaces.ConfigSource, error) {
+	return nil, m.err
+}
+
+func (m *MockConfigManager) GetConfigLocation() string {
+	return "/mock/config"
+}
+
+func (m *MockConfigManager) CreateDefaultConfig(path string) error {
+	return m.err
+}
+
+func (m *MockConfigManager) BackupConfig(path string) error {
+	return m.err
+}
+
+func (m *MockConfigManager) RestoreConfig(backupPath string) error {
+	return m.err
+}
+
+func (m *MockConfigManager) LoadEnvironmentVariables() map[string]string {
+	return make(map[string]string)
+}
+
+func (m *MockConfigManager) SetEnvironmentDefaults() error {
+	return m.err
+}
+
+func (m *MockConfigManager) GetEnvironmentPrefix() string {
+	return "GENERATOR"
+}
+
 // MockValidationEngine implements the ValidationEngine interface for testing
 type MockValidationEngine struct {
 	result *models.ValidationResult
@@ -88,6 +153,91 @@ func (m *MockValidationEngine) ValidateYAML(path string) error {
 
 func (m *MockValidationEngine) ValidateJSON(path string) error {
 	return m.err
+}
+
+// Additional methods required by the enhanced ValidationEngine interface
+func (m *MockValidationEngine) ValidateProjectStructure(path string) (*interfaces.StructureValidationResult, error) {
+	return nil, m.err
+}
+
+func (m *MockValidationEngine) ValidateProjectDependencies(path string) (*interfaces.DependencyValidationResult, error) {
+	return nil, m.err
+}
+
+func (m *MockValidationEngine) ValidateProjectSecurity(path string) (*interfaces.SecurityValidationResult, error) {
+	return nil, m.err
+}
+
+func (m *MockValidationEngine) ValidateProjectQuality(path string) (*interfaces.QualityValidationResult, error) {
+	return nil, m.err
+}
+
+func (m *MockValidationEngine) ValidateConfiguration(config *models.ProjectConfig) (*interfaces.ConfigValidationResult, error) {
+	return nil, m.err
+}
+
+func (m *MockValidationEngine) ValidateConfigurationSchema(config any, schema *interfaces.ConfigSchema) error {
+	return m.err
+}
+
+func (m *MockValidationEngine) ValidateConfigurationValues(config *models.ProjectConfig) (*interfaces.ConfigValidationResult, error) {
+	return nil, m.err
+}
+
+func (m *MockValidationEngine) ValidateTemplateAdvanced(path string) (*interfaces.TemplateValidationResult, error) {
+	return nil, m.err
+}
+
+func (m *MockValidationEngine) ValidateTemplateMetadata(metadata *interfaces.TemplateMetadata) error {
+	return m.err
+}
+
+func (m *MockValidationEngine) ValidateTemplateStructure(path string) (*interfaces.StructureValidationResult, error) {
+	return nil, m.err
+}
+
+func (m *MockValidationEngine) ValidateTemplateVariables(variables map[string]interfaces.TemplateVariable) error {
+	return m.err
+}
+
+func (m *MockValidationEngine) SetValidationRules(rules []interfaces.ValidationRule) error {
+	return m.err
+}
+
+func (m *MockValidationEngine) GetValidationRules() []interfaces.ValidationRule {
+	return nil
+}
+
+func (m *MockValidationEngine) AddValidationRule(rule interfaces.ValidationRule) error {
+	return m.err
+}
+
+func (m *MockValidationEngine) RemoveValidationRule(ruleID string) error {
+	return m.err
+}
+
+func (m *MockValidationEngine) FixValidationIssues(path string, issues []interfaces.ValidationIssue) (*interfaces.FixResult, error) {
+	return nil, m.err
+}
+
+func (m *MockValidationEngine) GetFixableIssues(issues []interfaces.ValidationIssue) []interfaces.ValidationIssue {
+	return nil
+}
+
+func (m *MockValidationEngine) PreviewFixes(path string, issues []interfaces.ValidationIssue) (*interfaces.FixPreview, error) {
+	return nil, m.err
+}
+
+func (m *MockValidationEngine) ApplyFix(path string, fix interfaces.Fix) error {
+	return m.err
+}
+
+func (m *MockValidationEngine) GenerateValidationReport(result *interfaces.ValidationResult, format string) ([]byte, error) {
+	return nil, m.err
+}
+
+func (m *MockValidationEngine) GetValidationSummary(results []*interfaces.ValidationResult) (*interfaces.ValidationSummary, error) {
+	return nil, m.err
 }
 
 func TestNewCLIWithMocks(t *testing.T) {

@@ -248,6 +248,55 @@ func (m *mockCLI) ClearCache() error                             { return nil }
 func (m *mockCLI) CleanCache() error                             { return nil }
 func (m *mockCLI) ShowLogs() error                               { return nil }
 
+// Additional methods required by the enhanced CLIInterface
+func (m *mockCLI) PromptAdvancedOptions() (*interfaces.AdvancedOptions, error) { return nil, nil }
+func (m *mockCLI) ConfirmAdvancedGeneration(*models.ProjectConfig, *interfaces.AdvancedOptions) bool {
+	return true
+}
+func (m *mockCLI) SelectTemplateInteractively(interfaces.TemplateFilter) (*interfaces.TemplateInfo, error) {
+	return nil, nil
+}
+func (m *mockCLI) GenerateWithAdvancedOptions(*models.ProjectConfig, *interfaces.AdvancedOptions) error {
+	return nil
+}
+func (m *mockCLI) ValidateProjectAdvanced(string, *interfaces.ValidationOptions) (*interfaces.ValidationResult, error) {
+	return nil, nil
+}
+func (m *mockCLI) AuditProjectAdvanced(string, *interfaces.AuditOptions) (*interfaces.AuditResult, error) {
+	return nil, nil
+}
+func (m *mockCLI) SearchTemplates(string) ([]interfaces.TemplateInfo, error)        { return nil, nil }
+func (m *mockCLI) GetTemplateMetadata(string) (*interfaces.TemplateMetadata, error) { return nil, nil }
+func (m *mockCLI) GetTemplateDependencies(string) ([]string, error)                 { return nil, nil }
+func (m *mockCLI) ValidateCustomTemplate(string) (*interfaces.TemplateValidationResult, error) {
+	return nil, nil
+}
+func (m *mockCLI) LoadConfiguration([]string) (*models.ProjectConfig, error) { return nil, nil }
+func (m *mockCLI) MergeConfigurations([]*models.ProjectConfig) (*models.ProjectConfig, error) {
+	return nil, nil
+}
+func (m *mockCLI) ValidateConfigurationSchema(*models.ProjectConfig) error     { return nil }
+func (m *mockCLI) GetConfigurationSources() ([]interfaces.ConfigSource, error) { return nil, nil }
+func (m *mockCLI) GetPackageVersions() (map[string]string, error)              { return nil, nil }
+func (m *mockCLI) GetLatestPackageVersions() (map[string]string, error)        { return nil, nil }
+func (m *mockCLI) CheckCompatibility(string) (*interfaces.CompatibilityResult, error) {
+	return nil, nil
+}
+func (m *mockCLI) GetCacheStats() (*interfaces.CacheStats, error) { return nil, nil }
+func (m *mockCLI) ValidateCache() error                           { return nil }
+func (m *mockCLI) RepairCache() error                             { return nil }
+func (m *mockCLI) EnableOfflineMode() error                       { return nil }
+func (m *mockCLI) DisableOfflineMode() error                      { return nil }
+func (m *mockCLI) SetLogLevel(string) error                       { return nil }
+func (m *mockCLI) GetLogLevel() string                            { return "info" }
+func (m *mockCLI) ShowRecentLogs(int, string) error               { return nil }
+func (m *mockCLI) GetLogFileLocations() ([]string, error)         { return nil, nil }
+func (m *mockCLI) RunNonInteractive(*models.ProjectConfig, *interfaces.AdvancedOptions) error {
+	return nil
+}
+func (m *mockCLI) GenerateReport(string, string, string) error { return nil }
+func (m *mockCLI) GetExitCode() int                            { return 0 }
+
 func TestContainerWithMockCLI(t *testing.T) {
 	container := NewContainer()
 

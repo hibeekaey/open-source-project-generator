@@ -260,7 +260,12 @@ func (e *Engine) ValidateTemplate(path string) error {
 // Additional validation methods for test compatibility
 
 // ValidateProjectStructure validates project structure
-func (e *Engine) ValidateProjectStructure(projectPath string) (*models.ValidationResult, error) {
+func (e *Engine) ValidateProjectStructure(path string) (*interfaces.StructureValidationResult, error) {
+	return nil, fmt.Errorf("ValidateProjectStructure implementation pending - will be implemented in task 5")
+}
+
+// ValidateProjectStructureLegacy validates project structure (legacy method for compatibility)
+func (e *Engine) ValidateProjectStructureLegacy(projectPath string) (*models.ValidationResult, error) {
 	result := &models.ValidationResult{
 		Valid:   true,
 		Issues:  []models.ValidationIssue{},
@@ -355,4 +360,106 @@ func (e *Engine) validateBasicFiles(projectPath string, result *models.Validatio
 	}
 
 	return nil
+}
+
+// Enhanced validation methods
+
+// ValidateProjectDependencies validates project dependencies
+func (e *Engine) ValidateProjectDependencies(path string) (*interfaces.DependencyValidationResult, error) {
+	return nil, fmt.Errorf("ValidateProjectDependencies implementation pending - will be implemented in task 5")
+}
+
+// ValidateProjectSecurity validates project security
+func (e *Engine) ValidateProjectSecurity(path string) (*interfaces.SecurityValidationResult, error) {
+	return nil, fmt.Errorf("ValidateProjectSecurity implementation pending - will be implemented in task 5")
+}
+
+// ValidateProjectQuality validates project quality
+func (e *Engine) ValidateProjectQuality(path string) (*interfaces.QualityValidationResult, error) {
+	return nil, fmt.Errorf("ValidateProjectQuality implementation pending - will be implemented in task 5")
+}
+
+// ValidateConfiguration validates configuration
+func (e *Engine) ValidateConfiguration(config *models.ProjectConfig) (*interfaces.ConfigValidationResult, error) {
+	return nil, fmt.Errorf("ValidateConfiguration implementation pending - will be implemented in task 5")
+}
+
+// ValidateConfigurationSchema validates configuration schema
+func (e *Engine) ValidateConfigurationSchema(config any, schema *interfaces.ConfigSchema) error {
+	return fmt.Errorf("ValidateConfigurationSchema implementation pending - will be implemented in task 5")
+}
+
+// ValidateConfigurationValues validates configuration values
+func (e *Engine) ValidateConfigurationValues(config *models.ProjectConfig) (*interfaces.ConfigValidationResult, error) {
+	return nil, fmt.Errorf("ValidateConfigurationValues implementation pending - will be implemented in task 5")
+}
+
+// ValidateTemplateAdvanced validates template advanced
+func (e *Engine) ValidateTemplateAdvanced(path string) (*interfaces.TemplateValidationResult, error) {
+	return nil, fmt.Errorf("ValidateTemplateAdvanced implementation pending - will be implemented in task 5")
+}
+
+// ValidateTemplateMetadata validates template metadata
+func (e *Engine) ValidateTemplateMetadata(metadata *interfaces.TemplateMetadata) error {
+	return fmt.Errorf("ValidateTemplateMetadata implementation pending - will be implemented in task 5")
+}
+
+// ValidateTemplateStructure validates template structure
+func (e *Engine) ValidateTemplateStructure(path string) (*interfaces.StructureValidationResult, error) {
+	return nil, fmt.Errorf("ValidateTemplateStructure implementation pending - will be implemented in task 5")
+}
+
+// ValidateTemplateVariables validates template variables
+func (e *Engine) ValidateTemplateVariables(variables map[string]interfaces.TemplateVariable) error {
+	return fmt.Errorf("ValidateTemplateVariables implementation pending - will be implemented in task 5")
+}
+
+// SetValidationRules sets validation rules
+func (e *Engine) SetValidationRules(rules []interfaces.ValidationRule) error {
+	return fmt.Errorf("SetValidationRules implementation pending - will be implemented in task 5")
+}
+
+// GetValidationRules gets validation rules
+func (e *Engine) GetValidationRules() []interfaces.ValidationRule {
+	return nil
+}
+
+// AddValidationRule adds a validation rule
+func (e *Engine) AddValidationRule(rule interfaces.ValidationRule) error {
+	return fmt.Errorf("AddValidationRule implementation pending - will be implemented in task 5")
+}
+
+// RemoveValidationRule removes a validation rule
+func (e *Engine) RemoveValidationRule(ruleID string) error {
+	return fmt.Errorf("RemoveValidationRule implementation pending - will be implemented in task 5")
+}
+
+// FixValidationIssues fixes validation issues
+func (e *Engine) FixValidationIssues(path string, issues []interfaces.ValidationIssue) (*interfaces.FixResult, error) {
+	return nil, fmt.Errorf("FixValidationIssues implementation pending - will be implemented in task 5")
+}
+
+// GetFixableIssues gets fixable issues
+func (e *Engine) GetFixableIssues(issues []interfaces.ValidationIssue) []interfaces.ValidationIssue {
+	return nil
+}
+
+// PreviewFixes previews fixes
+func (e *Engine) PreviewFixes(path string, issues []interfaces.ValidationIssue) (*interfaces.FixPreview, error) {
+	return nil, fmt.Errorf("PreviewFixes implementation pending - will be implemented in task 5")
+}
+
+// ApplyFix applies a fix
+func (e *Engine) ApplyFix(path string, fix interfaces.Fix) error {
+	return fmt.Errorf("ApplyFix implementation pending - will be implemented in task 5")
+}
+
+// GenerateValidationReport generates validation report
+func (e *Engine) GenerateValidationReport(result *interfaces.ValidationResult, format string) ([]byte, error) {
+	return nil, fmt.Errorf("GenerateValidationReport implementation pending - will be implemented in task 5")
+}
+
+// GetValidationSummary gets validation summary
+func (e *Engine) GetValidationSummary(results []*interfaces.ValidationResult) (*interfaces.ValidationSummary, error) {
+	return nil, fmt.Errorf("GetValidationSummary implementation pending - will be implemented in task 5")
 }
