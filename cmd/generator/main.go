@@ -35,7 +35,7 @@ var (
 // and handles proper cleanup and error reporting.
 func main() {
 	// Create and configure the application
-	// This sets up all CLI commands, flags, and validation logic
+	// This sets up all CLI commands, flags, and comprehensive functionality
 	application, err := app.NewApp(Version, GitCommit, BuildTime)
 	if err != nil {
 		log.Fatalf("Failed to create application: %v", err)

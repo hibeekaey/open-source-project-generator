@@ -4,7 +4,13 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/cuesoftinc/open-source-project-generator/internal/config"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/audit"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/cache"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/template"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/validation"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/version"
 )
 
 // MockConfigManager implements the ConfigManager interface for testing
@@ -84,11 +90,18 @@ func (m *MockValidationEngine) ValidateJSON(path string) error {
 	return m.err
 }
 
-func TestNewCLI(t *testing.T) {
+func TestNewCLIWithMocks(t *testing.T) {
 	configManager := &MockConfigManager{}
 	validator := &MockValidationEngine{}
 
-	cli := NewCLI(configManager, validator, "test-version")
+	// Create mock implementations for the new dependencies
+	templateEngine := template.NewEmbeddedEngine()
+	templateManager := template.NewManager(templateEngine)
+	versionManager := version.NewManager()
+	auditEngine := audit.NewEngine()
+	cacheManager := cache.NewManager("/tmp/test-cache")
+
+	cli := NewCLI(configManager, validator, templateManager, cacheManager, versionManager, auditEngine, "test-version")
 
 	if cli == nil {
 		t.Fatal("NewCLI returned nil")
@@ -105,7 +118,7 @@ func TestNewCLI(t *testing.T) {
 
 func TestCLIWithNilDependencies(t *testing.T) {
 	// Test CLI with nil dependencies
-	cli := NewCLI(nil, nil, "test-version")
+	cli := NewCLI(nil, nil, nil, nil, nil, nil, "test-version")
 
 	if cli == nil {
 		t.Fatal("NewCLI with nil dependencies should not return nil")
@@ -128,7 +141,14 @@ func TestCLIErrorHandling(t *testing.T) {
 	configManager := &MockConfigManager{err: testErr}
 	validator := &MockValidationEngine{err: testErr}
 
-	cli := NewCLI(configManager, validator, "test-version")
+	// Create mock implementations for the new dependencies
+	templateEngine := template.NewEmbeddedEngine()
+	templateManager := template.NewManager(templateEngine)
+	versionManager := version.NewManager()
+	auditEngine := audit.NewEngine()
+	cacheManager := cache.NewManager("/tmp/test-cache")
+
+	cli := NewCLI(configManager, validator, templateManager, cacheManager, versionManager, auditEngine, "test-version")
 
 	if cli == nil {
 		t.Fatal("NewCLI returned nil")
@@ -136,4 +156,103 @@ func TestCLIErrorHandling(t *testing.T) {
 
 	// Test that CLI handles errors gracefully
 	// Methods removed in simplified CLI
+}
+func TestCLICreationWithAllDependencies(t *testing.T) {
+	// Initialize all required dependencies
+	configManager := config.NewManager("", "")
+	validator := validation.NewEngine()
+	templateEngine := template.NewEmbeddedEngine()
+	templateManager := template.NewManager(templateEngine)
+	versionManager := version.NewManager()
+	auditEngine := audit.NewEngine()
+	cacheManager := cache.NewManager("/tmp/test-cache")
+
+	// Create CLI with all dependencies
+	cli := NewCLI(
+		configManager,
+		validator,
+		templateManager,
+		cacheManager,
+		versionManager,
+		auditEngine,
+		"test-version",
+	)
+
+	if cli == nil {
+		t.Fatal("Expected CLI to be created, got nil")
+	}
+}
+
+func TestCLICommands(t *testing.T) {
+	// Initialize all required dependencies
+	configManager := config.NewManager("", "")
+	validator := validation.NewEngine()
+	templateEngine := template.NewEmbeddedEngine()
+	templateManager := template.NewManager(templateEngine)
+	versionManager := version.NewManager()
+	auditEngine := audit.NewEngine()
+	cacheManager := cache.NewManager("/tmp/test-cache")
+
+	// Create CLI
+	cliImpl := NewCLI(
+		configManager,
+		validator,
+		templateManager,
+		cacheManager,
+		versionManager,
+		auditEngine,
+		"test-version",
+	).(*CLI)
+
+	// Test that root command is set up
+	if cliImpl.rootCmd == nil {
+		t.Fatal("Expected root command to be set up")
+	}
+
+	// Test that commands are registered
+	commands := cliImpl.rootCmd.Commands()
+	expectedCommands := []string{
+		"generate", "validate", "audit", "version",
+		"config", "list-templates", "update", "cache", "logs",
+	}
+
+	commandMap := make(map[string]bool)
+	for _, cmd := range commands {
+		commandMap[cmd.Name()] = true
+	}
+
+	for _, expected := range expectedCommands {
+		if !commandMap[expected] {
+			t.Errorf("Expected command '%s' to be registered", expected)
+		}
+	}
+}
+
+func TestCLIHelp(t *testing.T) {
+	// Initialize all required dependencies
+	configManager := config.NewManager("", "")
+	validator := validation.NewEngine()
+	templateEngine := template.NewEmbeddedEngine()
+	templateManager := template.NewManager(templateEngine)
+	versionManager := version.NewManager()
+	auditEngine := audit.NewEngine()
+	cacheManager := cache.NewManager("/tmp/test-cache")
+
+	// Create CLI
+	cli := NewCLI(
+		configManager,
+		validator,
+		templateManager,
+		cacheManager,
+		versionManager,
+		auditEngine,
+		"test-version",
+	)
+
+	// Test help command (should not return error)
+	err := cli.Run([]string{"--help"})
+	// Help command exits with code 0, which cobra treats as no error
+	if err != nil {
+		t.Errorf("Expected help command to succeed, got error: %v", err)
+	}
 }

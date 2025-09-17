@@ -5,6 +5,7 @@ import (
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/cli"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/filesystem"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/interfaces"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/template"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/validation"
@@ -41,8 +42,8 @@ func TestNewContainer(t *testing.T) {
 func TestContainerCLI(t *testing.T) {
 	container := NewContainer()
 
-	// Create a mock CLI (we'll use the real CLI for testing)
-	mockCLI := cli.NewCLI(nil, nil, "test-version")
+	// Create a real CLI with all required dependencies
+	mockCLI := cli.NewCLI(nil, nil, nil, nil, nil, nil, "test-version")
 
 	// Test SetCLI and GetCLI
 	container.SetCLI(mockCLI)
@@ -216,16 +217,36 @@ func TestContainerNilHandling(t *testing.T) {
 // Mock implementations for testing
 type mockCLI struct{}
 
-func (m *mockCLI) Run() error                                           { return nil }
-func (m *mockCLI) PromptProjectDetails() (*models.ProjectConfig, error) { return nil, nil }
-func (m *mockCLI) SelectComponents() ([]string, error)                  { return nil, nil }
-func (m *mockCLI) ConfirmGeneration(*models.ProjectConfig) bool         { return true }
-func (m *mockCLI) ShowProgress(string)                                  {}
-func (m *mockCLI) ShowError(string)                                     {}
-func (m *mockCLI) ShowSuccess(string)                                   {}
-func (m *mockCLI) ShowWarning(string)                                   {}
-func (m *mockCLI) PreviewConfiguration(*models.ProjectConfig)           {}
-func (m *mockCLI) CheckOutputPath(string) error                         { return nil }
+func (m *mockCLI) Run(args []string) error                                     { return nil }
+func (m *mockCLI) PromptProjectDetails() (*models.ProjectConfig, error)        { return nil, nil }
+func (m *mockCLI) SelectComponents() ([]string, error)                         { return nil, nil }
+func (m *mockCLI) ConfirmGeneration(*models.ProjectConfig) bool                { return true }
+func (m *mockCLI) GenerateFromConfig(string, interfaces.GenerateOptions) error { return nil }
+func (m *mockCLI) ValidateProject(string, interfaces.ValidationOptions) (*interfaces.ValidationResult, error) {
+	return nil, nil
+}
+func (m *mockCLI) AuditProject(string, interfaces.AuditOptions) (*interfaces.AuditResult, error) {
+	return nil, nil
+}
+func (m *mockCLI) ListTemplates(interfaces.TemplateFilter) ([]interfaces.TemplateInfo, error) {
+	return nil, nil
+}
+func (m *mockCLI) GetTemplateInfo(string) (*interfaces.TemplateInfo, error) { return nil, nil }
+func (m *mockCLI) ValidateTemplate(string) (*interfaces.TemplateValidationResult, error) {
+	return nil, nil
+}
+func (m *mockCLI) ShowConfig() error                             { return nil }
+func (m *mockCLI) SetConfig(string, string) error                { return nil }
+func (m *mockCLI) EditConfig() error                             { return nil }
+func (m *mockCLI) ValidateConfig() error                         { return nil }
+func (m *mockCLI) ExportConfig(string) error                     { return nil }
+func (m *mockCLI) ShowVersion(interfaces.VersionOptions) error   { return nil }
+func (m *mockCLI) CheckUpdates() (*interfaces.UpdateInfo, error) { return nil, nil }
+func (m *mockCLI) InstallUpdates() error                         { return nil }
+func (m *mockCLI) ShowCache() error                              { return nil }
+func (m *mockCLI) ClearCache() error                             { return nil }
+func (m *mockCLI) CleanCache() error                             { return nil }
+func (m *mockCLI) ShowLogs() error                               { return nil }
 
 func TestContainerWithMockCLI(t *testing.T) {
 	container := NewContainer()
@@ -240,7 +261,7 @@ func TestContainerWithMockCLI(t *testing.T) {
 	}
 
 	// Test that we can call methods on the retrieved CLI
-	err := retrievedCLI.Run()
+	err := retrievedCLI.Run([]string{"--help"})
 	if err != nil {
 		t.Errorf("Mock CLI Run() returned error: %v", err)
 	}
