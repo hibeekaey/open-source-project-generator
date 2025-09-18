@@ -95,56 +95,77 @@ func NewCLI(
 func (c *CLI) setupCommands() {
 	c.rootCmd = &cobra.Command{
 		Use:   "generator",
-		Short: "Open Source Project Generator",
+		Short: "Open Source Project Generator - Create production-ready projects with modern best practices",
 		Long: `A comprehensive tool for generating production-ready, enterprise-grade
-open source project structures following modern best practices.
+open source project structures following modern best practices and security standards.
 
-The generator supports multiple technology stacks including:
-  • Go 1.21+ with Gin framework
-  • Node.js 20+ with Next.js 15+ and React 19+
-  • Mobile development with Android (Kotlin) and iOS (Swift)
-  • Infrastructure with Docker, Kubernetes, and Terraform
+SUPPORTED TECHNOLOGY STACKS:
+  • Backend: Go 1.21+ with Gin framework, PostgreSQL, Redis, JWT auth
+  • Frontend: Node.js 20+, Next.js 15+, React 19+, TypeScript 5+, Tailwind CSS
+  • Mobile: Android (Kotlin 2.0+), iOS (Swift 5.9+), shared components
+  • Infrastructure: Docker 24+, Kubernetes 1.28+, Terraform 1.6+, monitoring
 
-Features:
-  • Interactive project configuration
-  • Template-based code generation
-  • Project validation and auditing
-  • Configuration management
-  • Offline mode support
-  • Comprehensive documentation generation
+CORE FEATURES:
+  • Interactive project configuration with intelligent defaults
+  • Template-based code generation with version management
+  • Comprehensive project validation and security auditing
+  • Advanced configuration management with multiple sources
+  • Offline mode support with intelligent caching
+  • Enterprise-grade security and compliance features
+  • Automated documentation and CI/CD workflow generation
+  • Multi-format output (JSON, YAML, HTML) for automation
 
-Examples:
-  generator generate                    # Interactive project generation
-  generator generate --config app.yaml # Generate from configuration
-  generator validate ./my-project      # Validate project structure
-  generator audit ./my-project         # Security and quality audit
-  generator list-templates             # Show available templates
-  generator version --packages         # Show latest package versions
+QUICK START:
+  1. Run 'generator generate' for interactive project creation
+  2. Use 'generator list-templates' to explore available templates
+  3. Run 'generator validate' to check existing projects
+  4. Use 'generator audit' for security and quality analysis
 
-For more information about a specific command, use:
-  generator <command> --help`,
+AUTOMATION SUPPORT:
+  • Non-interactive mode for CI/CD pipelines
+  • Configuration file support (YAML/JSON)
+  • Environment variable configuration
+  • Machine-readable output formats
+  • Proper exit codes for automation
+
+For detailed help on any command, use: generator <command> --help
+For troubleshooting, use: generator logs --level error`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
-		Example: `  # Interactive project generation
+		Example: `  # Interactive project generation (recommended for first-time users)
   generator generate
 
-  # Generate from configuration file
+  # Generate from configuration file (ideal for automation)
   generator generate --config project.yaml --output ./my-app
 
-  # Generate minimal project structure
-  generator generate --minimal --template go-gin
+  # Generate minimal project structure (quick prototyping)
+  generator generate --minimal --template go-gin --non-interactive
 
-  # Validate existing project
-  generator validate ./my-project --fix
+  # Generate in offline mode using cached templates
+  generator generate --offline --template nextjs-app
 
-  # Audit project for security issues
-  generator audit ./my-project --security --detailed
+  # Validate existing project with auto-fix
+  generator validate ./my-project --fix --report --report-format html
 
-  # List available templates
-  generator list-templates --category backend
+  # Comprehensive security and quality audit
+  generator audit ./my-project --security --quality --detailed --output-format json
 
-  # Show version and package information
-  generator version --packages --check-updates`,
+  # List and filter available templates
+  generator list-templates --category backend --technology go
+
+  # Show version information and check for updates
+  generator version --packages --check-updates --output-format json
+
+  # Manage configuration settings
+  generator config show
+  generator config set default.license MIT
+
+  # Cache management for offline usage
+  generator cache show
+  generator cache clean
+
+  # View recent logs for troubleshooting
+  generator logs --level error --lines 50`,
 	}
 
 	// Add global flags
@@ -470,52 +491,124 @@ func (c *CLI) ConfirmGeneration(config *models.ProjectConfig) bool {
 // setupGenerateCommand sets up the generate command with all documented flags
 func (c *CLI) setupGenerateCommand() {
 	generateCmd := &cobra.Command{
-		Use:   "generate",
-		Short: "Generate a new project from templates",
-		Long: `Generate a new project using interactive prompts or configuration files.
+		Use:   "generate [flags]",
+		Short: "Generate a new project from templates with modern best practices",
+		Long: `Generate production-ready project structures using interactive prompts or configuration files.
+Creates comprehensive projects with security, testing, and deployment configurations built-in.
 
-The generate command creates production-ready project structures with:
-  • Modern technology stacks (Go, Node.js, React, etc.)
-  • Best practices and security configurations
-  • Comprehensive documentation and examples
-  • CI/CD workflows and deployment configurations
-  • Testing frameworks and quality tools
+GENERATION MODES:
+  Interactive Mode (default):
+    • Guided prompts for project configuration
+    • Component selection with dependency validation
+    • Real-time configuration preview
+    • Intelligent defaults based on selections
 
-Generation Modes:
-  • Interactive: Guided prompts for project configuration
-  • Configuration file: Generate from YAML/JSON configuration
-  • Template-based: Use specific templates with custom options
-  • Minimal: Generate only essential project structure
+  Configuration File Mode:
+    • Generate from YAML/JSON configuration files
+    • Supports environment variable substitution
+    • Ideal for automation and CI/CD pipelines
+    • Validation and error reporting
 
-Supported Technologies:
-  • Backend: Go with Gin framework, REST APIs, GraphQL
-  • Frontend: Next.js, React, TypeScript, Tailwind CSS
-  • Mobile: Android (Kotlin), iOS (Swift), shared components
-  • Infrastructure: Docker, Kubernetes, Terraform, monitoring`,
+  Template-Specific Mode:
+    • Use specific templates with custom options
+    • Override default configurations
+    • Combine multiple templates
+
+  Minimal Mode:
+    • Generate only essential project structure
+    • Faster generation for prototyping
+    • Reduced dependencies and complexity
+
+SUPPORTED TECHNOLOGY STACKS:
+  Backend (Go 1.21+):
+    • Gin web framework with middleware
+    • PostgreSQL with GORM and migrations
+    • Redis for caching and sessions
+    • JWT authentication with refresh tokens
+    • Swagger/OpenAPI documentation
+    • Comprehensive testing suite
+
+  Frontend (Node.js 20+, Next.js 15+):
+    • React 19+ with TypeScript 5+
+    • Tailwind CSS 3.4+ for styling
+    • ESLint, Prettier for code quality
+    • Jest and Cypress for testing
+    • Performance optimization built-in
+
+  Mobile Development:
+    • Android: Kotlin 2.0+ with Jetpack Compose
+    • iOS: Swift 5.9+ with SwiftUI
+    • Shared design system and API specs
+    • Modern architecture patterns (MVVM, Clean)
+
+  Infrastructure (Latest Versions):
+    • Docker 24+ with multi-stage builds
+    • Kubernetes 1.28+ with security policies
+    • Terraform 1.6+ for infrastructure as code
+    • Monitoring with Prometheus and Grafana
+    • CI/CD with GitHub Actions
+
+SECURITY & COMPLIANCE:
+  • Security-first configurations and defaults
+  • Dependency vulnerability scanning
+  • Code quality and best practices enforcement
+  • License compliance checking
+  • Secrets management and environment configuration
+
+AUTOMATION FEATURES:
+  • Non-interactive mode for CI/CD
+  • Environment variable configuration
+  • Dry-run mode for validation
+  • Backup and rollback capabilities
+  • Progress reporting and logging`,
 		RunE: c.runGenerate,
-		Example: `  # Interactive project generation
+		Example: `  INTERACTIVE GENERATION:
+  # Start interactive project creation (recommended for new users)
   generator generate
+  
+  # Interactive with specific output directory
+  generator generate --output ./my-awesome-project
 
-  # Generate from configuration file
-  generator generate --config project.yaml
+  CONFIGURATION FILE GENERATION:
+  # Generate from YAML configuration
+  generator generate --config project.yaml --output ./my-app
+  
+  # Generate with environment variable substitution
+  GENERATOR_PROJECT_NAME=myapp generator generate --config template.yaml
 
-  # Generate with specific output directory
-  generator generate --output ./my-new-project
+  TEMPLATE-SPECIFIC GENERATION:
+  # Use specific template (skips template selection)
+  generator generate --template go-gin --output ./api-server
+  
+  # Minimal project structure for quick prototyping
+  generator generate --minimal --template nextjs-app
 
-  # Generate minimal project structure
-  generator generate --minimal --template go-gin
-
-  # Generate in offline mode using cached templates
-  generator generate --offline
-
-  # Generate with latest package versions
-  generator generate --update-versions
-
+  ADVANCED OPTIONS:
+  # Generate with latest package versions (slower but current)
+  generator generate --update-versions --template go-gin
+  
+  # Offline generation using cached templates and versions
+  generator generate --offline --template nextjs-app
+  
   # Preview generation without creating files
-  generator generate --dry-run
+  generator generate --dry-run --config project.yaml
 
-  # Force overwrite existing files
-  generator generate --force --backup-existing=false`,
+  AUTOMATION & CI/CD:
+  # Non-interactive generation for automation
+  generator generate --non-interactive --config ci-config.yaml
+  
+  # Force overwrite with backup (useful for updates)
+  generator generate --force --backup-existing --config project.yaml
+  
+  # Skip validation for faster generation (not recommended)
+  generator generate --skip-validation --template go-gin
+
+  TROUBLESHOOTING:
+  # Verbose output for debugging
+  generator generate --verbose --config project.yaml
+  
+  # Debug mode with performance metrics
+  generator generate --debug --template nextjs-app`,
 	}
 
 	// Basic flags
@@ -545,48 +638,121 @@ Supported Technologies:
 // setupValidateCommand sets up the validate command with all documented flags
 func (c *CLI) setupValidateCommand() {
 	validateCmd := &cobra.Command{
-		Use:   "validate [path]",
-		Short: "Validate project structure and configuration",
-		Long: `Validate the structure, configuration, and dependencies of a project.
+		Use:   "validate [path] [flags]",
+		Short: "Validate project structure, configuration, and dependencies",
+		Long: `Perform comprehensive validation of project structure, configuration files, dependencies,
+and best practices compliance. Provides detailed reports and automatic fixing capabilities.
 
-The validate command performs comprehensive checks including:
-  • Project structure and file organization
-  • Configuration file syntax and values
-  • Dependency versions and compatibility
-  • Code quality and best practices
-  • Security configurations
-  • Documentation completeness
+VALIDATION CATEGORIES:
+  Project Structure:
+    • Directory layout and organization
+    • Required files and naming conventions
+    • File permissions and security settings
+    • Git configuration and ignore patterns
 
-Validation Categories:
-  • Structure: Directory layout, required files, naming conventions
-  • Configuration: YAML/JSON syntax, schema validation, value ranges
-  • Dependencies: Version compatibility, security vulnerabilities
-  • Quality: Code style, test coverage, documentation
-  • Security: Permissions, secrets, security policies
+  Configuration Files:
+    • YAML/JSON syntax validation
+    • Schema compliance checking
+    • Value range and type validation
+    • Environment variable usage
 
-The validator can automatically fix many common issues when using the --fix flag.
-Generate detailed reports in multiple formats for CI/CD integration.`,
+  Dependencies:
+    • Version compatibility checking
+    • Security vulnerability scanning
+    • License compatibility analysis
+    • Outdated package detection
+
+  Code Quality:
+    • Code style and formatting
+    • Test coverage analysis
+    • Documentation completeness
+    • Best practices compliance
+
+  Security:
+    • Secrets and sensitive data detection
+    • File permission validation
+    • Security policy compliance
+    • Dependency security analysis
+
+AUTO-FIX CAPABILITIES:
+  The validator can automatically fix many common issues:
+    • Code formatting and style issues
+    • Missing configuration files
+    • Incorrect file permissions
+    • Outdated dependency versions
+    • Documentation template generation
+
+REPORTING FORMATS:
+  • Text: Human-readable console output (default)
+  • JSON: Machine-readable for CI/CD integration
+  • HTML: Rich web-based report with charts
+  • Markdown: Documentation-friendly format
+
+INTEGRATION:
+  • CI/CD pipeline integration with proper exit codes
+  • Webhook support for automated reporting
+  • Custom rule configuration
+  • Severity-based filtering and failure conditions`,
 		RunE: c.runValidate,
-		Example: `  # Validate current directory
+		Example: `  BASIC VALIDATION:
+  # Validate current directory
   generator validate
-
-  # Validate specific project
+  
+  # Validate specific project path
   generator validate ./my-project
+  
+  # Validate with verbose output for debugging
+  generator validate ./my-project --verbose
 
-  # Validate and auto-fix issues
+  AUTO-FIX AND REPAIR:
+  # Validate and automatically fix common issues
   generator validate ./my-project --fix
+  
+  # Show available fixes without applying them
+  generator validate ./my-project --show-fixes
+  
+  # Fix only specific types of issues
+  generator validate --fix --rules structure,formatting
 
+  REPORTING AND OUTPUT:
   # Generate detailed HTML report
-  generator validate --report --report-format html --output-file report.html
+  generator validate --report --report-format html --output-file validation-report.html
+  
+  # Generate JSON report for CI/CD integration
+  generator validate --report --report-format json --output-file results.json
+  
+  # Generate markdown report for documentation
+  generator validate --report --report-format markdown --output-file VALIDATION.md
 
-  # Validate with specific rules only
-  generator validate --rules structure,dependencies
-
+  FILTERING AND RULES:
+  # Validate only specific categories
+  generator validate --rules structure,dependencies,security
+  
+  # Exclude specific validation rules
+  generator validate --exclude-rules formatting,documentation
+  
   # Ignore warnings, show only errors
   generator validate --ignore-warnings
+  
+  # Use strict validation mode (more rigorous checks)
+  generator validate --strict
 
-  # Verbose validation output
-  generator validate --verbose`,
+  CI/CD INTEGRATION:
+  # Non-interactive mode with JSON output
+  generator validate --non-interactive --output-format json
+  
+  # Summary-only output for quick checks
+  generator validate --summary-only --quiet
+  
+  # Fail fast on first error (useful for CI)
+  generator validate --fail-fast --strict
+
+  TROUBLESHOOTING:
+  # Debug validation issues
+  generator validate --debug --verbose
+  
+  # Validate specific files only
+  generator validate --include-only package.json,go.mod`,
 	}
 
 	validateCmd.Flags().Bool("fix", false, "Automatically fix common validation issues")
@@ -608,46 +774,124 @@ Generate detailed reports in multiple formats for CI/CD integration.`,
 // setupAuditCommand sets up the audit command with all documented flags
 func (c *CLI) setupAuditCommand() {
 	auditCmd := &cobra.Command{
-		Use:   "audit [path]",
-		Short: "Audit project for security, quality, and best practices",
-		Long: `Perform comprehensive auditing of a project including security vulnerabilities,
-code quality analysis, license compliance, and performance optimization.
+		Use:   "audit [path] [flags]",
+		Short: "Comprehensive security, quality, and compliance auditing",
+		Long: `Perform enterprise-grade auditing of projects including security vulnerability scanning,
+code quality analysis, license compliance checking, and performance optimization recommendations.
 
-The audit command provides enterprise-grade analysis including:
-  • Security vulnerability scanning
-  • Code quality and maintainability metrics
-  • License compliance checking
-  • Performance and bundle size analysis
-  • Best practices compliance
-  • Dependency analysis and recommendations
+AUDIT CATEGORIES:
+  Security Analysis:
+    • CVE vulnerability scanning across all dependencies
+    • Secret and sensitive data detection
+    • Security policy compliance checking
+    • Authentication and authorization review
+    • Cryptographic implementation analysis
+    • Container and infrastructure security
 
-Audit Categories:
-  • Security: CVE scanning, policy compliance, secret detection
-  • Quality: Code smells, duplication, complexity metrics
-  • Licenses: Compatibility checking, conflict detection
-  • Performance: Bundle analysis, load time optimization
-  • Dependencies: Outdated packages, security issues
+  Code Quality Assessment:
+    • Code complexity and maintainability metrics
+    • Code duplication and smell detection
+    • Test coverage analysis and recommendations
+    • Documentation quality and completeness
+    • Architecture and design pattern compliance
+    • Performance bottleneck identification
 
-Generate comprehensive reports with actionable recommendations
-for improving project security, quality, and maintainability.`,
+  License Compliance:
+    • License compatibility matrix analysis
+    • Conflict detection and resolution suggestions
+    • Commercial license usage tracking
+    • Open source compliance verification
+    • License change impact assessment
+    • Legal risk evaluation
+
+  Performance Optimization:
+    • Bundle size analysis and optimization
+    • Load time and runtime performance metrics
+    • Memory usage and leak detection
+    • Database query optimization
+    • API performance analysis
+    • Resource utilization assessment
+
+  Dependency Management:
+    • Outdated package detection
+    • Security vulnerability assessment
+    • Dependency tree analysis
+    • Breaking change impact evaluation
+    • Alternative package recommendations
+    • Supply chain security analysis
+
+SCORING SYSTEM:
+  • Overall project score (0-10 scale)
+  • Category-specific scores and trends
+  • Severity-based issue classification
+  • Improvement recommendations with priority
+  • Benchmark comparison with industry standards
+  • Progress tracking over time
+
+REPORTING CAPABILITIES:
+  • Executive summary for stakeholders
+  • Technical detailed reports for developers
+  • Compliance reports for legal/security teams
+  • Trend analysis and historical comparison
+  • Integration with security dashboards
+  • Automated alert and notification system`,
 		RunE: c.runAudit,
-		Example: `  # Full audit of current directory
+		Example: `  COMPREHENSIVE AUDITING:
+  # Full audit with all categories (recommended)
   generator audit
-
-  # Audit specific project
+  
+  # Audit specific project directory
   generator audit ./my-project
+  
+  # Detailed audit with comprehensive reporting
+  generator audit --detailed --output-format html --output-file full-audit.html
 
-  # Security audit only
+  CATEGORY-SPECIFIC AUDITS:
+  # Security-focused audit only
   generator audit --security --no-quality --no-licenses --no-performance
+  
+  # Code quality and performance audit
+  generator audit --quality --performance --no-security --no-licenses
+  
+  # License compliance audit for legal review
+  generator audit --licenses --detailed --output-format json
 
-  # Generate detailed JSON report
-  generator audit --detailed --output-format json --output-file audit.json
+  REPORTING AND OUTPUT:
+  # Generate executive summary report
+  generator audit --summary-only --output-format html --output-file executive-summary.html
+  
+  # Detailed technical report in JSON for automation
+  generator audit --detailed --output-format json --output-file audit-results.json
+  
+  # Markdown report for documentation
+  generator audit --output-format markdown --output-file AUDIT_REPORT.md
 
-  # Quality and performance audit
-  generator audit --quality --performance
+  FAILURE CONDITIONS AND CI/CD:
+  # Fail build if high-severity issues found
+  generator audit --fail-on-high --non-interactive
+  
+  # Fail if overall score below threshold
+  generator audit --min-score 7.5 --fail-on-medium
+  
+  # Quick audit for CI pipelines
+  generator audit --summary-only --quiet --output-format json
 
-  # Audit with HTML report
-  generator audit --output-format html --output-file audit-report.html`,
+  FILTERING AND CUSTOMIZATION:
+  # Exclude specific audit categories
+  generator audit --exclude-categories performance,licenses
+  
+  # Audit with custom severity thresholds
+  generator audit --fail-on-medium --min-score 8.0
+  
+  # Focus on specific security aspects
+  generator audit --security --detailed --verbose
+
+  TROUBLESHOOTING AND DEBUGGING:
+  # Debug audit process with verbose output
+  generator audit --debug --verbose
+  
+  # Audit with performance metrics
+  generator audit --debug --detailed`,
 	}
 
 	auditCmd.Flags().Bool("security", true, "Perform security vulnerability scanning")
@@ -671,41 +915,103 @@ for improving project security, quality, and maintainability.`,
 // setupVersionCommand sets up the version command with all documented flags
 func (c *CLI) setupVersionCommand() {
 	versionCmd := &cobra.Command{
-		Use:   "version",
-		Short: "Show version information",
-		Long: `Display version information for the generator and supported technologies.
+		Use:   "version [flags]",
+		Short: "Display version information and check for updates",
+		Long: `Display comprehensive version information for the generator and all supported technologies.
+Includes update checking, compatibility information, and build details.
 
-The version command shows:
-  • Generator version and build information
-  • Latest versions of supported technologies
-  • Package version information for all stacks
-  • Update availability and release notes
-  • Compatibility information
+VERSION INFORMATION:
+  Generator Details:
+    • Current generator version and build information
+    • Build date, commit hash, and Go version used
+    • Platform and architecture information
+    • Feature flags and compilation options
 
-Supported Technologies:
-  • Runtime: Go 1.21+, Node.js 20+, Python 3.11+
-  • Frontend: Next.js 15+, React 19+, TypeScript 5+
-  • Mobile: Android SDK, iOS SDK, Kotlin, Swift
-  • Infrastructure: Docker, Kubernetes, Terraform
-  • Databases: PostgreSQL, MongoDB, Redis
-  • Tools: ESLint, Prettier, Jest, Cypress
+  Technology Stack Versions:
+    • Runtime environments (Go, Node.js, Python)
+    • Frontend frameworks (Next.js, React, TypeScript)
+    • Mobile development (Android SDK, iOS SDK, Kotlin, Swift)
+    • Infrastructure tools (Docker, Kubernetes, Terraform)
+    • Databases (PostgreSQL, MongoDB, Redis)
+    • Development tools (ESLint, Prettier, Jest, Cypress)
 
-Use --check-updates to see if newer versions are available.`,
+UPDATE MANAGEMENT:
+  • Check for generator updates with release notes
+  • Compare current versions with latest available
+  • Security update notifications and recommendations
+  • Breaking change warnings and migration guides
+  • Compatibility matrix for version combinations
+
+COMPATIBILITY INFORMATION:
+  • Minimum and recommended versions for each technology
+  • Known compatibility issues and workarounds
+  • Version combination testing results
+  • Platform-specific version requirements
+  • End-of-life and deprecation notices
+
+PACKAGE REGISTRY INTEGRATION:
+  • Real-time version checking from multiple registries
+  • NPM, Go modules, GitHub releases, and custom registries
+  • Version caching for offline usage
+  • Security vulnerability database integration
+  • License and compliance information`,
 		RunE: c.runVersion,
-		Example: `  # Show generator version
+		Example: `  BASIC VERSION INFORMATION:
+  # Show generator version only
   generator version
-
-  # Show all package versions
-  generator version --packages
-
-  # Check for updates
-  generator version --check-updates
-
-  # Show detailed build information
+  
+  # Show generator version with build details
   generator version --build-info
+  
+  # Short version output (version number only)
+  generator version --short
 
-  # Output in JSON format
-  generator version --packages --output-format json`,
+  PACKAGE VERSION INFORMATION:
+  # Show latest versions for all supported technologies
+  generator version --packages
+  
+  # Check specific package version
+  generator version --check-package react
+  
+  # Show compatibility matrix
+  generator version --compatibility
+
+  UPDATE CHECKING:
+  # Check for generator updates
+  generator version --check-updates
+  
+  # Check updates with release notes
+  generator version --check-updates --verbose
+  
+  # Check updates in JSON format for automation
+  generator version --check-updates --output-format json
+
+  OUTPUT FORMATS:
+  # JSON output for automation and parsing
+  generator version --packages --output-format json
+  
+  # YAML output for configuration files
+  generator version --packages --output-format yaml
+  
+  # Detailed text output with descriptions
+  generator version --packages --verbose
+
+  CI/CD AND AUTOMATION:
+  # Machine-readable output for CI/CD
+  generator version --packages --output-format json --quiet
+  
+  # Check for updates in non-interactive mode
+  generator version --check-updates --non-interactive
+  
+  # Get version information for specific technology stack
+  generator version --packages --format json | jq '.go'
+
+  TROUBLESHOOTING:
+  # Debug version checking issues
+  generator version --debug --check-updates
+  
+  # Verbose output with registry information
+  generator version --packages --verbose --debug`,
 	}
 
 	versionCmd.Flags().Bool("packages", false, "Show latest package versions for all supported technologies")
@@ -724,56 +1030,325 @@ Use --check-updates to see if newer versions are available.`,
 // setupConfigCommand sets up the config command with all subcommands
 func (c *CLI) setupConfigCommand() {
 	configCmd := &cobra.Command{
-		Use:   "config",
-		Short: "Manage generator configuration and defaults",
-		Long: `Manage generator configuration including defaults, user preferences,
-and project-specific settings. Supports multiple configuration sources.`,
+		Use:   "config <command> [flags]",
+		Short: "Manage generator configuration, defaults, and preferences",
+		Long: `Comprehensive configuration management for the generator including user preferences,
+project defaults, and system-wide settings. Supports multiple configuration sources and formats.
+
+CONFIGURATION SOURCES:
+  System Configuration:
+    • Global system-wide defaults and policies
+    • Installation-specific settings and paths
+    • Security policies and compliance requirements
+    • Resource limits and performance settings
+
+  User Configuration:
+    • Personal preferences and default values
+    • Frequently used project templates and settings
+    • Custom template locations and repositories
+    • Authentication tokens and credentials
+
+  Project Configuration:
+    • Project-specific overrides and customizations
+    • Team-shared configuration and standards
+    • Environment-specific settings (dev, staging, prod)
+    • Local development preferences and tools
+
+  Environment Variables:
+    • Runtime configuration overrides
+    • CI/CD pipeline settings and automation
+    • Secrets and sensitive configuration data
+    • Platform-specific environment settings
+
+CONFIGURATION HIERARCHY:
+  Priority order (highest to lowest):
+    1. Command-line flags and arguments
+    2. Environment variables (GENERATOR_*)
+    3. Project-specific configuration files
+    4. User configuration files (~/.generator/)
+    5. System-wide configuration files
+    6. Built-in defaults and fallbacks
+
+SUPPORTED FORMATS:
+  • YAML: Human-readable configuration files
+  • JSON: Machine-readable and API-friendly
+  • TOML: Configuration-focused format
+  • Environment variables: Runtime overrides
+  • Command-line flags: Immediate overrides
+
+CONFIGURATION VALIDATION:
+  • Schema validation and type checking
+  • Value range and constraint validation
+  • Cross-reference and dependency validation
+  • Security and compliance policy enforcement
+  • Migration and upgrade assistance`,
 	}
 
 	// config show
 	configShowCmd := &cobra.Command{
-		Use:   "show",
-		Short: "Show current configuration with source information",
-		Long:  "Display current configuration values and their sources (file, environment, defaults)",
-		RunE:  c.runConfigShow,
+		Use:   "show [key] [flags]",
+		Short: "Display current configuration values and their sources",
+		Long: `Display comprehensive configuration information including current values,
+their sources, and the configuration hierarchy. Supports filtering and multiple output formats.
+
+DISPLAY OPTIONS:
+  • Show all configuration values with source information
+  • Display specific configuration keys or sections
+  • Show configuration hierarchy and precedence
+  • Include default values and available options
+  • Display validation status and any issues
+
+SOURCE INFORMATION:
+  For each configuration value, shows:
+    • Current effective value
+    • Source (file, environment, default, command-line)
+    • File path or environment variable name
+    • Override history and precedence
+    • Validation status and constraints
+
+FILTERING OPTIONS:
+  • Show specific configuration keys or patterns
+  • Filter by configuration source or type
+  • Display only modified or non-default values
+  • Show configuration sections or categories
+  • Include or exclude sensitive information`,
+		RunE: c.runConfigShow,
+		Example: `  # Show all configuration values
+  generator config show
+  
+  # Show specific configuration key
+  generator config show default.license
+  
+  # Show configuration section
+  generator config show templates
+  
+  # Show with source information
+  generator config show --sources --verbose
+  
+  # Show in JSON format
+  generator config show --output-format json
+  
+  # Show only non-default values
+  generator config show --modified-only`,
 	}
 	configCmd.AddCommand(configShowCmd)
 
 	// config set
 	configSetCmd := &cobra.Command{
-		Use:   "set <key> <value>",
-		Short: "Set individual configuration values",
-		Long:  "Set individual configuration values or load configuration from file",
-		RunE:  c.runConfigSet,
-		Args:  cobra.RangeArgs(0, 2),
+		Use:   "set <key> <value> [flags]",
+		Short: "Set configuration values or load from file",
+		Long: `Set individual configuration values, update configuration sections,
+or load complete configuration from files. Includes validation and backup capabilities.
+
+SETTING OPTIONS:
+  Individual Values:
+    • Set specific configuration keys to new values
+    • Update nested configuration properties
+    • Append to or modify array/list values
+    • Remove configuration keys or reset to defaults
+
+  Batch Operations:
+    • Load configuration from YAML/JSON files
+    • Merge configuration with existing settings
+    • Import configuration from other projects
+    • Apply configuration templates and presets
+
+VALIDATION AND SAFETY:
+  • Automatic validation of new configuration values
+  • Type checking and constraint validation
+  • Backup creation before making changes
+  • Rollback support for failed operations
+  • Confirmation prompts for destructive changes
+
+VALUE TYPES:
+  • Strings: Simple text values and paths
+  • Numbers: Integers and floating-point values
+  • Booleans: True/false flags and switches
+  • Arrays: Lists of values and options
+  • Objects: Nested configuration structures`,
+		RunE: c.runConfigSet,
+		Args: cobra.RangeArgs(0, 2),
+		Example: `  # Set individual configuration values
+  generator config set default.license MIT
+  generator config set templates.path ./custom-templates
+  generator config set cache.ttl 3600
+  
+  # Set boolean values
+  generator config set offline.enabled true
+  generator config set validation.strict false
+  
+  # Set array values
+  generator config set templates.exclude "*.tmp,*.bak"
+  
+  # Load configuration from file
+  generator config set --file project-defaults.yaml
+  
+  # Merge configuration with existing settings
+  generator config set --file team-config.yaml --merge
+  
+  # Set with validation and backup
+  generator config set --backup --validate default.author "John Doe"`,
 	}
 	configSetCmd.Flags().String("file", "", "Load configuration from file")
 	configCmd.AddCommand(configSetCmd)
 
 	// config edit
 	configEditCmd := &cobra.Command{
-		Use:   "edit",
-		Short: "Open configuration file in default editor",
-		Long:  "Open the configuration file in the system's default editor",
-		RunE:  c.runConfigEdit,
+		Use:   "edit [file] [flags]",
+		Short: "Open configuration files in editor for interactive editing",
+		Long: `Open configuration files in the system's default editor or specified editor
+for interactive editing. Includes validation, backup, and safety features.
+
+EDITING OPTIONS:
+  • Open user configuration file for editing
+  • Edit project-specific configuration files
+  • Create new configuration files from templates
+  • Edit specific configuration sections or keys
+  • Use custom editor or IDE integration
+
+SAFETY FEATURES:
+  • Automatic backup creation before editing
+  • Configuration validation after editing
+  • Syntax highlighting and error detection
+  • Rollback support for invalid changes
+  • Confirmation prompts for critical changes
+
+EDITOR INTEGRATION:
+  • Respects EDITOR and VISUAL environment variables
+  • Supports popular editors (vim, nano, code, etc.)
+  • IDE integration with configuration schemas
+  • Syntax validation and auto-completion
+  • Real-time validation and error highlighting`,
+		RunE: c.runConfigEdit,
+		Example: `  # Edit user configuration file
+  generator config edit
+  
+  # Edit specific configuration file
+  generator config edit ~/.generator/config.yaml
+  
+  # Edit with specific editor
+  generator config edit --editor code
+  
+  # Edit with backup and validation
+  generator config edit --backup --validate
+  
+  # Create new configuration from template
+  generator config edit --template project-defaults`,
 	}
 	configCmd.AddCommand(configEditCmd)
 
 	// config validate
 	configValidateCmd := &cobra.Command{
-		Use:   "validate",
-		Short: "Validate configuration syntax and values",
-		Long:  "Validate configuration file syntax and check for valid values",
-		RunE:  c.runConfigValidate,
+		Use:   "validate [file] [flags]",
+		Short: "Validate configuration files and values",
+		Long: `Comprehensive validation of configuration files including syntax checking,
+value validation, constraint verification, and compatibility analysis.
+
+VALIDATION CATEGORIES:
+  Syntax Validation:
+    • YAML/JSON/TOML syntax correctness
+    • File format and structure validation
+    • Character encoding and format compliance
+    • Schema adherence and structure verification
+
+  Value Validation:
+    • Data type checking and conversion
+    • Range and constraint validation
+    • Required field presence verification
+    • Default value application and validation
+
+  Semantic Validation:
+    • Cross-reference and dependency validation
+    • Compatibility checking with current system
+    • Security policy compliance verification
+    • Best practices and recommendation analysis
+
+  Integration Validation:
+    • Template compatibility verification
+    • Plugin and extension compatibility
+    • External service connectivity testing
+    • Performance impact assessment
+
+VALIDATION REPORTING:
+  • Detailed error messages with line numbers
+  • Warning and informational messages
+  • Suggested fixes and corrections
+  • Validation summary and statistics
+  • Integration with editors and IDEs`,
+		RunE: c.runConfigValidate,
+		Example: `  # Validate current configuration
+  generator config validate
+  
+  # Validate specific configuration file
+  generator config validate ./project-config.yaml
+  
+  # Validate with detailed output
+  generator config validate --verbose --detailed
+  
+  # Validate and show suggested fixes
+  generator config validate --show-fixes
+  
+  # Validate in strict mode
+  generator config validate --strict --fail-on-warnings`,
 	}
 	configCmd.AddCommand(configValidateCmd)
 
 	// config export
 	configExportCmd := &cobra.Command{
-		Use:   "export [file]",
-		Short: "Export current configuration to shareable file",
-		Long:  "Export current configuration to a file that can be shared or used as template",
-		RunE:  c.runConfigExport,
+		Use:   "export [file] [flags]",
+		Short: "Export configuration to shareable files and templates",
+		Long: `Export current configuration to files that can be shared, versioned, or used as templates.
+Supports multiple formats and filtering options for different use cases.
+
+EXPORT OPTIONS:
+  Complete Export:
+    • Export all configuration values and settings
+    • Include source information and metadata
+    • Export with comments and documentation
+    • Create portable configuration packages
+
+  Filtered Export:
+    • Export specific configuration sections
+    • Exclude sensitive or environment-specific data
+    • Export only modified or non-default values
+    • Create minimal configuration templates
+
+  Template Creation:
+    • Generate configuration templates for teams
+    • Create project-specific configuration starters
+    • Export with placeholder values and examples
+    • Include validation schemas and documentation
+
+EXPORT FORMATS:
+  • YAML: Human-readable with comments and structure
+  • JSON: Machine-readable for automation
+  • TOML: Configuration-focused format
+  • Shell: Environment variable export format
+  • Dockerfile: Container environment configuration
+
+SHARING AND COLLABORATION:
+  • Remove sensitive information automatically
+  • Include team-specific defaults and preferences
+  • Generate documentation and usage examples
+  • Create version-controlled configuration packages`,
+		RunE: c.runConfigExport,
+		Example: `  # Export to YAML file
+  generator config export config.yaml
+  
+  # Export to JSON for automation
+  generator config export --format json config.json
+  
+  # Export only modified values
+  generator config export --modified-only team-config.yaml
+  
+  # Export as template with placeholders
+  generator config export --template --format yaml project-template.yaml
+  
+  # Export environment variables
+  generator config export --format env .env
+  
+  # Export with documentation
+  generator config export --include-docs --verbose config-documented.yaml`,
 	}
 	configCmd.AddCommand(configExportCmd)
 
@@ -783,44 +1358,129 @@ and project-specific settings. Supports multiple configuration sources.`,
 // setupListTemplatesCommand sets up the list-templates command
 func (c *CLI) setupListTemplatesCommand() {
 	listTemplatesCmd := &cobra.Command{
-		Use:   "list-templates",
-		Short: "List available project templates",
-		Long: `List all available project templates with filtering and search capabilities.
+		Use:   "list-templates [flags]",
+		Short: "List and discover available project templates",
+		Long: `List all available project templates with advanced filtering, search, and discovery capabilities.
+Provides comprehensive information about each template including compatibility, dependencies, and usage examples.
 
-The list-templates command shows:
-  • Available templates by category and technology
-  • Template descriptions and compatibility information
-  • Version information and dependencies
-  • Tags and keywords for easy discovery
-  • Maintainer and license information
+TEMPLATE CATEGORIES:
+  Frontend Templates:
+    • Next.js applications with React 19+ and TypeScript
+    • Landing pages optimized for performance and SEO
+    • Admin dashboards with comprehensive UI components
+    • Component libraries with Storybook integration
+    • Progressive Web Apps (PWA) with offline support
 
-Template Categories:
-  • Frontend: Next.js applications, React components, landing pages
-  • Backend: Go APIs, microservices, GraphQL servers
-  • Mobile: Android apps, iOS apps, shared components
-  • Infrastructure: Docker configs, Kubernetes manifests, Terraform
-  • Full-stack: Complete application templates
+  Backend Templates:
+    • Go APIs with Gin framework and PostgreSQL
+    • Microservices with gRPC and service mesh
+    • GraphQL servers with schema-first development
+    • Serverless functions with cloud integration
+    • Event-driven architectures with message queues
 
-Use filters to find templates that match your specific needs.
-Each template includes comprehensive documentation and examples.`,
+  Mobile Templates:
+    • Android apps with Kotlin 2.0+ and Jetpack Compose
+    • iOS apps with Swift 5.9+ and SwiftUI
+    • Cross-platform shared components and design systems
+    • Mobile-first API integration patterns
+    • Platform-specific optimization templates
+
+  Infrastructure Templates:
+    • Docker configurations with multi-stage builds
+    • Kubernetes manifests with security policies
+    • Terraform modules for multi-cloud deployment
+    • CI/CD pipelines with comprehensive testing
+    • Monitoring and observability stacks
+
+  Full-Stack Templates:
+    • Complete application stacks with all components
+    • Monorepo configurations with workspace management
+    • Microservices architectures with service discovery
+    • Event-driven systems with real-time features
+    • Enterprise-grade applications with compliance
+
+TEMPLATE INFORMATION:
+  • Detailed descriptions and use cases
+  • Technology stack and version requirements
+  • Dependencies and compatibility matrix
+  • Configuration options and customization points
+  • Documentation and example projects
+  • Maintainer information and support channels
+
+FILTERING AND SEARCH:
+  • Category-based filtering (frontend, backend, mobile, infrastructure)
+  • Technology stack filtering (Go, Node.js, React, Kotlin, Swift)
+  • Tag-based search with multiple criteria
+  • Text search across names, descriptions, and documentation
+  • Version and compatibility filtering
+  • Popularity and maintenance status filtering`,
 		RunE: c.runListTemplates,
-		Example: `  # List all templates
+		Example: `  BASIC TEMPLATE LISTING:
+  # List all available templates
   generator list-templates
+  
+  # Show detailed information for all templates
+  generator list-templates --detailed
+  
+  # List templates with descriptions and tags
+  generator list-templates --verbose
 
+  CATEGORY AND TECHNOLOGY FILTERING:
   # List backend templates only
   generator list-templates --category backend
-
+  
   # List Go-based templates
   generator list-templates --technology go
+  
+  # List mobile templates for iOS
+  generator list-templates --category mobile --technology swift
 
-  # Search for API templates
+  SEARCH AND DISCOVERY:
+  # Search for API-related templates
   generator list-templates --search api
+  
+  # Find templates with specific tags
+  generator list-templates --tags rest,microservice,docker
+  
+  # Search in descriptions and documentation
+  generator list-templates --search "authentication jwt"
 
-  # List templates with specific tags
-  generator list-templates --tags rest,microservice
+  DETAILED INFORMATION:
+  # Show comprehensive template details
+  generator list-templates --detailed --category frontend
+  
+  # List templates with compatibility information
+  generator list-templates --compatibility --technology go
+  
+  # Show template dependencies and requirements
+  generator list-templates --dependencies --detailed
 
-  # Show detailed template information
-  generator list-templates --detailed`,
+  OUTPUT FORMATS:
+  # JSON output for automation and parsing
+  generator list-templates --output-format json
+  
+  # YAML output for configuration
+  generator list-templates --output-format yaml --category backend
+  
+  # Table format for easy reading
+  generator list-templates --output-format table --detailed
+
+  FILTERING COMBINATIONS:
+  # Find React templates with TypeScript support
+  generator list-templates --technology react --tags typescript
+  
+  # List infrastructure templates with Kubernetes
+  generator list-templates --category infrastructure --search kubernetes
+  
+  # Find full-stack templates with specific technologies
+  generator list-templates --category fullstack --tags go,react,postgresql
+
+  TROUBLESHOOTING:
+  # Debug template discovery issues
+  generator list-templates --debug --verbose
+  
+  # Show template loading and validation status
+  generator list-templates --detailed --debug`,
 	}
 
 	listTemplatesCmd.Flags().String("category", "", "Filter by category (frontend, backend, mobile, infrastructure)")
@@ -857,21 +1517,57 @@ or to validate custom templates you've created.`,
 
 	// template info
 	templateInfoCmd := &cobra.Command{
-		Use:   "info <template-name>",
-		Short: "Show detailed information about a template",
-		Long: `Display comprehensive information about a specific template including:
-  • Template metadata and description
-  • Version and compatibility information
-  • Dependencies and requirements
-  • Variables and configuration options
-  • File structure and components`,
+		Use:   "info <template-name> [flags]",
+		Short: "Display comprehensive template information and documentation",
+		Long: `Display detailed information about a specific template including metadata,
+dependencies, configuration options, and usage examples.
+
+TEMPLATE INFORMATION:
+  Basic Information:
+    • Template name, version, and description
+    • Author, maintainer, and license information
+    • Creation date, last update, and changelog
+    • Category, tags, and classification
+
+  Technical Details:
+    • Technology stack and version requirements
+    • Dependencies and compatibility matrix
+    • Configuration variables and options
+    • File structure and component breakdown
+    • Build system and deployment information
+
+  Usage Information:
+    • Configuration examples and templates
+    • Common use cases and scenarios
+    • Best practices and recommendations
+    • Troubleshooting and known issues
+    • Community resources and support
+
+  Compatibility Information:
+    • Supported platforms and environments
+    • Version compatibility matrix
+    • Breaking changes and migration guides
+    • Integration with other templates
+    • Performance characteristics and limitations`,
 		RunE: c.runTemplateInfo,
 		Args: cobra.ExactArgs(1),
-		Example: `  # Show info for go-gin template
+		Example: `  # Show basic template information
   generator template info go-gin
-
-  # Show info for nextjs-app template
-  generator template info nextjs-app`,
+  
+  # Show detailed information with all sections
+  generator template info nextjs-app --detailed
+  
+  # Show template variables and configuration options
+  generator template info go-gin --variables --detailed
+  
+  # Show dependency information
+  generator template info nextjs-app --dependencies --compatibility
+  
+  # Show file structure and components
+  generator template info go-gin --structure --verbose
+  
+  # Output in JSON format for automation
+  generator template info nextjs-app --output-format json`,
 	}
 	templateInfoCmd.Flags().Bool("detailed", false, "Show detailed template information")
 	templateInfoCmd.Flags().Bool("variables", false, "Show template variables")
@@ -881,21 +1577,65 @@ or to validate custom templates you've created.`,
 
 	// template validate
 	templateValidateCmd := &cobra.Command{
-		Use:   "validate <template-path>",
-		Short: "Validate template structure and metadata",
-		Long: `Validate a custom template directory for:
-  • Proper template structure
-  • Valid metadata files
-  • Template syntax correctness
-  • Required files and directories
-  • Best practices compliance`,
+		Use:   "validate <template-path> [flags]",
+		Short: "Validate custom template structure, syntax, and compliance",
+		Long: `Comprehensive validation of custom template directories including structure,
+metadata, syntax, and best practices compliance. Provides detailed feedback and auto-fix capabilities.
+
+VALIDATION CATEGORIES:
+  Structure Validation:
+    • Required files and directories presence
+    • Template file organization and naming
+    • Metadata file structure and completeness
+    • Asset and resource file validation
+    • Documentation and example file checking
+
+  Syntax Validation:
+    • Template syntax correctness and parsing
+    • Variable usage and definition validation
+    • Conditional logic and loop validation
+    • Function usage and parameter validation
+    • Template inheritance and inclusion validation
+
+  Metadata Validation:
+    • Template metadata completeness and accuracy
+    • Version information and compatibility data
+    • Dependency specification and validation
+    • Configuration schema and variable definitions
+    • License and author information validation
+
+  Best Practices Compliance:
+    • Template organization and structure standards
+    • Security best practices and vulnerability checks
+    • Performance optimization recommendations
+    • Documentation quality and completeness
+    • Accessibility and usability guidelines
+
+AUTO-FIX CAPABILITIES:
+  • Automatic correction of common syntax errors
+  • Missing file and directory creation
+  • Metadata completion and standardization
+  • Documentation template generation
+  • Security and best practices improvements`,
 		RunE: c.runTemplateValidate,
 		Args: cobra.ExactArgs(1),
-		Example: `  # Validate custom template
+		Example: `  # Validate custom template directory
   generator template validate ./my-custom-template
-
-  # Validate with detailed output
-  generator template validate ./my-template --detailed`,
+  
+  # Validate with detailed output and suggestions
+  generator template validate ./my-template --detailed --verbose
+  
+  # Validate and auto-fix common issues
+  generator template validate ./my-template --fix --backup
+  
+  # Validate with strict compliance checking
+  generator template validate ./my-template --strict --best-practices
+  
+  # Generate validation report
+  generator template validate ./my-template --report --output-format html
+  
+  # Validate specific aspects only
+  generator template validate ./my-template --syntax-only --metadata-only`,
 	}
 	templateValidateCmd.Flags().Bool("detailed", false, "Show detailed validation results")
 	templateValidateCmd.Flags().Bool("fix", false, "Attempt to fix validation issues")
@@ -908,52 +1648,126 @@ or to validate custom templates you've created.`,
 // setupUpdateCommand sets up the update command
 func (c *CLI) setupUpdateCommand() {
 	updateCmd := &cobra.Command{
-		Use:   "update",
-		Short: "Update generator and check for new versions",
-		Long: `Check for and install updates to the generator.
+		Use:   "update [flags]",
+		Short: "Update generator, templates, and package information",
+		Long: `Comprehensive update management for the generator, templates, and package information.
+Includes safety checks, rollback capabilities, and multiple update channels.
 
-The update command provides comprehensive update management including:
-  • Checking for generator updates
-  • Installing available updates with safety checks
-  • Updating template cache and package information
-  • Compatibility checking before updates
-  • Rollback support for failed updates
+UPDATE COMPONENTS:
+  Generator Updates:
+    • Core generator binary and functionality
+    • New features and bug fixes
+    • Security patches and vulnerability fixes
+    • Performance improvements and optimizations
+    • Breaking change notifications and migration guides
 
-Update Safety Features:
+  Template Updates:
+    • New project templates and improvements
+    • Updated technology stack versions
+    • Security and best practice updates
+    • Bug fixes and compatibility improvements
+    • Community-contributed templates
+
+  Package Information:
+    • Latest version information for all technologies
+    • Security vulnerability database updates
+    • Compatibility matrix updates
+    • New package additions and removals
+    • License and compliance information updates
+
+UPDATE CHANNELS:
+  Stable Channel (default):
+    • Production-ready releases with full testing
+    • Recommended for production environments
+    • Comprehensive documentation and migration guides
+    • Long-term support and stability guarantees
+
+  Beta Channel:
+    • Pre-release versions with new features
+    • Early access to upcoming functionality
+    • Community testing and feedback integration
+    • Suitable for development and testing environments
+
+  Alpha Channel:
+    • Development versions with latest changes
+    • Experimental features and improvements
+    • Frequent updates with potential instability
+    • For advanced users and contributors only
+
+SAFETY AND SECURITY:
   • Automatic backup creation before updates
-  • Compatibility verification
-  • Signature verification for security
-  • Rollback on installation failure
-  • Non-disruptive update checking
+  • Digital signature verification for security
+  • Compatibility checking with existing projects
+  • Rollback support for failed installations
+  • Network security and integrity validation
+  • Offline update support with cached packages
 
-Update Channels:
-  • Stable: Production-ready releases (default)
-  • Beta: Pre-release versions with new features
-  • Alpha: Development versions for testing
-
-The update process includes comprehensive safety checks and
-can be configured to run automatically or manually.`,
+UPDATE AUTOMATION:
+  • Scheduled update checking
+  • CI/CD integration with update notifications
+  • Automated security update installation
+  • Update policy configuration and enforcement
+  • Integration with package managers and deployment tools`,
 		RunE: c.runUpdate,
-		Example: `  # Check for updates
+		Example: `  UPDATE CHECKING:
+  # Check for available updates
   generator update --check
-
-  # Install available updates
-  generator update --install
-
-  # Update templates cache
-  generator update --templates
-
-  # Force update even if risky
-  generator update --install --force
-
-  # Check compatibility before updating
+  
+  # Check with detailed release information
+  generator update --check --release-notes --verbose
+  
+  # Check compatibility with current projects
   generator update --check --compatibility
 
-  # Update with specific channel
+  UPDATE INSTALLATION:
+  # Install available updates (safe mode)
+  generator update --install
+  
+  # Install updates with backup creation
+  generator update --install --backup --verify
+  
+  # Force update even if compatibility issues exist
+  generator update --install --force
+
+  COMPONENT-SPECIFIC UPDATES:
+  # Update only template cache and package information
+  generator update --templates --packages
+  
+  # Update to specific version
+  generator update --install --version v2.1.0
+  
+  # Update using specific channel
   generator update --channel beta --install
 
-  # Show release notes for available update
-  generator update --check --release-notes`,
+  AUTOMATION AND CI/CD:
+  # Non-interactive update checking for CI
+  generator update --check --non-interactive --output-format json
+  
+  # Automated security update installation
+  generator update --install --security-only --non-interactive
+  
+  # Update with custom timeout for CI environments
+  generator update --check --timeout 30s
+
+  SAFETY AND ROLLBACK:
+  # Update with comprehensive backup
+  generator update --install --backup --verify --compatibility
+  
+  # Show rollback options for failed updates
+  generator update --rollback --list
+  
+  # Perform rollback to previous version
+  generator update --rollback --version v2.0.5
+
+  TROUBLESHOOTING:
+  # Debug update process
+  generator update --check --debug --verbose
+  
+  # Verify update integrity and signatures
+  generator update --verify --check-signatures
+  
+  # Test update process without installation
+  generator update --dry-run --install`,
 	}
 
 	updateCmd.Flags().Bool("check", false, "Check for updates without installing")
@@ -973,10 +1787,51 @@ can be configured to run automatically or manually.`,
 // setupCacheCommand sets up the cache command with all subcommands
 func (c *CLI) setupCacheCommand() {
 	cacheCmd := &cobra.Command{
-		Use:   "cache",
-		Short: "Manage template and version cache",
-		Long: `Manage the local cache used for offline mode and performance optimization.
-Includes cache statistics, cleanup, and repair operations.`,
+		Use:   "cache <command> [flags]",
+		Short: "Manage local cache for offline mode and performance",
+		Long: `Comprehensive cache management for templates, package versions, and other data.
+Enables offline mode operation and improves performance through intelligent caching.
+
+CACHE COMPONENTS:
+  Template Cache:
+    • Project templates and their metadata
+    • Template dependencies and compatibility information
+    • Custom templates and user modifications
+    • Template validation results and checksums
+
+  Version Cache:
+    • Package version information from registries
+    • Security vulnerability data
+    • Compatibility matrices and dependency graphs
+    • Update notifications and release information
+
+  Configuration Cache:
+    • User preferences and default settings
+    • Project configuration templates
+    • Validation rules and custom configurations
+    • Performance optimization settings
+
+CACHE OPERATIONS:
+  • View cache statistics and health information
+  • Clear all cached data or specific components
+  • Clean expired and invalid cache entries
+  • Validate cache integrity and repair corruption
+  • Configure cache policies and retention settings
+  • Enable/disable offline mode operation
+
+OFFLINE MODE:
+  • Complete offline operation using cached data
+  • Automatic fallback to cache when network unavailable
+  • Cache validation and freshness checking
+  • Offline-first operation with periodic sync
+  • Manual cache population for air-gapped environments
+
+PERFORMANCE OPTIMIZATION:
+  • Intelligent cache warming and preloading
+  • Compression and deduplication
+  • Cache hit rate monitoring and optimization
+  • Memory usage optimization
+  • Background cache maintenance and cleanup`,
 	}
 
 	// cache show
@@ -1066,57 +1921,146 @@ Includes cache statistics, cleanup, and repair operations.`,
 // setupLogsCommand sets up the logs command
 func (c *CLI) setupLogsCommand() {
 	logsCmd := &cobra.Command{
-		Use:   "logs",
-		Short: "View recent log entries and log file locations",
-		Long: `Display recent log entries and show log file locations.
+		Use:   "logs [flags]",
+		Short: "View and analyze application logs for debugging and monitoring",
+		Long: `Comprehensive log viewing and analysis capabilities for debugging, monitoring, and troubleshooting.
+Provides filtering, search, real-time following, and multiple output formats.
 
-The logs command provides comprehensive log viewing capabilities including:
-  • Recent log entries with filtering and search
-  • Log file location information
-  • Real-time log following (tail -f functionality)
-  • Filtering by log level, component, and time
-  • Multiple output formats for integration
+LOG CATEGORIES:
+  Application Logs:
+    • CLI command execution and user interactions
+    • Template processing and generation operations
+    • Configuration loading and validation
+    • Network requests and API communications
+    • File system operations and permissions
 
-Log Filtering:
-  • Level: Filter by log level (debug, info, warn, error, fatal)
-  • Component: Filter by component name (cli, config, template, etc.)
-  • Time: Show logs since a specific time
-  • Lines: Limit number of entries shown
+  System Logs:
+    • Performance metrics and resource usage
+    • Cache operations and hit/miss statistics
+    • Background tasks and scheduled operations
+    • Error recovery and retry mechanisms
+    • Security events and access control
 
-Output Formats:
-  • Text: Human-readable format (default)
-  • JSON: Machine-readable format for parsing
-  • Raw: Raw log file content
+  Debug Logs:
+    • Detailed execution traces and call stacks
+    • Variable values and state changes
+    • Template rendering and variable substitution
+    • Dependency resolution and version checking
+    • Internal component communications
 
-Use this command for debugging issues, monitoring operations,
-and understanding application behavior.`,
+FILTERING CAPABILITIES:
+  Log Level Filtering:
+    • DEBUG: Detailed debugging information
+    • INFO: General operational information
+    • WARN: Warning conditions and potential issues
+    • ERROR: Error conditions requiring attention
+    • FATAL: Critical errors causing application termination
+
+  Component Filtering:
+    • CLI: Command-line interface operations
+    • Config: Configuration management
+    • Template: Template processing and rendering
+    • Version: Version management and updates
+    • Cache: Cache operations and management
+    • Audit: Security and quality auditing
+    • Validation: Project validation operations
+
+  Time-Based Filtering:
+    • Recent entries (last N lines or time period)
+    • Specific time ranges and date filters
+    • Real-time log following and monitoring
+    • Historical log analysis and trends
+
+OUTPUT FORMATS:
+  • Text: Human-readable console output with colors
+  • JSON: Structured data for automation and parsing
+  • Raw: Unprocessed log file content
+  • CSV: Tabular format for analysis tools
+  • Syslog: Standard syslog format for integration
+
+ANALYSIS FEATURES:
+  • Log pattern recognition and anomaly detection
+  • Performance metrics extraction and visualization
+  • Error correlation and root cause analysis
+  • Trend analysis and historical comparison
+  • Integration with monitoring and alerting systems`,
 		RunE: c.runLogs,
-		Example: `  # Show last 50 log entries
+		Example: `  BASIC LOG VIEWING:
+  # Show recent log entries (default: 50 lines)
   generator logs
-
-  # Show last 100 log entries
+  
+  # Show specific number of log entries
   generator logs --lines 100
-
-  # Show only error logs
-  generator logs --level error
-
-  # Show logs from specific component
-  generator logs --component cli
-
-  # Show logs since specific time
-  generator logs --since "2024-01-01T10:00:00Z"
-
-  # Show logs in JSON format
-  generator logs --format json
-
-  # Follow logs in real-time
-  generator logs --follow
-
-  # Show log file locations
+  
+  # Show log file locations and information
   generator logs --locations
 
-  # Combine filters
-  generator logs --level warn --component template --lines 20`,
+  LOG LEVEL FILTERING:
+  # Show only error and fatal logs
+  generator logs --level error
+  
+  # Show warnings and above (warn, error, fatal)
+  generator logs --level warn
+  
+  # Show debug logs for detailed troubleshooting
+  generator logs --level debug --lines 200
+
+  COMPONENT AND SOURCE FILTERING:
+  # Show logs from CLI component only
+  generator logs --component cli
+  
+  # Show template processing logs
+  generator logs --component template --level debug
+  
+  # Show configuration-related logs
+  generator logs --component config --verbose
+
+  TIME-BASED FILTERING:
+  # Show logs since specific timestamp
+  generator logs --since "2024-01-01T10:00:00Z"
+  
+  # Show logs from last hour
+  generator logs --since "1h"
+  
+  # Show logs from last 30 minutes
+  generator logs --since "30m"
+
+  REAL-TIME MONITORING:
+  # Follow logs in real-time (like tail -f)
+  generator logs --follow
+  
+  # Follow error logs only
+  generator logs --follow --level error
+  
+  # Follow specific component logs
+  generator logs --follow --component template
+
+  OUTPUT FORMATS AND ANALYSIS:
+  # JSON output for automation and parsing
+  generator logs --format json --lines 100
+  
+  # Raw log file content
+  generator logs --format raw --no-color
+  
+  # CSV format for analysis tools
+  generator logs --format csv --since "24h"
+
+  ADVANCED FILTERING:
+  # Combine multiple filters
+  generator logs --level warn --component template --since "1h" --lines 50
+  
+  # Search for specific patterns
+  generator logs --search "error" --level info
+  
+  # Exclude timestamps for cleaner output
+  generator logs --no-timestamps --format text
+
+  TROUBLESHOOTING:
+  # Debug log viewing issues
+  generator logs --debug --verbose --locations
+  
+  # Show all available log files and their status
+  generator logs --locations --detailed`,
 	}
 
 	logsCmd.Flags().Int("lines", 50, "Number of recent log lines to show")

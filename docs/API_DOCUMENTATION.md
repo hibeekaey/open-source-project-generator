@@ -29,38 +29,142 @@ The Open Source Project Generator provides a comprehensive API for generating pr
 
 ## Core Interfaces
 
-### CLIInterface
+### CLI Interface
 
-The `CLIInterface` provides interactive command-line functionality for collecting project configuration and managing user interactions.
+The `CLIInterface` provides comprehensive command-line functionality for all generator operations including interactive configuration, validation, auditing, and automation support.
 
 ```go
 type CLIInterface interface {
-    Run() error
+    // Core operations
+    Run(args []string) error
+
+    // Interactive operations
     PromptProjectDetails() (*models.ProjectConfig, error)
     SelectComponents() ([]string, error)
     ConfirmGeneration(*models.ProjectConfig) bool
+
+    // Advanced interactive operations
+    PromptAdvancedOptions() (*AdvancedOptions, error)
+    ConfirmAdvancedGeneration(*models.ProjectConfig, *AdvancedOptions) bool
+    SelectTemplateInteractively(filter TemplateFilter) (*TemplateInfo, error)
+
+    // Non-interactive operations
+    GenerateFromConfig(path string, options GenerateOptions) error
+    ValidateProject(path string, options ValidationOptions) (*ValidationResult, error)
+    AuditProject(path string, options AuditOptions) (*AuditResult, error)
+
+    // Advanced non-interactive operations
+    GenerateWithAdvancedOptions(config *models.ProjectConfig, options *AdvancedOptions) error
+    ValidateProjectAdvanced(path string, options *ValidationOptions) (*ValidationResult, error)
+    AuditProjectAdvanced(path string, options *AuditOptions) (*AuditResult, error)
+
+    // Template operations
+    ListTemplates(filter TemplateFilter) ([]TemplateInfo, error)
+    GetTemplateInfo(name string) (*TemplateInfo, error)
+    ValidateTemplate(path string) (*TemplateValidationResult, error)
+
+    // Template management operations
+    SearchTemplates(query string) ([]TemplateInfo, error)
+    GetTemplateMetadata(name string) (*TemplateMetadata, error)
+    GetTemplateDependencies(name string) ([]string, error)
+    ValidateCustomTemplate(path string) (*TemplateValidationResult, error)
+
+    // Configuration operations
+    ShowConfig() error
+    SetConfig(key, value string) error
+    EditConfig() error
+    ValidateConfig() error
+    ExportConfig(path string) error
+
+    // Configuration management operations
+    LoadConfiguration(sources []string) (*models.ProjectConfig, error)
+    MergeConfigurations(configs []*models.ProjectConfig) (*models.ProjectConfig, error)
+    ValidateConfigurationSchema(config *models.ProjectConfig) error
+    GetConfigurationSources() ([]ConfigSource, error)
+
+    // Version and update operations
+    ShowVersion(options VersionOptions) error
+    CheckUpdates() (*UpdateInfo, error)
+    InstallUpdates() error
+
+    // Advanced version operations
+    GetPackageVersions() (map[string]string, error)
+    GetLatestPackageVersions() (map[string]string, error)
+    CheckCompatibility(path string) (*CompatibilityResult, error)
+
+    // Cache operations
+    ShowCache() error
+    ClearCache() error
+    CleanCache() error
+
+    // Cache management operations
+    GetCacheStats() (*CacheStats, error)
+    ValidateCache() error
+    RepairCache() error
+    EnableOfflineMode() error
+    DisableOfflineMode() error
+
+    // Utility operations
+    ShowLogs() error
+
+    // Logging and debugging operations
+    SetLogLevel(level string) error
+    GetLogLevel() string
+    ShowRecentLogs(lines int, level string) error
+    GetLogFileLocations() ([]string, error)
+
+    // Automation and integration operations
+    RunNonInteractive(config *models.ProjectConfig, options *AdvancedOptions) error
+    GenerateReport(reportType string, format string, outputFile string) error
+    GetExitCode() int
+    SetExitCode(code int)
 }
 ```
 
 **Key Features:**
 
-- Interactive project configuration collection
-- Component selection with dependency validation
-- Configuration preview and confirmation
-- Progress indication and user feedback
+- Complete command-line interface with all documented commands
+- Interactive and non-interactive modes for different use cases
+- Comprehensive validation and auditing capabilities
+- Advanced configuration management with multiple sources
+- Template discovery and management
+- Update management with safety checks
+- Cache management for offline operation
+- Logging and debugging support
 
 **Usage:**
 
 ```go
-cli := cli.NewCLI(configManager, validator)
+// Create CLI with all dependencies
+cli := cli.NewCLI(
+    configManager,
+    validator,
+    templateManager,
+    cacheManager,
+    versionManager,
+    auditEngine,
+    logger,
+    version,
+)
+
+// Run with command-line arguments
+err := cli.Run(os.Args[1:])
+if err != nil {
+    log.Fatal(err)
+}
+
+// Or use specific operations
 config, err := cli.PromptProjectDetails()
 if err != nil {
     return fmt.Errorf("failed to collect project details: %w", err)
 }
 
-if cli.ConfirmGeneration(config) {
-    // Proceed with generation
-}
+// Validate project
+result, err := cli.ValidateProject("./my-project", ValidationOptions{
+    Fix:          true,
+    Report:       true,
+    ReportFormat: "html",
+})
 ```
 
 ### TemplateEngine Interface
@@ -103,20 +207,219 @@ if err != nil {
 }
 ```
 
-### VersionManager
+### Version Manager
 
-The `VersionManager` handles package version management and updates from various registries.
+The `VersionManager` provides comprehensive version management including update capabilities, compatibility checking, and caching.
 
 ```go
 type VersionManager interface {
+    // Basic version operations
     GetLatestNodeVersion() (string, error)
     GetLatestGoVersion() (string, error)
     GetLatestNPMPackage(packageName string) (string, error)
     GetLatestGoModule(moduleName string) (string, error)
     UpdateVersionsConfig() (*models.VersionConfig, error)
     GetLatestGitHubRelease(owner, repo string) (string, error)
-    CacheVersion(key, version string) error
-    GetCachedVersion(key string) (string, bool)
+    GetVersionHistory(packageName string) ([]string, error)
+
+    // Enhanced version information
+    GetCurrentVersion() string
+    GetLatestVersion() (*VersionInfo, error)
+    GetAllPackageVersions() (map[string]string, error)
+    GetLatestPackageVersions() (map[string]string, error)
+    GetDetailedVersionHistory() ([]VersionInfo, error)
+
+    // Update management
+    CheckForUpdates() (*UpdateInfo, error)
+    DownloadUpdate(version string) error
+    InstallUpdate(version string) error
+    GetUpdateChannel() string
+    SetUpdateChannel(channel string) error
+
+    // Version compatibility
+    CheckCompatibility(projectPath string) (*CompatibilityResult, error)
+    GetSupportedVersions() (map[string][]string, error)
+    ValidateVersionRequirements(requirements map[string]string) (*VersionValidationResult, error)
+
+    // Version caching
+    CacheVersionInfo(info *VersionInfo) error
+    GetCachedVersionInfo() (*VersionInfo, error)
+    RefreshVersionCache() error
+    ClearVersionCache() error
+
+    // Release information
+    GetReleaseNotes(version string) (*ReleaseNotes, error)
+    GetChangeLog(fromVersion, toVersion string) (*ChangeLog, error)
+    GetSecurityAdvisories(version string) ([]SecurityAdvisory, error)
+
+    // Package management
+    GetPackageInfo(packageName string) (*PackageInfo, error)
+    GetPackageVersions(packageName string) ([]string, error)
+    CheckPackageUpdates(packages map[string]string) (map[string]PackageUpdate, error)
+
+    // Version configuration
+    SetVersionConfig(config *VersionConfig) error
+    GetVersionConfig() (*VersionConfig, error)
+    SetAutoUpdate(enabled bool) error
+    SetUpdateNotifications(enabled bool) error
+}
+```
+
+### Configuration Manager
+
+The `ConfigManager` handles comprehensive configuration management with multiple sources and validation.
+
+```go
+type ConfigManager interface {
+    // Configuration loading and saving
+    LoadConfig(path string) (*models.ProjectConfig, error)
+    SaveConfig(config *models.ProjectConfig, path string) error
+    LoadDefaults() (*models.ProjectConfig, error)
+    
+    // Settings management
+    GetSetting(key string) (interface{}, error)
+    SetSetting(key string, value interface{}) error
+    ValidateSettings() error
+    
+    // Configuration sources
+    LoadFromFile(path string) (*models.ProjectConfig, error)
+    LoadFromEnvironment() (*models.ProjectConfig, error)
+    MergeConfigurations(configs ...*models.ProjectConfig) *models.ProjectConfig
+    
+    // Configuration validation
+    ValidateConfig(config *models.ProjectConfig) error
+    GetConfigSchema() *ConfigSchema
+}
+```
+
+### Template Manager
+
+The `TemplateManager` provides comprehensive template management including discovery, validation, and processing.
+
+```go
+type TemplateManager interface {
+    // Template discovery
+    ListTemplates(filter TemplateFilter) ([]TemplateInfo, error)
+    GetTemplateInfo(name string) (*TemplateInfo, error)
+    SearchTemplates(query string) ([]TemplateInfo, error)
+    
+    // Template validation
+    ValidateTemplate(path string) (*TemplateValidationResult, error)
+    ValidateTemplateStructure(template *TemplateInfo) error
+    
+    // Template processing
+    ProcessTemplate(templateName string, config *models.ProjectConfig, outputPath string) error
+    ProcessCustomTemplate(templatePath string, config *models.ProjectConfig, outputPath string) error
+    
+    // Template metadata
+    GetTemplateMetadata(name string) (*TemplateMetadata, error)
+    GetTemplateDependencies(name string) ([]string, error)
+    GetTemplateCompatibility(name string) (*CompatibilityInfo, error)
+}
+```
+
+### Validation Engine
+
+The `ValidationEngine` provides comprehensive project validation with auto-fix capabilities.
+
+```go
+type ValidationEngine interface {
+    // Basic validation methods
+    ValidateProject(path string) (*models.ValidationResult, error)
+    ValidatePackageJSON(path string) error
+    ValidateGoMod(path string) error
+    ValidateDockerfile(path string) error
+    ValidateYAML(path string) error
+    ValidateJSON(path string) error
+    ValidateTemplate(path string) error
+
+    // Enhanced project validation
+    ValidateProjectStructure(path string) (*StructureValidationResult, error)
+    ValidateProjectDependencies(path string) (*DependencyValidationResult, error)
+    ValidateProjectSecurity(path string) (*SecurityValidationResult, error)
+    ValidateProjectQuality(path string) (*QualityValidationResult, error)
+
+    // Configuration validation
+    ValidateConfiguration(config *models.ProjectConfig) (*ConfigValidationResult, error)
+    ValidateConfigurationSchema(config any, schema *ConfigSchema) error
+    ValidateConfigurationValues(config *models.ProjectConfig) (*ConfigValidationResult, error)
+
+    // Template validation (enhanced versions)
+    ValidateTemplateAdvanced(path string) (*TemplateValidationResult, error)
+    ValidateTemplateMetadata(metadata *TemplateMetadata) error
+    ValidateTemplateStructure(path string) (*StructureValidationResult, error)
+    ValidateTemplateVariables(variables map[string]TemplateVariable) error
+
+    // Validation options
+    SetValidationRules(rules []ValidationRule) error
+    GetValidationRules() []ValidationRule
+    AddValidationRule(rule ValidationRule) error
+    RemoveValidationRule(ruleID string) error
+
+    // Auto-fix capabilities
+    FixValidationIssues(path string, issues []ValidationIssue) (*FixResult, error)
+    GetFixableIssues(issues []ValidationIssue) []ValidationIssue
+    PreviewFixes(path string, issues []ValidationIssue) (*FixPreview, error)
+    ApplyFix(path string, fix Fix) error
+
+    // Validation reporting
+    GenerateValidationReport(result *ValidationResult, format string) ([]byte, error)
+    GetValidationSummary(results []*ValidationResult) (*ValidationSummary, error)
+}
+```
+
+### Audit Engine
+
+The `AuditEngine` provides comprehensive security, quality, and compliance auditing.
+
+```go
+type AuditEngine interface {
+    // Security auditing
+    AuditSecurity(path string) (*SecurityAuditResult, error)
+    ScanVulnerabilities(path string) (*VulnerabilityReport, error)
+    CheckSecurityPolicies(path string) (*PolicyComplianceResult, error)
+    
+    // Quality auditing
+    AuditCodeQuality(path string) (*QualityAuditResult, error)
+    CheckBestPractices(path string) (*BestPracticesResult, error)
+    AnalyzeDependencies(path string) (*DependencyAnalysisResult, error)
+    
+    // License auditing
+    AuditLicenses(path string) (*LicenseAuditResult, error)
+    CheckLicenseCompatibility(path string) (*LicenseCompatibilityResult, error)
+    
+    // Performance auditing
+    AuditPerformance(path string) (*PerformanceAuditResult, error)
+    AnalyzeBundleSize(path string) (*BundleAnalysisResult, error)
+}
+```
+
+### Cache Manager
+
+The `CacheManager` provides comprehensive cache management for offline operation and performance optimization.
+
+```go
+type CacheManager interface {
+    // Cache operations
+    Get(key string) (interface{}, error)
+    Set(key string, value interface{}, ttl time.Duration) error
+    Delete(key string) error
+    Clear() error
+    Clean() error
+    
+    // Cache information
+    GetStats() (*CacheStats, error)
+    GetSize() (int64, error)
+    GetLocation() string
+    
+    // Cache validation
+    ValidateCache() error
+    RepairCache() error
+    
+    // Offline support
+    EnableOfflineMode() error
+    DisableOfflineMode() error
+    IsOfflineMode() bool
 }
 ```
 
@@ -156,7 +459,7 @@ Contains all interface definitions for dependency injection and testing.
 
 ### pkg/models
 
-Contains data models and configuration structures.
+Contains comprehensive data models and configuration structures for all generator operations.
 
 ```go
 type ProjectConfig struct {
@@ -170,8 +473,67 @@ type ProjectConfig struct {
     OutputPath   string            `json:"output_path" yaml:"output_path"`
     Components   Components        `json:"components" yaml:"components"`
     Versions     *VersionConfig    `json:"versions,omitempty" yaml:"versions,omitempty"`
-    CustomVars   map[string]string `json:"custom_vars,omitempty" yaml:"custom_vars,omitempty"`
-    // ... additional fields
+    CustomVars   map[string]interface{} `json:"custom_vars,omitempty" yaml:"custom_vars,omitempty"`
+    GenerateOptions GenerateOptions `json:"generate_options,omitempty" yaml:"generate_options,omitempty"`
+    GeneratedAt     time.Time       `json:"generated_at,omitempty" yaml:"generated_at,omitempty"`
+    GeneratorVersion string         `json:"generator_version,omitempty" yaml:"generator_version,omitempty"`
+}
+
+type GenerateOptions struct {
+    Force           bool     `json:"force" yaml:"force"`
+    Minimal         bool     `json:"minimal" yaml:"minimal"`
+    Offline         bool     `json:"offline" yaml:"offline"`
+    UpdateVersions  bool     `json:"update_versions" yaml:"update_versions"`
+    SkipValidation  bool     `json:"skip_validation" yaml:"skip_validation"`
+    BackupExisting  bool     `json:"backup_existing" yaml:"backup_existing"`
+    IncludeExamples bool     `json:"include_examples" yaml:"include_examples"`
+    Templates       []string `json:"templates" yaml:"templates"`
+    DryRun          bool     `json:"dry_run" yaml:"dry_run"`
+    NonInteractive  bool     `json:"non_interactive" yaml:"non_interactive"`
+}
+
+type ValidationOptions struct {
+    Verbose        bool     `json:"verbose"`
+    Fix            bool     `json:"fix"`
+    Report         bool     `json:"report"`
+    ReportFormat   string   `json:"report_format"`
+    Rules          []string `json:"rules"`
+    IgnoreWarnings bool     `json:"ignore_warnings"`
+    OutputFile     string   `json:"output_file"`
+    Strict         bool     `json:"strict"`
+    ShowFixes      bool     `json:"show_fixes"`
+}
+
+type AuditOptions struct {
+    Security     bool     `json:"security"`
+    Quality      bool     `json:"quality"`
+    Licenses     bool     `json:"licenses"`
+    Performance  bool     `json:"performance"`
+    OutputFormat string   `json:"output_format"`
+    OutputFile   string   `json:"output_file"`
+    Detailed     bool     `json:"detailed"`
+    FailOnHigh   bool     `json:"fail_on_high"`
+    FailOnMedium bool     `json:"fail_on_medium"`
+    MinScore     float64  `json:"min_score"`
+}
+
+type ValidationResult struct {
+    Valid           bool               `json:"valid"`
+    Issues          []ValidationIssue  `json:"issues"`
+    Warnings        []ValidationIssue  `json:"warnings"`
+    Summary         ValidationSummary  `json:"summary"`
+    FixSuggestions  []FixSuggestion    `json:"fix_suggestions"`
+}
+
+type AuditResult struct {
+    ProjectPath     string                  `json:"project_path"`
+    AuditTime       time.Time              `json:"audit_time"`
+    Security        *SecurityAuditResult    `json:"security,omitempty"`
+    Quality         *QualityAuditResult     `json:"quality,omitempty"`
+    Licenses        *LicenseAuditResult     `json:"licenses,omitempty"`
+    Performance     *PerformanceAuditResult `json:"performance,omitempty"`
+    OverallScore    float64                `json:"overall_score"`
+    Recommendations []string               `json:"recommendations"`
 }
 ```
 
