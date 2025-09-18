@@ -366,6 +366,9 @@ func (m *Manager) GetTemplatesByTechnology(technology string) ([]interfaces.Temp
 
 // ValidateTemplateMetadata validates template metadata
 func (m *Manager) ValidateTemplateMetadata(metadata *interfaces.TemplateMetadata) error {
+	if metadata == nil {
+		return fmt.Errorf("metadata cannot be nil")
+	}
 	if metadata.Author == "" {
 		return fmt.Errorf("metadata author is required")
 	}
@@ -837,12 +840,14 @@ func (m *Manager) loadTemplateMetadata(templatePath string) (*models.TemplateMet
 		if content, err := fs.ReadFile(embeddedTemplates, metadataPath); err == nil {
 			// For now, return basic metadata - full YAML parsing would require yaml package
 			metadata := &models.TemplateMetadata{
-				Name:        filepath.Base(templatePath),
-				DisplayName: m.formatDisplayName(filepath.Base(templatePath)),
-				Description: "Template description", // Would be parsed from YAML
-				Version:     "1.0.0",
-				Author:      "Open Source Project Generator",
-				License:     "MIT",
+				Name:         filepath.Base(templatePath),
+				DisplayName:  m.formatDisplayName(filepath.Base(templatePath)),
+				Description:  "Template description", // Would be parsed from YAML
+				Version:      "1.0.0",
+				Author:       "Open Source Project Generator",
+				License:      "MIT",
+				Dependencies: []string{}, // Initialize as empty slice, not nil
+				Tags:         []string{}, // Initialize as empty slice, not nil
 			}
 			_ = content // TODO: Parse YAML content when yaml package is available
 			return metadata, nil

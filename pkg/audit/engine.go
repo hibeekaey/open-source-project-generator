@@ -2342,6 +2342,7 @@ func (e *Engine) isSourceCodeFile(filePath string) bool {
 	sourceExtensions := []string{
 		".go", ".js", ".ts", ".jsx", ".tsx", ".py", ".java", ".cs", ".cpp", ".c", ".h",
 		".rb", ".php", ".swift", ".kt", ".rs", ".scala", ".clj", ".hs", ".ml", ".fs",
+		".css", ".scss", ".sass", ".less", ".html", ".htm", ".xml", ".yaml", ".yml",
 	}
 
 	ext := strings.ToLower(filepath.Ext(filePath))

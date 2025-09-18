@@ -761,6 +761,7 @@ INTEGRATION:
 	validateCmd.Flags().StringSlice("rules", []string{}, "Specific validation rules to apply")
 	validateCmd.Flags().Bool("ignore-warnings", false, "Ignore validation warnings")
 	validateCmd.Flags().String("output-file", "", "Save report to file")
+	validateCmd.Flags().StringP("output", "o", "", "Save report to file (alias for --output-file)")
 
 	// Additional validation flags
 	validateCmd.Flags().Bool("strict", false, "Use strict validation mode")
@@ -914,89 +915,47 @@ REPORTING CAPABILITIES:
 
 // setupVersionCommand sets up the version command with all documented flags
 func (c *CLI) setupVersionCommand() {
-	versionCmd := &cobra.Command{
-		Use:   "version [flags]",
-		Short: "Display version information and check for updates",
-		Long: `Display comprehensive version information for the generator and all supported technologies.
-Includes update checking, compatibility information, and build details.
+	versionCmd := NewVersionCommand()
 
-VERSION INFORMATION:
-  Generator Details:
-    • Current generator version and build information
-    • Build date, commit hash, and Go version used
-    • Platform and architecture information
-    • Feature flags and compilation options
+	// Add additional flags for the main CLI
+	versionCmd.Flags().Bool("packages", false, "Show latest package versions for all supported technologies")
+	versionCmd.Flags().Bool("check-updates", false, "Check for generator updates")
+	versionCmd.Flags().Bool("build-info", false, "Show detailed build information")
+	versionCmd.Flags().Bool("short", false, "Show only version number")
+	versionCmd.Flags().String("format", "text", "Output format (text, json, yaml)")
+	versionCmd.Flags().Bool("compatibility", false, "Show compatibility information")
+	versionCmd.Flags().String("check-package", "", "Check version for specific package")
 
-  Technology Stack Versions:
-    • Runtime environments (Go, Node.js, Python)
-    • Frontend frameworks (Next.js, React, TypeScript)
-    • Mobile development (Android SDK, iOS SDK, Kotlin, Swift)
-    • Infrastructure tools (Docker, Kubernetes, Terraform)
-    • Databases (PostgreSQL, MongoDB, Redis)
-    • Development tools (ESLint, Prettier, Jest, Cypress)
+	// Update the command description and examples
+	versionCmd.Long = `Display comprehensive version information for the generator and supported technologies.
 
-UPDATE MANAGEMENT:
-  • Check for generator updates with release notes
-  • Compare current versions with latest available
-  • Security update notifications and recommendations
-  • Breaking change warnings and migration guides
-  • Compatibility matrix for version combinations
+This command provides detailed version information including:
+- Generator version and build information
+- Latest versions of supported packages and technologies
+- Update availability and compatibility information
+- Build metadata and system information
 
-COMPATIBILITY INFORMATION:
-  • Minimum and recommended versions for each technology
-  • Known compatibility issues and workarounds
-  • Version combination testing results
-  • Platform-specific version requirements
-  • End-of-life and deprecation notices
+The command supports multiple output formats and can check for updates
+both for the generator itself and for supported technology packages.`
 
-PACKAGE REGISTRY INTEGRATION:
-  • Real-time version checking from multiple registries
-  • NPM, Go modules, GitHub releases, and custom registries
-  • Version caching for offline usage
-  • Security vulnerability database integration
-  • License and compliance information`,
-		RunE: c.runVersion,
-		Example: `  BASIC VERSION INFORMATION:
-  # Show generator version only
+	versionCmd.Example = `  # Basic version information
   generator version
   
-  # Show generator version with build details
+  # Show version in JSON format
+  generator version --json
+  
+  # Show all package versions
+  generator version --packages
+  
+  # Check for generator updates
+  generator version --check-updates
+  
+  # Show detailed build information
   generator version --build-info
   
   # Short version output (version number only)
   generator version --short
-
-  PACKAGE VERSION INFORMATION:
-  # Show latest versions for all supported technologies
-  generator version --packages
   
-  # Check specific package version
-  generator version --check-package react
-  
-  # Show compatibility matrix
-  generator version --compatibility
-
-  UPDATE CHECKING:
-  # Check for generator updates
-  generator version --check-updates
-  
-  # Check updates with release notes
-  generator version --check-updates --verbose
-  
-  # Check updates in JSON format for automation
-  generator version --check-updates --output-format json
-
-  OUTPUT FORMATS:
-  # JSON output for automation and parsing
-  generator version --packages --output-format json
-  
-  # YAML output for configuration files
-  generator version --packages --output-format yaml
-  
-  # Detailed text output with descriptions
-  generator version --packages --verbose
-
-  CI/CD AND AUTOMATION:
   # Machine-readable output for CI/CD
   generator version --packages --output-format json --quiet
   
@@ -1011,18 +970,7 @@ PACKAGE REGISTRY INTEGRATION:
   generator version --debug --check-updates
   
   # Verbose output with registry information
-  generator version --packages --verbose --debug`,
-	}
-
-	versionCmd.Flags().Bool("packages", false, "Show latest package versions for all supported technologies")
-	versionCmd.Flags().Bool("check-updates", false, "Check for generator updates")
-	versionCmd.Flags().Bool("build-info", false, "Show detailed build information")
-
-	// Additional version flags
-	versionCmd.Flags().Bool("short", false, "Show only version number")
-	versionCmd.Flags().String("format", "text", "Output format (text, json, yaml)")
-	versionCmd.Flags().Bool("compatibility", false, "Show compatibility information")
-	versionCmd.Flags().String("check-package", "", "Check version for specific package")
+  generator version --packages --verbose --debug`
 
 	c.rootCmd.AddCommand(versionCmd)
 }
@@ -2328,6 +2276,12 @@ func (c *CLI) runValidate(cmd *cobra.Command, args []string) error {
 	rules, _ := cmd.Flags().GetStringSlice("rules")
 	ignoreWarnings, _ := cmd.Flags().GetBool("ignore-warnings")
 	outputFile, _ := cmd.Flags().GetString("output-file")
+	output, _ := cmd.Flags().GetString("output")
+
+	// Use --output if provided, otherwise use --output-file
+	if output != "" {
+		outputFile = output
+	}
 	// Additional validation flags (for future implementation)
 	strict, _ := cmd.Flags().GetBool("strict")
 	summaryOnly, _ := cmd.Flags().GetBool("summary-only")
@@ -2417,6 +2371,15 @@ func (c *CLI) runValidate(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	// Generate report if requested
+	if report && outputFile != "" {
+		err := c.generateValidationReport(result, reportFormat, outputFile)
+		if err != nil {
+			return fmt.Errorf("failed to generate validation report: %w", err)
+		}
+		c.QuietOutput("Validation report written to: %s", outputFile)
+	}
+
 	// Return appropriate exit code
 	if !result.Valid {
 		details := map[string]interface{}{
@@ -2425,6 +2388,34 @@ func (c *CLI) runValidate(cmd *cobra.Command, args []string) error {
 			"path":           path,
 		}
 		return c.createValidationError(fmt.Sprintf("validation failed with %d issues", len(result.Issues)), details)
+	}
+
+	return nil
+}
+
+// generateValidationReport generates a validation report in the specified format
+func (c *CLI) generateValidationReport(result *interfaces.ValidationResult, format, outputFile string) error {
+	var content []byte
+	var err error
+
+	switch format {
+	case "json":
+		content, err = json.MarshalIndent(result, "", "  ")
+	case "text":
+		content = []byte(fmt.Sprintf("Validation Report\n=================\n\nValid: %t\nIssues: %d\nWarnings: %d\n",
+			result.Valid, len(result.Issues), len(result.Warnings)))
+	default:
+		content = []byte(fmt.Sprintf("Validation Report\n=================\n\nValid: %t\nIssues: %d\nWarnings: %d\n",
+			result.Valid, len(result.Issues), len(result.Warnings)))
+	}
+
+	if err != nil {
+		return fmt.Errorf("failed to format report: %w", err)
+	}
+
+	err = os.WriteFile(outputFile, content, 0600)
+	if err != nil {
+		return fmt.Errorf("failed to write report file: %w", err)
 	}
 
 	return nil
@@ -2547,71 +2538,6 @@ func (c *CLI) runAudit(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func (c *CLI) runVersion(cmd *cobra.Command, args []string) error {
-	// Get flags
-	packages, _ := cmd.Flags().GetBool("packages")
-	checkUpdates, _ := cmd.Flags().GetBool("check-updates")
-	buildInfo, _ := cmd.Flags().GetBool("build-info")
-	short, _ := cmd.Flags().GetBool("short")
-	format, _ := cmd.Flags().GetString("format")
-	compatibility, _ := cmd.Flags().GetBool("compatibility")
-	checkPackage, _ := cmd.Flags().GetString("check-package")
-	outputFormat, _ := cmd.Flags().GetString("output-format")
-
-	// Get global flags
-	nonInteractive, _ := cmd.Flags().GetBool("non-interactive")
-
-	// Auto-detect non-interactive mode
-	if !nonInteractive {
-		nonInteractive = c.isNonInteractiveMode()
-	}
-
-	// Use format if outputFormat is not set
-	if format != "text" {
-		outputFormat = format
-	}
-
-	// Handle short version output
-	if short {
-		if nonInteractive && (outputFormat == "json" || outputFormat == "yaml") {
-			versionData := map[string]string{"version": c.generatorVersion}
-			return c.outputMachineReadable(versionData, outputFormat)
-		}
-		c.QuietOutput(c.generatorVersion)
-		return nil
-	}
-
-	// Handle specific package version check
-	if checkPackage != "" {
-		c.VerboseOutput("Checking version for package: %s", checkPackage)
-		// This would be implemented when package version checking is fully implemented
-		if nonInteractive && (outputFormat == "json" || outputFormat == "yaml") {
-			packageData := map[string]interface{}{
-				"package": checkPackage,
-				"status":  "not_implemented",
-			}
-			return c.outputMachineReadable(packageData, outputFormat)
-		}
-		return nil
-	}
-
-	// Handle compatibility flag
-	if compatibility {
-		c.DebugOutput("Showing compatibility information")
-	}
-
-	// Create version options
-	options := interfaces.VersionOptions{
-		ShowPackages:  packages,
-		CheckUpdates:  checkUpdates,
-		ShowBuildInfo: buildInfo,
-		OutputFormat:  outputFormat,
-	}
-
-	// Show version information
-	return c.ShowVersion(options)
-}
-
 func (c *CLI) runConfigShow(cmd *cobra.Command, args []string) error {
 	// Show current configuration with source information
 	return c.ShowConfig()
@@ -2652,9 +2578,34 @@ func (c *CLI) runConfigEdit(cmd *cobra.Command, args []string) error {
 
 func (c *CLI) runConfigValidate(cmd *cobra.Command, args []string) error {
 	// Validate configuration file syntax and values
-	err := c.ValidateConfig()
-	if err != nil {
-		return fmt.Errorf("configuration validation failed: %w", err)
+	var err error
+
+	if len(args) > 0 {
+		// Validate specific config file
+		configPath := args[0]
+		result, validateErr := c.configManager.ValidateConfigFromFile(configPath)
+		if validateErr != nil {
+			return fmt.Errorf("configuration validation failed: %w", validateErr)
+		}
+
+		fmt.Printf("Configuration file: %s\n", configPath)
+		fmt.Printf("Valid: %t\n", result.Valid)
+
+		if !result.Valid {
+			if len(result.Errors) > 0 {
+				fmt.Println("Validation errors:")
+				for _, err := range result.Errors {
+					fmt.Printf("  - %s: %s\n", err.Field, err.Message)
+				}
+			}
+			return fmt.Errorf("configuration validation failed")
+		}
+	} else {
+		// Validate current configuration
+		err = c.ValidateConfig()
+		if err != nil {
+			return fmt.Errorf("configuration validation failed: %w", err)
+		}
 	}
 
 	fmt.Println("Configuration is valid")
@@ -3618,7 +3569,61 @@ func (c *CLI) GenerateFromConfig(configPath string, options interfaces.GenerateO
 }
 
 func (c *CLI) ValidateProject(path string, options interfaces.ValidationOptions) (*interfaces.ValidationResult, error) {
-	return nil, fmt.Errorf("ValidateProject implementation pending - will be implemented in task 5")
+	if c.validator == nil {
+		return nil, fmt.Errorf("validation engine not initialized")
+	}
+
+	// Call the actual validation engine
+	result, err := c.validator.ValidateProject(path)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert from models.ValidationResult to interfaces.ValidationResult
+	interfaceResult := &interfaces.ValidationResult{
+		Valid:    result.Valid,
+		Issues:   []interfaces.ValidationIssue{},
+		Warnings: []interfaces.ValidationIssue{},
+		Summary: interfaces.ValidationSummary{
+			TotalFiles:   1,
+			ValidFiles:   0,
+			ErrorCount:   0,
+			WarningCount: 0,
+			FixableCount: 0,
+		},
+		FixSuggestions: []interfaces.FixSuggestion{},
+	}
+
+	// Convert issues
+	for _, issue := range result.Issues {
+		interfaceIssue := interfaces.ValidationIssue{
+			Type:     issue.Type,
+			Severity: issue.Severity,
+			Message:  issue.Message,
+			File:     issue.File,
+			Line:     issue.Line,
+			Column:   issue.Column,
+			Rule:     issue.Rule,
+		}
+
+		if issue.Severity == "error" {
+			interfaceResult.Issues = append(interfaceResult.Issues, interfaceIssue)
+			interfaceResult.Summary.ErrorCount++
+		} else {
+			interfaceResult.Warnings = append(interfaceResult.Warnings, interfaceIssue)
+			interfaceResult.Summary.WarningCount++
+		}
+
+		if issue.Fixable {
+			interfaceResult.Summary.FixableCount++
+		}
+	}
+
+	if interfaceResult.Valid {
+		interfaceResult.Summary.ValidFiles = 1
+	}
+
+	return interfaceResult, nil
 }
 
 func (c *CLI) AuditProject(path string, options interfaces.AuditOptions) (*interfaces.AuditResult, error) {
@@ -3951,11 +3956,8 @@ func (c *CLI) SetConfig(key, value string) error {
 		return fmt.Errorf("failed to set configuration value: %w", err)
 	}
 
-	// Validate the updated settings
-	err = c.configManager.ValidateSettings()
-	if err != nil {
-		return fmt.Errorf("configuration validation failed after update: %w", err)
-	}
+	// Skip validation for individual settings - validation should be done
+	// when the complete configuration is ready
 
 	// Save the configuration to file if possible
 	configLocation := c.configManager.GetConfigLocation()

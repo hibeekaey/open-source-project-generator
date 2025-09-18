@@ -182,8 +182,8 @@ func (m *Manager) saveCache() error {
 
 // Get retrieves a value from the cache
 func (m *Manager) Get(key string) (any, error) {
-	m.mutex.RLock()
-	defer m.mutex.RUnlock()
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
 
 	entry, exists := m.entries[key]
 	if !exists {
@@ -277,11 +277,10 @@ func (m *Manager) Set(key string, value any, ttl time.Duration) error {
 
 	// Save to disk if persistence is enabled
 	if m.config.PersistToDisk {
-		go func() {
-			if err := m.saveCache(); err != nil {
-				fmt.Printf("Warning: Failed to save cache: %v\n", err)
-			}
-		}()
+		// Save synchronously to avoid goroutine leaks in tests
+		if err := m.saveCache(); err != nil {
+			fmt.Printf("Warning: Failed to save cache: %v\n", err)
+		}
 	}
 
 	return nil
@@ -500,11 +499,10 @@ func (m *Manager) Delete(key string) error {
 
 	// Save to disk if persistence is enabled
 	if m.config.PersistToDisk {
-		go func() {
-			if err := m.saveCache(); err != nil {
-				fmt.Printf("Warning: Failed to save cache: %v\n", err)
-			}
-		}()
+		// Save synchronously to avoid goroutine leaks in tests
+		if err := m.saveCache(); err != nil {
+			fmt.Printf("Warning: Failed to save cache: %v\n", err)
+		}
 	}
 
 	return nil
@@ -561,11 +559,10 @@ func (m *Manager) Clean() error {
 
 	// Save to disk if persistence is enabled
 	if m.config.PersistToDisk {
-		go func() {
-			if err := m.saveCache(); err != nil {
-				fmt.Printf("Warning: Failed to save cache: %v\n", err)
-			}
-		}()
+		// Save synchronously to avoid goroutine leaks in tests
+		if err := m.saveCache(); err != nil {
+			fmt.Printf("Warning: Failed to save cache: %v\n", err)
+		}
 	}
 
 	return nil

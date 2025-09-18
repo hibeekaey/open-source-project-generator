@@ -372,3 +372,83 @@ func TestManager_UpdateType(t *testing.T) {
 		t.Errorf("Expected 'patch' update type for 1.0.0 -> 1.0.1, got '%s'", updateType)
 	}
 }
+
+// Additional enhanced tests
+
+func TestManager_SetUpdateChannel(t *testing.T) {
+	manager := NewManager()
+
+	// Test setting valid channel
+	err := manager.SetUpdateChannel("beta")
+	if err != nil {
+		t.Fatalf("SetUpdateChannel failed: %v", err)
+	}
+
+	channel := manager.GetUpdateChannel()
+	if channel != "beta" {
+		t.Errorf("Expected channel 'beta', got '%s'", channel)
+	}
+
+	// Reset to stable
+	err = manager.SetUpdateChannel("stable")
+	if err != nil {
+		t.Fatalf("SetUpdateChannel reset failed: %v", err)
+	}
+}
+
+func TestManager_SetAutoUpdate(t *testing.T) {
+	manager := NewManager()
+
+	// Enable auto update
+	err := manager.SetAutoUpdate(true)
+	if err != nil {
+		t.Fatalf("SetAutoUpdate failed: %v", err)
+	}
+
+	config, err := manager.GetVersionConfig()
+	if err != nil {
+		t.Fatalf("GetVersionConfig failed: %v", err)
+	}
+
+	if !config.AutoUpdate {
+		t.Error("Expected AutoUpdate to be enabled")
+	}
+
+	// Disable auto update
+	err = manager.SetAutoUpdate(false)
+	if err != nil {
+		t.Fatalf("SetAutoUpdate disable failed: %v", err)
+	}
+
+	config, err = manager.GetVersionConfig()
+	if err != nil {
+		t.Fatalf("GetVersionConfig after disable failed: %v", err)
+	}
+
+	if config.AutoUpdate {
+		t.Error("Expected AutoUpdate to be disabled")
+	}
+}
+
+func TestManager_GetUpdateChannel(t *testing.T) {
+	manager := NewManager()
+
+	channel := manager.GetUpdateChannel()
+	if channel == "" {
+		t.Error("Expected update channel to be non-empty")
+	}
+
+	// Should be a valid channel
+	validChannels := []string{"stable", "beta", "alpha", "nightly"}
+	found := false
+	for _, validChannel := range validChannels {
+		if channel == validChannel {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		t.Errorf("Expected valid update channel, got '%s'", channel)
+	}
+}

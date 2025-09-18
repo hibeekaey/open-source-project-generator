@@ -492,7 +492,7 @@ func (m *Manager) CacheVersionInfo(info *interfaces.VersionInfo) error {
 		return nil
 	}
 
-	cacheKey := "version_info_" + info.Version
+	cacheKey := "latest_version_info"
 	config, _ := m.GetVersionConfig()
 	cacheTTL := 6 * time.Hour
 	if config != nil {
@@ -529,7 +529,7 @@ func (m *Manager) RefreshVersionCache() error {
 	}
 
 	// Clear version-related cache entries
-	keys, err := m.cacheManager.GetKeysByPattern("*version*")
+	keys, err := m.cacheManager.GetKeysByPattern(".*version.*")
 	if err != nil {
 		return fmt.Errorf("failed to get cache keys: %w", err)
 	}
@@ -560,7 +560,7 @@ func (m *Manager) ClearVersionCache() error {
 		return nil
 	}
 
-	keys, err := m.cacheManager.GetKeysByPattern("*version*")
+	keys, err := m.cacheManager.GetKeysByPattern(".*version.*")
 	if err != nil {
 		return fmt.Errorf("failed to get cache keys: %w", err)
 	}

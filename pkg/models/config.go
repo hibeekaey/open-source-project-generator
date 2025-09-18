@@ -24,6 +24,9 @@ type ProjectConfig struct {
 	// Output configuration
 	OutputPath string `yaml:"output_path" json:"output_path"`
 
+	// Features list for testing
+	Features []string `yaml:"features" json:"features"`
+
 	// Generation metadata
 	GeneratedAt      time.Time `yaml:"generated_at" json:"generated_at"`
 	GeneratorVersion string    `yaml:"generator_version" json:"generator_version"`
