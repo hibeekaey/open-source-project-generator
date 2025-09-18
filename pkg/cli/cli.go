@@ -47,6 +47,7 @@ type CLI struct {
 	verboseMode      bool
 	quietMode        bool
 	debugMode        bool
+	exitCode         int
 }
 
 // NewCLI creates a new CLI instance with all required dependencies.
@@ -181,7 +182,25 @@ func (c *CLI) Run(args []string) error {
 		return c.handleGlobalFlags(cmd)
 	}
 
-	return c.rootCmd.Execute()
+	// Execute command and handle errors with proper exit codes
+	err := c.rootCmd.Execute()
+	if err != nil {
+		// Get command name for context
+		cmdName := "generator"
+		if c.rootCmd.CalledAs() != "" {
+			cmdName = c.rootCmd.CalledAs()
+		}
+
+		// Handle error and get exit code
+		exitCode := c.handleError(err, cmdName, args)
+
+		// Exit with appropriate code for automation
+		if c.isNonInteractiveMode() {
+			os.Exit(exitCode)
+		}
+	}
+
+	return err
 }
 
 // handleGlobalFlags processes global flags that apply to all commands
@@ -195,6 +214,14 @@ func (c *CLI) handleGlobalFlags(cmd *cobra.Command) error {
 	logCaller, _ := cmd.Flags().GetBool("log-caller")
 	nonInteractive, _ := cmd.Flags().GetBool("non-interactive")
 	outputFormat, _ := cmd.Flags().GetString("output-format")
+
+	// Auto-detect non-interactive mode if not explicitly set
+	if !nonInteractive {
+		nonInteractive = c.isNonInteractiveMode()
+		if nonInteractive {
+			c.VerboseOutput("Auto-detected non-interactive mode (CI environment or piped input)")
+		}
+	}
 
 	// Handle conflicting flags
 	if verbose && quiet {
@@ -416,6 +443,16 @@ func (c *CLI) FinishOperationWithError(ctx *interfaces.OperationContext, operati
 		c.logger.FinishOperationWithError(ctx, err, nil)
 	}
 	c.ErrorOutput("Failed %s: %v", operation, err)
+}
+
+// GetExitCode returns the current exit code
+func (c *CLI) GetExitCode() int {
+	return c.exitCode
+}
+
+// SetExitCode sets the exit code for the CLI
+func (c *CLI) SetExitCode(code int) {
+	c.exitCode = code
 }
 
 // PromptProjectDetails collects basic project configuration from user input.
@@ -1118,23 +1155,28 @@ func (c *CLI) runGenerate(cmd *cobra.Command, args []string) error {
 	interactive, _ := cmd.Flags().GetBool("interactive")
 	preset, _ := cmd.Flags().GetString("preset")
 
+	// Auto-detect non-interactive mode if not explicitly set
+	if !nonInteractive {
+		nonInteractive = c.isNonInteractiveMode()
+		if nonInteractive {
+			c.VerboseOutput("Auto-detected non-interactive mode")
+		}
+	}
+
 	// Handle non-interactive mode
 	if nonInteractive {
 		interactive = false
 	}
 
-	// Use interactive flag for future implementation
-	_ = interactive
-
 	// Log additional options for debugging
 	if len(exclude) > 0 {
-		fmt.Printf("Debug: Excluding files/directories: %v\n", exclude)
+		c.DebugOutput("Excluding files/directories: %v", exclude)
 	}
 	if len(includeOnly) > 0 {
-		fmt.Printf("Debug: Including only: %v\n", includeOnly)
+		c.DebugOutput("Including only: %v", includeOnly)
 	}
 	if preset != "" {
-		fmt.Printf("Debug: Using preset: %s\n", preset)
+		c.DebugOutput("Using preset: %s", preset)
 	}
 
 	// Create generate options
@@ -1157,32 +1199,109 @@ func (c *CLI) runGenerate(cmd *cobra.Command, args []string) error {
 
 	// If config file is provided, generate from config
 	if configPath != "" {
+		c.VerboseOutput("Loading configuration from file: %s", configPath)
 		return c.GenerateFromConfig(configPath, options)
 	}
 
-	// Otherwise, use interactive mode
-	config, err := c.PromptProjectDetails()
-	if err != nil {
-		return fmt.Errorf("failed to collect project details: %w", err)
+	// Non-interactive mode with environment variables
+	if nonInteractive {
+		c.VerboseOutput("Running in non-interactive mode, loading configuration from environment variables")
+
+		// Load configuration from environment variables
+		envConfig, err := c.loadEnvironmentConfig()
+		if err != nil {
+			return fmt.Errorf("failed to load environment configuration: %w", err)
+		}
+
+		// Convert environment config to project config
+		config, err := c.convertEnvironmentConfigToProjectConfig(envConfig)
+		if err != nil {
+			return fmt.Errorf("failed to convert environment configuration: %w", err)
+		}
+
+		// Validate required fields for non-interactive mode
+		if config.Name == "" {
+			return c.createConfigurationError("project name is required in non-interactive mode", "GENERATOR_PROJECT_NAME environment variable")
+		}
+
+		// Override with command-line flags and environment variables
+		if outputPath != "" {
+			config.OutputPath = outputPath
+		} else if envConfig.OutputPath != "" {
+			config.OutputPath = envConfig.OutputPath
+		} else {
+			config.OutputPath = "./" + config.Name
+		}
+
+		// Update options with environment variables
+		options.Force = options.Force || envConfig.Force
+		options.Minimal = options.Minimal || envConfig.Minimal
+		options.Offline = options.Offline || envConfig.Offline
+		options.UpdateVersions = options.UpdateVersions || envConfig.UpdateVersions
+		options.SkipValidation = options.SkipValidation || envConfig.SkipValidation
+		options.BackupExisting = options.BackupExisting && envConfig.BackupExisting
+		options.IncludeExamples = options.IncludeExamples && envConfig.IncludeExamples
+		options.OutputPath = config.OutputPath
+
+		if template == "" && envConfig.Template != "" {
+			options.Templates = []string{envConfig.Template}
+		}
+
+		// Log CI environment information if detected
+		ci := c.detectCIEnvironment()
+		if ci.IsCI {
+			c.VerboseOutput("Detected CI environment: %s", ci.Provider)
+			if ci.BuildID != "" {
+				c.VerboseOutput("Build ID: %s", ci.BuildID)
+			}
+			if ci.Branch != "" {
+				c.VerboseOutput("Branch: %s", ci.Branch)
+			}
+		}
+
+		// Generate project in non-interactive mode
+		c.VerboseOutput("Generating project '%s' in non-interactive mode", config.Name)
+
+		// Use template from options or default
+		templateName := ""
+		if len(options.Templates) > 0 {
+			templateName = options.Templates[0]
+		}
+		if templateName == "" {
+			templateName = "go-gin" // Default template
+		}
+
+		return c.templateManager.ProcessTemplate(templateName, config, options.OutputPath)
 	}
 
-	if !c.ConfirmGeneration(config) {
-		fmt.Println("Generation cancelled by user")
-		return nil
+	// Interactive mode
+	if interactive {
+		c.VerboseOutput("Starting interactive project configuration")
+
+		config, err := c.PromptProjectDetails()
+		if err != nil {
+			return fmt.Errorf("failed to collect project details: %w", err)
+		}
+
+		if !c.ConfirmGeneration(config) {
+			c.QuietOutput("Generation cancelled by user")
+			return nil
+		}
+
+		// Generate project using template manager
+		templateName := template
+		if templateName == "" {
+			templateName = "go-gin" // Default template
+		}
+
+		if outputPath == "" {
+			outputPath = config.Name
+		}
+
+		return c.templateManager.ProcessTemplate(templateName, config, outputPath)
 	}
 
-	// Generate project using template manager
-	templateName := template
-	if templateName == "" {
-		// Use default template selection logic
-		templateName = "go-gin" // Default template
-	}
-
-	if outputPath == "" {
-		outputPath = config.Name
-	}
-
-	return c.templateManager.ProcessTemplate(templateName, config, outputPath)
+	return fmt.Errorf("no configuration provided - use --config flag, enable --interactive mode, or run in non-interactive mode with environment variables")
 }
 
 func (c *CLI) runValidate(cmd *cobra.Command, args []string) error {
@@ -1205,20 +1324,27 @@ func (c *CLI) runValidate(cmd *cobra.Command, args []string) error {
 	excludeRules, _ := cmd.Flags().GetStringSlice("exclude-rules")
 	showFixes, _ := cmd.Flags().GetBool("show-fixes")
 
+	// Get global flags
+	verbose, _ := cmd.Flags().GetBool("verbose")
+	nonInteractive, _ := cmd.Flags().GetBool("non-interactive")
+	outputFormat, _ := cmd.Flags().GetString("output-format")
+
+	// Auto-detect non-interactive mode
+	if !nonInteractive {
+		nonInteractive = c.isNonInteractiveMode()
+	}
+
 	// Log additional options for debugging
 	if strict {
-		fmt.Println("Debug: Using strict validation mode")
+		c.DebugOutput("Using strict validation mode")
 	}
 	if len(excludeRules) > 0 {
-		fmt.Printf("Debug: Excluding rules: %v\n", excludeRules)
+		c.DebugOutput("Excluding rules: %v", excludeRules)
 	}
 
 	// Use additional flags for future implementation
 	_ = summaryOnly
 	_ = showFixes
-
-	// Get global flags
-	verbose, _ := cmd.Flags().GetBool("verbose")
 
 	// Create validation options
 	options := interfaces.ValidationOptions{
@@ -1237,21 +1363,58 @@ func (c *CLI) runValidate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("validation failed: %w", err)
 	}
 
-	// Display results
-	fmt.Printf("Validation completed for: %s\n", path)
-	fmt.Printf("Valid: %t\n", result.Valid)
-	fmt.Printf("Issues: %d\n", len(result.Issues))
-	fmt.Printf("Warnings: %d\n", len(result.Warnings))
+	// Output results based on format and mode
+	if nonInteractive && (outputFormat == "json" || outputFormat == "yaml") {
+		// Machine-readable output for automation
+		return c.outputMachineReadable(result, outputFormat)
+	}
 
-	if len(result.Issues) > 0 {
-		fmt.Println("\nIssues found:")
-		for _, issue := range result.Issues {
-			fmt.Printf("  - %s: %s\n", issue.Severity, issue.Message)
+	// Human-readable output
+	if !c.quietMode {
+		c.QuietOutput("Validation completed for: %s", path)
+		c.QuietOutput("Valid: %t", result.Valid)
+		c.QuietOutput("Issues: %d", len(result.Issues))
+		c.QuietOutput("Warnings: %d", len(result.Warnings))
+
+		if len(result.Issues) > 0 && !summaryOnly {
+			c.QuietOutput("\nIssues found:")
+			for _, issue := range result.Issues {
+				c.QuietOutput("  - %s: %s", issue.Severity, issue.Message)
+				if issue.File != "" {
+					c.VerboseOutput("    File: %s:%d:%d", issue.File, issue.Line, issue.Column)
+				}
+			}
+		}
+
+		if len(result.Warnings) > 0 && !ignoreWarnings && !summaryOnly {
+			c.QuietOutput("\nWarnings:")
+			for _, warning := range result.Warnings {
+				c.QuietOutput("  - %s: %s", warning.Severity, warning.Message)
+				if warning.File != "" {
+					c.VerboseOutput("    File: %s:%d:%d", warning.File, warning.Line, warning.Column)
+				}
+			}
+		}
+
+		if showFixes && len(result.FixSuggestions) > 0 {
+			c.QuietOutput("\nSuggested fixes:")
+			for _, suggestion := range result.FixSuggestions {
+				c.QuietOutput("  - %s", suggestion.Description)
+				if suggestion.AutoFixable {
+					c.QuietOutput("    (Auto-fixable with --fix flag)")
+				}
+			}
 		}
 	}
 
+	// Return appropriate exit code
 	if !result.Valid {
-		return fmt.Errorf("validation failed with %d issues", len(result.Issues))
+		details := map[string]interface{}{
+			"issues_count":   len(result.Issues),
+			"warnings_count": len(result.Warnings),
+			"path":           path,
+		}
+		return c.createValidationError(fmt.Sprintf("validation failed with %d issues", len(result.Issues)), details)
 	}
 
 	return nil
@@ -1279,12 +1442,26 @@ func (c *CLI) runAudit(cmd *cobra.Command, args []string) error {
 	excludeCategories, _ := cmd.Flags().GetStringSlice("exclude-categories")
 	summaryOnly, _ := cmd.Flags().GetBool("summary-only")
 
+	// Get global flags
+	nonInteractive, _ := cmd.Flags().GetBool("non-interactive")
+	globalOutputFormat, _ := cmd.Flags().GetString("output-format")
+
+	// Auto-detect non-interactive mode
+	if !nonInteractive {
+		nonInteractive = c.isNonInteractiveMode()
+	}
+
+	// Use global output format if command-specific format not set
+	if outputFormat == "text" && globalOutputFormat != "text" {
+		outputFormat = globalOutputFormat
+	}
+
 	// Log additional options for debugging
 	if len(excludeCategories) > 0 {
-		fmt.Printf("Debug: Excluding audit categories: %v\n", excludeCategories)
+		c.DebugOutput("Excluding audit categories: %v", excludeCategories)
 	}
 	if summaryOnly {
-		fmt.Println("Debug: Showing summary only")
+		c.DebugOutput("Showing summary only")
 	}
 
 	// Create audit options
@@ -1304,49 +1481,57 @@ func (c *CLI) runAudit(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("audit failed: %w", err)
 	}
 
-	// Display results
-	fmt.Printf("Audit completed for: %s\n", path)
-	fmt.Printf("Overall Score: %.2f\n", result.OverallScore)
-	fmt.Printf("Audit Time: %s\n", result.AuditTime.Format("2006-01-02 15:04:05"))
-
-	if result.Security != nil {
-		fmt.Printf("Security Score: %.2f\n", result.Security.Score)
-		fmt.Printf("Vulnerabilities: %d\n", len(result.Security.Vulnerabilities))
+	// Output results based on format and mode
+	if nonInteractive && (outputFormat == "json" || outputFormat == "yaml") {
+		// Machine-readable output for automation
+		return c.outputMachineReadable(result, outputFormat)
 	}
 
-	if result.Quality != nil {
-		fmt.Printf("Quality Score: %.2f\n", result.Quality.Score)
-		fmt.Printf("Code Smells: %d\n", len(result.Quality.CodeSmells))
-	}
+	// Human-readable output
+	if !c.quietMode {
+		c.QuietOutput("Audit completed for: %s", path)
+		c.QuietOutput("Overall Score: %.2f", result.OverallScore)
+		c.VerboseOutput("Audit Time: %s", result.AuditTime.Format("2006-01-02 15:04:05"))
 
-	if result.Licenses != nil {
-		fmt.Printf("License Compatible: %t\n", result.Licenses.Compatible)
-		fmt.Printf("License Conflicts: %d\n", len(result.Licenses.Conflicts))
-	}
+		if result.Security != nil && !summaryOnly {
+			c.QuietOutput("Security Score: %.2f", result.Security.Score)
+			c.VerboseOutput("Vulnerabilities: %d", len(result.Security.Vulnerabilities))
+		}
 
-	if result.Performance != nil {
-		fmt.Printf("Performance Score: %.2f\n", result.Performance.Score)
-		fmt.Printf("Bundle Size: %d bytes\n", result.Performance.BundleSize)
-	}
+		if result.Quality != nil && !summaryOnly {
+			c.QuietOutput("Quality Score: %.2f", result.Quality.Score)
+			c.VerboseOutput("Code Smells: %d", len(result.Quality.CodeSmells))
+		}
 
-	if len(result.Recommendations) > 0 {
-		fmt.Println("\nRecommendations:")
-		for _, rec := range result.Recommendations {
-			fmt.Printf("  - %s\n", rec)
+		if result.Licenses != nil && !summaryOnly {
+			c.QuietOutput("License Compatible: %t", result.Licenses.Compatible)
+			c.VerboseOutput("License Conflicts: %d", len(result.Licenses.Conflicts))
+		}
+
+		if result.Performance != nil && !summaryOnly {
+			c.QuietOutput("Performance Score: %.2f", result.Performance.Score)
+			c.VerboseOutput("Bundle Size: %d bytes", result.Performance.BundleSize)
+		}
+
+		if len(result.Recommendations) > 0 && !summaryOnly {
+			c.QuietOutput("\nRecommendations:")
+			for _, rec := range result.Recommendations {
+				c.QuietOutput("  - %s", rec)
+			}
 		}
 	}
 
-	// Check fail conditions
+	// Check fail conditions and return appropriate exit codes
 	if failOnHigh && result.OverallScore < 7.0 {
-		return fmt.Errorf("audit failed: high severity issues found (score: %.2f)", result.OverallScore)
+		return c.createAuditError(fmt.Sprintf("audit failed: high severity issues found (score: %.2f)", result.OverallScore), result.OverallScore)
 	}
 
 	if failOnMedium && result.OverallScore < 5.0 {
-		return fmt.Errorf("audit failed: medium or higher severity issues found (score: %.2f)", result.OverallScore)
+		return c.createAuditError(fmt.Sprintf("audit failed: medium or higher severity issues found (score: %.2f)", result.OverallScore), result.OverallScore)
 	}
 
 	if minScore > 0 && result.OverallScore < minScore {
-		return fmt.Errorf("audit failed: score %.2f is below minimum required score %.2f", result.OverallScore, minScore)
+		return c.createAuditError(fmt.Sprintf("audit failed: score %.2f is below minimum required score %.2f", result.OverallScore, minScore), result.OverallScore)
 	}
 
 	return nil
@@ -1363,6 +1548,14 @@ func (c *CLI) runVersion(cmd *cobra.Command, args []string) error {
 	checkPackage, _ := cmd.Flags().GetString("check-package")
 	outputFormat, _ := cmd.Flags().GetString("output-format")
 
+	// Get global flags
+	nonInteractive, _ := cmd.Flags().GetBool("non-interactive")
+
+	// Auto-detect non-interactive mode
+	if !nonInteractive {
+		nonInteractive = c.isNonInteractiveMode()
+	}
+
 	// Use format if outputFormat is not set
 	if format != "text" {
 		outputFormat = format
@@ -1370,20 +1563,31 @@ func (c *CLI) runVersion(cmd *cobra.Command, args []string) error {
 
 	// Handle short version output
 	if short {
-		fmt.Println(c.generatorVersion)
+		if nonInteractive && (outputFormat == "json" || outputFormat == "yaml") {
+			versionData := map[string]string{"version": c.generatorVersion}
+			return c.outputMachineReadable(versionData, outputFormat)
+		}
+		c.QuietOutput(c.generatorVersion)
 		return nil
 	}
 
 	// Handle specific package version check
 	if checkPackage != "" {
-		fmt.Printf("Checking version for package: %s\n", checkPackage)
+		c.VerboseOutput("Checking version for package: %s", checkPackage)
 		// This would be implemented when package version checking is fully implemented
+		if nonInteractive && (outputFormat == "json" || outputFormat == "yaml") {
+			packageData := map[string]interface{}{
+				"package": checkPackage,
+				"status":  "not_implemented",
+			}
+			return c.outputMachineReadable(packageData, outputFormat)
+		}
 		return nil
 	}
 
 	// Handle compatibility flag
 	if compatibility {
-		fmt.Println("Debug: Showing compatibility information")
+		c.DebugOutput("Showing compatibility information")
 	}
 
 	// Create version options
@@ -1472,6 +1676,15 @@ func (c *CLI) runListTemplates(cmd *cobra.Command, args []string) error {
 	search, _ := cmd.Flags().GetString("search")
 	detailed, _ := cmd.Flags().GetBool("detailed")
 
+	// Get global flags
+	nonInteractive, _ := cmd.Flags().GetBool("non-interactive")
+	outputFormat, _ := cmd.Flags().GetString("output-format")
+
+	// Auto-detect non-interactive mode
+	if !nonInteractive {
+		nonInteractive = c.isNonInteractiveMode()
+	}
+
 	// Create template filter
 	filter := interfaces.TemplateFilter{
 		Category:   category,
@@ -1488,7 +1701,7 @@ func (c *CLI) runListTemplates(cmd *cobra.Command, args []string) error {
 		// This would be enhanced when SearchTemplates is fully implemented
 		allTemplates, err := c.ListTemplates(filter)
 		if err != nil {
-			return fmt.Errorf("failed to search templates: %w", err)
+			return c.createTemplateError("failed to search templates", search)
 		}
 
 		// Simple search filtering
@@ -1504,44 +1717,61 @@ func (c *CLI) runListTemplates(cmd *cobra.Command, args []string) error {
 	}
 
 	if err != nil {
-		return fmt.Errorf("failed to list templates: %w", err)
+		return c.createTemplateError("failed to list templates", "")
 	}
 
-	// Display templates
+	// Prepare response data
+	responseData := map[string]interface{}{
+		"templates": templates,
+		"count":     len(templates),
+		"filter":    filter,
+		"search":    search,
+		"detailed":  detailed,
+	}
+
+	// Output in machine-readable format if requested
+	if nonInteractive && (outputFormat == "json" || outputFormat == "yaml") {
+		return c.outputMachineReadable(responseData, outputFormat)
+	}
+
+	// Human-readable output
 	if len(templates) == 0 {
-		fmt.Println("No templates found matching the criteria")
-		return nil
+		c.QuietOutput("No templates found matching the criteria")
+		return c.outputSuccess("No templates found", responseData, "list-templates", []string{})
 	}
 
-	fmt.Printf("Found %d template(s):\n\n", len(templates))
+	if !c.quietMode {
+		c.QuietOutput("Found %d template(s):", len(templates))
+		c.QuietOutput("")
 
-	for _, template := range templates {
-		fmt.Printf("Name: %s\n", template.Name)
-		fmt.Printf("Display Name: %s\n", template.DisplayName)
-		fmt.Printf("Description: %s\n", template.Description)
-		fmt.Printf("Category: %s\n", template.Category)
-		fmt.Printf("Technology: %s\n", template.Technology)
-		fmt.Printf("Version: %s\n", template.Version)
+		for _, template := range templates {
+			c.QuietOutput("Name: %s", template.Name)
+			c.QuietOutput("Display Name: %s", template.DisplayName)
+			c.QuietOutput("Description: %s", template.Description)
+			c.QuietOutput("Category: %s", template.Category)
+			c.QuietOutput("Technology: %s", template.Technology)
+			c.QuietOutput("Version: %s", template.Version)
 
-		if len(template.Tags) > 0 {
-			fmt.Printf("Tags: %s\n", strings.Join(template.Tags, ", "))
-		}
-
-		if detailed {
-			if len(template.Dependencies) > 0 {
-				fmt.Printf("Dependencies: %s\n", strings.Join(template.Dependencies, ", "))
+			if len(template.Tags) > 0 {
+				c.QuietOutput("Tags: %s", strings.Join(template.Tags, ", "))
 			}
-			fmt.Printf("Author: %s\n", template.Metadata.Author)
-			fmt.Printf("License: %s\n", template.Metadata.License)
-			if template.Metadata.Repository != "" {
-				fmt.Printf("Repository: %s\n", template.Metadata.Repository)
-			}
-		}
 
-		fmt.Println()
+			if detailed {
+				if len(template.Dependencies) > 0 {
+					c.VerboseOutput("Dependencies: %s", strings.Join(template.Dependencies, ", "))
+				}
+				c.VerboseOutput("Author: %s", template.Metadata.Author)
+				c.VerboseOutput("License: %s", template.Metadata.License)
+				if template.Metadata.Repository != "" {
+					c.VerboseOutput("Repository: %s", template.Metadata.Repository)
+				}
+			}
+
+			c.QuietOutput("")
+		}
 	}
 
-	return nil
+	return c.outputSuccess(fmt.Sprintf("Listed %d templates", len(templates)), responseData, "list-templates", []string{})
 }
 
 func (c *CLI) runUpdate(cmd *cobra.Command, args []string) error {
@@ -2874,10 +3104,6 @@ func (c *CLI) RunNonInteractive(config *models.ProjectConfig, options *interface
 
 func (c *CLI) GenerateReport(reportType string, format string, outputFile string) error {
 	return fmt.Errorf("GenerateReport implementation pending")
-}
-
-func (c *CLI) GetExitCode() int {
-	return 0
 }
 
 // applySettingToConfig applies a configuration setting to a ProjectConfig struct

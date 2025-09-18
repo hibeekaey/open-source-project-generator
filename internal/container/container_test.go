@@ -296,6 +296,7 @@ func (m *mockCLI) RunNonInteractive(*models.ProjectConfig, *interfaces.AdvancedO
 }
 func (m *mockCLI) GenerateReport(string, string, string) error { return nil }
 func (m *mockCLI) GetExitCode() int                            { return 0 }
+func (m *mockCLI) SetExitCode(int)                             {}
 
 func TestContainerWithMockCLI(t *testing.T) {
 	container := NewContainer()

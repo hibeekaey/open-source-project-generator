@@ -107,6 +107,7 @@ type CLIInterface interface {
 	RunNonInteractive(config *models.ProjectConfig, options *AdvancedOptions) error
 	GenerateReport(reportType string, format string, outputFile string) error
 	GetExitCode() int
+	SetExitCode(code int)
 }
 
 // GenerateOptions defines options for project generation
