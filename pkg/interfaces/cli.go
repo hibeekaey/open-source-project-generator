@@ -135,17 +135,6 @@ type ValidationOptions struct {
 	OutputFile     string   `json:"output_file"`
 }
 
-// AuditOptions defines options for project auditing
-type AuditOptions struct {
-	Security     bool   `json:"security"`
-	Quality      bool   `json:"quality"`
-	Licenses     bool   `json:"licenses"`
-	Performance  bool   `json:"performance"`
-	OutputFormat string `json:"output_format"`
-	OutputFile   string `json:"output_file"`
-	Detailed     bool   `json:"detailed"`
-}
-
 // VersionOptions defines options for version display
 type VersionOptions struct {
 	ShowPackages  bool   `json:"show_packages"`
@@ -234,106 +223,6 @@ type TemplateValidationResult struct {
 	Issues   []ValidationIssue `json:"issues"`
 	Warnings []ValidationIssue `json:"warnings"`
 	Summary  ValidationSummary `json:"summary"`
-}
-
-// AuditResult contains the result of project auditing
-type AuditResult struct {
-	ProjectPath     string                  `json:"project_path"`
-	AuditTime       time.Time               `json:"audit_time"`
-	Security        *SecurityAuditResult    `json:"security,omitempty"`
-	Quality         *QualityAuditResult     `json:"quality,omitempty"`
-	Licenses        *LicenseAuditResult     `json:"licenses,omitempty"`
-	Performance     *PerformanceAuditResult `json:"performance,omitempty"`
-	OverallScore    float64                 `json:"overall_score"`
-	Recommendations []string                `json:"recommendations"`
-}
-
-// SecurityAuditResult contains security audit results
-type SecurityAuditResult struct {
-	Score            float64           `json:"score"`
-	Vulnerabilities  []Vulnerability   `json:"vulnerabilities"`
-	PolicyViolations []PolicyViolation `json:"policy_violations"`
-	Recommendations  []string          `json:"recommendations"`
-}
-
-// QualityAuditResult contains quality audit results
-type QualityAuditResult struct {
-	Score           float64       `json:"score"`
-	CodeSmells      []CodeSmell   `json:"code_smells"`
-	Duplications    []Duplication `json:"duplications"`
-	TestCoverage    float64       `json:"test_coverage"`
-	Recommendations []string      `json:"recommendations"`
-}
-
-// LicenseAuditResult contains license audit results
-type LicenseAuditResult struct {
-	Compatible      bool          `json:"compatible"`
-	Licenses        []LicenseInfo `json:"licenses"`
-	Conflicts       []LicenseInfo `json:"conflicts"`
-	Recommendations []string      `json:"recommendations"`
-}
-
-// PerformanceAuditResult contains performance audit results
-type PerformanceAuditResult struct {
-	Score           float64            `json:"score"`
-	BundleSize      int64              `json:"bundle_size"`
-	LoadTime        time.Duration      `json:"load_time"`
-	Issues          []PerformanceIssue `json:"issues"`
-	Recommendations []string           `json:"recommendations"`
-}
-
-// Vulnerability represents a security vulnerability
-type Vulnerability struct {
-	ID          string `json:"id"`
-	Severity    string `json:"severity"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Package     string `json:"package"`
-	Version     string `json:"version"`
-	FixedIn     string `json:"fixed_in,omitempty"`
-}
-
-// PolicyViolation represents a security policy violation
-type PolicyViolation struct {
-	Policy      string `json:"policy"`
-	Severity    string `json:"severity"`
-	Description string `json:"description"`
-	File        string `json:"file"`
-	Line        int    `json:"line"`
-}
-
-// CodeSmell represents a code quality issue
-type CodeSmell struct {
-	Type        string `json:"type"`
-	Severity    string `json:"severity"`
-	Description string `json:"description"`
-	File        string `json:"file"`
-	Line        int    `json:"line"`
-}
-
-// Duplication represents code duplication
-type Duplication struct {
-	Files      []string `json:"files"`
-	Lines      int      `json:"lines"`
-	Tokens     int      `json:"tokens"`
-	Percentage float64  `json:"percentage"`
-}
-
-// LicenseInfo represents license information
-type LicenseInfo struct {
-	Name       string `json:"name"`
-	SPDXID     string `json:"spdx_id"`
-	Package    string `json:"package"`
-	Compatible bool   `json:"compatible"`
-}
-
-// PerformanceIssue represents a performance issue
-type PerformanceIssue struct {
-	Type        string `json:"type"`
-	Severity    string `json:"severity"`
-	Description string `json:"description"`
-	Impact      string `json:"impact"`
-	File        string `json:"file,omitempty"`
 }
 
 // UpdateInfo contains information about available updates

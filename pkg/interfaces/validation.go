@@ -165,26 +165,6 @@ type DependencyValidation struct {
 	LicenseIssues  int    `json:"license_issues"`
 }
 
-// DependencyVulnerability represents a dependency vulnerability
-type DependencyVulnerability struct {
-	Dependency  string  `json:"dependency"`
-	Version     string  `json:"version"`
-	CVEID       string  `json:"cve_id"`
-	Severity    string  `json:"severity"`
-	Description string  `json:"description"`
-	FixedIn     string  `json:"fixed_in,omitempty"`
-	CVSS        float64 `json:"cvss"`
-}
-
-// OutdatedDependency represents an outdated dependency
-type OutdatedDependency struct {
-	Name           string `json:"name"`
-	CurrentVersion string `json:"current_version"`
-	LatestVersion  string `json:"latest_version"`
-	UpdateType     string `json:"update_type"` // major, minor, patch
-	Breaking       bool   `json:"breaking"`
-}
-
 // DependencyConflict represents a dependency conflict
 type DependencyConflict struct {
 	Dependency1 string `json:"dependency1"`
@@ -226,17 +206,6 @@ type SecurityIssue struct {
 	Rule        string `json:"rule"`
 	CWE         string `json:"cwe,omitempty"`
 	Fixable     bool   `json:"fixable"`
-}
-
-// SecretDetection represents detected secrets or sensitive information
-type SecretDetection struct {
-	Type       string  `json:"type"`
-	File       string  `json:"file"`
-	Line       int     `json:"line"`
-	Column     int     `json:"column"`
-	Pattern    string  `json:"pattern"`
-	Confidence float64 `json:"confidence"`
-	Masked     string  `json:"masked"`
 }
 
 // SecurityConfig represents security configuration validation

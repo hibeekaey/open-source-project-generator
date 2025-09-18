@@ -1375,7 +1375,37 @@ func (c *CLI) ValidateProject(path string, options interfaces.ValidationOptions)
 }
 
 func (c *CLI) AuditProject(path string, options interfaces.AuditOptions) (*interfaces.AuditResult, error) {
-	return nil, fmt.Errorf("AuditProject implementation pending - will be implemented in task 6")
+	if c.auditEngine == nil {
+		return nil, fmt.Errorf("audit engine not initialized")
+	}
+
+	// Perform comprehensive project audit
+	result, err := c.auditEngine.AuditProject(path, &options)
+	if err != nil {
+		return nil, fmt.Errorf("audit failed: %w", err)
+	}
+
+	// Generate report if output file is specified
+	if options.OutputFile != "" {
+		format := options.OutputFormat
+		if format == "" {
+			format = "json" // Default format
+		}
+
+		reportData, err := c.auditEngine.GenerateAuditReport(result, format)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate audit report: %w", err)
+		}
+
+		err = os.WriteFile(options.OutputFile, reportData, 0600)
+		if err != nil {
+			return nil, fmt.Errorf("failed to write audit report: %w", err)
+		}
+
+		fmt.Printf("Audit report written to: %s\n", options.OutputFile)
+	}
+
+	return result, nil
 }
 
 func (c *CLI) ListTemplates(filter interfaces.TemplateFilter) ([]interfaces.TemplateInfo, error) {
@@ -1937,7 +1967,74 @@ func (c *CLI) ValidateProjectAdvanced(path string, options *interfaces.Validatio
 }
 
 func (c *CLI) AuditProjectAdvanced(path string, options *interfaces.AuditOptions) (*interfaces.AuditResult, error) {
-	return nil, fmt.Errorf("AuditProjectAdvanced implementation pending")
+	if c.auditEngine == nil {
+		return nil, fmt.Errorf("audit engine not initialized")
+	}
+
+	if options == nil {
+		options = &interfaces.AuditOptions{
+			Security:    true,
+			Quality:     true,
+			Licenses:    true,
+			Performance: true,
+		}
+	}
+
+	// Perform comprehensive project audit with advanced options
+	result, err := c.auditEngine.AuditProject(path, options)
+	if err != nil {
+		return nil, fmt.Errorf("advanced audit failed: %w", err)
+	}
+
+	// Enhanced reporting for advanced audit
+	if options.Detailed {
+		// Add detailed analysis results
+		if result.Security != nil {
+			// Perform additional security scans
+			vulnReport, err := c.auditEngine.ScanVulnerabilities(path)
+			if err == nil {
+				result.Security.Vulnerabilities = vulnReport.Vulnerabilities
+			}
+
+			secretReport, err := c.auditEngine.DetectSecrets(path)
+			if err == nil && len(secretReport.Secrets) > 0 {
+				// Add secret detection results to security recommendations
+				result.Security.Recommendations = append(result.Security.Recommendations,
+					fmt.Sprintf("Found %d potential secrets in code", len(secretReport.Secrets)))
+			}
+		}
+
+		if result.Quality != nil {
+			// Perform additional quality analysis
+			complexityReport, err := c.auditEngine.MeasureComplexity(path)
+			if err == nil {
+				result.Quality.Recommendations = append(result.Quality.Recommendations,
+					fmt.Sprintf("Average complexity: %.1f, High complexity files: %d",
+						complexityReport.Summary.AverageComplexity,
+						complexityReport.Summary.HighComplexityFiles))
+			}
+		}
+
+		if result.Licenses != nil {
+			// Perform additional license analysis
+			violationReport, err := c.auditEngine.ScanLicenseViolations(path)
+			if err == nil && len(violationReport.Violations) > 0 {
+				result.Licenses.Recommendations = append(result.Licenses.Recommendations,
+					fmt.Sprintf("Found %d license violations", len(violationReport.Violations)))
+			}
+		}
+
+		if result.Performance != nil {
+			// Perform additional performance analysis
+			metricsReport, err := c.auditEngine.CheckPerformanceMetrics(path)
+			if err == nil {
+				result.Performance.Recommendations = append(result.Performance.Recommendations,
+					fmt.Sprintf("Performance grade: %s", metricsReport.Summary.PerformanceGrade))
+			}
+		}
+	}
+
+	return result, nil
 }
 
 func (c *CLI) SearchTemplates(query string) ([]interfaces.TemplateInfo, error) {
