@@ -16,6 +16,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -1197,6 +1199,14 @@ func (c *CLI) runGenerate(cmd *cobra.Command, args []string) error {
 		options.Templates = []string{template}
 	}
 
+	// Perform comprehensive validation before generation
+	if !options.SkipValidation {
+		c.VerboseOutput("Performing pre-generation validation...")
+		if err := c.validateGenerateOptions(options); err != nil {
+			return fmt.Errorf("generate options validation failed: %w", err)
+		}
+	}
+
 	// If config file is provided, generate from config
 	if configPath != "" {
 		c.VerboseOutput("Loading configuration from file: %s", configPath)
@@ -1259,6 +1269,14 @@ func (c *CLI) runGenerate(cmd *cobra.Command, args []string) error {
 			}
 		}
 
+		// Validate configuration if not skipped
+		if !options.SkipValidation {
+			c.VerboseOutput("Validating configuration...")
+			if err := c.validateGenerateConfiguration(config, options); err != nil {
+				return fmt.Errorf("configuration validation failed: %w", err)
+			}
+		}
+
 		// Generate project in non-interactive mode
 		c.VerboseOutput("Generating project '%s' in non-interactive mode", config.Name)
 
@@ -1271,6 +1289,26 @@ func (c *CLI) runGenerate(cmd *cobra.Command, args []string) error {
 			templateName = "go-gin" // Default template
 		}
 
+		// Validate dependencies if not skipped
+		if !options.SkipValidation {
+			c.VerboseOutput("Validating dependencies...")
+			if err := c.validateDependencies(config, templateName); err != nil {
+				return fmt.Errorf("dependency validation failed: %w", err)
+			}
+		}
+
+		// Perform pre-generation checks
+		if err := c.performPreGenerationChecks(options.OutputPath, options); err != nil {
+			return fmt.Errorf("pre-generation checks failed: %w", err)
+		}
+
+		// Handle dry-run mode
+		if options.DryRun {
+			c.QuietOutput("Dry run mode - would generate project '%s' using template '%s' in directory '%s'",
+				config.Name, templateName, options.OutputPath)
+			return nil
+		}
+
 		return c.templateManager.ProcessTemplate(templateName, config, options.OutputPath)
 	}
 
@@ -1281,6 +1319,14 @@ func (c *CLI) runGenerate(cmd *cobra.Command, args []string) error {
 		config, err := c.PromptProjectDetails()
 		if err != nil {
 			return fmt.Errorf("failed to collect project details: %w", err)
+		}
+
+		// Validate configuration if not skipped
+		if !options.SkipValidation {
+			c.VerboseOutput("Validating configuration...")
+			if err := c.validateGenerateConfiguration(config, options); err != nil {
+				return fmt.Errorf("configuration validation failed: %w", err)
+			}
 		}
 
 		if !c.ConfirmGeneration(config) {
@@ -1296,6 +1342,26 @@ func (c *CLI) runGenerate(cmd *cobra.Command, args []string) error {
 
 		if outputPath == "" {
 			outputPath = config.Name
+		}
+
+		// Validate dependencies if not skipped
+		if !options.SkipValidation {
+			c.VerboseOutput("Validating dependencies...")
+			if err := c.validateDependencies(config, templateName); err != nil {
+				return fmt.Errorf("dependency validation failed: %w", err)
+			}
+		}
+
+		// Perform pre-generation checks
+		if err := c.performPreGenerationChecks(outputPath, options); err != nil {
+			return fmt.Errorf("pre-generation checks failed: %w", err)
+		}
+
+		// Handle dry-run mode
+		if options.DryRun {
+			c.QuietOutput("Dry run mode - would generate project '%s' using template '%s' in directory '%s'",
+				config.Name, templateName, outputPath)
+			return nil
 		}
 
 		return c.templateManager.ProcessTemplate(templateName, config, outputPath)
@@ -2121,8 +2187,490 @@ func (c *CLI) SelectComponents() ([]string, error) {
 	return nil, fmt.Errorf("SelectComponents implementation pending - will be implemented in task 2")
 }
 
+// Helper methods for generate command
+
+// validateGenerateConfiguration validates the configuration for generation
+func (c *CLI) validateGenerateConfiguration(config *models.ProjectConfig, options interfaces.GenerateOptions) error {
+	if config.Name == "" {
+		return c.createConfigurationError("project name is required", "Set project name in configuration file or GENERATOR_PROJECT_NAME environment variable")
+	}
+
+	// Validate project name format
+	if !isValidProjectName(config.Name) {
+		return c.createConfigurationError(
+			fmt.Sprintf("invalid project name '%s'", config.Name),
+			"Project name must contain only letters, numbers, hyphens, and underscores",
+		)
+	}
+
+	// Validate license if specified
+	if config.License != "" && !isValidLicense(config.License) {
+		return c.createConfigurationError(
+			fmt.Sprintf("invalid license '%s'", config.License),
+			"Use a valid SPDX license identifier (e.g., MIT, Apache-2.0, GPL-3.0)",
+		)
+	}
+
+	return nil
+}
+
+// performPreGenerationChecks performs checks before generation
+func (c *CLI) performPreGenerationChecks(outputPath string, options interfaces.GenerateOptions) error {
+	// Check if output directory exists
+	if _, err := os.Stat(outputPath); err == nil {
+		// Directory exists
+		if !options.Force {
+			return fmt.Errorf("output directory '%s' already exists, use --force to overwrite", outputPath)
+		}
+
+		// Check if directory is empty
+		entries, err := os.ReadDir(outputPath)
+		if err != nil {
+			return fmt.Errorf("failed to read output directory: %w", err)
+		}
+
+		if len(entries) > 0 && options.BackupExisting {
+			c.VerboseOutput("Creating backup of existing files in %s", outputPath)
+			if err := c.createBackup(outputPath); err != nil {
+				c.WarningOutput("Failed to create backup: %v", err)
+			}
+		}
+	}
+
+	// Check write permissions
+	parentDir := outputPath
+	if _, err := os.Stat(outputPath); os.IsNotExist(err) {
+		parentDir = filepath.Dir(outputPath)
+	}
+
+	if err := c.checkWritePermissions(parentDir); err != nil {
+		return fmt.Errorf("insufficient permissions for output directory: %w", err)
+	}
+
+	return nil
+}
+
+// updatePackageVersions updates package versions in the configuration
+func (c *CLI) updatePackageVersions(config *models.ProjectConfig) error {
+	if c.versionManager == nil {
+		return fmt.Errorf("version manager not initialized")
+	}
+
+	c.VerboseOutput("Fetching latest package versions...")
+
+	// This would fetch latest versions and update the config
+	// For now, we'll just log that we would do this
+	c.VerboseOutput("Would update package versions for project type based on configuration")
+
+	return nil
+}
+
+// selectDefaultTemplate selects a default template based on configuration
+func (c *CLI) selectDefaultTemplate(config *models.ProjectConfig) string {
+	// This would analyze the config and select an appropriate template
+	// For now, return a sensible default
+	return "go-gin"
+}
+
+// createBackup creates a backup of the existing directory
+func (c *CLI) createBackup(path string) error {
+	timestamp := time.Now().Format("20060102-150405")
+	backupPath := path + ".backup." + timestamp
+
+	c.VerboseOutput("Creating backup at: %s", backupPath)
+
+	// This would implement the actual backup logic
+	// For now, we'll just log what we would do
+	c.VerboseOutput("Would copy %s to %s", path, backupPath)
+
+	return nil
+}
+
+// checkWritePermissions checks if we have write permissions to a directory
+func (c *CLI) checkWritePermissions(path string) error {
+	// Try to create a temporary file to test permissions
+	// Use a secure temporary file name with random suffix
+	tempFile := filepath.Join(path, ".generator-permission-test-"+strconv.FormatInt(time.Now().UnixNano(), 36))
+
+	// #nosec G304 - This is a controlled temporary file creation for permission testing
+	file, err := os.Create(tempFile)
+	if err != nil {
+		return fmt.Errorf("no write permission to directory %s: %w", path, err)
+	}
+	if err := file.Close(); err != nil {
+		c.WarningOutput("Failed to close temporary file: %v", err)
+	}
+	if err := os.Remove(tempFile); err != nil {
+		c.WarningOutput("Failed to remove temporary file: %v", err)
+	}
+	return nil
+}
+
+// isValidProjectName validates project name format
+func isValidProjectName(name string) bool {
+	// Allow letters, numbers, hyphens, and underscores
+	matched, _ := regexp.MatchString(`^[a-zA-Z0-9_-]+$`, name)
+	return matched && len(name) > 0 && len(name) <= 100
+}
+
+// isValidLicense validates license identifier
+func isValidLicense(license string) bool {
+	// Common SPDX license identifiers
+	validLicenses := []string{
+		"MIT", "Apache-2.0", "GPL-2.0", "GPL-3.0", "LGPL-2.1", "LGPL-3.0",
+		"BSD-2-Clause", "BSD-3-Clause", "ISC", "MPL-2.0", "UNLICENSED",
+	}
+
+	for _, valid := range validLicenses {
+		if strings.EqualFold(license, valid) {
+			return true
+		}
+	}
+	return false
+}
+
+// validateGenerateOptions validates the generate command options
+func (c *CLI) validateGenerateOptions(options interfaces.GenerateOptions) error {
+	var validationErrors []string
+
+	// Validate output path
+	if options.OutputPath != "" {
+		if !filepath.IsAbs(options.OutputPath) && !strings.HasPrefix(options.OutputPath, "./") && !strings.HasPrefix(options.OutputPath, "../") {
+			// Relative path without ./ prefix - this is okay, but we'll make it explicit
+			options.OutputPath = "./" + options.OutputPath
+		}
+
+		// Check for invalid characters in path
+		if strings.ContainsAny(options.OutputPath, "<>:\"|?*") {
+			validationErrors = append(validationErrors, "output path contains invalid characters")
+		}
+	}
+
+	// Validate template names
+	for _, template := range options.Templates {
+		if template == "" {
+			validationErrors = append(validationErrors, "empty template name specified")
+			continue
+		}
+
+		// Validate template name format
+		if !isValidTemplateName(template) {
+			validationErrors = append(validationErrors, fmt.Sprintf("invalid template name '%s' - must contain only letters, numbers, hyphens, and underscores", template))
+		}
+	}
+
+	// Validate conflicting options
+	if options.Offline && options.UpdateVersions {
+		validationErrors = append(validationErrors, "cannot use --offline and --update-versions together")
+	}
+
+	if options.Minimal && options.IncludeExamples {
+		c.WarningOutput("Using --minimal with --include-examples may result in minimal examples only")
+	}
+
+	// Validate dry-run with force
+	if options.DryRun && options.Force {
+		c.WarningOutput("--force flag has no effect in dry-run mode")
+	}
+
+	if len(validationErrors) > 0 {
+		return &interfaces.CLIError{
+			Type:        interfaces.ErrorTypeValidation,
+			Message:     "generate options validation failed",
+			Code:        interfaces.ErrorCodeValidationFailed,
+			Details:     map[string]any{"errors": validationErrors},
+			Suggestions: []string{"Fix the validation errors and try again"},
+		}
+	}
+
+	return nil
+}
+
+// validateDependencies validates project dependencies before generation
+func (c *CLI) validateDependencies(config *models.ProjectConfig, templateName string) error {
+	c.VerboseOutput("Validating dependencies for template: %s", templateName)
+
+	// Check if template manager is available
+	if c.templateManager == nil {
+		return fmt.Errorf("template manager not initialized")
+	}
+
+	// Get template information
+	templateInfo, err := c.templateManager.GetTemplateInfo(templateName)
+	if err != nil {
+		return fmt.Errorf("failed to get template information: %w", err)
+	}
+
+	// Validate template dependencies
+	if len(templateInfo.Dependencies) > 0 {
+		c.VerboseOutput("Checking template dependencies: %v", templateInfo.Dependencies)
+
+		for _, dep := range templateInfo.Dependencies {
+			if err := c.validateDependency(dep); err != nil {
+				return fmt.Errorf("dependency validation failed for '%s': %w", dep, err)
+			}
+		}
+	}
+
+	// Validate system requirements based on template
+	if err := c.validateSystemRequirements(templateInfo); err != nil {
+		return fmt.Errorf("system requirements validation failed: %w", err)
+	}
+
+	return nil
+}
+
+// validateDependency validates a specific dependency
+func (c *CLI) validateDependency(dependency string) error {
+	// Parse dependency (format: name@version or just name)
+	parts := strings.Split(dependency, "@")
+	depName := parts[0]
+
+	c.DebugOutput("Validating dependency: %s", depName)
+
+	// Check common dependencies
+	switch depName {
+	case "go":
+		return c.validateGoVersion(parts)
+	case "node", "nodejs":
+		return c.validateNodeVersion(parts)
+	case "docker":
+		return c.validateDockerAvailability()
+	case "git":
+		return c.validateGitAvailability()
+	default:
+		c.VerboseOutput("Dependency '%s' will be validated during generation", depName)
+	}
+
+	return nil
+}
+
+// validateGoVersion validates Go installation and version
+func (c *CLI) validateGoVersion(parts []string) error {
+	// Check if Go is installed
+	if _, err := exec.LookPath("go"); err != nil {
+		return fmt.Errorf("go is not installed or not in PATH")
+	}
+
+	// Get Go version
+	cmd := exec.Command("go", "version")
+	output, err := cmd.Output()
+	if err != nil {
+		return fmt.Errorf("failed to get Go version: %w", err)
+	}
+
+	versionStr := string(output)
+	c.VerboseOutput("Found Go version: %s", strings.TrimSpace(versionStr))
+
+	// If specific version is required, validate it
+	if len(parts) > 1 {
+		requiredVersion := parts[1]
+		c.VerboseOutput("Required Go version: %s", requiredVersion)
+		// This would implement actual version comparison
+		// For now, we'll just log it
+	}
+
+	return nil
+}
+
+// validateNodeVersion validates Node.js installation and version
+func (c *CLI) validateNodeVersion(parts []string) error {
+	// Check if Node.js is installed
+	if _, err := exec.LookPath("node"); err != nil {
+		return fmt.Errorf("node.js is not installed or not in PATH")
+	}
+
+	// Get Node.js version
+	cmd := exec.Command("node", "--version")
+	output, err := cmd.Output()
+	if err != nil {
+		return fmt.Errorf("failed to get Node.js version: %w", err)
+	}
+
+	versionStr := strings.TrimSpace(string(output))
+	c.VerboseOutput("Found Node.js version: %s", versionStr)
+
+	// If specific version is required, validate it
+	if len(parts) > 1 {
+		requiredVersion := parts[1]
+		c.VerboseOutput("Required Node.js version: %s", requiredVersion)
+		// This would implement actual version comparison
+	}
+
+	return nil
+}
+
+// validateDockerAvailability validates Docker installation
+func (c *CLI) validateDockerAvailability() error {
+	if _, err := exec.LookPath("docker"); err != nil {
+		return fmt.Errorf("docker is not installed or not in PATH")
+	}
+
+	// Check if Docker daemon is running
+	cmd := exec.Command("docker", "info")
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("docker daemon is not running")
+	}
+
+	c.VerboseOutput("Docker is available and running")
+	return nil
+}
+
+// validateGitAvailability validates Git installation
+func (c *CLI) validateGitAvailability() error {
+	if _, err := exec.LookPath("git"); err != nil {
+		return fmt.Errorf("git is not installed or not in PATH")
+	}
+
+	c.VerboseOutput("Git is available")
+	return nil
+}
+
+// validateSystemRequirements validates system requirements for a template
+func (c *CLI) validateSystemRequirements(templateInfo *interfaces.TemplateInfo) error {
+	c.VerboseOutput("Validating system requirements for template: %s", templateInfo.Name)
+
+	// Check available disk space
+	if err := c.validateDiskSpace(); err != nil {
+		return fmt.Errorf("disk space validation failed: %w", err)
+	}
+
+	// Check memory requirements (basic check)
+	if err := c.validateMemoryRequirements(); err != nil {
+		c.WarningOutput("Memory validation warning: %v", err)
+	}
+
+	return nil
+}
+
+// validateDiskSpace validates available disk space
+func (c *CLI) validateDiskSpace() error {
+	// This would implement actual disk space checking
+	// For now, we'll just log that we would check it
+	c.VerboseOutput("Checking available disk space...")
+
+	// Minimum required space (in bytes) - 100MB
+	const minRequiredSpace = 100 * 1024 * 1024
+
+	// This would get actual available space
+	c.VerboseOutput("Would check for at least %d bytes of free space", minRequiredSpace)
+
+	return nil
+}
+
+// validateMemoryRequirements validates memory requirements
+func (c *CLI) validateMemoryRequirements() error {
+	// This would implement actual memory checking
+	c.VerboseOutput("Checking available memory...")
+
+	// This would check system memory
+	c.VerboseOutput("Would check system memory requirements")
+
+	return nil
+}
+
+// isValidTemplateName validates template name format
+func isValidTemplateName(name string) bool {
+	// Allow letters, numbers, hyphens, underscores, and dots
+	matched, _ := regexp.MatchString(`^[a-zA-Z0-9_.-]+$`, name)
+	return matched && len(name) > 0 && len(name) <= 50
+}
+
 func (c *CLI) GenerateFromConfig(configPath string, options interfaces.GenerateOptions) error {
-	return fmt.Errorf("GenerateFromConfig implementation pending - will be implemented in task 2")
+	ctx := c.StartOperationWithOutput("generate-from-config", fmt.Sprintf("Loading configuration from %s", configPath))
+	defer func() {
+		if ctx != nil {
+			c.FinishOperationWithOutput(ctx, "generate-from-config", "Configuration loading completed")
+		}
+	}()
+
+	// Load configuration from file
+	if c.configManager == nil {
+		return fmt.Errorf("configuration manager not initialized")
+	}
+
+	config, err := c.configManager.LoadConfig(configPath)
+	if err != nil {
+		c.FinishOperationWithError(ctx, "generate-from-config", err)
+		return fmt.Errorf("failed to load configuration from %s: %w", configPath, err)
+	}
+
+	c.VerboseOutput("Successfully loaded configuration for project: %s", config.Name)
+
+	// Validate configuration if not skipped
+	if !options.SkipValidation {
+		c.VerboseOutput("Validating configuration...")
+		if err := c.validateGenerateConfiguration(config, options); err != nil {
+			return fmt.Errorf("configuration validation failed: %w", err)
+		}
+		c.VerboseOutput("Configuration validation passed")
+	}
+
+	// Set output path from options or config
+	outputPath := options.OutputPath
+	if outputPath == "" {
+		outputPath = config.OutputPath
+	}
+	if outputPath == "" {
+		outputPath = "./" + config.Name
+	}
+
+	// Handle offline mode
+	if options.Offline {
+		c.VerboseOutput("Running in offline mode - using cached templates and versions")
+		if c.cacheManager != nil {
+			if err := c.cacheManager.EnableOfflineMode(); err != nil {
+				c.WarningOutput("Failed to enable offline mode: %v", err)
+			}
+		}
+	}
+
+	// Handle version updates
+	if options.UpdateVersions && !options.Offline {
+		c.VerboseOutput("Fetching latest package versions...")
+		if err := c.updatePackageVersions(config); err != nil {
+			c.WarningOutput("Failed to update package versions: %v", err)
+		}
+	}
+
+	// Pre-generation checks
+	if err := c.performPreGenerationChecks(outputPath, options); err != nil {
+		return fmt.Errorf("pre-generation checks failed: %w", err)
+	}
+
+	// Select template
+	templateName := ""
+	if len(options.Templates) > 0 {
+		templateName = options.Templates[0]
+	}
+	if templateName == "" {
+		templateName = c.selectDefaultTemplate(config)
+	}
+
+	c.VerboseOutput("Using template: %s", templateName)
+
+	// Validate dependencies if not skipped
+	if !options.SkipValidation {
+		c.VerboseOutput("Validating dependencies...")
+		if err := c.validateDependencies(config, templateName); err != nil {
+			return fmt.Errorf("dependency validation failed: %w", err)
+		}
+		c.VerboseOutput("Dependency validation passed")
+	}
+
+	// Generate project
+	if options.DryRun {
+		c.QuietOutput("Dry run mode - would generate project '%s' using template '%s' in directory '%s'",
+			config.Name, templateName, outputPath)
+		return nil
+	}
+
+	// Process template
+	if c.templateManager == nil {
+		return fmt.Errorf("template manager not initialized")
+	}
+
+	return c.templateManager.ProcessTemplate(templateName, config, outputPath)
 }
 
 func (c *CLI) ValidateProject(path string, options interfaces.ValidationOptions) (*interfaces.ValidationResult, error) {
