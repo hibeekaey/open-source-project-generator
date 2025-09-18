@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"os"
 	"time"
+
+	"github.com/cuesoftinc/open-source-project-generator/pkg/errors"
+	"github.com/spf13/pflag"
 )
 
 // StructuredError represents an error with structured information for automation
@@ -114,6 +117,29 @@ func (c *CLI) handleError(err error, cmd string, args []string) int {
 		return ExitCodeSuccess
 	}
 
+	// Use the comprehensive error handler if available
+	if globalHandler := errors.GetGlobalErrorHandler(); globalHandler != nil {
+		context := map[string]interface{}{
+			"command":   cmd,
+			"arguments": args,
+		}
+
+		// Add flags context if available
+		if c.rootCmd != nil {
+			flags := make(map[string]string)
+			c.rootCmd.Flags().VisitAll(func(flag *pflag.Flag) {
+				if flag.Changed {
+					flags[flag.Name] = flag.Value.String()
+				}
+			})
+			context["flags"] = flags
+		}
+
+		result := globalHandler.HandleError(err, context)
+		return result.ExitCode
+	}
+
+	// Fallback to legacy error handling
 	// Check if it's already a structured error
 	if structErr, ok := err.(*StructuredError); ok {
 		return c.outputStructuredError(structErr, cmd, args)
