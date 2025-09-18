@@ -432,6 +432,13 @@ type FixSummary struct {
 	FilesModified int `json:"files_modified"`
 }
 
+// DuplicationFile represents a file involved in duplication
+type DuplicationFile struct {
+	Path      string `json:"path"`
+	StartLine int    `json:"start_line"`
+	EndLine   int    `json:"end_line"`
+}
+
 // ValidationRuleCategory defines categories for validation rules
 const (
 	ValidationCategoryStructure     = "structure"

@@ -32,6 +32,7 @@ func TestEngine_ValidateProject(t *testing.T) {
 				// Create required files
 				files := map[string]string{
 					"README.md": "# Test Project",
+					"LICENSE":   "MIT License\n\nCopyright (c) 2024 Test Project",
 					"go.mod":    "module test\n\ngo 1.21",
 					"frontend/package.json": `{
 						"name": "test-frontend",
@@ -399,6 +400,19 @@ func TestValidateProjectStructure(t *testing.T) {
 						return err
 					}
 				}
+
+				// Create required files
+				files := map[string]string{
+					"README.md": "# Test Project",
+					"LICENSE":   "MIT License\n\nCopyright (c) 2024 Test Project",
+				}
+
+				for filePath, content := range files {
+					fullPath := filepath.Join(projectPath, filePath)
+					if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
+						return err
+					}
+				}
 				return nil
 			},
 			expectedValid:  true,
@@ -407,8 +421,24 @@ func TestValidateProjectStructure(t *testing.T) {
 		{
 			name: "minimal valid structure",
 			setupProject: func(projectPath string) error {
-				// Just create the directory
-				return os.MkdirAll(projectPath, 0755)
+				// Create the directory
+				if err := os.MkdirAll(projectPath, 0755); err != nil {
+					return err
+				}
+
+				// Create required files
+				files := map[string]string{
+					"README.md": "# Test Project",
+					"LICENSE":   "MIT License\n\nCopyright (c) 2024 Test Project",
+				}
+
+				for filePath, content := range files {
+					fullPath := filepath.Join(projectPath, filePath)
+					if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
+						return err
+					}
+				}
+				return nil
 			},
 			expectedValid:  true,
 			expectedIssues: 0,
