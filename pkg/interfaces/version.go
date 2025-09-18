@@ -322,6 +322,14 @@ const (
 	VersionSeverityLow      = "low"
 )
 
+// CompatibilitySummary contains compatibility check statistics
+type CompatibilitySummary struct {
+	TotalChecks   int `json:"total_checks"`
+	PassedChecks  int `json:"passed_checks"`
+	FailedChecks  int `json:"failed_checks"`
+	SkippedChecks int `json:"skipped_checks"`
+}
+
 // DefaultVersionConfig returns default version configuration
 func DefaultVersionConfig() *VersionConfig {
 	return &VersionConfig{

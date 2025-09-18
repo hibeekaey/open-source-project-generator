@@ -234,6 +234,11 @@ type UpdateInfo struct {
 	DownloadURL     string    `json:"download_url"`
 	ReleaseDate     time.Time `json:"release_date"`
 	Breaking        bool      `json:"breaking"`
+	Security        bool      `json:"security"`
+	Recommended     bool      `json:"recommended"`
+	Size            int64     `json:"size"`
+	Checksum        string    `json:"checksum"`
+	SignatureURL    string    `json:"signature_url"`
 }
 
 // AdvancedOptions contains advanced options for project generation
