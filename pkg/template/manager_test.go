@@ -450,16 +450,16 @@ func TestManager_GetTemplatesByTechnology(t *testing.T) {
 	mockEngine := NewMockTemplateEngine()
 	manager := NewManager(mockEngine)
 
-	// Test with valid technology
-	templates, err := manager.GetTemplatesByTechnology("Go")
+	// Test with valid technology (using lowercase as it comes from YAML)
+	templates, err := manager.GetTemplatesByTechnology("go")
 	if err != nil {
 		t.Fatalf("GetTemplatesByTechnology failed: %v", err)
 	}
 
-	// All templates should use Go technology
+	// All templates should use go technology
 	for _, tmpl := range templates {
-		if tmpl.Technology != "Go" {
-			t.Errorf("Expected Go template, got technology: %s", tmpl.Technology)
+		if tmpl.Technology != "go" {
+			t.Errorf("Expected go template, got technology: %s", tmpl.Technology)
 		}
 	}
 }
@@ -569,13 +569,13 @@ func TestManager_GetTemplateVariables(t *testing.T) {
 		t.Fatal("Expected variables, got nil")
 	}
 
-	// Should have default variables
-	if _, exists := variables["Name"]; !exists {
-		t.Error("Expected 'Name' variable")
+	// Should have variables from template.yaml (lowercase keys as they come from YAML)
+	if _, exists := variables["name"]; !exists {
+		t.Error("Expected 'name' variable")
 	}
 
-	if _, exists := variables["Organization"]; !exists {
-		t.Error("Expected 'Organization' variable")
+	if _, exists := variables["organization"]; !exists {
+		t.Error("Expected 'organization' variable")
 	}
 
 	// Test with non-existent template

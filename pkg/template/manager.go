@@ -13,6 +13,7 @@ import (
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/interfaces"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
+	yaml "gopkg.in/yaml.v3"
 )
 
 // Manager implements the TemplateManager interface for template operations.
@@ -838,23 +839,102 @@ func (m *Manager) loadTemplateMetadata(templatePath string) (*models.TemplateMet
 	for _, filename := range metadataFiles {
 		metadataPath := filepath.Join(templatePath, filename)
 		if content, err := fs.ReadFile(embeddedTemplates, metadataPath); err == nil {
-			// For now, return basic metadata - full YAML parsing would require yaml package
-			metadata := &models.TemplateMetadata{
-				Name:         filepath.Base(templatePath),
-				DisplayName:  m.formatDisplayName(filepath.Base(templatePath)),
-				Description:  "Template description", // Would be parsed from YAML
-				Version:      "1.0.0",
-				Author:       "Open Source Project Generator",
-				License:      "MIT",
-				Dependencies: []string{}, // Initialize as empty slice, not nil
-				Tags:         []string{}, // Initialize as empty slice, not nil
-			}
-			_ = content // TODO: Parse YAML content when yaml package is available
-			return metadata, nil
+			return m.parseTemplateYAML(content, filepath.Base(templatePath))
 		}
 	}
 
 	return nil, fmt.Errorf("no metadata file found")
+}
+
+// parseTemplateYAML parses template.yaml content into models.TemplateMetadata
+func (m *Manager) parseTemplateYAML(content []byte, templateName string) (*models.TemplateMetadata, error) {
+	// Define a structure that matches the template.yaml format
+	type TemplateYAML struct {
+		Name         string   `yaml:"name"`
+		DisplayName  string   `yaml:"display_name"`
+		Description  string   `yaml:"description"`
+		Category     string   `yaml:"category"`
+		Technology   string   `yaml:"technology"`
+		Version      string   `yaml:"version"`
+		Tags         []string `yaml:"tags"`
+		Dependencies []string `yaml:"dependencies"`
+		Metadata     struct {
+			Author      string            `yaml:"author"`
+			License     string            `yaml:"license"`
+			Repository  string            `yaml:"repository"`
+			Homepage    string            `yaml:"homepage"`
+			Keywords    []string          `yaml:"keywords"`
+			Maintainers []string          `yaml:"maintainers"`
+			Created     time.Time         `yaml:"created"`
+			Updated     time.Time         `yaml:"updated"`
+			Variables   map[string]string `yaml:"variables"`
+		} `yaml:"metadata"`
+	}
+
+	var yamlData TemplateYAML
+	if err := yaml.Unmarshal(content, &yamlData); err != nil {
+		return nil, fmt.Errorf("failed to parse template YAML: %w", err)
+	}
+
+	// Convert to models.TemplateMetadata
+	metadata := &models.TemplateMetadata{
+		Name:         yamlData.Name,
+		DisplayName:  yamlData.DisplayName,
+		Description:  yamlData.Description,
+		Version:      yamlData.Version,
+		Author:       yamlData.Metadata.Author,
+		License:      yamlData.Metadata.License,
+		Category:     yamlData.Category,
+		Technology:   yamlData.Technology,
+		Tags:         yamlData.Tags,
+		Dependencies: yamlData.Dependencies,
+		CreatedAt:    yamlData.Metadata.Created,
+		UpdatedAt:    yamlData.Metadata.Updated,
+		Homepage:     yamlData.Metadata.Homepage,
+		Repository:   yamlData.Metadata.Repository,
+		Keywords:     yamlData.Metadata.Keywords,
+		Variables:    make(map[string]models.TemplateVar),
+	}
+
+	// Convert variables from simple string map to TemplateVar map
+	for name, description := range yamlData.Metadata.Variables {
+		metadata.Variables[name] = models.TemplateVar{
+			Name:        name,
+			Type:        "string", // Default type
+			Description: description,
+			Required:    false, // Default to not required
+		}
+	}
+
+	// Set defaults if not provided
+	if metadata.Name == "" {
+		metadata.Name = templateName
+	}
+	if metadata.DisplayName == "" {
+		metadata.DisplayName = m.formatDisplayName(templateName)
+	}
+	if metadata.Version == "" {
+		metadata.Version = "1.0.0"
+	}
+	if metadata.License == "" {
+		metadata.License = "MIT"
+	}
+	if metadata.Author == "" {
+		metadata.Author = "Open Source Project Generator"
+	}
+
+	// Initialize slices if nil to prevent issues
+	if metadata.Tags == nil {
+		metadata.Tags = []string{}
+	}
+	if metadata.Dependencies == nil {
+		metadata.Dependencies = []string{}
+	}
+	if metadata.Keywords == nil {
+		metadata.Keywords = []string{}
+	}
+
+	return metadata, nil
 }
 
 // calculateTemplateStats calculates size and file count for a template

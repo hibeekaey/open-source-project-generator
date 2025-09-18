@@ -18,28 +18,42 @@ import (
 	"github.com/cuesoftinc/open-source-project-generator/pkg/cli"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/filesystem"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/interfaces"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/security"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/template"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/validation"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/version"
 )
 
 // App represents the main application instance that orchestrates all CLI operations.
-// It manages the basic components, CLI interface, and error handling.
+// It manages all components, CLI interface, and comprehensive functionality.
 //
 // The App struct serves as the central coordinator for:
 //   - CLI command processing and routing
-//   - Basic component initialization
-//   - Project generation workflows
-//   - Basic validation operations
-//   - Configuration management
+//   - Component initialization and dependency injection
+//   - Project generation workflows with advanced options
+//   - Comprehensive validation and auditing operations
+//   - Configuration management with multiple sources
+//   - Template management and processing
+//   - Cache management and offline mode support
+//   - Version management and update checking
+//   - Security management and validation
+//   - Logging and debugging capabilities
 type App struct {
-	configManager  interfaces.ConfigManager
-	validator      interfaces.ValidationEngine
+	// Core managers and engines
+	configManager   interfaces.ConfigManager
+	validator       interfaces.ValidationEngine
+	templateManager interfaces.TemplateManager
+	cacheManager    interfaces.CacheManager
+	versionManager  interfaces.VersionManager
+	auditEngine     interfaces.AuditEngine
+	securityManager interfaces.SecurityManager
+
+	// CLI and generation components
 	cli            interfaces.CLIInterface
 	generator      interfaces.FileSystemGenerator
 	templateEngine interfaces.TemplateEngine
-	versionManager interfaces.VersionManager
 	logger         interfaces.Logger
+
 	// Version information
 	version   string
 	gitCommit string
@@ -63,14 +77,11 @@ func NewApp(appVersion, gitCommit, buildTime string) (*App, error) {
 		return nil, err
 	}
 
-	// Initialize all components
-	configManager := config.NewManager("", "")
-	validator := validation.NewEngine()
-	generator := filesystem.NewGenerator()
-	templateEngine := template.NewEmbeddedEngine()
-	templateManager := template.NewManager(templateEngine)
-	versionManager := version.NewManager()
-	auditEngine := audit.NewEngine()
+	// Initialize workspace directory for security manager
+	workspaceDir, err := os.Getwd()
+	if err != nil {
+		workspaceDir = "."
+	}
 
 	// Initialize cache manager with default cache directory
 	homeDir, err := os.UserHomeDir()
@@ -80,7 +91,17 @@ func NewApp(appVersion, gitCommit, buildTime string) (*App, error) {
 	cacheDir := filepath.Join(homeDir, ".generator", "cache")
 	cacheManager := cache.NewManager(cacheDir)
 
-	// Initialize CLI with all dependencies including logger
+	// Initialize all core managers and engines
+	configManager := config.NewManager("", "")
+	validator := validation.NewEngine()
+	generator := filesystem.NewGenerator()
+	templateEngine := template.NewEmbeddedEngine()
+	templateManager := template.NewManager(templateEngine)
+	versionManager := version.NewManagerWithCache(cacheManager)
+	auditEngine := audit.NewEngine()
+	securityManager := security.NewSecurityManager(workspaceDir)
+
+	// Initialize CLI with all dependencies
 	cli := cli.NewCLI(
 		configManager,
 		validator,
@@ -93,16 +114,25 @@ func NewApp(appVersion, gitCommit, buildTime string) (*App, error) {
 	)
 
 	return &App{
-		configManager:  configManager,
-		validator:      validator,
+		// Core managers and engines
+		configManager:   configManager,
+		validator:       validator,
+		templateManager: templateManager,
+		cacheManager:    cacheManager,
+		versionManager:  versionManager,
+		auditEngine:     auditEngine,
+		securityManager: securityManager,
+
+		// CLI and generation components
 		cli:            cli,
 		generator:      generator,
 		templateEngine: templateEngine,
-		versionManager: versionManager,
 		logger:         logger,
-		version:        appVersion,
-		gitCommit:      gitCommit,
-		buildTime:      buildTime,
+
+		// Version information
+		version:   appVersion,
+		gitCommit: gitCommit,
+		buildTime: buildTime,
 	}, nil
 }
 
@@ -115,4 +145,64 @@ func NewApp(appVersion, gitCommit, buildTime string) (*App, error) {
 //   - error: Any error that occurred during execution
 func (a *App) Run(args []string) error {
 	return a.cli.Run(args)
+}
+
+// GetConfigManager returns the configuration manager instance
+func (a *App) GetConfigManager() interfaces.ConfigManager {
+	return a.configManager
+}
+
+// GetValidator returns the validation engine instance
+func (a *App) GetValidator() interfaces.ValidationEngine {
+	return a.validator
+}
+
+// GetTemplateManager returns the template manager instance
+func (a *App) GetTemplateManager() interfaces.TemplateManager {
+	return a.templateManager
+}
+
+// GetCacheManager returns the cache manager instance
+func (a *App) GetCacheManager() interfaces.CacheManager {
+	return a.cacheManager
+}
+
+// GetVersionManager returns the version manager instance
+func (a *App) GetVersionManager() interfaces.VersionManager {
+	return a.versionManager
+}
+
+// GetAuditEngine returns the audit engine instance
+func (a *App) GetAuditEngine() interfaces.AuditEngine {
+	return a.auditEngine
+}
+
+// GetSecurityManager returns the security manager instance
+func (a *App) GetSecurityManager() interfaces.SecurityManager {
+	return a.securityManager
+}
+
+// GetCLI returns the CLI interface instance
+func (a *App) GetCLI() interfaces.CLIInterface {
+	return a.cli
+}
+
+// GetGenerator returns the filesystem generator instance
+func (a *App) GetGenerator() interfaces.FileSystemGenerator {
+	return a.generator
+}
+
+// GetTemplateEngine returns the template engine instance
+func (a *App) GetTemplateEngine() interfaces.TemplateEngine {
+	return a.templateEngine
+}
+
+// GetLogger returns the logger instance
+func (a *App) GetLogger() interfaces.Logger {
+	return a.logger
+}
+
+// GetVersion returns the application version information
+func (a *App) GetVersion() (version, gitCommit, buildTime string) {
+	return a.version, a.gitCommit, a.buildTime
 }
