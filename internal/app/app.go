@@ -39,6 +39,7 @@ type App struct {
 	generator      interfaces.FileSystemGenerator
 	templateEngine interfaces.TemplateEngine
 	versionManager interfaces.VersionManager
+	logger         interfaces.Logger
 	// Version information
 	version   string
 	gitCommit string
@@ -56,6 +57,12 @@ type App struct {
 //   - *App: New application instance ready for use
 //   - error: Any error that occurred during initialization
 func NewApp(appVersion, gitCommit, buildTime string) (*App, error) {
+	// Initialize logger first
+	logger, err := NewLogger(LogLevelInfo, true)
+	if err != nil {
+		return nil, err
+	}
+
 	// Initialize all components
 	configManager := config.NewManager("", "")
 	validator := validation.NewEngine()
@@ -73,7 +80,7 @@ func NewApp(appVersion, gitCommit, buildTime string) (*App, error) {
 	cacheDir := filepath.Join(homeDir, ".generator", "cache")
 	cacheManager := cache.NewManager(cacheDir)
 
-	// Initialize CLI with all dependencies
+	// Initialize CLI with all dependencies including logger
 	cli := cli.NewCLI(
 		configManager,
 		validator,
@@ -81,6 +88,7 @@ func NewApp(appVersion, gitCommit, buildTime string) (*App, error) {
 		cacheManager,
 		versionManager,
 		auditEngine,
+		logger,
 		appVersion,
 	)
 
@@ -91,6 +99,7 @@ func NewApp(appVersion, gitCommit, buildTime string) (*App, error) {
 		generator:      generator,
 		templateEngine: templateEngine,
 		versionManager: versionManager,
+		logger:         logger,
 		version:        appVersion,
 		gitCommit:      gitCommit,
 		buildTime:      buildTime,

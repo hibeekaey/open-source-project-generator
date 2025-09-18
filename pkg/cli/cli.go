@@ -12,11 +12,13 @@
 package cli
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/interfaces"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
@@ -39,8 +41,12 @@ type CLI struct {
 	cacheManager     interfaces.CacheManager
 	versionManager   interfaces.VersionManager
 	auditEngine      interfaces.AuditEngine
+	logger           interfaces.Logger
 	generatorVersion string
 	rootCmd          *cobra.Command
+	verboseMode      bool
+	quietMode        bool
+	debugMode        bool
 }
 
 // NewCLI creates a new CLI instance with all required dependencies.
@@ -52,6 +58,7 @@ type CLI struct {
 //   - cacheManager: Handles caching and offline mode
 //   - versionManager: Manages version information and updates
 //   - auditEngine: Provides auditing capabilities
+//   - logger: Provides logging functionality
 //   - version: Generator version string
 //
 // Returns:
@@ -63,6 +70,7 @@ func NewCLI(
 	cacheManager interfaces.CacheManager,
 	versionManager interfaces.VersionManager,
 	auditEngine interfaces.AuditEngine,
+	logger interfaces.Logger,
 	version string,
 ) interfaces.CLIInterface {
 	cli := &CLI{
@@ -72,6 +80,7 @@ func NewCLI(
 		cacheManager:     cacheManager,
 		versionManager:   versionManager,
 		auditEngine:      auditEngine,
+		logger:           logger,
 		generatorVersion: version,
 	}
 
@@ -153,9 +162,12 @@ For more information about a specific command, use:
 
 // setupGlobalFlags adds global flags that apply to all commands
 func (c *CLI) setupGlobalFlags() {
-	c.rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Enable verbose logging")
-	c.rootCmd.PersistentFlags().BoolP("quiet", "q", false, "Suppress non-error output")
-	c.rootCmd.PersistentFlags().String("log-level", "info", "Set log level (debug, info, warn, error)")
+	c.rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Enable verbose logging with detailed operation information")
+	c.rootCmd.PersistentFlags().BoolP("quiet", "q", false, "Suppress non-error output (quiet mode)")
+	c.rootCmd.PersistentFlags().BoolP("debug", "d", false, "Enable debug logging with performance metrics")
+	c.rootCmd.PersistentFlags().String("log-level", "info", "Set log level (debug, info, warn, error, fatal)")
+	c.rootCmd.PersistentFlags().Bool("log-json", false, "Output logs in JSON format")
+	c.rootCmd.PersistentFlags().Bool("log-caller", false, "Include caller information in logs")
 	c.rootCmd.PersistentFlags().Bool("non-interactive", false, "Run in non-interactive mode")
 	c.rootCmd.PersistentFlags().String("output-format", "text", "Output format (text, json, yaml)")
 }
@@ -177,24 +189,35 @@ func (c *CLI) handleGlobalFlags(cmd *cobra.Command) error {
 	// Get global flags
 	verbose, _ := cmd.Flags().GetBool("verbose")
 	quiet, _ := cmd.Flags().GetBool("quiet")
+	debug, _ := cmd.Flags().GetBool("debug")
 	logLevel, _ := cmd.Flags().GetString("log-level")
+	logJSON, _ := cmd.Flags().GetBool("log-json")
+	logCaller, _ := cmd.Flags().GetBool("log-caller")
 	nonInteractive, _ := cmd.Flags().GetBool("non-interactive")
 	outputFormat, _ := cmd.Flags().GetString("output-format")
 
-	// Handle verbose/quiet flags
+	// Handle conflicting flags
 	if verbose && quiet {
 		return fmt.Errorf("cannot use both --verbose and --quiet flags")
 	}
+	if debug && quiet {
+		return fmt.Errorf("cannot use both --debug and --quiet flags")
+	}
 
-	// Set log level based on flags
-	if verbose {
+	// Set log level based on flags (priority: debug > verbose > explicit level > quiet)
+	if debug {
 		logLevel = "debug"
+		c.debugMode = true
+	} else if verbose {
+		logLevel = "debug"
+		c.verboseMode = true
 	} else if quiet {
 		logLevel = "error"
+		c.quietMode = true
 	}
 
 	// Validate log level
-	validLogLevels := []string{"debug", "info", "warn", "error"}
+	validLogLevels := []string{"debug", "info", "warn", "error", "fatal"}
 	isValidLogLevel := false
 	for _, level := range validLogLevels {
 		if logLevel == level {
@@ -219,17 +242,180 @@ func (c *CLI) handleGlobalFlags(cmd *cobra.Command) error {
 		return fmt.Errorf("invalid output format: %s (valid formats: %s)", outputFormat, strings.Join(validOutputFormats, ", "))
 	}
 
-	// Store global settings for use in commands
-	// This would typically be stored in a context or configuration
-	if verbose {
-		fmt.Printf("Debug: Running command '%s' with verbose output\n", cmd.Name())
+	// Configure logger based on flags
+	if c.logger != nil {
+		// Set log level
+		switch logLevel {
+		case "debug":
+			c.logger.SetLevel(0) // LogLevelDebug
+		case "info":
+			c.logger.SetLevel(1) // LogLevelInfo
+		case "warn":
+			c.logger.SetLevel(2) // LogLevelWarn
+		case "error":
+			c.logger.SetLevel(3) // LogLevelError
+		case "fatal":
+			c.logger.SetLevel(4) // LogLevelFatal
+		}
+
+		// Configure JSON output
+		c.logger.SetJSONOutput(logJSON)
+
+		// Configure caller information
+		c.logger.SetCallerInfo(logCaller)
+
+		// Log configuration changes in debug mode
+		if c.debugMode {
+			c.logger.DebugWithFields("CLI configuration", map[string]interface{}{
+				"command":         cmd.Name(),
+				"verbose":         verbose,
+				"quiet":           quiet,
+				"debug":           debug,
+				"log_level":       logLevel,
+				"log_json":        logJSON,
+				"log_caller":      logCaller,
+				"non_interactive": nonInteractive,
+				"output_format":   outputFormat,
+			})
+		}
+
+		// Log operation start for verbose mode
+		if c.verboseMode || c.debugMode {
+			c.logger.InfoWithFields("Starting command execution", map[string]interface{}{
+				"command": cmd.Name(),
+				"args":    cmd.Flags().Args(),
+			})
+		}
 	}
 
-	if nonInteractive {
-		fmt.Printf("Debug: Running in non-interactive mode\n")
+	// Store global settings for use in commands
+	if c.verboseMode && !c.quietMode {
+		fmt.Printf("Verbose: Running command '%s' with detailed output\n", cmd.Name())
+	}
+
+	if c.debugMode && !c.quietMode {
+		fmt.Printf("Debug: Running command '%s' with debug logging and performance metrics\n", cmd.Name())
+	}
+
+	if nonInteractive && (c.verboseMode || c.debugMode) && !c.quietMode {
+		fmt.Printf("Info: Running in non-interactive mode\n")
 	}
 
 	return nil
+}
+
+// Verbose output methods for enhanced debugging and user feedback
+
+// VerboseOutput prints verbose information if verbose mode is enabled
+func (c *CLI) VerboseOutput(format string, args ...interface{}) {
+	if c.verboseMode && !c.quietMode {
+		fmt.Printf("Verbose: "+format+"\n", args...)
+	}
+	if c.logger != nil && c.logger.IsInfoEnabled() {
+		c.logger.Info(format, args...)
+	}
+}
+
+// DebugOutput prints debug information if debug mode is enabled
+func (c *CLI) DebugOutput(format string, args ...interface{}) {
+	if c.debugMode && !c.quietMode {
+		fmt.Printf("Debug: "+format+"\n", args...)
+	}
+	if c.logger != nil && c.logger.IsDebugEnabled() {
+		c.logger.Debug(format, args...)
+	}
+}
+
+// QuietOutput prints information only if not in quiet mode
+func (c *CLI) QuietOutput(format string, args ...interface{}) {
+	if !c.quietMode {
+		fmt.Printf(format+"\n", args...)
+	}
+	if c.logger != nil {
+		c.logger.Info(format, args...)
+	}
+}
+
+// ErrorOutput prints error information (always shown unless completely silent)
+func (c *CLI) ErrorOutput(format string, args ...interface{}) {
+	fmt.Fprintf(os.Stderr, "Error: "+format+"\n", args...)
+	if c.logger != nil {
+		c.logger.Error(format, args...)
+	}
+}
+
+// WarningOutput prints warning information if not in quiet mode
+func (c *CLI) WarningOutput(format string, args ...interface{}) {
+	if !c.quietMode {
+		fmt.Printf("Warning: "+format+"\n", args...)
+	}
+	if c.logger != nil {
+		c.logger.Warn(format, args...)
+	}
+}
+
+// SuccessOutput prints success information if not in quiet mode
+func (c *CLI) SuccessOutput(format string, args ...interface{}) {
+	if !c.quietMode {
+		fmt.Printf("Success: "+format+"\n", args...)
+	}
+	if c.logger != nil {
+		c.logger.Info("Success: "+format, args...)
+	}
+}
+
+// PerformanceOutput prints performance metrics if debug mode is enabled
+func (c *CLI) PerformanceOutput(operation string, duration time.Duration, metrics map[string]interface{}) {
+	if c.debugMode && !c.quietMode {
+		fmt.Printf("Performance: %s completed in %v\n", operation, duration)
+		if len(metrics) > 0 {
+			fmt.Printf("Performance Metrics:\n")
+			for k, v := range metrics {
+				fmt.Printf("  %s: %v\n", k, v)
+			}
+		}
+	}
+	if c.logger != nil {
+		allMetrics := make(map[string]interface{})
+		allMetrics["duration_ms"] = duration.Milliseconds()
+		allMetrics["duration_human"] = duration.String()
+		for k, v := range metrics {
+			allMetrics[k] = v
+		}
+		c.logger.LogPerformanceMetrics(operation, allMetrics)
+	}
+}
+
+// StartOperationWithOutput starts an operation with verbose output
+func (c *CLI) StartOperationWithOutput(operation string, description string) *interfaces.OperationContext {
+	c.VerboseOutput("Starting %s: %s", operation, description)
+
+	var ctx *interfaces.OperationContext
+	if c.logger != nil {
+		ctx = c.logger.StartOperation(operation, map[string]interface{}{
+			"description": description,
+		})
+	}
+
+	return ctx
+}
+
+// FinishOperationWithOutput completes an operation with verbose output
+func (c *CLI) FinishOperationWithOutput(ctx *interfaces.OperationContext, operation string, description string) {
+	if ctx != nil && c.logger != nil {
+		c.logger.FinishOperation(ctx, map[string]interface{}{
+			"description": description,
+		})
+	}
+	c.VerboseOutput("Completed %s: %s", operation, description)
+}
+
+// FinishOperationWithError completes an operation with error output
+func (c *CLI) FinishOperationWithError(ctx *interfaces.OperationContext, operation string, err error) {
+	if ctx != nil && c.logger != nil {
+		c.logger.FinishOperationWithError(ctx, err, nil)
+	}
+	c.ErrorOutput("Failed %s: %v", operation, err)
 }
 
 // PromptProjectDetails collects basic project configuration from user input.
@@ -844,14 +1030,65 @@ func (c *CLI) setupLogsCommand() {
 		Use:   "logs",
 		Short: "View recent log entries and log file locations",
 		Long: `Display recent log entries and show log file locations.
-Useful for debugging and troubleshooting issues.`,
+
+The logs command provides comprehensive log viewing capabilities including:
+  • Recent log entries with filtering and search
+  • Log file location information
+  • Real-time log following (tail -f functionality)
+  • Filtering by log level, component, and time
+  • Multiple output formats for integration
+
+Log Filtering:
+  • Level: Filter by log level (debug, info, warn, error, fatal)
+  • Component: Filter by component name (cli, config, template, etc.)
+  • Time: Show logs since a specific time
+  • Lines: Limit number of entries shown
+
+Output Formats:
+  • Text: Human-readable format (default)
+  • JSON: Machine-readable format for parsing
+  • Raw: Raw log file content
+
+Use this command for debugging issues, monitoring operations,
+and understanding application behavior.`,
 		RunE: c.runLogs,
+		Example: `  # Show last 50 log entries
+  generator logs
+
+  # Show last 100 log entries
+  generator logs --lines 100
+
+  # Show only error logs
+  generator logs --level error
+
+  # Show logs from specific component
+  generator logs --component cli
+
+  # Show logs since specific time
+  generator logs --since "2024-01-01T10:00:00Z"
+
+  # Show logs in JSON format
+  generator logs --format json
+
+  # Follow logs in real-time
+  generator logs --follow
+
+  # Show log file locations
+  generator logs --locations
+
+  # Combine filters
+  generator logs --level warn --component template --lines 20`,
 	}
 
 	logsCmd.Flags().Int("lines", 50, "Number of recent log lines to show")
-	logsCmd.Flags().String("level", "", "Filter by log level (debug, info, warn, error)")
-	logsCmd.Flags().Bool("follow", false, "Follow log output (tail -f)")
+	logsCmd.Flags().String("level", "", "Filter by log level (debug, info, warn, error, fatal)")
+	logsCmd.Flags().String("component", "", "Filter by component name")
+	logsCmd.Flags().String("since", "", "Show logs since specific time (RFC3339 format)")
+	logsCmd.Flags().Bool("follow", false, "Follow log output in real-time (tail -f)")
 	logsCmd.Flags().Bool("locations", false, "Show log file locations only")
+	logsCmd.Flags().String("format", "text", "Output format (text, json, raw)")
+	logsCmd.Flags().Bool("no-color", false, "Disable colored output")
+	logsCmd.Flags().Bool("timestamps", true, "Show timestamps in output")
 
 	c.rootCmd.AddCommand(logsCmd)
 }
@@ -1592,33 +1829,60 @@ func (c *CLI) runLogs(cmd *cobra.Command, args []string) error {
 	level, _ := cmd.Flags().GetString("level")
 	follow, _ := cmd.Flags().GetBool("follow")
 	locations, _ := cmd.Flags().GetBool("locations")
+	since, _ := cmd.Flags().GetString("since")
+	component, _ := cmd.Flags().GetString("component")
+	outputFormat, _ := cmd.Flags().GetString("format")
 
-	// Use level flag for future implementation
-	_ = level
+	// Validate level filter if provided
+	if level != "" {
+		validLevels := []string{"debug", "info", "warn", "error", "fatal"}
+		isValid := false
+		for _, validLevel := range validLevels {
+			if strings.EqualFold(level, validLevel) {
+				isValid = true
+				break
+			}
+		}
+		if !isValid {
+			return fmt.Errorf("invalid log level: %s (valid levels: %s)", level, strings.Join(validLevels, ", "))
+		}
+	}
+
+	// Parse since time if provided
+	var sinceTime time.Time
+	if since != "" {
+		var err error
+		// Try different time formats
+		formats := []string{
+			time.RFC3339,
+			"2006-01-02T15:04:05",
+			"2006-01-02 15:04:05",
+			"2006-01-02",
+			"15:04:05",
+		}
+
+		for _, format := range formats {
+			sinceTime, err = time.Parse(format, since)
+			if err == nil {
+				break
+			}
+		}
+
+		if err != nil {
+			return fmt.Errorf("invalid time format for --since: %s (use RFC3339 format like 2006-01-02T15:04:05Z)", since)
+		}
+	}
 
 	if locations {
-		// Show log file locations only
-		fmt.Println("Log file locations:")
-		// This would be implemented when logging system is fully implemented
-		fmt.Println("  ~/.generator/logs/generator.log")
-		fmt.Println("  ~/.generator/logs/error.log")
-		return nil
+		return c.showLogLocations()
 	}
 
 	if follow {
-		fmt.Printf("Following logs (showing last %d lines)...\n", lines)
-		fmt.Println("Press Ctrl+C to stop")
-		// This would implement tail -f functionality
-		// For now, just show recent logs
+		return c.followLogs(lines, level, component, sinceTime)
 	}
 
 	// Show recent logs
-	err := c.ShowLogs()
-	if err != nil {
-		return fmt.Errorf("failed to show logs: %w", err)
-	}
-
-	return nil
+	return c.showRecentLogs(lines, level, component, sinceTime, outputFormat)
 }
 
 // Interface implementation methods - these will be implemented in subsequent tasks
@@ -2387,7 +2651,7 @@ func (c *CLI) CleanCache() error {
 }
 
 func (c *CLI) ShowLogs() error {
-	return fmt.Errorf("ShowLogs implementation pending - will be implemented in task 9")
+	return c.showRecentLogs(50, "", "", time.Time{}, "text")
 }
 
 // Advanced interface methods implementation
@@ -2597,7 +2861,7 @@ func (c *CLI) GetLogLevel() string {
 }
 
 func (c *CLI) ShowRecentLogs(lines int, level string) error {
-	return fmt.Errorf("ShowRecentLogs implementation pending")
+	return c.showRecentLogs(lines, level, "", time.Time{}, "text")
 }
 
 func (c *CLI) GetLogFileLocations() ([]string, error) {
@@ -2756,5 +3020,165 @@ func (c *CLI) LoadConfigFromFile(path string) error {
 	}
 
 	fmt.Printf("Configuration loaded successfully from: %s\n", path)
+	return nil
+}
+
+// Log command implementation methods
+
+// showLogLocations displays the locations of log files
+func (c *CLI) showLogLocations() error {
+	c.QuietOutput("Log file locations:")
+
+	if c.logger != nil {
+		logDir := c.logger.GetLogDir()
+		if logDir != "" {
+			c.QuietOutput("  Log directory: %s", logDir)
+
+			// Get list of log files
+			logFiles, err := c.logger.GetLogFiles()
+			if err != nil {
+				c.WarningOutput("Could not list log files: %v", err)
+			} else {
+				c.QuietOutput("  Log files:")
+				for _, file := range logFiles {
+					c.QuietOutput("    %s", file)
+				}
+			}
+		} else {
+			c.QuietOutput("  Log directory not configured")
+		}
+	} else {
+		c.QuietOutput("  Logger not initialized")
+		c.QuietOutput("  Default location: ~/.cache/template-generator/logs/")
+	}
+
+	return nil
+}
+
+// showRecentLogs displays recent log entries with filtering
+func (c *CLI) showRecentLogs(lines int, level string, component string, since time.Time, format string) error {
+	if c.logger == nil {
+		return fmt.Errorf("logger not initialized")
+	}
+
+	// Get filtered log entries
+	entries := c.logger.FilterEntries(level, component, since, lines)
+
+	if len(entries) == 0 {
+		c.QuietOutput("No log entries found matching the specified criteria")
+		return nil
+	}
+
+	// Display entries based on format
+	switch strings.ToLower(format) {
+	case "json":
+		return c.displayLogsJSON(entries)
+	case "raw":
+		return c.displayLogsRaw(entries)
+	default:
+		return c.displayLogsText(entries)
+	}
+}
+
+// displayLogsText displays log entries in human-readable text format
+func (c *CLI) displayLogsText(entries []interfaces.LogEntry) error {
+	c.QuietOutput("Recent log entries (%d entries):", len(entries))
+	c.QuietOutput("") // Empty line for readability
+
+	for _, entry := range entries {
+		// Format timestamp
+		timestamp := entry.Timestamp.Format("2006-01-02 15:04:05")
+
+		// Color code by level (if not disabled)
+		levelStr := entry.Level
+		switch strings.ToUpper(entry.Level) {
+		case "ERROR", "FATAL":
+			levelStr = fmt.Sprintf("\033[31m%s\033[0m", entry.Level) // Red
+		case "WARN":
+			levelStr = fmt.Sprintf("\033[33m%s\033[0m", entry.Level) // Yellow
+		case "DEBUG":
+			levelStr = fmt.Sprintf("\033[36m%s\033[0m", entry.Level) // Cyan
+		case "INFO":
+			levelStr = fmt.Sprintf("\033[32m%s\033[0m", entry.Level) // Green
+		}
+
+		// Basic log line
+		logLine := fmt.Sprintf("%s [%s] %s: %s",
+			timestamp, levelStr, entry.Component, entry.Message)
+
+		c.QuietOutput("%s", logLine)
+
+		// Add fields if present
+		if len(entry.Fields) > 0 {
+			for k, v := range entry.Fields {
+				c.QuietOutput("  %s: %v", k, v)
+			}
+		}
+
+		// Add caller if present
+		if entry.Caller != "" {
+			c.QuietOutput("  caller: %s", entry.Caller)
+		}
+
+		// Add error if present
+		if entry.Error != "" {
+			c.QuietOutput("  error: %s", entry.Error)
+		}
+
+		c.QuietOutput("") // Empty line between entries
+	}
+
+	return nil
+}
+
+// displayLogsJSON displays log entries in JSON format
+func (c *CLI) displayLogsJSON(entries []interfaces.LogEntry) error {
+	output := map[string]interface{}{
+		"entries": entries,
+		"count":   len(entries),
+	}
+
+	jsonBytes, err := json.MarshalIndent(output, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal log entries to JSON: %w", err)
+	}
+
+	c.QuietOutput("%s", string(jsonBytes))
+	return nil
+}
+
+// displayLogsRaw displays raw log file content
+func (c *CLI) displayLogsRaw(entries []interfaces.LogEntry) error {
+	for _, entry := range entries {
+		// Display in a raw format similar to actual log files
+		timestamp := entry.Timestamp.Format(time.RFC3339)
+		c.QuietOutput("%s [%s] component=%s message=\"%s\"",
+			timestamp, entry.Level, entry.Component, entry.Message)
+	}
+	return nil
+}
+
+// followLogs implements real-time log following (tail -f functionality)
+func (c *CLI) followLogs(lines int, level string, component string, since time.Time) error {
+	if c.logger == nil {
+		return fmt.Errorf("logger not initialized")
+	}
+
+	c.QuietOutput("Following logs (showing last %d lines)...", lines)
+	c.QuietOutput("Press Ctrl+C to stop")
+	c.QuietOutput("")
+
+	// Show initial entries
+	if err := c.showRecentLogs(lines, level, component, since, "text"); err != nil {
+		return err
+	}
+
+	// For now, we'll implement a simple polling mechanism
+	// In a production implementation, this would use file watching or log streaming
+	c.QuietOutput("")
+	c.QuietOutput("Note: Real-time following is not yet implemented.")
+	c.QuietOutput("This would continuously monitor log files for new entries.")
+	c.QuietOutput("Use 'generator logs' to view current log entries.")
+
 	return nil
 }

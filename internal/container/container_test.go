@@ -43,7 +43,7 @@ func TestContainerCLI(t *testing.T) {
 	container := NewContainer()
 
 	// Create a real CLI with all required dependencies
-	mockCLI := cli.NewCLI(nil, nil, nil, nil, nil, nil, "test-version")
+	mockCLI := cli.NewCLI(nil, nil, nil, nil, nil, nil, nil, "test-version")
 
 	// Test SetCLI and GetCLI
 	container.SetCLI(mockCLI)

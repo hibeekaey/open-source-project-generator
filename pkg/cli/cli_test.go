@@ -260,7 +260,7 @@ func TestNewCLIWithMocks(t *testing.T) {
 	auditEngine := audit.NewEngine()
 	cacheManager := cache.NewManager("/tmp/test-cache")
 
-	cli := NewCLI(configManager, validator, templateManager, cacheManager, versionManager, auditEngine, "test-version")
+	cli := NewCLI(configManager, validator, templateManager, cacheManager, versionManager, auditEngine, nil, "test-version")
 
 	if cli == nil {
 		t.Fatal("NewCLI returned nil")
@@ -277,7 +277,7 @@ func TestNewCLIWithMocks(t *testing.T) {
 
 func TestCLIWithNilDependencies(t *testing.T) {
 	// Test CLI with nil dependencies
-	cli := NewCLI(nil, nil, nil, nil, nil, nil, "test-version")
+	cli := NewCLI(nil, nil, nil, nil, nil, nil, nil, "test-version")
 
 	if cli == nil {
 		t.Fatal("NewCLI with nil dependencies should not return nil")
@@ -307,7 +307,7 @@ func TestCLIErrorHandling(t *testing.T) {
 	auditEngine := audit.NewEngine()
 	cacheManager := cache.NewManager("/tmp/test-cache")
 
-	cli := NewCLI(configManager, validator, templateManager, cacheManager, versionManager, auditEngine, "test-version")
+	cli := NewCLI(configManager, validator, templateManager, cacheManager, versionManager, auditEngine, nil, "test-version")
 
 	if cli == nil {
 		t.Fatal("NewCLI returned nil")
@@ -334,6 +334,7 @@ func TestCLICreationWithAllDependencies(t *testing.T) {
 		cacheManager,
 		versionManager,
 		auditEngine,
+		nil,
 		"test-version",
 	)
 
@@ -360,6 +361,7 @@ func TestCLICommands(t *testing.T) {
 		cacheManager,
 		versionManager,
 		auditEngine,
+		nil,
 		"test-version",
 	).(*CLI)
 
@@ -405,6 +407,7 @@ func TestCLIHelp(t *testing.T) {
 		cacheManager,
 		versionManager,
 		auditEngine,
+		nil,
 		"test-version",
 	)
 
