@@ -735,6 +735,59 @@ Includes cache statistics, cleanup, and repair operations.`,
 	}
 	cacheCmd.AddCommand(cacheCleanCmd)
 
+	// cache validate
+	cacheValidateCmd := &cobra.Command{
+		Use:   "validate",
+		Short: "Validate cache integrity",
+		Long:  "Check cache integrity and report any issues",
+		RunE:  c.runCacheValidate,
+	}
+	cacheCmd.AddCommand(cacheValidateCmd)
+
+	// cache repair
+	cacheRepairCmd := &cobra.Command{
+		Use:   "repair",
+		Short: "Repair corrupted cache data",
+		Long:  "Attempt to repair corrupted cache entries and fix cache issues",
+		RunE:  c.runCacheRepair,
+	}
+	cacheCmd.AddCommand(cacheRepairCmd)
+
+	// cache offline
+	cacheOfflineCmd := &cobra.Command{
+		Use:   "offline",
+		Short: "Manage offline mode",
+		Long:  "Enable or disable offline mode for the cache",
+	}
+
+	// cache offline enable
+	cacheOfflineEnableCmd := &cobra.Command{
+		Use:   "enable",
+		Short: "Enable offline mode",
+		Long:  "Enable offline mode to use only cached data",
+		RunE:  c.runCacheOfflineEnable,
+	}
+	cacheOfflineCmd.AddCommand(cacheOfflineEnableCmd)
+
+	// cache offline disable
+	cacheOfflineDisableCmd := &cobra.Command{
+		Use:   "disable",
+		Short: "Disable offline mode",
+		Long:  "Disable offline mode to allow network access",
+		RunE:  c.runCacheOfflineDisable,
+	}
+	cacheOfflineCmd.AddCommand(cacheOfflineDisableCmd)
+
+	// cache offline status
+	cacheOfflineStatusCmd := &cobra.Command{
+		Use:   "status",
+		Short: "Show offline mode status",
+		Long:  "Display current offline mode status and readiness",
+		RunE:  c.runCacheOfflineStatus,
+	}
+	cacheOfflineCmd.AddCommand(cacheOfflineStatusCmd)
+
+	cacheCmd.AddCommand(cacheOfflineCmd)
 	c.rootCmd.AddCommand(cacheCmd)
 }
 
@@ -1322,6 +1375,66 @@ func (c *CLI) runCacheClean(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Println("Cache cleaned successfully")
+	return nil
+}
+
+func (c *CLI) runCacheValidate(cmd *cobra.Command, args []string) error {
+	fmt.Println("Validating cache...")
+	err := c.ValidateCache()
+	if err != nil {
+		fmt.Printf("Cache validation failed: %v\n", err)
+		return err
+	}
+
+	fmt.Println("Cache validation passed - cache is healthy")
+	return nil
+}
+
+func (c *CLI) runCacheRepair(cmd *cobra.Command, args []string) error {
+	err := c.RepairCache()
+	if err != nil {
+		return fmt.Errorf("failed to repair cache: %w", err)
+	}
+	return nil
+}
+
+func (c *CLI) runCacheOfflineEnable(cmd *cobra.Command, args []string) error {
+	return c.EnableOfflineMode()
+}
+
+func (c *CLI) runCacheOfflineDisable(cmd *cobra.Command, args []string) error {
+	return c.DisableOfflineMode()
+}
+
+func (c *CLI) runCacheOfflineStatus(cmd *cobra.Command, args []string) error {
+	if c.cacheManager == nil {
+		return fmt.Errorf("cache manager not initialized")
+	}
+
+	isOffline := c.cacheManager.IsOfflineMode()
+	fmt.Printf("Offline Mode: %t\n", isOffline)
+
+	if isOffline {
+		fmt.Println("Status: Using cached data only")
+		fmt.Println("Network requests are disabled")
+	} else {
+		fmt.Println("Status: Network access enabled")
+		fmt.Println("Will use network resources when available")
+	}
+
+	// Show cache readiness for offline mode
+	stats, err := c.cacheManager.GetStats()
+	if err == nil {
+		fmt.Printf("\nCache Readiness:\n")
+		fmt.Printf("  Entries: %d\n", stats.TotalEntries)
+		fmt.Printf("  Size: %s\n", formatBytes(stats.TotalSize))
+		fmt.Printf("  Health: %s\n", stats.CacheHealth)
+
+		if stats.TotalEntries == 0 {
+			fmt.Println("  Warning: No cached data available for offline mode")
+		}
+	}
+
 	return nil
 }
 
@@ -1929,15 +2042,127 @@ func (c *CLI) InstallUpdates() error {
 }
 
 func (c *CLI) ShowCache() error {
-	return fmt.Errorf("ShowCache implementation pending - will be implemented in task 7")
+	if c.cacheManager == nil {
+		return fmt.Errorf("cache manager not initialized")
+	}
+
+	// Get cache statistics
+	stats, err := c.cacheManager.GetStats()
+	if err != nil {
+		return fmt.Errorf("failed to get cache statistics: %w", err)
+	}
+
+	// Get cache configuration
+	config, err := c.cacheManager.GetCacheConfig()
+	if err != nil {
+		return fmt.Errorf("failed to get cache configuration: %w", err)
+	}
+
+	// Display cache information
+	fmt.Println("Cache Information")
+	fmt.Println("=================")
+	fmt.Printf("Location: %s\n", stats.CacheLocation)
+	fmt.Printf("Status: %s\n", stats.CacheHealth)
+	fmt.Printf("Offline Mode: %t\n", stats.OfflineMode)
+	fmt.Println()
+
+	fmt.Println("Statistics")
+	fmt.Println("----------")
+	fmt.Printf("Total Entries: %d\n", stats.TotalEntries)
+	fmt.Printf("Total Size: %s\n", formatBytes(stats.TotalSize))
+	fmt.Printf("Hit Rate: %.1f%%\n", stats.HitRate*100)
+	fmt.Printf("Expired Entries: %d\n", stats.ExpiredEntries)
+	fmt.Printf("Last Cleanup: %s\n", stats.LastCleanup.Format("2006-01-02 15:04:05"))
+	fmt.Println()
+
+	fmt.Println("Configuration")
+	fmt.Println("-------------")
+	fmt.Printf("Max Size: %s\n", formatBytes(config.MaxSize))
+	fmt.Printf("Max Entries: %d\n", config.MaxEntries)
+	fmt.Printf("Default TTL: %s\n", config.DefaultTTL)
+	fmt.Printf("Eviction Policy: %s\n", config.EvictionPolicy)
+	fmt.Printf("Compression: %t\n", config.EnableCompression)
+	fmt.Printf("Persist to Disk: %t\n", config.PersistToDisk)
+
+	// Show cache health warnings if any
+	if stats.CacheHealth != "healthy" {
+		fmt.Println()
+		fmt.Println("Health Issues")
+		fmt.Println("-------------")
+		if stats.ExpiredEntries > 0 {
+			fmt.Printf("⚠ %d expired entries found - consider running 'generator cache clean'\n", stats.ExpiredEntries)
+		}
+		if stats.CacheHealth == "corrupted" {
+			fmt.Println("⚠ Cache corruption detected - consider running 'generator cache repair'")
+		}
+		if stats.CacheHealth == "missing" {
+			fmt.Println("⚠ Cache directory missing - will be created on next cache operation")
+		}
+	}
+
+	return nil
 }
 
 func (c *CLI) ClearCache() error {
-	return fmt.Errorf("ClearCache implementation pending - will be implemented in task 7")
+	if c.cacheManager == nil {
+		return fmt.Errorf("cache manager not initialized")
+	}
+
+	// Get cache stats before clearing
+	stats, err := c.cacheManager.GetStats()
+	if err != nil {
+		return fmt.Errorf("failed to get cache statistics: %w", err)
+	}
+
+	// Clear the cache
+	err = c.cacheManager.Clear()
+	if err != nil {
+		return fmt.Errorf("failed to clear cache: %w", err)
+	}
+
+	fmt.Printf("Cache cleared successfully!\n")
+	fmt.Printf("Removed %d entries (%s)\n", stats.TotalEntries, formatBytes(stats.TotalSize))
+
+	return nil
 }
 
 func (c *CLI) CleanCache() error {
-	return fmt.Errorf("CleanCache implementation pending - will be implemented in task 7")
+	if c.cacheManager == nil {
+		return fmt.Errorf("cache manager not initialized")
+	}
+
+	// Get stats before cleaning
+	statsBefore, err := c.cacheManager.GetStats()
+	if err != nil {
+		return fmt.Errorf("failed to get cache statistics: %w", err)
+	}
+
+	// Clean expired entries
+	err = c.cacheManager.Clean()
+	if err != nil {
+		return fmt.Errorf("failed to clean cache: %w", err)
+	}
+
+	// Get stats after cleaning
+	statsAfter, err := c.cacheManager.GetStats()
+	if err != nil {
+		return fmt.Errorf("failed to get cache statistics after cleaning: %w", err)
+	}
+
+	// Calculate what was cleaned
+	entriesRemoved := statsBefore.TotalEntries - statsAfter.TotalEntries
+	sizeFreed := statsBefore.TotalSize - statsAfter.TotalSize
+
+	fmt.Printf("Cache cleaned successfully!\n")
+	if entriesRemoved > 0 {
+		fmt.Printf("Removed %d expired entries\n", entriesRemoved)
+		fmt.Printf("Freed %s of space\n", formatBytes(sizeFreed))
+	} else {
+		fmt.Printf("No expired entries found\n")
+	}
+	fmt.Printf("Current cache: %d entries (%s)\n", statsAfter.TotalEntries, formatBytes(statsAfter.TotalSize))
+
+	return nil
 }
 
 func (c *CLI) ShowLogs() error {
@@ -2082,23 +2307,64 @@ func (c *CLI) CheckCompatibility(projectPath string) (*interfaces.CompatibilityR
 }
 
 func (c *CLI) GetCacheStats() (*interfaces.CacheStats, error) {
-	return nil, fmt.Errorf("GetCacheStats implementation pending")
+	if c.cacheManager == nil {
+		return nil, fmt.Errorf("cache manager not initialized")
+	}
+
+	return c.cacheManager.GetStats()
 }
 
 func (c *CLI) ValidateCache() error {
-	return fmt.Errorf("ValidateCache implementation pending")
+	if c.cacheManager == nil {
+		return fmt.Errorf("cache manager not initialized")
+	}
+
+	return c.cacheManager.ValidateCache()
 }
 
 func (c *CLI) RepairCache() error {
-	return fmt.Errorf("RepairCache implementation pending")
+	if c.cacheManager == nil {
+		return fmt.Errorf("cache manager not initialized")
+	}
+
+	fmt.Println("Repairing cache...")
+	err := c.cacheManager.RepairCache()
+	if err != nil {
+		return fmt.Errorf("failed to repair cache: %w", err)
+	}
+
+	fmt.Println("Cache repaired successfully!")
+	return nil
 }
 
 func (c *CLI) EnableOfflineMode() error {
-	return fmt.Errorf("EnableOfflineMode implementation pending")
+	if c.cacheManager == nil {
+		return fmt.Errorf("cache manager not initialized")
+	}
+
+	err := c.cacheManager.EnableOfflineMode()
+	if err != nil {
+		return fmt.Errorf("failed to enable offline mode: %w", err)
+	}
+
+	fmt.Println("Offline mode enabled")
+	fmt.Println("The generator will now use cached data only")
+	return nil
 }
 
 func (c *CLI) DisableOfflineMode() error {
-	return fmt.Errorf("DisableOfflineMode implementation pending")
+	if c.cacheManager == nil {
+		return fmt.Errorf("cache manager not initialized")
+	}
+
+	err := c.cacheManager.DisableOfflineMode()
+	if err != nil {
+		return fmt.Errorf("failed to disable offline mode: %w", err)
+	}
+
+	fmt.Println("Offline mode disabled")
+	fmt.Println("The generator will now use network resources when available")
+	return nil
 }
 
 func (c *CLI) SetLogLevel(level string) error {
@@ -2240,4 +2506,18 @@ func (c *CLI) applySettingToConfig(config *models.ProjectConfig, key, value stri
 	}
 
 	return nil
+}
+
+// formatBytes formats a byte count as a human-readable string
+func formatBytes(bytes int64) string {
+	const unit = 1024
+	if bytes < unit {
+		return fmt.Sprintf("%d B", bytes)
+	}
+	div, exp := int64(unit), 0
+	for n := bytes / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
 }
