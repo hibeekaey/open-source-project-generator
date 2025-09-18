@@ -163,11 +163,18 @@ const (
 
 // Template Path Constants
 const (
-	// TemplateBaseDir represents the base templates directory
+	// TemplateBaseDir represents the base templates directory in embedded filesystem
 	TemplateBaseDir = "templates"
 
-	// TemplateRelativeBasePath represents the relative path to base templates
-	TemplateRelativeBasePath = "../../templates"
+	// EmbeddedTemplateDir represents the embedded templates directory name
+	EmbeddedTemplateDir = "templates"
+
+	// EmbeddedTemplateBasePath represents the full path to embedded templates from project root
+	EmbeddedTemplateBasePath = "pkg/template/templates"
+
+	// TemplateRelativeBasePath represents the relative path to templates from pkg/template directory
+	// This is used for tests and operations that need filesystem access relative to pkg/template/
+	TemplateRelativeBasePath = "templates"
 
 	// TemplateConfigDir represents the template config directory
 	TemplateConfigDir = "config"

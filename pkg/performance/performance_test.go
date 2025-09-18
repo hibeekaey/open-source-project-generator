@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/cache"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/constants"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/interfaces"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/template"
@@ -16,15 +17,31 @@ import (
 	"github.com/cuesoftinc/open-source-project-generator/pkg/version"
 )
 
+// hasEmbeddedTemplates checks if embedded templates are available for testing
+// by attempting to create an embedded template engine and checking if it can access templates
+func hasEmbeddedTemplates() bool {
+	// Try to create an embedded template engine
+	engine := template.NewEmbeddedEngine()
+	if engine == nil {
+		return false
+	}
+
+	// Try to load a known template to verify embedded templates are accessible
+	// We'll try to load a backend template that should exist
+	templatePath := filepath.Join(constants.TemplateBaseDir, constants.TemplateBackend, "go-gin", "template.yaml")
+	_, err := engine.LoadTemplate(templatePath)
+	return err == nil
+}
+
 // TestLargeProjectGeneration tests performance with large project configurations
 func TestLargeProjectGeneration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping performance tests in short mode")
 	}
 
-	// Check if templates directory exists
-	if _, err := os.Stat("templates"); os.IsNotExist(err) {
-		t.Skip("Templates directory not found, skipping performance test")
+	// Check if embedded templates are available
+	if !hasEmbeddedTemplates() {
+		t.Skip("Embedded templates not available, skipping performance test")
 	}
 
 	tempDir := t.TempDir()
@@ -35,8 +52,8 @@ func TestLargeProjectGeneration(t *testing.T) {
 	// Measure generation time
 	start := time.Now()
 
-	// Create template engine and manager
-	templateEngine := template.NewEngine()
+	// Create embedded template engine and manager
+	templateEngine := template.NewEmbeddedEngine()
 	templateManager := template.NewManager(templateEngine)
 
 	// Process template

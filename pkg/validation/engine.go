@@ -263,23 +263,42 @@ func (e *Engine) ValidateJSON(path string) error {
 	return nil
 }
 
-// ValidateTemplate validates a template file
+// ValidateTemplate validates a template file using the enhanced TemplateValidator
 func (e *Engine) ValidateTemplate(path string) error {
-	// Validate path to prevent directory traversal
-	if err := utils.ValidatePath(path); err != nil {
-		return fmt.Errorf("invalid template file path: %w", err)
+	// Use the new TemplateValidator for comprehensive validation
+	templateValidator := NewTemplateValidator()
+
+	// Create a validation result to capture issues
+	result := &models.ValidationResult{
+		Valid:   true,
+		Issues:  []models.ValidationIssue{},
+		Summary: "Template validation",
 	}
 
-	content, err := utils.SafeReadFile(path)
-	if err != nil {
-		return fmt.Errorf("failed to read template file: %w", err)
+	// Validate template content using the enhanced validator
+	if templateValidator.useEmbedded {
+		// Try embedded validation first
+		err := templateValidator.validateEmbeddedTemplateFile(path, result)
+		if err != nil {
+			// Fall back to filesystem validation
+			err = templateValidator.validateTemplateFile(path, result)
+			if err != nil {
+				return fmt.Errorf("template validation failed: %w", err)
+			}
+		}
+	} else {
+		// Use filesystem validation
+		err := templateValidator.validateTemplateFile(path, result)
+		if err != nil {
+			return fmt.Errorf("template validation failed: %w", err)
+		}
 	}
 
-	contentStr := string(content)
-
-	// Basic validation - check for template syntax
-	if !strings.Contains(contentStr, "{{") || !strings.Contains(contentStr, "}}") {
-		return fmt.Errorf("template file must contain template syntax ({{ }})")
+	// Check if validation found any critical issues
+	for _, issue := range result.Issues {
+		if issue.Type == "error" {
+			return fmt.Errorf("template validation error: %s", issue.Message)
+		}
 	}
 
 	return nil

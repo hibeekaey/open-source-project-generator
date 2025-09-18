@@ -2,7 +2,7 @@ package template
 
 import (
 	"fmt"
-	"os"
+	"io/fs"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -89,9 +89,9 @@ func testImportDetectionUtility(t *testing.T) {
 func testTemplateCompilationIntegration(t *testing.T) {
 	t.Log("Testing template compilation integration...")
 
-	templatesDir := constants.TemplateRelativeBasePath
-	if _, err := os.Stat(templatesDir); os.IsNotExist(err) {
-		t.Skip("Templates directory not found, skipping integration tests")
+	// Check if embedded templates are available
+	if !checkEmbeddedTemplatesAvailable() {
+		t.Skip("Embedded templates not available, skipping integration tests")
 	}
 
 	testData := createCompilationTestData()
@@ -100,9 +100,15 @@ func testTemplateCompilationIntegration(t *testing.T) {
 	var totalTemplates, successfulTemplates, failedTemplates int
 	var failures []string
 
-	err := filepath.Walk(templatesDir, func(path string, info os.FileInfo, err error) error {
+	// Walk through embedded templates
+	err := fs.WalkDir(embeddedTemplates, constants.TemplateBaseDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
+		}
+
+		// Skip directories
+		if d.IsDir() {
+			return nil
 		}
 
 		// Only test Go template files
@@ -111,9 +117,17 @@ func testTemplateCompilationIntegration(t *testing.T) {
 		}
 
 		totalTemplates++
-		relPath, _ := filepath.Rel(templatesDir, path)
+		relPath, _ := filepath.Rel(constants.TemplateBaseDir, path)
 
-		result := verifyTemplateCompilation(path, testData, outputDir)
+		// Extract template to temporary file for verification
+		tempFile, extractErr := extractEmbeddedTemplateToTemp(path, outputDir)
+		if extractErr != nil {
+			failedTemplates++
+			failures = append(failures, fmt.Sprintf("%s: failed to extract template: %s", relPath, extractErr.Error()))
+			return nil
+		}
+
+		result := verifyTemplateCompilation(tempFile, testData, outputDir)
 
 		switch result.Status {
 		case VerificationSuccess:
@@ -127,7 +141,7 @@ func testTemplateCompilationIntegration(t *testing.T) {
 	})
 
 	if err != nil {
-		t.Fatalf("Failed to walk templates directory: %v", err)
+		t.Fatalf("Failed to walk embedded templates directory: %v", err)
 	}
 
 	t.Logf("Template compilation results:")
@@ -282,6 +296,11 @@ import (
 func handler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "Hello World")
+}
+
+func main() {
+	http.HandleFunc("/", handler)
+	fmt.Println("Server starting...")
 }`,
 			description:     "HTTP import fix verification",
 			requiredImports: []string{"fmt", "net/http"},
@@ -298,7 +317,13 @@ func processData(data interface{}) {
 	bytes, err := json.Marshal(data)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
+	} else {
+		fmt.Printf("JSON: %s\n", string(bytes))
 	}
+}
+
+func main() {
+	processData(map[string]string{"hello": "world"})
 }`,
 			description:     "JSON import fix verification",
 			requiredImports: []string{"encoding/json", "fmt"},
@@ -628,6 +653,12 @@ func GenerateToken() (string, error) {
 	}
 }
 
+// TestTemplateFixesSuiteWrapper wraps the comprehensive test suite
+func TestTemplateFixesSuiteWrapper(t *testing.T) {
+	t.Log("Running template fixes comprehensive test suite...")
+	TestTemplateFixesComprehensive(t)
+}
+
 // TestSuiteRunner provides a convenient way to run all template fix tests
 func TestSuiteRunner(t *testing.T) {
 	startTime := time.Now()
@@ -649,4 +680,43 @@ func TestSuiteRunner(t *testing.T) {
 	t.Log("  ✓ Regression scenario tests")
 	t.Log("")
 	t.Log("🎉 All template fix tests passed successfully!")
+}
+
+// checkEmbeddedTemplatesAvailable checks if embedded templates are available for testing
+func checkEmbeddedTemplatesAvailable() bool {
+	// Check if the embedded templates filesystem has the expected structure
+	entries, err := fs.ReadDir(embeddedTemplates, ".")
+	if err != nil {
+		return false
+	}
+
+	// Look for the templates directory
+	for _, entry := range entries {
+		if entry.Name() == constants.TemplateBaseDir && entry.IsDir() {
+			// Check if frontend templates exist
+			_, err := fs.Stat(embeddedTemplates, filepath.Join(constants.TemplateBaseDir, constants.TemplateFrontend))
+			return err == nil
+		}
+	}
+	return false
+}
+
+// extractEmbeddedTemplateToTemp extracts an embedded template to a temporary file for testing
+func extractEmbeddedTemplateToTemp(templatePath, outputDir string) (string, error) {
+	// Read template content from embedded filesystem
+	content, err := fs.ReadFile(embeddedTemplates, templatePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read embedded template: %w", err)
+	}
+
+	// Create temporary file path
+	tempFileName := strings.ReplaceAll(templatePath, "/", "_")
+	tempFilePath := filepath.Join(outputDir, "temp_"+tempFileName)
+
+	// Write content to temporary file
+	if err := utils.SafeWriteFile(tempFilePath, content); err != nil {
+		return "", fmt.Errorf("failed to write temporary template file: %w", err)
+	}
+
+	return tempFilePath, nil
 }

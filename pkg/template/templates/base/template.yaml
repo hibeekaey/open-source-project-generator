@@ -1,0 +1,32 @@
+name: base
+display_name: Base Project Structure
+description: Common base files and configurations for all project types
+category: base
+technology: general
+version: 1.0.0
+tags:
+  - base
+  - common
+  - github
+  - ci-cd
+  - scripts
+dependencies: []
+metadata:
+  author: Open Source Project Generator
+  license: MIT
+  repository: https://github.com/cuesoftinc/open-source-project-generator
+  homepage: https://github.com/cuesoftinc/open-source-project-generator
+  keywords:
+    - base
+    - common
+    - github
+    - ci-cd
+  maintainers:
+    - Open Source Project Generator Team
+  created: 2024-01-01T00:00:00Z
+  updated: 2024-01-01T00:00:00Z
+  variables:
+    name: Project name
+    organization: Organization name
+    description: Project description
+    license: Project license

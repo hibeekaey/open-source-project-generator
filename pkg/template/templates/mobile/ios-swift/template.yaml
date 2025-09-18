@@ -1,0 +1,35 @@
+name: ios-swift
+display_name: iOS Swift App
+description: Modern iOS application built with Swift and SwiftUI
+category: mobile
+technology: ios
+version: 1.0.0
+tags:
+  - ios
+  - swift
+  - swiftui
+  - mobile
+  - app
+dependencies:
+  - swift
+  - swiftui
+  - cocoapods
+metadata:
+  author: Open Source Project Generator
+  license: MIT
+  repository: https://github.com/cuesoftinc/open-source-project-generator
+  homepage: https://github.com/cuesoftinc/open-source-project-generator
+  keywords:
+    - ios
+    - swift
+    - swiftui
+    - mobile
+    - app
+  maintainers:
+    - Open Source Project Generator Team
+  created: 2024-01-01T00:00:00Z
+  updated: 2024-01-01T00:00:00Z
+  variables:
+    name: Project name
+    organization: Organization name
+    description: Project description

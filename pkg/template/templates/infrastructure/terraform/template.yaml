@@ -1,0 +1,36 @@
+name: terraform
+display_name: Terraform Infrastructure
+description: Infrastructure as Code using Terraform for cloud resource management
+category: infrastructure
+technology: terraform
+version: 1.0.0
+tags:
+  - terraform
+  - iac
+  - infrastructure
+  - cloud
+  - devops
+  - aws
+  - azure
+  - gcp
+dependencies:
+  - terraform
+metadata:
+  author: Open Source Project Generator
+  license: MIT
+  repository: https://github.com/cuesoftinc/open-source-project-generator
+  homepage: https://github.com/cuesoftinc/open-source-project-generator
+  keywords:
+    - terraform
+    - iac
+    - infrastructure
+    - cloud
+    - devops
+  maintainers:
+    - Open Source Project Generator Team
+  created: 2024-01-01T00:00:00Z
+  updated: 2024-01-01T00:00:00Z
+  variables:
+    name: Project name
+    organization: Organization name
+    description: Project description

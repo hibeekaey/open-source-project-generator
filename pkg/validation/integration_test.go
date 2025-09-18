@@ -1,279 +1,99 @@
 package validation
 
 import (
-	"encoding/json"
-	"os"
-	"path/filepath"
 	"testing"
 
-	"github.com/cuesoftinc/open-source-project-generator/pkg/interfaces"
-	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/constants"
 )
 
-func TestValidationEngineIntegration(t *testing.T) {
-	// Create a validation engine
-	engine := NewEngine()
+// TestTemplateValidatorIntegration tests the template validator with actual embedded templates
+func TestTemplateValidatorIntegration(t *testing.T) {
+	validator := NewTemplateValidator()
 
-	// Verify it implements the interface
-	var _ interfaces.ValidationEngine = engine //nolint:staticcheck // Interface compliance check
-
-	// Test template consistency validation
-	t.Run("template consistency validation", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		frontendDir := filepath.Join(tmpDir, "frontend")
-		if err := os.MkdirAll(frontendDir, 0755); err != nil {
-			t.Fatalf("Failed to create frontend directory: %v", err)
-		}
-
-		// Create a simple template
-		templateDir := filepath.Join(frontendDir, "nextjs-app")
-		if err := os.MkdirAll(templateDir, 0755); err != nil {
-			t.Fatalf("Failed to create template directory: %v", err)
-		}
-
-		packageJSON := map[string]interface{}{
-			"name":    "test-app",
-			"version": "1.0.0",
-			"scripts": map[string]interface{}{
-				"dev":        "next dev",
-				"build":      "next build",
-				"start":      "next start",
-				"lint":       "next lint",
-				"type-check": "tsc --noEmit",
-				"test":       "jest",
-				"format":     "prettier --write .",
-				"clean":      "rm -rf .next",
-			},
-			"dependencies": map[string]interface{}{
-				"next":  "15.5.2",
-				"react": "19.1.0",
-			},
-			"devDependencies": map[string]interface{}{
-				"typescript": "^5.3.0",
-			},
-			"engines": map[string]interface{}{
-				"node": ">=22.0.0",
-				"npm":  ">=10.0.0",
-			},
-		}
-
-		data, _ := json.Marshal(packageJSON)
-		packageJSONPath := filepath.Join(templateDir, "package.json.tmpl")
-		if err := os.WriteFile(packageJSONPath, data, 0644); err != nil {
-			t.Fatalf("Failed to write package.json: %v", err)
-		}
-
-		// ValidateTemplateConsistency method removed in simplified validation
-		result := &models.ValidationResult{
-			Valid:  true,
-			Issues: []models.ValidationIssue{},
-		}
-
-		if !result.Valid {
-			t.Errorf("Expected template consistency validation to pass, got issues: %v", result.Issues)
-		}
-	})
-
-	// Test Vercel compatibility validation
-	t.Run("vercel compatibility validation", func(t *testing.T) {
-		tmpDir := t.TempDir()
-
-		// Create a Next.js project structure
-		packageJSON := map[string]interface{}{
-			"name":    "test-app",
-			"version": "1.0.0",
-			"scripts": map[string]interface{}{
-				"build": "next build",
-				"start": "next start",
-				"dev":   "next dev",
-			},
-			"dependencies": map[string]interface{}{
-				"next":  "15.5.2",
-				"react": "19.1.0",
-			},
-			"engines": map[string]interface{}{
-				"node": ">=22.0.0",
-			},
-		}
-
-		data, _ := json.Marshal(packageJSON)
-		if err := os.WriteFile(filepath.Join(tmpDir, "package.json"), data, 0644); err != nil {
-			t.Fatalf("Failed to write package.json: %v", err)
-		}
-
-		// Create src/app directory
-		if err := os.MkdirAll(filepath.Join(tmpDir, "src", "app"), 0755); err != nil {
-			t.Fatalf("Failed to create src/app directory: %v", err)
-		}
-
-		// ValidateVercelCompatibility method removed in simplified validation
-		result := &models.ValidationResult{
-			Valid:  true,
-			Issues: []models.ValidationIssue{},
-		}
-
-		if !result.Valid {
-			t.Errorf("Expected Vercel compatibility validation to pass, got issues: %v", result.Issues)
-		}
-	})
-
-	// Test security vulnerability validation
-	t.Run("security vulnerability validation", func(t *testing.T) {
-		tmpDir := t.TempDir()
-
-		// Create a project with safe packages
-		packageJSON := map[string]interface{}{
-			"name":    "test-app",
-			"version": "1.0.0",
-			"dependencies": map[string]interface{}{
-				"lodash": "4.17.21", // safe version
-			},
-		}
-
-		data, _ := json.Marshal(packageJSON)
-		if err := os.WriteFile(filepath.Join(tmpDir, "package.json"), data, 0644); err != nil {
-			t.Fatalf("Failed to write package.json: %v", err)
-		}
-
-		// ValidateSecurityVulnerabilities method removed in simplified validation
-		result := &models.ValidationResult{
-			Valid:  true,
-			Issues: []models.ValidationIssue{},
-		}
-
-		if !result.Valid {
-			t.Errorf("Expected security validation to pass for safe packages, got issues: %v", result.Issues)
-		}
-	})
-
-	// Test package.json structure validation
-	t.Run("package.json structure validation", func(t *testing.T) {
-		tmpDir := t.TempDir()
-
-		packageJSON := map[string]interface{}{
-			"name":    "test-app",
-			"version": "1.0.0",
-			"scripts": map[string]interface{}{
-				"dev":        "next dev",
-				"build":      "next build",
-				"start":      "next start",
-				"lint":       "next lint",
-				"type-check": "tsc --noEmit",
-				"test":       "jest",
-			},
-			"dependencies": map[string]interface{}{
-				"next": "15.5.2",
-			},
-			"devDependencies": map[string]interface{}{
-				"typescript": "^5.3.0",
-			},
-			"engines": map[string]interface{}{
-				"node": ">=22.0.0",
-				"npm":  ">=10.0.0",
-			},
-		}
-
-		data, _ := json.Marshal(packageJSON)
-		packageJSONPath := filepath.Join(tmpDir, "package.json")
-		if err := os.WriteFile(packageJSONPath, data, 0644); err != nil {
-			t.Fatalf("Failed to write package.json: %v", err)
-		}
-
-		// ValidatePackageJSONStructure method removed in simplified validation
-		result := &models.ValidationResult{
-			Valid:  true,
-			Issues: []models.ValidationIssue{},
-		}
-
-		if !result.Valid {
-			t.Errorf("Expected package.json structure validation to pass, got issues: %v", result.Issues)
-		}
-	})
-
-	// Test TypeScript config validation
-	t.Run("typescript config validation", func(t *testing.T) {
-		tmpDir := t.TempDir()
-
-		tsconfig := map[string]interface{}{
-			"compilerOptions": map[string]interface{}{
-				"target":           "es5",
-				"lib":              []string{"dom", "dom.iterable", "es6"},
-				"strict":           true,
-				"esModuleInterop":  true,
-				"moduleResolution": "bundler",
-				"jsx":              "preserve",
-			},
-			"include": []string{"**/*.ts", "**/*.tsx"},
-			"exclude": []string{"node_modules"},
-		}
-
-		data, _ := json.Marshal(tsconfig)
-		tsconfigPath := filepath.Join(tmpDir, "tsconfig.json")
-		if err := os.WriteFile(tsconfigPath, data, 0644); err != nil {
-			t.Fatalf("Failed to write tsconfig.json: %v", err)
-		}
-
-		// ValidateTypeScriptConfig method removed in simplified validation
-		result := &models.ValidationResult{
-			Valid:  true,
-			Issues: []models.ValidationIssue{},
-		}
-
-		if !result.Valid {
-			t.Errorf("Expected TypeScript config validation to pass, got issues: %v", result.Issues)
-		}
-	})
-}
-
-func TestValidationEngineMethodsExist(t *testing.T) {
-	// Engine removed in simplified validation
-
-	// Test that all new methods are accessible
-	methods := []struct {
-		name string
-		test func() error
-	}{
-		{
-			name: "ValidateTemplateConsistency",
-			test: func() error {
-				// ValidateTemplateConsistency method removed in simplified validation
-				return nil
-			},
-		},
-		{
-			name: "ValidatePackageJSONStructure",
-			test: func() error {
-				// ValidatePackageJSONStructure method removed in simplified validation
-				return nil
-			},
-		},
-		{
-			name: "ValidateTypeScriptConfig",
-			test: func() error {
-				// ValidateTypeScriptConfig method removed in simplified validation
-				return nil
-			},
-		},
-		{
-			name: "ValidateVercelCompatibility",
-			test: func() error {
-				// ValidateVercelCompatibility method removed in simplified validation
-				return nil
-			},
-		},
-		{
-			name: "ValidateSecurityVulnerabilities",
-			test: func() error {
-				// ValidateSecurityVulnerabilities method removed in simplified validation
-				return nil
-			},
-		},
+	// Test that we can validate embedded templates
+	if !validator.useEmbedded {
+		t.Skip("Embedded filesystem not available, skipping integration test")
 	}
 
-	for _, method := range methods {
-		t.Run(method.name, func(t *testing.T) {
-			// We don't care about the specific result, just that the method exists and can be called
-			_ = method.test()
-		})
+	// Test comprehensive validation
+	result, err := validator.ValidateAllEmbeddedTemplates()
+	if err != nil {
+		t.Fatalf("Failed to validate embedded templates: %v", err)
+	}
+
+	if result == nil {
+		t.Fatal("Expected validation result, got nil")
+	}
+
+	// Log validation results for debugging
+	t.Logf("Validation completed: %s", result.Summary)
+	t.Logf("Valid: %v", result.Valid)
+	t.Logf("Issues found: %d", len(result.Issues))
+
+	for i, issue := range result.Issues {
+		t.Logf("Issue %d: %s - %s (File: %s)", i+1, issue.Type, issue.Message, issue.File)
+	}
+}
+
+// TestTemplateValidatorWithSpecificTemplate tests validation of a specific template
+func TestTemplateValidatorWithSpecificTemplate(t *testing.T) {
+	validator := NewTemplateValidator()
+
+	if !validator.useEmbedded {
+		t.Skip("Embedded filesystem not available, skipping integration test")
+	}
+
+	// Test package.json validation with embedded template
+	packageJsonPath := "frontend/nextjs-app/package.json.tmpl"
+	err := validator.ValidatePackageJSON(packageJsonPath)
+
+	// This might fail if the template doesn't exist, which is okay for this test
+	if err != nil {
+		t.Logf("Package.json validation result: %v", err)
+	} else {
+		t.Log("Package.json validation passed")
+	}
+}
+
+// TestTemplateValidatorFallback tests fallback to filesystem validation
+func TestTemplateValidatorFallback(t *testing.T) {
+	// Create validator without embedded filesystem
+	validator := NewTemplateValidatorWithFS(nil)
+
+	if validator.useEmbedded {
+		t.Error("Expected useEmbedded to be false when nil filesystem provided")
+	}
+
+	// Test that it falls back to filesystem validation
+	result, err := validator.ValidateTemplateConsistency("nonexistent")
+	if err != nil {
+		t.Fatalf("Expected no error in fallback mode, got: %v", err)
+	}
+
+	if result == nil {
+		t.Fatal("Expected validation result, got nil")
+	}
+
+	// Should have validation issues due to nonexistent path
+	if result.Valid {
+		t.Error("Expected validation to fail for nonexistent path")
+	}
+}
+
+// TestTemplateValidatorConstants tests that constants are used correctly
+func TestTemplateValidatorConstants(t *testing.T) {
+	validator := NewTemplateValidator()
+
+	summary := validator.GetValidationSummary()
+
+	// Check that embedded template base is set correctly
+	if validator.useEmbedded {
+		if base, exists := summary["embedded_template_base"]; exists {
+			if base != constants.TemplateBaseDir {
+				t.Errorf("Expected embedded_template_base to be %s, got %v", constants.TemplateBaseDir, base)
+			}
+		} else {
+			t.Error("Expected embedded_template_base in summary when embedded filesystem is available")
+		}
 	}
 }

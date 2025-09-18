@@ -16,6 +16,11 @@ import (
 //go:embed templates
 var embeddedTemplates embed.FS
 
+// GetEmbeddedFS returns the embedded filesystem for external use
+func GetEmbeddedFS() fs.FS {
+	return embeddedTemplates
+}
+
 // EmbeddedEngine implements the TemplateEngine interface using embedded templates
 type EmbeddedEngine struct {
 	funcMap template.FuncMap

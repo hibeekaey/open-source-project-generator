@@ -1,21 +1,95 @@
 package template
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/cuesoftinc/open-source-project-generator/pkg/constants"
 )
 
-func TestTemplateScanner_ScanFrontendTemplates(t *testing.T) {
-	// Use the actual templates directory for testing
-	templateDir := "../../templates"
-
-	// Check if templates directory exists
-	if _, err := os.Stat(templateDir); os.IsNotExist(err) {
-		t.Skip("Templates directory not found, skipping integration test")
+// Helper function to check if embedded templates are available
+func hasEmbeddedTemplates() bool {
+	// Check if the embedded templates filesystem has the expected structure
+	entries, err := fs.ReadDir(embeddedTemplates, ".")
+	if err != nil {
+		return false
 	}
 
-	scanner := NewTemplateScanner(templateDir)
+	// Look for the templates directory
+	for _, entry := range entries {
+		if entry.Name() == constants.TemplateBaseDir && entry.IsDir() {
+			// Check if frontend templates exist
+			_, err := fs.Stat(embeddedTemplates, filepath.Join(constants.TemplateBaseDir, constants.TemplateFrontend))
+			return err == nil
+		}
+	}
+	return false
+}
+
+// Helper function to create a scanner with embedded template access
+// This function extracts embedded templates to a temporary directory for filesystem-based testing
+// since the TemplateScanner requires filesystem access to analyze template structures
+func newEmbeddedTemplateScanner(t *testing.T) *TemplateScanner {
+	if !hasEmbeddedTemplates() {
+		t.Skip("Embedded templates not available, skipping test")
+	}
+
+	// Create a temporary directory to extract templates for filesystem-based scanner
+	tempDir := t.TempDir()
+
+	// Extract embedded templates to temp directory for testing
+	err := fs.WalkDir(embeddedTemplates, constants.TemplateBaseDir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Calculate output path (remove the templates prefix since tempDir will be our template root)
+		relPath, err := filepath.Rel(constants.TemplateBaseDir, path)
+		if err != nil {
+			return err
+		}
+
+		// Skip the root directory itself
+		if relPath == "." {
+			return nil
+		}
+
+		outputPath := filepath.Join(tempDir, relPath)
+
+		if d.IsDir() {
+			return os.MkdirAll(outputPath, 0755)
+		}
+
+		// Copy file content
+		content, err := fs.ReadFile(embeddedTemplates, path)
+		if err != nil {
+			return err
+		}
+
+		// Ensure directory exists
+		if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
+			return err
+		}
+
+		return os.WriteFile(outputPath, content, 0644)
+	})
+
+	if err != nil {
+		t.Fatalf("Failed to extract embedded templates: %v", err)
+	}
+
+	return NewTemplateScanner(tempDir)
+}
+
+func TestTemplateScanner_ScanFrontendTemplates(t *testing.T) {
+	// Skip if embedded templates are not available for filesystem operations
+	if !hasEmbeddedTemplates() {
+		t.Skip("Embedded templates not available, skipping integration test")
+	}
+
+	scanner := newEmbeddedTemplateScanner(t)
 	analysis, err := scanner.ScanFrontendTemplates()
 
 	if err != nil {
@@ -80,16 +154,14 @@ func TestTemplateScanner_ScanFrontendTemplates(t *testing.T) {
 }
 
 func TestTemplateScanner_analyzeTemplate(t *testing.T) {
-	templateDir := "../../templates"
-
-	// Check if templates directory exists
-	if _, err := os.Stat(templateDir); os.IsNotExist(err) {
-		t.Skip("Templates directory not found, skipping integration test")
+	// Skip if embedded templates are not available for filesystem operations
+	if !hasEmbeddedTemplates() {
+		t.Skip("Embedded templates not available, skipping integration test")
 	}
 
-	scanner := NewTemplateScanner(templateDir)
+	scanner := newEmbeddedTemplateScanner(t)
 
-	templatePath := filepath.Join(templateDir, "frontend", "nextjs-app")
+	templatePath := filepath.Join(scanner.templateDir, constants.TemplateFrontend, "nextjs-app")
 	if _, err := os.Stat(templatePath); os.IsNotExist(err) {
 		t.Skip("nextjs-app template not found, skipping test")
 	}
