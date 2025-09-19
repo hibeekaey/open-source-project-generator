@@ -1120,82 +1120,17 @@ func (c *CLI) setupLogsCommand() {
 
 Provides filtering, search, real-time following, and multiple output formats.`,
 		RunE: c.runLogs,
-		Example: `  BASIC LOG VIEWING:
-  # Show recent log entries (default: 50 lines)
+		Example: `  # Show recent logs
   generator logs
   
-  # Show specific number of log entries
-  generator logs --lines 100
-  
-  # Show log file locations and information
-  generator logs --locations
-
-  LOG LEVEL FILTERING:
-  # Show only error and fatal logs
+  # Show error logs only
   generator logs --level error
   
-  # Show warnings and above (warn, error, fatal)
-  generator logs --level warn
-  
-  # Show debug logs for detailed troubleshooting
-  generator logs --level debug --lines 200
-
-  COMPONENT AND SOURCE FILTERING:
-  # Show logs from CLI component only
-  generator logs --component cli
-  
-  # Show template processing logs
-  generator logs --component template --level debug
-  
-  # Show configuration-related logs
-  generator logs --component config --verbose
-
-  TIME-BASED FILTERING:
-  # Show logs since specific timestamp
-  generator logs --since "2024-01-01T10:00:00Z"
-  
-  # Show logs from last hour
-  generator logs --since "1h"
-  
-  # Show logs from last 30 minutes
-  generator logs --since "30m"
-
-  REAL-TIME MONITORING:
-  # Follow logs in real-time (like tail -f)
+  # Follow logs in real-time
   generator logs --follow
   
-  # Follow error logs only
-  generator logs --follow --level error
-  
-  # Follow specific component logs
-  generator logs --follow --component template
-
-  OUTPUT FORMATS AND ANALYSIS:
-  # JSON output for automation and parsing
-  generator logs --format json --lines 100
-  
-  # Raw log file content
-  generator logs --format raw --no-color
-  
-  # CSV format for analysis tools
-  generator logs --format csv --since "24h"
-
-  ADVANCED FILTERING:
-  # Combine multiple filters
-  generator logs --level warn --component template --since "1h" --lines 50
-  
-  # Search for specific patterns
-  generator logs --search "error" --level info
-  
-  # Exclude timestamps for cleaner output
-  generator logs --no-timestamps --format text
-
-  TROUBLESHOOTING:
-  # Debug log viewing issues
-  generator logs --debug --verbose --locations
-  
-  # Show all available log files and their status
-  generator logs --locations --detailed`,
+  # Show logs from last hour
+  generator logs --since "1h"`,
 	}
 
 	logsCmd.Flags().Int("lines", 50, "Number of recent log lines to show")
