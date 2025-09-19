@@ -25,29 +25,17 @@ func (c *CLI) setupConfigCommand() {
 		Long: `Manage saved project configurations for reuse in future project generation.
 
 Save, load, view, and manage project configurations to skip interactive setup.`,
-		Example: `  # List all saved configurations
+		Example: `  # List configurations
   generator config list
 
-  # View detailed information about a configuration
-  generator config view my-api-config
-
-  # Save current interactive session as configuration
-  generator generate --save-config my-new-config
-
-  # Load and use a saved configuration
-  generator generate --load-config my-api-config
+  # View a configuration
+  generator config view my-config
 
   # Delete a configuration
   generator config delete old-config
 
-  # Export configuration to file
-  generator config export my-config --format yaml --output my-config.yaml
-
-  # Import configuration from file
-  generator config import --file my-config.yaml --name imported-config
-
-  # Interactive configuration management
-  generator config manage`,
+  # Export configuration
+  generator config export my-config`,
 	}
 
 	// Add subcommands
@@ -298,7 +286,7 @@ func (c *CLI) runConfigDelete(cmd *cobra.Command, args []string) error {
 
 	// Delete configuration
 	if err := persistence.DeleteConfiguration(configName); err != nil {
-		return fmt.Errorf("failed to delete configuration: %w", err)
+		return fmt.Errorf("🚫 Couldn't delete the configuration: %w", err)
 	}
 
 	c.SuccessOutput("🗑️  Configuration '%s' deleted successfully", configName)
@@ -322,7 +310,7 @@ func (c *CLI) runConfigExport(cmd *cobra.Command, args []string) error {
 		// Export current configuration
 		err = c.ExportConfig(output)
 		if err != nil {
-			return fmt.Errorf("failed to export current configuration: %w", err)
+			return fmt.Errorf("🚫 Couldn't export the current configuration: %w", err)
 		}
 
 		c.SuccessOutput("📤 Configuration exported to '%s'", output)
@@ -351,7 +339,7 @@ func (c *CLI) runConfigExport(cmd *cobra.Command, args []string) error {
 	// Export saved configuration
 	data, err = persistence.ExportConfiguration(configName, format)
 	if err != nil {
-		return fmt.Errorf("failed to export configuration: %w", err)
+		return fmt.Errorf("🚫 Couldn't export the configuration: %w", err)
 	}
 
 	// Output to file or stdout
@@ -427,7 +415,7 @@ func (c *CLI) runConfigImport(cmd *cobra.Command, args []string) error {
 
 	// Import configuration
 	if err := persistence.ImportConfiguration(name, data, format); err != nil {
-		return fmt.Errorf("failed to import configuration: %w", err)
+		return fmt.Errorf("🚫 Couldn't import the configuration: %w", err)
 	}
 
 	c.SuccessOutput("📥 Configuration imported as '%s'", name)
@@ -652,7 +640,7 @@ func (c *CLI) outputConfigurationDetailsTable(config *config.SavedConfiguration,
 func (c *CLI) outputJSON(data interface{}) error {
 	// This would use the existing JSON output functionality
 	// Placeholder implementation
-	fmt.Printf("JSON output not fully implemented: %+v\n", data)
+	fmt.Printf("🚧 JSON output is coming soon: %+v\n", data)
 	return nil
 }
 

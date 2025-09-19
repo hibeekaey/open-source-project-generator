@@ -40,7 +40,7 @@ func (c *CLI) runInteractiveDirectorySelection(ctx context.Context, defaultPath 
 	if result.ConflictResolution == "overwrite" && result.BackupPath != "" {
 		c.VerboseOutput("💾 Creating backup: %s", result.BackupPath)
 		if err := directorySelector.CreateBackup(result.Path, result.BackupPath); err != nil {
-			return "", fmt.Errorf("failed to create backup: %w", err)
+			return "", fmt.Errorf("🚫 Couldn't create backup: %w", err)
 		}
 		c.QuietOutput("💾 Backup created at: %s", result.BackupPath)
 	}

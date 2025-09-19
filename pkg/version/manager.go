@@ -252,7 +252,7 @@ func (m *Manager) GetLatestVersion() (*interfaces.VersionInfo, error) {
 	// Cache the version info
 	if err := m.CacheVersionInfo(versionInfo); err != nil {
 		// Log warning but don't fail
-		fmt.Printf("⚠️  Failed to cache version info: %v\n", err)
+		fmt.Printf("⚠️  Couldn't cache version info: %v\n", err)
 	}
 
 	return versionInfo, nil
@@ -320,7 +320,7 @@ func (m *Manager) GetAllPackageVersions() (map[string]string, error) {
 			cacheTTL = config.CacheTTL
 		}
 		if err := m.cacheManager.Set(cacheKey, packages, cacheTTL); err != nil {
-			fmt.Printf("⚠️  Failed to cache package versions: %v\n", err)
+			fmt.Printf("⚠️  Couldn't cache package versions: %v\n", err)
 		}
 	}
 
@@ -552,7 +552,7 @@ func (m *Manager) RefreshVersionCache() error {
 
 	for _, key := range keys {
 		if err := m.cacheManager.Delete(key); err != nil {
-			fmt.Printf("⚠️  Failed to delete cache key %s: %v\n", key, err)
+			fmt.Printf("⚠️  Couldn't delete cache key %s: %v\n", key, err)
 		}
 	}
 

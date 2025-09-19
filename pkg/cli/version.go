@@ -52,7 +52,7 @@ func RunVersionCommand(cmd *cobra.Command, args []string, cli interfaces.CLIInte
 		}
 		jsonBytes, err := json.Marshal(versionInfo)
 		if err != nil {
-			return fmt.Errorf("failed to marshal version info: %w", err)
+			return fmt.Errorf("🚫 Couldn't format version info: %w", err)
 		}
 		fmt.Println(string(jsonBytes))
 	}

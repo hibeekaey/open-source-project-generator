@@ -523,7 +523,7 @@ func (c *CLI) PromptProjectDetails() (*models.ProjectConfig, error) {
 	fmt.Print("Project name: ")
 	var name string
 	if _, err := fmt.Scanln(&name); err != nil {
-		return nil, fmt.Errorf("failed to read project name: %w", err)
+		return nil, fmt.Errorf("🚫 Couldn't read the project name: %w", err)
 	}
 	config.Name = strings.TrimSpace(name)
 
@@ -856,54 +856,17 @@ or to validate custom templates you've created.`,
 		Use:   "info <template-name> [flags]",
 		Short: "Display comprehensive template information and documentation",
 		Long: `Display detailed information about a specific template including metadata,
-dependencies, configuration options, and usage examples.
-
-TEMPLATE INFORMATION:
-  Basic Information:
-    • Template name, version, and description
-    • Author, maintainer, and license information
-    • Creation date, last update, and changelog
-    • Category, tags, and classification
-
-  Technical Details:
-    • Technology stack and version requirements
-    • Dependencies and compatibility matrix
-    • Configuration variables and options
-    • File structure and component breakdown
-    • Build system and deployment information
-
-  Usage Information:
-    • Configuration examples and templates
-    • Common use cases and scenarios
-    • Best practices and recommendations
-    • Troubleshooting and known issues
-    • Community resources and support
-
-  Compatibility Information:
-    • Supported platforms and environments
-    • Version compatibility matrix
-    • Breaking changes and migration guides
-    • Integration with other templates
-    • Performance characteristics and limitations`,
+dependencies, configuration options, and usage examples.`,
 		RunE: c.runTemplateInfo,
 		Args: cobra.ExactArgs(1),
-		Example: `  # Show basic template information
+		Example: `  # Show template information
   generator template info go-gin
   
-  # Show detailed information with all sections
+  # Show detailed information
   generator template info nextjs-app --detailed
   
-  # Show template variables and configuration options
-  generator template info go-gin --variables --detailed
-  
-  # Show dependency information
-  generator template info nextjs-app --dependencies --compatibility
-  
-  # Show file structure and components
-  generator template info go-gin --structure --verbose
-  
-  # Output in JSON format for automation
-  generator template info nextjs-app --output-format json`,
+  # Show template variables
+  generator template info go-gin --variables`,
 	}
 	templateInfoCmd.Flags().Bool("detailed", false, "Show detailed template information")
 	templateInfoCmd.Flags().Bool("variables", false, "Show template variables")
@@ -915,63 +878,19 @@ TEMPLATE INFORMATION:
 	templateValidateCmd := &cobra.Command{
 		Use:   "validate <template-path> [flags]",
 		Short: "Validate custom template structure, syntax, and compliance",
-		Long: `Comprehensive validation of custom template directories including structure,
-metadata, syntax, and best practices compliance. Provides detailed feedback and auto-fix capabilities.
+		Long: `Validate custom template directories including structure, metadata, syntax, and best practices.
 
-VALIDATION CATEGORIES:
-  Structure Validation:
-    • Required files and directories presence
-    • Template file organization and naming
-    • Metadata file structure and completeness
-    • Asset and resource file validation
-    • Documentation and example file checking
-
-  Syntax Validation:
-    • Template syntax correctness and parsing
-    • Variable usage and definition validation
-    • Conditional logic and loop validation
-    • Function usage and parameter validation
-    • Template inheritance and inclusion validation
-
-  Metadata Validation:
-    • Template metadata completeness and accuracy
-    • Version information and compatibility data
-    • Dependency specification and validation
-    • Configuration schema and variable definitions
-    • License and author information validation
-
-  Best Practices Compliance:
-    • Template organization and structure standards
-    • Security best practices and vulnerability checks
-    • Performance optimization recommendations
-    • Documentation quality and completeness
-    • Accessibility and usability guidelines
-
-AUTO-FIX CAPABILITIES:
-  • Automatic correction of common syntax errors
-  • Missing file and directory creation
-  • Metadata completion and standardization
-  • Documentation template generation
-  • Security and best practices improvements`,
+Provides detailed feedback and auto-fix capabilities for common issues.`,
 		RunE: c.runTemplateValidate,
 		Args: cobra.ExactArgs(1),
-		Example: `  # Validate custom template directory
-  generator template validate ./my-custom-template
+		Example: `  # Validate template directory
+  generator template validate ./my-template
   
-  # Validate with detailed output and suggestions
-  generator template validate ./my-template --detailed --verbose
+  # Validate with detailed output
+  generator template validate ./my-template --detailed
   
-  # Validate and auto-fix common issues
-  generator template validate ./my-template --fix --backup
-  
-  # Validate with strict compliance checking
-  generator template validate ./my-template --strict --best-practices
-  
-  # Generate validation report
-  generator template validate ./my-template --report --output-format html
-  
-  # Validate specific aspects only
-  generator template validate ./my-template --syntax-only --metadata-only`,
+  # Validate and auto-fix issues
+  generator template validate ./my-template --fix`,
 	}
 	templateValidateCmd.Flags().Bool("detailed", false, "Show detailed validation results")
 	templateValidateCmd.Flags().Bool("fix", false, "Attempt to fix validation issues")
@@ -1346,7 +1265,7 @@ func (c *CLI) runValidate(cmd *cobra.Command, args []string) error {
 	if report && outputFile != "" {
 		err := c.generateValidationReport(result, reportFormat, outputFile)
 		if err != nil {
-			return fmt.Errorf("failed to generate validation report: %w", err)
+			return fmt.Errorf("🚫 Couldn't create the validation report: %w", err)
 		}
 		c.QuietOutput("Validation report written to: %s", outputFile)
 	}
@@ -1404,7 +1323,7 @@ func (c *CLI) generateValidationReport(result *interfaces.ValidationResult, form
 
 	err = os.WriteFile(outputFile, content, 0600)
 	if err != nil {
-		return fmt.Errorf("failed to write report file: %w", err)
+		return fmt.Errorf("🚫 Couldn't write the report file: %w", err)
 	}
 
 	return nil
@@ -1623,39 +1542,88 @@ func (c *CLI) runListTemplates(cmd *cobra.Command, args []string) error {
 
 	// Human-readable output
 	if len(templates) == 0 {
-		c.QuietOutput("No templates found matching the criteria")
+		c.QuietOutput("🔍 No templates found matching your criteria")
+		c.QuietOutput("💡 Try a different category or search term")
 		return c.outputSuccess("No templates found", responseData, "list-templates", []string{})
 	}
 
 	if !c.quietMode {
-		c.QuietOutput("Found %d template(s):", len(templates))
+		// Group templates by category for better organization
+		categories := make(map[string][]interfaces.TemplateInfo)
+		for _, template := range templates {
+			categories[template.Category] = append(categories[template.Category], template)
+		}
+
+		c.QuietOutput("📦 Available Templates (%d found)", len(templates))
 		c.QuietOutput("")
 
-		for _, template := range templates {
-			c.QuietOutput("Name: %s", template.Name)
-			c.QuietOutput("Display Name: %s", template.DisplayName)
-			c.QuietOutput("Description: %s", template.Description)
-			c.QuietOutput("Category: %s", template.Category)
-			c.QuietOutput("Technology: %s", template.Technology)
-			c.QuietOutput("Version: %s", template.Version)
-
-			if len(template.Tags) > 0 {
-				c.QuietOutput("Tags: %s", strings.Join(template.Tags, ", "))
-			}
-
-			if detailed {
-				if len(template.Dependencies) > 0 {
-					c.VerboseOutput("Dependencies: %s", strings.Join(template.Dependencies, ", "))
-				}
-				c.VerboseOutput("Author: %s", template.Metadata.Author)
-				c.VerboseOutput("License: %s", template.Metadata.License)
-				if template.Metadata.Repository != "" {
-					c.VerboseOutput("Repository: %s", template.Metadata.Repository)
-				}
-			}
-
-			c.QuietOutput("")
+		// Display templates grouped by category
+		categoryOrder := []string{"frontend", "backend", "mobile", "infrastructure", "base"}
+		categoryEmojis := map[string]string{
+			"frontend":       "🎨",
+			"backend":        "⚙️ ",
+			"mobile":         "📱",
+			"infrastructure": "🚀",
+			"base":           "📋",
 		}
+
+		for _, cat := range categoryOrder {
+			if templates, exists := categories[cat]; exists {
+				emoji := categoryEmojis[cat]
+				if emoji == "" {
+					emoji = "📦"
+				}
+				c.QuietOutput("%s  %s Templates:", emoji, strings.Title(cat))
+				
+				for _, template := range templates {
+					if detailed {
+						c.QuietOutput("  • %s (%s)", template.DisplayName, template.Name)
+						c.QuietOutput("    %s", template.Description)
+						if len(template.Tags) > 0 {
+							c.QuietOutput("    🏷️   %s", strings.Join(template.Tags, ", "))
+						}
+						if template.Metadata.Author != "" {
+							c.VerboseOutput("    👤  %s", template.Metadata.Author)
+						}
+						if len(template.Dependencies) > 0 {
+							c.VerboseOutput("    📋  Dependencies: %s", strings.Join(template.Dependencies, ", "))
+						}
+					} else {
+						c.QuietOutput("  • %s - %s", template.DisplayName, template.Description)
+					}
+				}
+				c.QuietOutput("")
+			}
+		}
+
+		// Display any templates from categories not in our predefined list
+		for cat, templates := range categories {
+			found := false
+			for _, knownCat := range categoryOrder {
+				if cat == knownCat {
+					found = true
+					break
+				}
+			}
+			if !found {
+				c.QuietOutput("📦  %s Templates:", strings.Title(cat))
+				for _, template := range templates {
+					if detailed {
+						c.QuietOutput("  • %s (%s)", template.DisplayName, template.Name)
+						c.QuietOutput("    %s", template.Description)
+						if len(template.Tags) > 0 {
+							c.QuietOutput("    🏷️   %s", strings.Join(template.Tags, ", "))
+						}
+					} else {
+						c.QuietOutput("  • %s - %s", template.DisplayName, template.Description)
+					}
+				}
+				c.QuietOutput("")
+			}
+		}
+
+		c.QuietOutput("💡 Use --detailed for more information")
+		c.QuietOutput("🔍 Use --search <term> to find specific templates")
 	}
 
 	return c.outputSuccess(fmt.Sprintf("Listed %d templates", len(templates)), responseData, "list-templates", []string{})
@@ -1677,7 +1645,7 @@ func (c *CLI) runUpdate(cmd *cobra.Command, args []string) error {
 	// Set update channel if specified
 	if channel != "stable" {
 		if err := c.versionManager.SetUpdateChannel(channel); err != nil {
-			return fmt.Errorf("failed to set update channel: %w", err)
+			return fmt.Errorf("🚫 Couldn't set the update channel: %w", err)
 		}
 		fmt.Printf("📡 Using update channel: %s\n", channel)
 	}
@@ -1717,7 +1685,7 @@ func (c *CLI) runUpdate(cmd *cobra.Command, args []string) error {
 				fmt.Println("\n🔍 Checking compatibility...")
 				compatResult, err := c.versionManager.CheckCompatibility(".")
 				if err != nil {
-					fmt.Printf("⚠️  Failed to check compatibility: %v\n", err)
+					fmt.Printf("⚠️  Couldn't check compatibility: %v\n", err)
 				} else {
 					if compatResult.Compatible {
 						fmt.Println("✅ Update is compatible with your current project")
@@ -1835,7 +1803,7 @@ func (c *CLI) runCacheShow(cmd *cobra.Command, args []string) error {
 	// Show cache status and statistics
 	err := c.ShowCache()
 	if err != nil {
-		return fmt.Errorf("failed to show cache information: %w", err)
+		return fmt.Errorf("🚫 Couldn't show cache information: %w", err)
 	}
 	return nil
 }
@@ -1861,7 +1829,7 @@ func (c *CLI) runCacheClear(cmd *cobra.Command, args []string) error {
 	// Clear cache
 	err := c.ClearCache()
 	if err != nil {
-		return fmt.Errorf("failed to clear cache: %w", err)
+		return fmt.Errorf("🚫 Couldn't clear the cache: %w", err)
 	}
 
 	fmt.Println("🗑️  Cache cleared successfully")
@@ -1873,7 +1841,7 @@ func (c *CLI) runCacheClean(cmd *cobra.Command, args []string) error {
 	fmt.Println("🧹 Cleaning cache...")
 	err := c.CleanCache()
 	if err != nil {
-		return fmt.Errorf("failed to clean cache: %w", err)
+		return fmt.Errorf("🚫 Couldn't clean the cache: %w", err)
 	}
 
 	fmt.Println("✨ Cache cleaned successfully")
@@ -1895,7 +1863,7 @@ func (c *CLI) runCacheValidate(cmd *cobra.Command, args []string) error {
 func (c *CLI) runCacheRepair(cmd *cobra.Command, args []string) error {
 	err := c.RepairCache()
 	if err != nil {
-		return fmt.Errorf("failed to repair cache: %w", err)
+		return fmt.Errorf("🚫 Couldn't repair the cache: %w", err)
 	}
 	return nil
 }
@@ -1961,7 +1929,7 @@ func (c *CLI) runLogs(cmd *cobra.Command, args []string) error {
 			}
 		}
 		if !isValid {
-			return fmt.Errorf("invalid log level: %s (valid levels: %s)", level, strings.Join(validLevels, ", "))
+			return fmt.Errorf("🚫 '%s' isn't a valid log level. Try one of these: %s", level, strings.Join(validLevels, ", "))
 		}
 	}
 
@@ -2110,7 +2078,7 @@ func (c *CLI) performPreGenerationChecks(outputPath string, options interfaces.G
 
 	// Check write permissions on the output directory
 	if err := c.checkWritePermissions(outputPath); err != nil {
-		return fmt.Errorf("insufficient permissions for output directory: %w", err)
+		return fmt.Errorf("🚫 Don't have permission to write to the output directory: %w", err)
 	}
 
 	return nil
@@ -2175,14 +2143,14 @@ func (c *CLI) generateBaseStructure(config *models.ProjectConfig, outputPath str
 	for _, dir := range dirs {
 		dirPath := filepath.Join(outputPath, dir)
 		if err := os.MkdirAll(dirPath, 0755); err != nil {
-			return fmt.Errorf("failed to create directory %s: %w", dir, err)
+			return fmt.Errorf("🚫 Couldn't create directory %s: %w", dir, err)
 		}
 	}
 
 	// Process base template files directly from the embedded filesystem
 	// The base directory contains common files like README, LICENSE, etc.
 	if err := c.processBaseTemplateFiles(config, outputPath); err != nil {
-		return fmt.Errorf("failed to process base template files: %w", err)
+		return fmt.Errorf("🚫 Couldn't process base template files: %w", err)
 	}
 
 	// Process GitHub workflow templates
@@ -2219,7 +2187,7 @@ func (c *CLI) processFrontendComponents(config *models.ProjectConfig, outputPath
 	// Create App directory structure
 	appDir := filepath.Join(outputPath, "App")
 	if err := os.MkdirAll(appDir, 0755); err != nil {
-		return fmt.Errorf("failed to create App directory: %w", err)
+		return fmt.Errorf("🚫 Couldn't create App directory: %w", err)
 	}
 
 	// Process Next.js components based on configuration
@@ -2227,7 +2195,7 @@ func (c *CLI) processFrontendComponents(config *models.ProjectConfig, outputPath
 		c.VerboseOutput("   ✨ Creating main Next.js application")
 		mainAppPath := filepath.Join(appDir, "main")
 		if err := c.templateManager.ProcessTemplate("nextjs-app", config, mainAppPath); err != nil {
-			return fmt.Errorf("failed to process nextjs-app template: %w", err)
+			return fmt.Errorf("🚫 Couldn't process nextjs-app template: %w", err)
 		}
 	}
 
@@ -2763,7 +2731,7 @@ func (c *CLI) GenerateFromConfig(configPath string, options interfaces.GenerateO
 	if options.UpdateVersions && !options.Offline {
 		c.VerboseOutput("Fetching latest package versions...")
 		if err := c.updatePackageVersions(config); err != nil {
-			c.WarningOutput("Failed to update package versions: %v", err)
+			c.WarningOutput("Couldn't update package versions: %v", err)
 		}
 	}
 
@@ -2907,42 +2875,61 @@ func (c *CLI) runTemplateInfo(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("🚫 Couldn't find template '%s': %w", templateName, err)
 	}
 
-	// Display basic information
-	fmt.Printf("Template: %s\n", templateInfo.Name)
-	fmt.Printf("Display Name: %s\n", templateInfo.DisplayName)
-	fmt.Printf("Description: %s\n", templateInfo.Description)
-	fmt.Printf("Category: %s\n", templateInfo.Category)
-	fmt.Printf("Technology: %s\n", templateInfo.Technology)
-	fmt.Printf("Version: %s\n", templateInfo.Version)
+	// Get category emoji
+	categoryEmojis := map[string]string{
+		"frontend":       "🎨",
+		"backend":        "⚙️",
+		"mobile":         "📱",
+		"infrastructure": "🚀",
+		"base":           "📋",
+	}
+	categoryEmoji := categoryEmojis[templateInfo.Category]
+	if categoryEmoji == "" {
+		categoryEmoji = "📦"
+	}
+
+	// Display header with emoji and template name
+	c.QuietOutput("%s  %s", categoryEmoji, templateInfo.DisplayName)
+	c.QuietOutput("═══════════════════════════════════════════════════")
+	c.QuietOutput("")
+	
+	// Basic information
+	c.QuietOutput("📝  %s", templateInfo.Description)
+	c.QuietOutput("")
+	c.QuietOutput("🔧  Template ID: %s", templateInfo.Name)
+	c.QuietOutput("📂  Category: %s", strings.Title(templateInfo.Category))
+	c.QuietOutput("⚡  Technology: %s", templateInfo.Technology)
+	c.QuietOutput("🏷️   Version: %s", templateInfo.Version)
 
 	if len(templateInfo.Tags) > 0 {
-		fmt.Printf("Tags: %s\n", strings.Join(templateInfo.Tags, ", "))
+		c.QuietOutput("🏷️   Tags: %s", strings.Join(templateInfo.Tags, ", "))
 	}
 
 	// Show detailed information if requested
 	if detailed || showDependencies {
+		c.QuietOutput("")
 		if len(templateInfo.Dependencies) > 0 {
-			fmt.Printf("\nDependencies:\n")
+			c.QuietOutput("📋  Dependencies:")
 			for _, dep := range templateInfo.Dependencies {
-				fmt.Printf("  - %s\n", dep)
+				c.QuietOutput("    • %s", dep)
 			}
 		} else {
-			fmt.Printf("\nDependencies: None\n")
+			c.QuietOutput("📋  Dependencies: None required")
 		}
 	}
 
 	if detailed {
-		fmt.Printf("\nMetadata:\n")
-		fmt.Printf("  Author: %s\n", templateInfo.Metadata.Author)
-		fmt.Printf("  License: %s\n", templateInfo.Metadata.License)
+		c.QuietOutput("")
+		c.QuietOutput("👤  Author: %s", templateInfo.Metadata.Author)
+		c.QuietOutput("📄  License: %s", templateInfo.Metadata.License)
 		if templateInfo.Metadata.Repository != "" {
-			fmt.Printf("  Repository: %s\n", templateInfo.Metadata.Repository)
+			c.QuietOutput("🔗  Repository: %s", templateInfo.Metadata.Repository)
 		}
 		if templateInfo.Metadata.Homepage != "" {
-			fmt.Printf("  Homepage: %s\n", templateInfo.Metadata.Homepage)
+			c.QuietOutput("🌐  Homepage: %s", templateInfo.Metadata.Homepage)
 		}
 		if len(templateInfo.Metadata.Keywords) > 0 {
-			fmt.Printf("  Keywords: %s\n", strings.Join(templateInfo.Metadata.Keywords, ", "))
+			c.QuietOutput("🔍  Keywords: %s", strings.Join(templateInfo.Metadata.Keywords, ", "))
 		}
 	}
 
@@ -2950,23 +2937,29 @@ func (c *CLI) runTemplateInfo(cmd *cobra.Command, args []string) error {
 	if showVariables || detailed {
 		variables, err := c.templateManager.GetTemplateVariables(templateName)
 		if err != nil {
-			fmt.Printf("\nVariables: Error retrieving variables: %v\n", err)
+			c.QuietOutput("")
+			c.QuietOutput("⚠️  Couldn't get template variables: %v", err)
 		} else if len(variables) > 0 {
-			fmt.Printf("\nVariables:\n")
+			c.QuietOutput("")
+			c.QuietOutput("🔧  Template Variables:")
 			for name, variable := range variables {
-				fmt.Printf("  %s (%s):\n", name, variable.Type)
-				fmt.Printf("    Description: %s\n", variable.Description)
+				requiredText := ""
+				if variable.Required {
+					requiredText = " (required)"
+				}
+				c.QuietOutput("    • %s (%s)%s", name, variable.Type, requiredText)
+				c.QuietOutput("      %s", variable.Description)
 				if variable.Default != nil {
-					fmt.Printf("    Default: %v\n", variable.Default)
+					c.QuietOutput("      Default: %v", variable.Default)
 				}
-				fmt.Printf("    Required: %t\n", variable.Required)
 				if variable.Validation != nil && variable.Validation.Pattern != "" {
-					fmt.Printf("    Pattern: %s\n", variable.Validation.Pattern)
+					c.QuietOutput("      Pattern: %s", variable.Validation.Pattern)
 				}
-				fmt.Println()
+				c.QuietOutput("")
 			}
 		} else {
-			fmt.Printf("\nVariables: None defined\n")
+			c.QuietOutput("")
+			c.QuietOutput("🔧  Template Variables: None defined")
 		}
 	}
 
@@ -2974,22 +2967,32 @@ func (c *CLI) runTemplateInfo(cmd *cobra.Command, args []string) error {
 	if showCompatibility || detailed {
 		compatibility, err := c.templateManager.GetTemplateCompatibility(templateName)
 		if err != nil {
-			fmt.Printf("\nCompatibility: Error retrieving compatibility info: %v\n", err)
+			c.QuietOutput("")
+			c.QuietOutput("⚠️  Couldn't get compatibility info: %v", err)
 		} else {
-			fmt.Printf("\nCompatibility:\n")
+			c.QuietOutput("")
+			c.QuietOutput("✅  Compatibility:")
 			if compatibility.MinGeneratorVersion != "" {
-				fmt.Printf("  Min Generator Version: %s\n", compatibility.MinGeneratorVersion)
+				c.QuietOutput("    • Min Generator Version: %s", compatibility.MinGeneratorVersion)
 			}
 			if compatibility.MaxGeneratorVersion != "" {
-				fmt.Printf("  Max Generator Version: %s\n", compatibility.MaxGeneratorVersion)
+				c.QuietOutput("    • Max Generator Version: %s", compatibility.MaxGeneratorVersion)
 			}
 			if len(compatibility.SupportedPlatforms) > 0 {
-				fmt.Printf("  Supported Platforms: %s\n", strings.Join(compatibility.SupportedPlatforms, ", "))
+				c.QuietOutput("    • Supported Platforms: %s", strings.Join(compatibility.SupportedPlatforms, ", "))
 			}
 			if len(compatibility.RequiredFeatures) > 0 {
-				fmt.Printf("  Required Features: %s\n", strings.Join(compatibility.RequiredFeatures, ", "))
+				c.QuietOutput("    • Required Features: %s", strings.Join(compatibility.RequiredFeatures, ", "))
 			}
 		}
+	}
+
+	// Add helpful tips
+	if !detailed && !showVariables && !showDependencies && !showCompatibility {
+		c.QuietOutput("")
+		c.QuietOutput("💡 Use --detailed to see more information")
+		c.QuietOutput("🔧 Use --variables to see template variables")
+		c.QuietOutput("📋 Use --dependencies to see dependencies")
 	}
 
 	return nil
@@ -3007,7 +3010,7 @@ func (c *CLI) runTemplateValidate(cmd *cobra.Command, args []string) error {
 	// Validate template
 	result, err := c.ValidateTemplate(templatePath)
 	if err != nil {
-		return fmt.Errorf("validation failed: %w", err)
+		return fmt.Errorf("🚫 Template validation failed: %w", err)
 	}
 
 	// Output results based on format
@@ -3020,69 +3023,144 @@ func (c *CLI) runTemplateValidate(cmd *cobra.Command, args []string) error {
 		fmt.Printf("  \"warnings\": %d\n", len(result.Warnings))
 		fmt.Printf("}\n")
 	default:
-		// Text output
-		fmt.Printf("Template validation for: %s\n", templatePath)
-		fmt.Printf("Valid: %t\n", result.Valid)
-		fmt.Printf("Issues: %d\n", len(result.Issues))
-		fmt.Printf("Warnings: %d\n", len(result.Warnings))
+		// Beautiful text output with emojis and clear formatting
+		c.QuietOutput("🔍  Template Validation Results")
+		c.QuietOutput("═══════════════════════════════════════════════════")
+		c.QuietOutput("")
+		c.QuietOutput("📂  Template: %s", templatePath)
+		
+		// Status with appropriate emoji
+		if result.Valid {
+			c.QuietOutput("✅  Status: %s", c.success("Valid"))
+		} else {
+			c.QuietOutput("❌  Status: %s", c.error("Invalid"))
+		}
+		
+		// Summary counts
+		issueCount := len(result.Issues)
+		warningCount := len(result.Warnings)
+		
+		if issueCount == 0 && warningCount == 0 {
+			c.QuietOutput("🎉  Perfect! No issues or warnings found")
+		} else {
+			c.QuietOutput("📊  Summary: %s issues, %s warnings", 
+				c.formatCount(issueCount, "error"), 
+				c.formatCount(warningCount, "warning"))
+		}
 
-		if len(result.Issues) > 0 {
-			fmt.Println("\nIssues:")
-			for _, issue := range result.Issues {
-				if detailed {
-					fmt.Printf("  [%s] %s: %s", issue.Severity, issue.Type, issue.Message)
-					if issue.File != "" {
-						fmt.Printf(" (File: %s", issue.File)
-						if issue.Line > 0 {
-							fmt.Printf(":%d", issue.Line)
-						}
-						fmt.Printf(")")
-					}
-					fmt.Printf(" [Rule: %s]", issue.Rule)
-					if issue.Fixable {
-						fmt.Printf(" [Fixable]")
-					}
-					fmt.Println()
-				} else {
-					fmt.Printf("  - %s: %s\n", issue.Severity, issue.Message)
-				}
+		// Show issues if any
+		if issueCount > 0 {
+			c.QuietOutput("")
+			c.QuietOutput("🚨  Issues Found:")
+			for i, issue := range result.Issues {
+				c.displayValidationIssue(issue, i+1, detailed, "error")
 			}
 		}
 
-		if len(result.Warnings) > 0 {
-			fmt.Println("\nWarnings:")
-			for _, warning := range result.Warnings {
-				if detailed {
-					fmt.Printf("  [%s] %s: %s", warning.Severity, warning.Type, warning.Message)
-					if warning.File != "" {
-						fmt.Printf(" (File: %s", warning.File)
-						if warning.Line > 0 {
-							fmt.Printf(":%d", warning.Line)
-						}
-						fmt.Printf(")")
-					}
-					fmt.Printf(" [Rule: %s]", warning.Rule)
-					if warning.Fixable {
-						fmt.Printf(" [Fixable]")
-					}
-					fmt.Println()
-				} else {
-					fmt.Printf("  - %s: %s\n", warning.Severity, warning.Message)
-				}
+		// Show warnings if any
+		if warningCount > 0 {
+			c.QuietOutput("")
+			c.QuietOutput("⚠️   Warnings:")
+			for i, warning := range result.Warnings {
+				c.displayValidationIssue(warning, i+1, detailed, "warning")
 			}
 		}
 
+		// Show fix note if requested
 		if fix {
-			fmt.Println("\nNote: Auto-fix functionality is not yet implemented")
+			c.QuietOutput("")
+			if issueCount > 0 || warningCount > 0 {
+				c.QuietOutput("🔧  Auto-fix: Not yet implemented, but here's what you can do:")
+				c.QuietOutput("    • Review the issues above and fix them manually")
+				c.QuietOutput("    • Check template syntax and file structure")
+				c.QuietOutput("    • Ensure all required metadata is present")
+			} else {
+				c.QuietOutput("🔧  Auto-fix: Nothing to fix - template is already valid!")
+			}
+		}
+
+		// Helpful tips
+		if !detailed && (issueCount > 0 || warningCount > 0) {
+			c.QuietOutput("")
+			c.QuietOutput("💡 Use --detailed to see more information about each issue")
+		}
+		
+		if !fix && (issueCount > 0 || warningCount > 0) {
+			c.QuietOutput("🔧 Use --fix to see suggestions for fixing issues")
 		}
 	}
 
 	// Return error if validation failed
 	if !result.Valid {
-		return fmt.Errorf("template validation failed")
+		return fmt.Errorf("❌ Template validation failed - %d issues found", len(result.Issues))
 	}
 
 	return nil
+}
+
+// displayValidationIssue displays a single validation issue with beautiful formatting
+func (c *CLI) displayValidationIssue(issue interfaces.ValidationIssue, index int, detailed bool, issueType string) {
+	// Choose emoji based on severity
+	var emoji string
+	switch issue.Severity {
+	case "error":
+		emoji = "❌"
+	case "warning":
+		emoji = "⚠️"
+	case "info":
+		emoji = "ℹ️"
+	default:
+		emoji = "•"
+	}
+
+	if detailed {
+		// Detailed format with all information
+		c.QuietOutput("  %s %d. %s", emoji, index, c.highlight(issue.Message))
+		
+		if issue.File != "" {
+			fileInfo := fmt.Sprintf("📄 File: %s", issue.File)
+			if issue.Line > 0 {
+				fileInfo += fmt.Sprintf(":%d", issue.Line)
+			}
+			c.QuietOutput("     %s", c.dim(fileInfo))
+		}
+		
+		if issue.Rule != "" {
+			c.QuietOutput("     %s", c.dim(fmt.Sprintf("🔍 Rule: %s", issue.Rule)))
+		}
+		
+		if issue.Type != "" && issue.Type != issue.Severity {
+			c.QuietOutput("     %s", c.dim(fmt.Sprintf("🏷️  Type: %s", issue.Type)))
+		}
+		
+		if issue.Fixable {
+			c.QuietOutput("     %s", c.success("🔧 Fixable"))
+		}
+		
+		c.QuietOutput("")
+	} else {
+		// Simple format for basic output
+		c.QuietOutput("  %s %s", emoji, issue.Message)
+	}
+}
+
+// formatCount formats a count with appropriate color and pluralization
+func (c *CLI) formatCount(count int, itemType string) string {
+	if count == 0 {
+		return c.dim("0")
+	}
+	
+	var color func(string) string
+	switch itemType {
+	case "error":
+		color = c.error
+	case "warning":
+		color = c.warning
+	default:
+		color = c.info
+	}
+	
+	return color(fmt.Sprintf("%d", count))
 }
 
 func (c *CLI) ShowConfig() error {
@@ -3219,7 +3297,7 @@ func (c *CLI) EditConfig() error {
 	// Create backup before editing
 	err := c.configManager.BackupConfig(configLocation)
 	if err != nil {
-		fmt.Printf("Warning: failed to create backup: %v\n", err)
+		fmt.Printf("⚠️  Couldn't create backup: %v\n", err)
 	}
 
 	// Try to open with various editors
@@ -4113,7 +4191,7 @@ func (c *CLI) SetLogLevel(level string) error {
 	case "fatal":
 		numLevel = 4
 	default:
-		return fmt.Errorf("invalid log level: %s", level)
+		return fmt.Errorf("🚫 '%s' isn't a valid log level", level)
 	}
 
 	c.logger.SetLevel(numLevel)

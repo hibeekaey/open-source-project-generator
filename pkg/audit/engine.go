@@ -1366,7 +1366,7 @@ func (e *Engine) projectExists(path string) error {
 		if os.IsNotExist(err) {
 			return fmt.Errorf("project path does not exist: %s", path)
 		}
-		return fmt.Errorf("cannot access project path: %w", err)
+		return fmt.Errorf("🚫 Can't access project path: %w", err)
 	}
 
 	if !info.IsDir() {

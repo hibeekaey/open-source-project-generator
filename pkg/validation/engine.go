@@ -91,17 +91,17 @@ func (e *Engine) ValidateProject(projectPath string) (*models.ValidationResult, 
 
 	// Perform structure validation
 	if err := e.validateProjectStructureBasic(projectPath, result); err != nil {
-		return nil, fmt.Errorf("failed to validate project structure: %w", err)
+		return nil, fmt.Errorf("🚫 Couldn't validate project structure: %w", err)
 	}
 
 	// Perform dependency validation
 	if err := e.validateProjectDependenciesBasic(projectPath, result); err != nil {
-		return nil, fmt.Errorf("failed to validate project dependencies: %w", err)
+		return nil, fmt.Errorf("🚫 Couldn't validate project dependencies: %w", err)
 	}
 
 	// Perform configuration validation
 	if err := e.validateProjectConfigurationFiles(projectPath, result); err != nil {
-		return nil, fmt.Errorf("failed to validate project configuration: %w", err)
+		return nil, fmt.Errorf("🚫 Couldn't validate project configuration: %w", err)
 	}
 
 	return result, nil
