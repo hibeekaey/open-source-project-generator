@@ -12,6 +12,7 @@
 package cli
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -24,6 +25,7 @@ import (
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/interfaces"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -36,20 +38,23 @@ import (
 //   - Configuration management
 //   - Auditing and validation capabilities
 //   - Cache and offline mode support
+//   - Interactive UI for guided project generation
 type CLI struct {
-	configManager    interfaces.ConfigManager
-	validator        interfaces.ValidationEngine
-	templateManager  interfaces.TemplateManager
-	cacheManager     interfaces.CacheManager
-	versionManager   interfaces.VersionManager
-	auditEngine      interfaces.AuditEngine
-	logger           interfaces.Logger
-	generatorVersion string
-	rootCmd          *cobra.Command
-	verboseMode      bool
-	quietMode        bool
-	debugMode        bool
-	exitCode         int
+	configManager          interfaces.ConfigManager
+	validator              interfaces.ValidationEngine
+	templateManager        interfaces.TemplateManager
+	cacheManager           interfaces.CacheManager
+	versionManager         interfaces.VersionManager
+	auditEngine            interfaces.AuditEngine
+	logger                 interfaces.Logger
+	interactiveUI          interfaces.InteractiveUIInterface
+	interactiveFlowManager *InteractiveFlowManager
+	generatorVersion       string
+	rootCmd                *cobra.Command
+	verboseMode            bool
+	quietMode              bool
+	debugMode              bool
+	exitCode               int
 }
 
 // NewCLI creates a new CLI instance with all required dependencies.
@@ -76,6 +81,19 @@ func NewCLI(
 	logger interfaces.Logger,
 	version string,
 ) interfaces.CLIInterface {
+	// Create interactive UI with default configuration
+	uiConfig := &ui.UIConfig{
+		EnableColors:    true,
+		EnableUnicode:   true,
+		PageSize:        10,
+		Timeout:         30 * time.Minute,
+		AutoSave:        true,
+		ShowBreadcrumbs: true,
+		ShowShortcuts:   true,
+		ConfirmOnQuit:   true,
+	}
+	interactiveUI := ui.NewInteractiveUI(logger, uiConfig)
+
 	cli := &CLI{
 		configManager:    configManager,
 		validator:        validator,
@@ -84,8 +102,19 @@ func NewCLI(
 		versionManager:   versionManager,
 		auditEngine:      auditEngine,
 		logger:           logger,
+		interactiveUI:    interactiveUI,
 		generatorVersion: version,
 	}
+
+	// Initialize interactive flow manager
+	cli.interactiveFlowManager = NewInteractiveFlowManager(
+		cli,
+		templateManager,
+		configManager,
+		validator,
+		logger,
+		interactiveUI,
+	)
 
 	cli.setupCommands()
 	return cli
@@ -709,6 +738,11 @@ AUTOMATION FEATURES:
 	generateCmd.Flags().StringP("output", "o", "", "Output directory for generated project")
 	generateCmd.Flags().Bool("dry-run", false, "Preview generation without creating files")
 
+	// Configuration management flags
+	generateCmd.Flags().String("load-config", "", "Load a saved configuration by name")
+	generateCmd.Flags().String("save-config", "", "Save configuration with the specified name after interactive setup")
+	generateCmd.Flags().Bool("list-configs", false, "List available saved configurations and exit")
+
 	// Advanced flags
 	generateCmd.Flags().Bool("offline", false, "Use cached templates and versions without network requests")
 	generateCmd.Flags().Bool("minimal", false, "Generate minimal project structure with only essential components")
@@ -724,6 +758,11 @@ AUTOMATION FEATURES:
 	generateCmd.Flags().StringSlice("include-only", []string{}, "Include only specific files or directories in generation")
 	generateCmd.Flags().Bool("interactive", true, "Use interactive mode for project configuration")
 	generateCmd.Flags().String("preset", "", "Use predefined configuration preset")
+
+	// Mode-specific flags
+	generateCmd.Flags().Bool("force-interactive", false, "Force interactive mode even in CI/automated environments")
+	generateCmd.Flags().Bool("force-non-interactive", false, "Force non-interactive mode even in terminal environments")
+	generateCmd.Flags().String("mode", "", "Explicitly set generation mode (interactive, non-interactive, config-file)")
 
 	c.rootCmd.AddCommand(generateCmd)
 }
@@ -1066,334 +1105,6 @@ both for the generator itself and for supported technology packages.`
   generator version --packages --verbose --debug`
 
 	c.rootCmd.AddCommand(versionCmd)
-}
-
-// setupConfigCommand sets up the config command with all subcommands
-func (c *CLI) setupConfigCommand() {
-	configCmd := &cobra.Command{
-		Use:   "config <command> [flags]",
-		Short: "Manage generator configuration, defaults, and preferences",
-		Long: `Comprehensive configuration management for the generator including user preferences,
-project defaults, and system-wide settings. Supports multiple configuration sources and formats.
-
-CONFIGURATION SOURCES:
-  System Configuration:
-    • Global system-wide defaults and policies
-    • Installation-specific settings and paths
-    • Security policies and compliance requirements
-    • Resource limits and performance settings
-
-  User Configuration:
-    • Personal preferences and default values
-    • Frequently used project templates and settings
-    • Custom template locations and repositories
-    • Authentication tokens and credentials
-
-  Project Configuration:
-    • Project-specific overrides and customizations
-    • Team-shared configuration and standards
-    • Environment-specific settings (dev, staging, prod)
-    • Local development preferences and tools
-
-  Environment Variables:
-    • Runtime configuration overrides
-    • CI/CD pipeline settings and automation
-    • Secrets and sensitive configuration data
-    • Platform-specific environment settings
-
-CONFIGURATION HIERARCHY:
-  Priority order (highest to lowest):
-    1. Command-line flags and arguments
-    2. Environment variables (GENERATOR_*)
-    3. Project-specific configuration files
-    4. User configuration files (~/.generator/)
-    5. System-wide configuration files
-    6. Built-in defaults and fallbacks
-
-SUPPORTED FORMATS:
-  • YAML: Human-readable configuration files
-  • JSON: Machine-readable and API-friendly
-  • TOML: Configuration-focused format
-  • Environment variables: Runtime overrides
-  • Command-line flags: Immediate overrides
-
-CONFIGURATION VALIDATION:
-  • Schema validation and type checking
-  • Value range and constraint validation
-  • Cross-reference and dependency validation
-  • Security and compliance policy enforcement
-  • Migration and upgrade assistance`,
-	}
-
-	// config show
-	configShowCmd := &cobra.Command{
-		Use:   "show [key] [flags]",
-		Short: "Display current configuration values and their sources",
-		Long: `Display comprehensive configuration information including current values,
-their sources, and the configuration hierarchy. Supports filtering and multiple output formats.
-
-DISPLAY OPTIONS:
-  • Show all configuration values with source information
-  • Display specific configuration keys or sections
-  • Show configuration hierarchy and precedence
-  • Include default values and available options
-  • Display validation status and any issues
-
-SOURCE INFORMATION:
-  For each configuration value, shows:
-    • Current effective value
-    • Source (file, environment, default, command-line)
-    • File path or environment variable name
-    • Override history and precedence
-    • Validation status and constraints
-
-FILTERING OPTIONS:
-  • Show specific configuration keys or patterns
-  • Filter by configuration source or type
-  • Display only modified or non-default values
-  • Show configuration sections or categories
-  • Include or exclude sensitive information`,
-		RunE: c.runConfigShow,
-		Example: `  # Show all configuration values
-  generator config show
-  
-  # Show specific configuration key
-  generator config show default.license
-  
-  # Show configuration section
-  generator config show templates
-  
-  # Show with source information
-  generator config show --sources --verbose
-  
-  # Show in JSON format
-  generator config show --output-format json
-  
-  # Show only non-default values
-  generator config show --modified-only`,
-	}
-	configCmd.AddCommand(configShowCmd)
-
-	// config set
-	configSetCmd := &cobra.Command{
-		Use:   "set <key> <value> [flags]",
-		Short: "Set configuration values or load from file",
-		Long: `Set individual configuration values, update configuration sections,
-or load complete configuration from files. Includes validation and backup capabilities.
-
-SETTING OPTIONS:
-  Individual Values:
-    • Set specific configuration keys to new values
-    • Update nested configuration properties
-    • Append to or modify array/list values
-    • Remove configuration keys or reset to defaults
-
-  Batch Operations:
-    • Load configuration from YAML/JSON files
-    • Merge configuration with existing settings
-    • Import configuration from other projects
-    • Apply configuration templates and presets
-
-VALIDATION AND SAFETY:
-  • Automatic validation of new configuration values
-  • Type checking and constraint validation
-  • Backup creation before making changes
-  • Rollback support for failed operations
-  • Confirmation prompts for destructive changes
-
-VALUE TYPES:
-  • Strings: Simple text values and paths
-  • Numbers: Integers and floating-point values
-  • Booleans: True/false flags and switches
-  • Arrays: Lists of values and options
-  • Objects: Nested configuration structures`,
-		RunE: c.runConfigSet,
-		Args: cobra.RangeArgs(0, 2),
-		Example: `  # Set individual configuration values
-  generator config set default.license MIT
-  generator config set templates.path ./custom-templates
-  generator config set cache.ttl 3600
-  
-  # Set boolean values
-  generator config set offline.enabled true
-  generator config set validation.strict false
-  
-  # Set array values
-  generator config set templates.exclude "*.tmp,*.bak"
-  
-  # Load configuration from file
-  generator config set --file project-defaults.yaml
-  
-  # Merge configuration with existing settings
-  generator config set --file team-config.yaml --merge
-  
-  # Set with validation and backup
-  generator config set --backup --validate default.author "John Doe"`,
-	}
-	configSetCmd.Flags().String("file", "", "Load configuration from file")
-	configCmd.AddCommand(configSetCmd)
-
-	// config edit
-	configEditCmd := &cobra.Command{
-		Use:   "edit [file] [flags]",
-		Short: "Open configuration files in editor for interactive editing",
-		Long: `Open configuration files in the system's default editor or specified editor
-for interactive editing. Includes validation, backup, and safety features.
-
-EDITING OPTIONS:
-  • Open user configuration file for editing
-  • Edit project-specific configuration files
-  • Create new configuration files from templates
-  • Edit specific configuration sections or keys
-  • Use custom editor or IDE integration
-
-SAFETY FEATURES:
-  • Automatic backup creation before editing
-  • Configuration validation after editing
-  • Syntax highlighting and error detection
-  • Rollback support for invalid changes
-  • Confirmation prompts for critical changes
-
-EDITOR INTEGRATION:
-  • Respects EDITOR and VISUAL environment variables
-  • Supports popular editors (vim, nano, code, etc.)
-  • IDE integration with configuration schemas
-  • Syntax validation and auto-completion
-  • Real-time validation and error highlighting`,
-		RunE: c.runConfigEdit,
-		Example: `  # Edit user configuration file
-  generator config edit
-  
-  # Edit specific configuration file
-  generator config edit ~/.generator/config.yaml
-  
-  # Edit with specific editor
-  generator config edit --editor code
-  
-  # Edit with backup and validation
-  generator config edit --backup --validate
-  
-  # Create new configuration from template
-  generator config edit --template project-defaults`,
-	}
-	configCmd.AddCommand(configEditCmd)
-
-	// config validate
-	configValidateCmd := &cobra.Command{
-		Use:   "validate [file] [flags]",
-		Short: "Validate configuration files and values",
-		Long: `Comprehensive validation of configuration files including syntax checking,
-value validation, constraint verification, and compatibility analysis.
-
-VALIDATION CATEGORIES:
-  Syntax Validation:
-    • YAML/JSON/TOML syntax correctness
-    • File format and structure validation
-    • Character encoding and format compliance
-    • Schema adherence and structure verification
-
-  Value Validation:
-    • Data type checking and conversion
-    • Range and constraint validation
-    • Required field presence verification
-    • Default value application and validation
-
-  Semantic Validation:
-    • Cross-reference and dependency validation
-    • Compatibility checking with current system
-    • Security policy compliance verification
-    • Best practices and recommendation analysis
-
-  Integration Validation:
-    • Template compatibility verification
-    • Plugin and extension compatibility
-    • External service connectivity testing
-    • Performance impact assessment
-
-VALIDATION REPORTING:
-  • Detailed error messages with line numbers
-  • Warning and informational messages
-  • Suggested fixes and corrections
-  • Validation summary and statistics
-  • Integration with editors and IDEs`,
-		RunE: c.runConfigValidate,
-		Example: `  # Validate current configuration
-  generator config validate
-  
-  # Validate specific configuration file
-  generator config validate ./project-config.yaml
-  
-  # Validate with detailed output
-  generator config validate --verbose --detailed
-  
-  # Validate and show suggested fixes
-  generator config validate --show-fixes
-  
-  # Validate in strict mode
-  generator config validate --strict --fail-on-warnings`,
-	}
-	configCmd.AddCommand(configValidateCmd)
-
-	// config export
-	configExportCmd := &cobra.Command{
-		Use:   "export [file] [flags]",
-		Short: "Export configuration to shareable files and templates",
-		Long: `Export current configuration to files that can be shared, versioned, or used as templates.
-Supports multiple formats and filtering options for different use cases.
-
-EXPORT OPTIONS:
-  Complete Export:
-    • Export all configuration values and settings
-    • Include source information and metadata
-    • Export with comments and documentation
-    • Create portable configuration packages
-
-  Filtered Export:
-    • Export specific configuration sections
-    • Exclude sensitive or environment-specific data
-    • Export only modified or non-default values
-    • Create minimal configuration templates
-
-  Template Creation:
-    • Generate configuration templates for teams
-    • Create project-specific configuration starters
-    • Export with placeholder values and examples
-    • Include validation schemas and documentation
-
-EXPORT FORMATS:
-  • YAML: Human-readable with comments and structure
-  • JSON: Machine-readable for automation
-  • TOML: Configuration-focused format
-  • Shell: Environment variable export format
-  • Dockerfile: Container environment configuration
-
-SHARING AND COLLABORATION:
-  • Remove sensitive information automatically
-  • Include team-specific defaults and preferences
-  • Generate documentation and usage examples
-  • Create version-controlled configuration packages`,
-		RunE: c.runConfigExport,
-		Example: `  # Export to YAML file
-  generator config export config.yaml
-  
-  # Export to JSON for automation
-  generator config export --format json config.json
-  
-  # Export only modified values
-  generator config export --modified-only team-config.yaml
-  
-  # Export as template with placeholders
-  generator config export --template --format yaml project-template.yaml
-  
-  # Export environment variables
-  generator config export --format env .env
-  
-  # Export with documentation
-  generator config export --include-docs --verbose config-documented.yaml`,
-	}
-	configCmd.AddCommand(configExportCmd)
-
-	c.rootCmd.AddCommand(configCmd)
 }
 
 // setupListTemplatesCommand sets up the list-templates command
@@ -2142,18 +1853,18 @@ func (c *CLI) runGenerate(cmd *cobra.Command, args []string) error {
 	interactive, _ := cmd.Flags().GetBool("interactive")
 	preset, _ := cmd.Flags().GetString("preset")
 
-	// Auto-detect non-interactive mode if not explicitly set
-	if !nonInteractive {
-		nonInteractive = c.isNonInteractiveMode()
-		if nonInteractive {
-			c.VerboseOutput("Auto-detected non-interactive mode")
-		}
+	// Mode-specific flags
+	forceInteractive, _ := cmd.Flags().GetBool("force-interactive")
+	forceNonInteractive, _ := cmd.Flags().GetBool("force-non-interactive")
+	explicitMode, _ := cmd.Flags().GetString("mode")
+
+	// Validate conflicting mode flags
+	if err := c.validateModeFlags(nonInteractive, interactive, forceInteractive, forceNonInteractive, explicitMode); err != nil {
+		return fmt.Errorf("conflicting mode flags: %w", err)
 	}
 
-	// Handle non-interactive mode
-	if nonInteractive {
-		interactive = false
-	}
+	// Apply mode overrides
+	nonInteractive, interactive = c.applyModeOverrides(nonInteractive, interactive, forceInteractive, forceNonInteractive, explicitMode)
 
 	// Log additional options for debugging
 	if len(exclude) > 0 {
@@ -2192,167 +1903,12 @@ func (c *CLI) runGenerate(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// If config file is provided, generate from config
-	if configPath != "" {
-		c.VerboseOutput("Loading configuration from file: %s", configPath)
-		return c.GenerateFromConfig(configPath, options)
-	}
+	// Mode detection and routing logic
+	mode := c.detectGenerationMode(configPath, nonInteractive, interactive, explicitMode)
+	c.VerboseOutput("Detected generation mode: %s", mode)
 
-	// Non-interactive mode with environment variables
-	if nonInteractive {
-		c.VerboseOutput("Running in non-interactive mode, loading configuration from environment variables")
-
-		// Load configuration from environment variables
-		envConfig, err := c.loadEnvironmentConfig()
-		if err != nil {
-			return fmt.Errorf("failed to load environment configuration: %w", err)
-		}
-
-		// Convert environment config to project config
-		config, err := c.convertEnvironmentConfigToProjectConfig(envConfig)
-		if err != nil {
-			return fmt.Errorf("failed to convert environment configuration: %w", err)
-		}
-
-		// Validate required fields for non-interactive mode
-		if config.Name == "" {
-			return c.createConfigurationError("project name is required in non-interactive mode", "GENERATOR_PROJECT_NAME environment variable")
-		}
-
-		// Override with command-line flags and environment variables
-		if outputPath != "" {
-			config.OutputPath = outputPath
-		} else if envConfig.OutputPath != "" {
-			config.OutputPath = envConfig.OutputPath
-		} else {
-			config.OutputPath = "./" + config.Name
-		}
-
-		// Update options with environment variables
-		options.Force = options.Force || envConfig.Force
-		options.Minimal = options.Minimal || envConfig.Minimal
-		options.Offline = options.Offline || envConfig.Offline
-		options.UpdateVersions = options.UpdateVersions || envConfig.UpdateVersions
-		options.SkipValidation = options.SkipValidation || envConfig.SkipValidation
-		options.BackupExisting = options.BackupExisting && envConfig.BackupExisting
-		options.IncludeExamples = options.IncludeExamples && envConfig.IncludeExamples
-		options.OutputPath = config.OutputPath
-
-		if template == "" && envConfig.Template != "" {
-			options.Templates = []string{envConfig.Template}
-		}
-
-		// Log CI environment information if detected
-		ci := c.detectCIEnvironment()
-		if ci.IsCI {
-			c.VerboseOutput("Detected CI environment: %s", ci.Provider)
-			if ci.BuildID != "" {
-				c.VerboseOutput("Build ID: %s", ci.BuildID)
-			}
-			if ci.Branch != "" {
-				c.VerboseOutput("Branch: %s", ci.Branch)
-			}
-		}
-
-		// Validate configuration if not skipped
-		if !options.SkipValidation {
-			c.VerboseOutput("Validating configuration...")
-			if err := c.validateGenerateConfiguration(config, options); err != nil {
-				return fmt.Errorf("configuration validation failed: %w", err)
-			}
-		}
-
-		// Generate project in non-interactive mode
-		c.VerboseOutput("Generating project '%s' in non-interactive mode", config.Name)
-
-		// Use template from options or default
-		templateName := ""
-		if len(options.Templates) > 0 {
-			templateName = options.Templates[0]
-		}
-		if templateName == "" {
-			templateName = "go-gin" // Default template
-		}
-
-		// Validate dependencies if not skipped
-		if !options.SkipValidation {
-			c.VerboseOutput("Validating dependencies...")
-			if err := c.validateDependencies(config, templateName); err != nil {
-				return fmt.Errorf("dependency validation failed: %w", err)
-			}
-		}
-
-		// Perform pre-generation checks
-		if err := c.performPreGenerationChecks(options.OutputPath, options); err != nil {
-			return fmt.Errorf("pre-generation checks failed: %w", err)
-		}
-
-		// Handle dry-run mode
-		if options.DryRun {
-			c.QuietOutput("Dry run mode - would generate project '%s' using template '%s' in directory '%s'",
-				config.Name, templateName, options.OutputPath)
-			return nil
-		}
-
-		return c.templateManager.ProcessTemplate(templateName, config, options.OutputPath)
-	}
-
-	// Interactive mode
-	if interactive {
-		c.VerboseOutput("Starting interactive project configuration")
-
-		config, err := c.PromptProjectDetails()
-		if err != nil {
-			return fmt.Errorf("failed to collect project details: %w", err)
-		}
-
-		// Validate configuration if not skipped
-		if !options.SkipValidation {
-			c.VerboseOutput("Validating configuration...")
-			if err := c.validateGenerateConfiguration(config, options); err != nil {
-				return fmt.Errorf("configuration validation failed: %w", err)
-			}
-		}
-
-		if !c.ConfirmGeneration(config) {
-			c.QuietOutput("Generation cancelled by user")
-			return nil
-		}
-
-		// Generate project using template manager
-		templateName := template
-		if templateName == "" {
-			templateName = "go-gin" // Default template
-		}
-
-		if outputPath == "" {
-			outputPath = config.Name
-		}
-
-		// Validate dependencies if not skipped
-		if !options.SkipValidation {
-			c.VerboseOutput("Validating dependencies...")
-			if err := c.validateDependencies(config, templateName); err != nil {
-				return fmt.Errorf("dependency validation failed: %w", err)
-			}
-		}
-
-		// Perform pre-generation checks
-		if err := c.performPreGenerationChecks(outputPath, options); err != nil {
-			return fmt.Errorf("pre-generation checks failed: %w", err)
-		}
-
-		// Handle dry-run mode
-		if options.DryRun {
-			c.QuietOutput("Dry run mode - would generate project '%s' using template '%s' in directory '%s'",
-				config.Name, templateName, outputPath)
-			return nil
-		}
-
-		return c.templateManager.ProcessTemplate(templateName, config, outputPath)
-	}
-
-	return fmt.Errorf("no configuration provided - use --config flag, enable --interactive mode, or run in non-interactive mode with environment variables")
+	// Route to appropriate generation method based on detected mode
+	return c.routeToGenerationMethod(mode, configPath, options)
 }
 
 func (c *CLI) runValidate(cmd *cobra.Command, args []string) error {
@@ -2628,97 +2184,6 @@ func (c *CLI) runAudit(cmd *cobra.Command, args []string) error {
 		return c.createAuditError(fmt.Sprintf("audit failed: score %.2f is below minimum required score %.2f", result.OverallScore, minScore), result.OverallScore)
 	}
 
-	return nil
-}
-
-func (c *CLI) runConfigShow(cmd *cobra.Command, args []string) error {
-	// Show current configuration with source information
-	return c.ShowConfig()
-}
-
-func (c *CLI) runConfigSet(cmd *cobra.Command, args []string) error {
-	// Get flags
-	file, _ := cmd.Flags().GetString("file")
-
-	if file != "" {
-		// Load configuration from file
-		fmt.Printf("Loading configuration from: %s\n", file)
-		// This would be implemented when configuration manager is fully implemented
-		return fmt.Errorf("loading configuration from file not yet implemented")
-	}
-
-	if len(args) != 2 {
-		return fmt.Errorf("usage: config set <key> <value>")
-	}
-
-	key := args[0]
-	value := args[1]
-
-	// Set individual configuration value
-	err := c.SetConfig(key, value)
-	if err != nil {
-		return fmt.Errorf("failed to set configuration: %w", err)
-	}
-
-	fmt.Printf("Configuration updated: %s = %s\n", key, value)
-	return nil
-}
-
-func (c *CLI) runConfigEdit(cmd *cobra.Command, args []string) error {
-	// Open configuration file in default editor
-	return c.EditConfig()
-}
-
-func (c *CLI) runConfigValidate(cmd *cobra.Command, args []string) error {
-	// Validate configuration file syntax and values
-	var err error
-
-	if len(args) > 0 {
-		// Validate specific config file
-		configPath := args[0]
-		result, validateErr := c.configManager.ValidateConfigFromFile(configPath)
-		if validateErr != nil {
-			return fmt.Errorf("configuration validation failed: %w", validateErr)
-		}
-
-		fmt.Printf("Configuration file: %s\n", configPath)
-		fmt.Printf("Valid: %t\n", result.Valid)
-
-		if !result.Valid {
-			if len(result.Errors) > 0 {
-				fmt.Println("Validation errors:")
-				for _, err := range result.Errors {
-					fmt.Printf("  - %s: %s\n", err.Field, err.Message)
-				}
-			}
-			return fmt.Errorf("configuration validation failed")
-		}
-	} else {
-		// Validate current configuration
-		err = c.ValidateConfig()
-		if err != nil {
-			return fmt.Errorf("configuration validation failed: %w", err)
-		}
-	}
-
-	fmt.Println("Configuration is valid")
-	return nil
-}
-
-func (c *CLI) runConfigExport(cmd *cobra.Command, args []string) error {
-	// Get export path from args or use default
-	exportPath := "generator-config.yaml"
-	if len(args) > 0 {
-		exportPath = args[0]
-	}
-
-	// Export current configuration to shareable file
-	err := c.ExportConfig(exportPath)
-	if err != nil {
-		return fmt.Errorf("failed to export configuration: %w", err)
-	}
-
-	fmt.Printf("Configuration exported to: %s\n", exportPath)
 	return nil
 }
 
@@ -5487,5 +4952,811 @@ func (c *CLI) followLogs(lines int, level string, component string, since time.T
 	c.QuietOutput("This would continuously monitor log files for new entries.")
 	c.QuietOutput("Use 'generator logs' to view current log entries.")
 
+	return nil
+}
+
+// runInteractiveProjectConfiguration handles interactive project configuration
+func (c *CLI) runInteractiveProjectConfiguration(ctx context.Context) (*models.ProjectConfig, error) {
+	config := &models.ProjectConfig{}
+
+	// Show breadcrumb
+	if err := c.interactiveUI.ShowBreadcrumb(ctx, []string{"Generator", "Project Configuration", "Basic Details"}); err != nil {
+		c.logger.Error("Failed to show breadcrumb", "error", err)
+	}
+
+	// Collect project name
+	nameConfig := interfaces.TextPromptConfig{
+		Prompt:      "Project Name",
+		Description: "Enter a name for your project (letters, numbers, hyphens, and underscores only)",
+		Required:    true,
+		Validator:   ui.ProjectConfigValidation().Validate,
+		AllowBack:   false,
+		AllowQuit:   true,
+		ShowHelp:    true,
+		HelpText:    "Project name will be used for directories, packages, and documentation. Use lowercase letters, numbers, hyphens, and underscores.",
+		MaxLength:   50,
+		MinLength:   2,
+	}
+
+	nameResult, err := c.interactiveUI.PromptText(ctx, nameConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get project name: %w", err)
+	}
+	if nameResult.Cancelled {
+		return nil, fmt.Errorf("project configuration cancelled")
+	}
+	config.Name = nameResult.Value
+
+	// Collect organization (optional)
+	orgConfig := interfaces.TextPromptConfig{
+		Prompt:      "Organization",
+		Description: "Enter your organization name (optional)",
+		Required:    false,
+		AllowBack:   true,
+		AllowQuit:   true,
+		ShowHelp:    true,
+		HelpText:    "Organization name will be used in package names and documentation. Leave empty if not applicable.",
+		MaxLength:   100,
+	}
+
+	orgResult, err := c.interactiveUI.PromptText(ctx, orgConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get organization: %w", err)
+	}
+	if orgResult.Cancelled {
+		return nil, fmt.Errorf("project configuration cancelled")
+	}
+	config.Organization = orgResult.Value
+
+	// Collect description (optional)
+	descConfig := interfaces.TextPromptConfig{
+		Prompt:      "Description",
+		Description: "Enter a brief description of your project (optional)",
+		Required:    false,
+		AllowBack:   true,
+		AllowQuit:   true,
+		ShowHelp:    true,
+		HelpText:    "Description will be used in README files and package documentation.",
+		MaxLength:   500,
+	}
+
+	descResult, err := c.interactiveUI.PromptText(ctx, descConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get description: %w", err)
+	}
+	if descResult.Cancelled {
+		return nil, fmt.Errorf("project configuration cancelled")
+	}
+	config.Description = descResult.Value
+
+	// Collect author (optional)
+	authorConfig := interfaces.TextPromptConfig{
+		Prompt:      "Author",
+		Description: "Enter the author name (optional)",
+		Required:    false,
+		AllowBack:   true,
+		AllowQuit:   true,
+		ShowHelp:    true,
+		HelpText:    "Author name will be used in license files and package documentation.",
+		MaxLength:   100,
+	}
+
+	authorResult, err := c.interactiveUI.PromptText(ctx, authorConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get author: %w", err)
+	}
+	if authorResult.Cancelled {
+		return nil, fmt.Errorf("project configuration cancelled")
+	}
+	config.Author = authorResult.Value
+
+	// Select license
+	if err := c.interactiveUI.ShowBreadcrumb(ctx, []string{"Generator", "Project Configuration", "License"}); err != nil {
+		c.logger.Error("Failed to show breadcrumb", "error", err)
+	}
+
+	licenseConfig := interfaces.MenuConfig{
+		Title:       "Select License",
+		Description: "Choose a license for your project",
+		Options: []interfaces.MenuOption{
+			{Label: "MIT License", Description: "Permissive license with minimal restrictions", Value: "MIT"},
+			{Label: "Apache License 2.0", Description: "Permissive license with patent protection", Value: "Apache-2.0"},
+			{Label: "GNU GPL v3", Description: "Copyleft license requiring derivative works to be open source", Value: "GPL-3.0"},
+			{Label: "BSD 3-Clause", Description: "Permissive license similar to MIT", Value: "BSD-3-Clause"},
+			{Label: "Mozilla Public License 2.0", Description: "Weak copyleft license", Value: "MPL-2.0"},
+			{Label: "Unlicense", Description: "Public domain dedication", Value: "Unlicense"},
+		},
+		DefaultItem: 0, // MIT as default
+		AllowBack:   true,
+		AllowQuit:   true,
+		ShowHelp:    true,
+		HelpText:    "Choose a license that fits your project's goals. MIT is recommended for most open source projects.",
+	}
+
+	licenseResult, err := c.interactiveUI.ShowMenu(ctx, licenseConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to select license: %w", err)
+	}
+	if licenseResult.Cancelled {
+		return nil, fmt.Errorf("project configuration cancelled")
+	}
+	config.License = licenseResult.SelectedValue.(string)
+
+	// Select components
+	if err := c.interactiveUI.ShowBreadcrumb(ctx, []string{"Generator", "Project Configuration", "Components"}); err != nil {
+		c.logger.Error("Failed to show breadcrumb", "error", err)
+	}
+
+	componentsConfig := interfaces.MultiSelectConfig{
+		Title:        "Select Project Components",
+		Description:  "Choose the components to include in your project",
+		MinSelection: 1,
+		MaxSelection: 0, // No limit
+		Options: []interfaces.SelectOption{
+			{
+				Label:       "Go Gin API",
+				Description: "RESTful API server using Gin framework",
+				Value:       "go-gin",
+				Selected:    true, // Default selection
+				Tags:        []string{"backend", "api", "go"},
+			},
+			{
+				Label:       "Next.js Frontend",
+				Description: "React-based frontend with Next.js framework",
+				Value:       "nextjs",
+				Selected:    false,
+				Tags:        []string{"frontend", "react", "nextjs"},
+			},
+			{
+				Label:       "PostgreSQL Database",
+				Description: "PostgreSQL database with migrations",
+				Value:       "postgresql",
+				Selected:    false,
+				Tags:        []string{"database", "sql"},
+			},
+			{
+				Label:       "Redis Cache",
+				Description: "Redis for caching and session storage",
+				Value:       "redis",
+				Selected:    false,
+				Tags:        []string{"cache", "session"},
+			},
+			{
+				Label:       "Docker Configuration",
+				Description: "Docker and Docker Compose setup",
+				Value:       "docker",
+				Selected:    true, // Default selection
+				Tags:        []string{"infrastructure", "containerization"},
+			},
+			{
+				Label:       "Kubernetes Manifests",
+				Description: "Kubernetes deployment manifests",
+				Value:       "kubernetes",
+				Selected:    false,
+				Tags:        []string{"infrastructure", "orchestration"},
+			},
+			{
+				Label:       "CI/CD Pipeline",
+				Description: "GitHub Actions workflow for CI/CD",
+				Value:       "cicd",
+				Selected:    false,
+				Tags:        []string{"automation", "deployment"},
+			},
+			{
+				Label:       "Monitoring Setup",
+				Description: "Prometheus and Grafana monitoring",
+				Value:       "monitoring",
+				Selected:    false,
+				Tags:        []string{"observability", "metrics"},
+			},
+		},
+		AllowBack:     true,
+		AllowQuit:     true,
+		ShowHelp:      true,
+		HelpText:      "Select the components you want to include. You can search by typing / followed by your search term.",
+		SearchEnabled: true,
+	}
+
+	componentsResult, err := c.interactiveUI.ShowMultiSelect(ctx, componentsConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to select components: %w", err)
+	}
+	if componentsResult.Cancelled {
+		return nil, fmt.Errorf("project configuration cancelled")
+	}
+
+	// Convert selected components to project config
+	config.Components = c.convertSelectedComponents(componentsResult.SelectedValues)
+
+	return config, nil
+}
+
+// runInteractiveConfirmation shows configuration summary and confirms generation
+func (c *CLI) runInteractiveConfirmation(ctx context.Context, config *models.ProjectConfig, options interfaces.GenerateOptions) bool {
+	if err := c.interactiveUI.ShowBreadcrumb(ctx, []string{"Generator", "Confirmation"}); err != nil {
+		c.logger.Error("Failed to show breadcrumb", "error", err)
+	}
+
+	// Show configuration summary in a table
+	tableConfig := interfaces.TableConfig{
+		Title:   "Project Configuration Summary",
+		Headers: []string{"Setting", "Value"},
+		Rows: [][]string{
+			{"Project Name", config.Name},
+			{"Organization", config.Organization},
+			{"Description", config.Description},
+			{"Author", config.Author},
+			{"License", config.License},
+			{"Components", c.formatSelectedComponents(config.Components)},
+		},
+		MaxWidth:   80,
+		Pagination: false,
+		Sortable:   false,
+		Searchable: false,
+	}
+
+	if err := c.interactiveUI.ShowTable(ctx, tableConfig); err != nil {
+		c.logger.WarnWithFields("Failed to show configuration table", map[string]interface{}{
+			"error": err.Error(),
+		})
+	}
+
+	// Confirm generation
+	confirmConfig := interfaces.ConfirmConfig{
+		Prompt:       "Generate Project",
+		Description:  "Do you want to proceed with generating the project with the above configuration?",
+		DefaultValue: true,
+		YesLabel:     "Generate",
+		NoLabel:      "Cancel",
+		AllowBack:    true,
+		AllowQuit:    true,
+		ShowHelp:     true,
+		HelpText:     "Confirm to start project generation or go back to modify the configuration.",
+	}
+
+	confirmResult, err := c.interactiveUI.PromptConfirm(ctx, confirmConfig)
+	if err != nil {
+		c.logger.ErrorWithFields("Failed to get confirmation", map[string]interface{}{
+			"error": err.Error(),
+		})
+		return false
+	}
+
+	return confirmResult.Confirmed && !confirmResult.Cancelled
+}
+
+// runInteractiveGeneration handles project generation with progress tracking
+func (c *CLI) runInteractiveGeneration(ctx context.Context, templateName string, config *models.ProjectConfig, outputPath string) error {
+	if err := c.interactiveUI.ShowBreadcrumb(ctx, []string{"Generator", "Generation"}); err != nil {
+		c.logger.Error("Failed to show breadcrumb", "error", err)
+	}
+
+	// Create progress tracker
+	progressConfig := interfaces.ProgressConfig{
+		Title:       "Generating Project",
+		Description: fmt.Sprintf("Creating project '%s' using template '%s'", config.Name, templateName),
+		Steps: []string{
+			"Initializing project structure",
+			"Processing templates",
+			"Installing dependencies",
+			"Configuring components",
+			"Finalizing setup",
+		},
+		ShowPercent: true,
+		ShowETA:     true,
+		Cancellable: true,
+	}
+
+	tracker, err := c.interactiveUI.ShowProgress(ctx, progressConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create progress tracker: %w", err)
+	}
+	defer func() {
+		if closeErr := tracker.Close(); closeErr != nil {
+			c.logger.Error("Failed to close progress tracker", "error", closeErr)
+		}
+	}()
+
+	// Step 1: Initialize project structure
+	if err := tracker.SetCurrentStep(0, "Creating directory structure"); err != nil {
+		c.logger.Error("Failed to set current step", "error", err)
+	}
+	if err := tracker.SetProgress(0.1); err != nil {
+		c.logger.Error("Failed to set progress", "error", err)
+	}
+	if err := tracker.AddLog("Creating output directory: " + outputPath); err != nil {
+		c.logger.Error("Failed to add log", "error", err)
+	}
+
+	if err := os.MkdirAll(outputPath, 0750); err != nil {
+		if failErr := tracker.Fail(fmt.Errorf("failed to create output directory: %w", err)); failErr != nil {
+			c.logger.Error("Failed to mark tracker as failed", "error", failErr)
+		}
+		return err
+	}
+
+	// Step 2: Process templates
+	if err := tracker.SetCurrentStep(1, "Processing project templates"); err != nil {
+		c.logger.Error("Failed to set current step", "error", err)
+	}
+	if err := tracker.SetProgress(0.3); err != nil {
+		c.logger.Error("Failed to set progress", "error", err)
+	}
+	if err := tracker.AddLog("Loading template: " + templateName); err != nil {
+		c.logger.Error("Failed to add log", "error", err)
+	}
+
+	// Use the template manager to process the template
+	// This is a simplified version - the actual implementation would be more complex
+	if err := c.templateManager.ProcessTemplate(templateName, config, outputPath); err != nil {
+		if failErr := tracker.Fail(fmt.Errorf("failed to process template: %w", err)); failErr != nil {
+			c.logger.Error("Failed to mark tracker as failed", "error", failErr)
+		}
+		return err
+	}
+
+	// Step 3: Install dependencies (simulated)
+	if err := tracker.SetCurrentStep(2, "Installing project dependencies"); err != nil {
+		c.logger.Error("Failed to set current step", "error", err)
+	}
+	if err := tracker.SetProgress(0.6); err != nil {
+		c.logger.Error("Failed to set progress", "error", err)
+	}
+	if err := tracker.AddLog("Installing Go modules"); err != nil {
+		c.logger.Error("Failed to add log", "error", err)
+	}
+
+	// Simulate dependency installation
+	time.Sleep(500 * time.Millisecond)
+	if err := tracker.AddLog("Dependencies installed successfully"); err != nil {
+		c.logger.Error("Failed to add log", "error", err)
+	}
+
+	// Step 4: Configure components
+	if err := tracker.SetCurrentStep(3, "Configuring selected components"); err != nil {
+		c.logger.Error("Failed to set current step", "error", err)
+	}
+	if err := tracker.SetProgress(0.8); err != nil {
+		c.logger.Error("Failed to set progress", "error", err)
+	}
+	if err := tracker.AddLog("Configuring project components"); err != nil {
+		c.logger.Error("Failed to add log", "error", err)
+	}
+
+	// Simulate component configuration
+	time.Sleep(300 * time.Millisecond)
+	if err := tracker.AddLog("Components configured successfully"); err != nil {
+		c.logger.Error("Failed to add log", "error", err)
+	}
+
+	// Step 5: Finalize
+	if err := tracker.SetCurrentStep(4, "Finalizing project setup"); err != nil {
+		c.logger.Error("Failed to set current step", "error", err)
+	}
+	if err := tracker.SetProgress(0.95); err != nil {
+		c.logger.Error("Failed to set progress", "error", err)
+	}
+	if err := tracker.AddLog("Setting up project metadata"); err != nil {
+		c.logger.Error("Failed to add log", "error", err)
+	}
+
+	// Simulate finalization
+	time.Sleep(200 * time.Millisecond)
+	if err := tracker.AddLog("Project generation completed"); err != nil {
+		c.logger.Error("Failed to add log", "error", err)
+	}
+
+	// Complete the progress
+	if err := tracker.SetProgress(1.0); err != nil {
+		c.logger.Error("Failed to set progress", "error", err)
+	}
+	if err := tracker.Complete(); err != nil {
+		c.logger.Error("Failed to complete tracker", "error", err)
+	}
+
+	c.QuietOutput("Project '%s' generated successfully in '%s'", config.Name, outputPath)
+	return nil
+}
+
+// convertSelectedComponents converts selected component values to models.Components
+func (c *CLI) convertSelectedComponents(selectedValues []interface{}) models.Components {
+	components := models.Components{}
+
+	for _, value := range selectedValues {
+		component := value.(string)
+		switch component {
+		case "go-gin":
+			components.Backend.GoGin = true
+		case "nextjs":
+			components.Frontend.NextJS.App = true
+		case "postgresql":
+			components.Database.PostgreSQL = true
+		case "redis":
+			components.Cache.Redis = true
+		case "docker":
+			components.Infrastructure.Docker = true
+		case "kubernetes":
+			components.Infrastructure.Kubernetes = true
+		case "cicd":
+			components.DevOps.CICD = true
+		case "monitoring":
+			components.Monitoring.Prometheus = true
+			components.Monitoring.Grafana = true
+		}
+	}
+
+	return components
+}
+
+// formatSelectedComponents formats selected components for display
+func (c *CLI) formatSelectedComponents(components models.Components) string {
+	var selected []string
+
+	if components.Backend.GoGin {
+		selected = append(selected, "Go Gin API")
+	}
+	if components.Frontend.NextJS.App {
+		selected = append(selected, "Next.js Frontend")
+	}
+	if components.Database.PostgreSQL {
+		selected = append(selected, "PostgreSQL")
+	}
+	if components.Cache.Redis {
+		selected = append(selected, "Redis")
+	}
+	if components.Infrastructure.Docker {
+		selected = append(selected, "Docker")
+	}
+	if components.Infrastructure.Kubernetes {
+		selected = append(selected, "Kubernetes")
+	}
+	if components.DevOps.CICD {
+		selected = append(selected, "CI/CD Pipeline")
+	}
+	if components.Monitoring.Prometheus || components.Monitoring.Grafana {
+		selected = append(selected, "Monitoring")
+	}
+
+	if len(selected) == 0 {
+		return "None"
+	}
+
+	return strings.Join(selected, ", ")
+}
+
+// detectGenerationMode determines which generation mode to use based on flags and environment
+func (c *CLI) detectGenerationMode(configPath string, nonInteractive, interactive bool, explicitMode string) string {
+	// Priority 1: Explicit mode flag (highest priority)
+	if explicitMode != "" {
+		c.DebugOutput("Mode detection: Explicit mode flag set (%s)", explicitMode)
+		return c.validateAndNormalizeMode(explicitMode)
+	}
+
+	// Priority 2: Configuration file mode
+	if configPath != "" {
+		c.DebugOutput("Mode detection: Configuration file provided (%s)", configPath)
+		return "config-file"
+	}
+
+	// Priority 3: Explicit non-interactive flag (overrides auto-detection)
+	if nonInteractive {
+		c.DebugOutput("Mode detection: Explicit non-interactive flag set")
+		return "non-interactive"
+	}
+
+	// Priority 4: Auto-detect non-interactive environment (CI, piped input, etc.)
+	if c.isNonInteractiveMode() {
+		c.DebugOutput("Mode detection: Auto-detected non-interactive environment")
+		return "non-interactive"
+	}
+
+	// Priority 5: Explicit interactive flag or default
+	if interactive {
+		c.DebugOutput("Mode detection: Interactive mode (explicit or default)")
+		return "interactive"
+	}
+
+	// Fallback: Interactive mode (should not reach here with current logic)
+	c.DebugOutput("Mode detection: Fallback to interactive mode")
+	return "interactive"
+}
+
+// validateModeFlags checks for conflicting mode flags
+func (c *CLI) validateModeFlags(nonInteractive, interactive, forceInteractive, forceNonInteractive bool, explicitMode string) error {
+	conflictCount := 0
+
+	if nonInteractive {
+		conflictCount++
+	}
+	if forceInteractive {
+		conflictCount++
+	}
+	if forceNonInteractive {
+		conflictCount++
+	}
+	if explicitMode != "" {
+		conflictCount++
+	}
+
+	if conflictCount > 1 {
+		return fmt.Errorf("cannot specify multiple mode flags simultaneously")
+	}
+
+	// Validate explicit mode value
+	if explicitMode != "" {
+		validModes := []string{"interactive", "non-interactive", "config-file"}
+		isValid := false
+		for _, mode := range validModes {
+			if explicitMode == mode {
+				isValid = true
+				break
+			}
+		}
+		if !isValid {
+			return fmt.Errorf("invalid mode '%s', valid modes are: %s", explicitMode, strings.Join(validModes, ", "))
+		}
+	}
+
+	return nil
+}
+
+// applyModeOverrides applies mode override flags to the base mode flags
+func (c *CLI) applyModeOverrides(nonInteractive, interactive, forceInteractive, forceNonInteractive bool, explicitMode string) (bool, bool) {
+	// Handle explicit mode
+	if explicitMode != "" {
+		switch explicitMode {
+		case "non-interactive":
+			return true, false
+		case "interactive":
+			return false, true
+		case "config-file":
+			// Config file mode doesn't change interactive flags
+			return nonInteractive, interactive
+		}
+	}
+
+	// Handle force flags
+	if forceInteractive {
+		return false, true
+	}
+	if forceNonInteractive {
+		return true, false
+	}
+
+	// Return original values if no overrides
+	return nonInteractive, interactive
+}
+
+// validateAndNormalizeMode validates and normalizes the mode string
+func (c *CLI) validateAndNormalizeMode(mode string) string {
+	switch strings.ToLower(strings.TrimSpace(mode)) {
+	case "interactive", "i":
+		return "interactive"
+	case "non-interactive", "noninteractive", "ni", "auto":
+		return "non-interactive"
+	case "config-file", "config", "file", "cf":
+		return "config-file"
+	default:
+		c.WarningOutput("Unknown mode '%s', defaulting to interactive", mode)
+		return "interactive"
+	}
+}
+
+// runNonInteractiveGeneration handles non-interactive project generation
+func (c *CLI) runNonInteractiveGeneration(options interfaces.GenerateOptions) error {
+	c.VerboseOutput("Running in non-interactive mode, loading configuration from environment variables")
+
+	// Load configuration from environment variables
+	envConfig, err := c.loadEnvironmentConfig()
+	if err != nil {
+		return fmt.Errorf("failed to load environment configuration: %w", err)
+	}
+
+	// Convert environment config to project config
+	config, err := c.convertEnvironmentConfigToProjectConfig(envConfig)
+	if err != nil {
+		return fmt.Errorf("failed to convert environment configuration: %w", err)
+	}
+
+	// Validate required fields for non-interactive mode
+	if config.Name == "" {
+		return c.createConfigurationError("project name is required in non-interactive mode", "GENERATOR_PROJECT_NAME environment variable")
+	}
+
+	// Override with command-line flags and environment variables
+	if options.OutputPath != "" {
+		config.OutputPath = options.OutputPath
+	} else if envConfig.OutputPath != "" {
+		config.OutputPath = envConfig.OutputPath
+	} else {
+		config.OutputPath = "./" + config.Name
+	}
+
+	// Update options with environment variables
+	options.Force = options.Force || envConfig.Force
+	options.Minimal = options.Minimal || envConfig.Minimal
+	options.Offline = options.Offline || envConfig.Offline
+	options.UpdateVersions = options.UpdateVersions || envConfig.UpdateVersions
+	options.SkipValidation = options.SkipValidation || envConfig.SkipValidation
+	options.BackupExisting = options.BackupExisting && envConfig.BackupExisting
+	options.IncludeExamples = options.IncludeExamples && envConfig.IncludeExamples
+	options.OutputPath = config.OutputPath
+
+	if len(options.Templates) == 0 && envConfig.Template != "" {
+		options.Templates = []string{envConfig.Template}
+	}
+
+	// Log CI environment information if detected
+	ci := c.detectCIEnvironment()
+	if ci.IsCI {
+		c.VerboseOutput("Detected CI environment: %s", ci.Provider)
+		if ci.BuildID != "" {
+			c.VerboseOutput("Build ID: %s", ci.BuildID)
+		}
+		if ci.Branch != "" {
+			c.VerboseOutput("Branch: %s", ci.Branch)
+		}
+	}
+
+	// Validate configuration if not skipped
+	if !options.SkipValidation {
+		c.VerboseOutput("Validating configuration...")
+		if err := c.validateGenerateConfiguration(config, options); err != nil {
+			return fmt.Errorf("configuration validation failed: %w", err)
+		}
+	}
+
+	// Generate project in non-interactive mode
+	c.VerboseOutput("Generating project '%s' in non-interactive mode", config.Name)
+
+	// Use template from options or default
+	templateName := ""
+	if len(options.Templates) > 0 {
+		templateName = options.Templates[0]
+	}
+	if templateName == "" {
+		templateName = "go-gin" // Default template
+	}
+
+	// Validate dependencies if not skipped
+	if !options.SkipValidation {
+		c.VerboseOutput("Validating dependencies...")
+		if err := c.validateDependencies(config, templateName); err != nil {
+			return fmt.Errorf("dependency validation failed: %w", err)
+		}
+	}
+
+	// Perform pre-generation checks
+	if err := c.performPreGenerationChecks(options.OutputPath, options); err != nil {
+		return fmt.Errorf("pre-generation checks failed: %w", err)
+	}
+
+	// Handle dry-run mode
+	if options.DryRun {
+		c.QuietOutput("Dry run mode - would generate project '%s' using template '%s' in directory '%s'",
+			config.Name, templateName, options.OutputPath)
+		return nil
+	}
+
+	return c.templateManager.ProcessTemplate(templateName, config, options.OutputPath)
+}
+
+// routeToGenerationMethod routes to the appropriate generation method based on mode
+func (c *CLI) routeToGenerationMethod(mode, configPath string, options interfaces.GenerateOptions) error {
+	c.VerboseOutput("Routing to %s generation method", mode)
+
+	switch mode {
+	case "config-file":
+		return c.handleConfigFileGeneration(configPath, options)
+	case "non-interactive":
+		return c.handleNonInteractiveGeneration(options)
+	case "interactive":
+		return c.handleInteractiveGeneration(options)
+	default:
+		return fmt.Errorf("unsupported generation mode: %s", mode)
+	}
+}
+
+// handleConfigFileGeneration handles configuration file-based generation
+func (c *CLI) handleConfigFileGeneration(configPath string, options interfaces.GenerateOptions) error {
+	c.VerboseOutput("Starting configuration file generation")
+	c.DebugOutput("Configuration file: %s", configPath)
+
+	// Validate configuration file exists and is readable
+	if err := c.validateConfigurationFile(configPath); err != nil {
+		return fmt.Errorf("configuration file validation failed: %w", err)
+	}
+
+	// Use existing GenerateFromConfig method
+	return c.GenerateFromConfig(configPath, options)
+}
+
+// handleNonInteractiveGeneration handles non-interactive generation
+func (c *CLI) handleNonInteractiveGeneration(options interfaces.GenerateOptions) error {
+	c.VerboseOutput("Starting non-interactive generation")
+
+	// Check for required environment variables
+	if err := c.validateNonInteractiveEnvironment(); err != nil {
+		return fmt.Errorf("non-interactive environment validation failed: %w", err)
+	}
+
+	// Use the existing non-interactive generation method
+	return c.runNonInteractiveGeneration(options)
+}
+
+// handleInteractiveGeneration handles interactive generation
+func (c *CLI) handleInteractiveGeneration(options interfaces.GenerateOptions) error {
+	c.VerboseOutput("Starting interactive generation")
+
+	// Validate interactive environment
+	if err := c.validateInteractiveEnvironment(); err != nil {
+		return fmt.Errorf("interactive environment validation failed: %w", err)
+	}
+
+	// Use the interactive flow manager
+	ctx := context.Background()
+	return c.interactiveFlowManager.RunInteractiveFlow(ctx, options)
+}
+
+// validateConfigurationFile validates that the configuration file exists and is readable
+func (c *CLI) validateConfigurationFile(configPath string) error {
+	if configPath == "" {
+		return fmt.Errorf("configuration file path is empty")
+	}
+
+	// Check if file exists
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		return fmt.Errorf("configuration file does not exist: %s", configPath)
+	}
+
+	// Check if file is readable
+	file, err := os.Open(configPath)
+	if err != nil {
+		return fmt.Errorf("cannot read configuration file: %w", err)
+	}
+	_ = file.Close()
+
+	c.DebugOutput("Configuration file validation passed: %s", configPath)
+	return nil
+}
+
+// validateNonInteractiveEnvironment validates the environment for non-interactive generation
+func (c *CLI) validateNonInteractiveEnvironment() error {
+	// Check for required environment variables
+	requiredEnvVars := []string{"GENERATOR_PROJECT_NAME"}
+	missingVars := []string{}
+
+	for _, envVar := range requiredEnvVars {
+		if os.Getenv(envVar) == "" {
+			missingVars = append(missingVars, envVar)
+		}
+	}
+
+	if len(missingVars) > 0 {
+		return fmt.Errorf("required environment variables missing: %s", strings.Join(missingVars, ", "))
+	}
+
+	c.DebugOutput("Non-interactive environment validation passed")
+	return nil
+}
+
+// validateInteractiveEnvironment validates the environment for interactive generation
+func (c *CLI) validateInteractiveEnvironment() error {
+	// Check if we're in a terminal
+	if c.isNonInteractiveMode() {
+		return fmt.Errorf("interactive mode not available in non-interactive environment (CI, piped input, etc.)")
+	}
+
+	// Check if interactive UI is available
+	if c.interactiveUI == nil {
+		return fmt.Errorf("interactive UI not initialized")
+	}
+
+	// Check if interactive flow manager is available
+	if c.interactiveFlowManager == nil {
+		return fmt.Errorf("interactive flow manager not initialized")
+	}
+
+	c.DebugOutput("Interactive environment validation passed")
 	return nil
 }

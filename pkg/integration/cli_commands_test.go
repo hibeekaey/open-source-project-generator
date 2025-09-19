@@ -391,7 +391,7 @@ output_path: ./test-output
 		t.Errorf("Expected exit code 0 for config validate, got %d. Stderr: %s", exitCode, stderr)
 	}
 
-	// Test config export
+	// Test config export of current configuration
 	exportPath := filepath.Join(tempDir, "exported-config.yaml")
 	_, stderr, exitCode = runCLICommand(t, binaryPath, "config", "export", exportPath)
 

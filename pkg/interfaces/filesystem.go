@@ -29,3 +29,27 @@ type FileSystemGenerator interface {
 	// EnsureDirectory ensures a directory exists, creating it if necessary
 	EnsureDirectory(path string) error
 }
+
+// StandardizedStructureGenerator defines the contract for standardized directory structure generation
+type StandardizedStructureGenerator interface {
+	// GenerateStandardizedStructure creates the complete standardized project structure
+	GenerateStandardizedStructure(config *models.ProjectConfig, outputPath string) error
+
+	// CreateFrontendDirectoryStructure creates App/ directory with main/, home/, admin/, shared-components/ subdirectories
+	CreateFrontendDirectoryStructure(projectPath string, config *models.ProjectConfig) error
+
+	// CreateBackendDirectoryStructure creates CommonServer/ directory with cmd/, internal/, pkg/, migrations/, docs/ structure
+	CreateBackendDirectoryStructure(projectPath string, config *models.ProjectConfig) error
+
+	// CreateMobileDirectoryStructure creates Mobile/ directory with android/, ios/, shared/ subdirectories
+	CreateMobileDirectoryStructure(projectPath string, config *models.ProjectConfig) error
+
+	// CreateInfrastructureDirectoryStructure creates Deploy/ directory with docker/, k8s/, terraform/, monitoring/ subdirectories
+	CreateInfrastructureDirectoryStructure(projectPath string, config *models.ProjectConfig) error
+
+	// CreateCommonDirectoryStructure creates Docs/, Scripts/, and .github/ directories with appropriate content
+	CreateCommonDirectoryStructure(projectPath string, config *models.ProjectConfig) error
+
+	// GenerateStandardProjectFiles generates standard project files (README.md, CONTRIBUTING.md, LICENSE, .gitignore, Makefile)
+	GenerateStandardProjectFiles(projectPath string, config *models.ProjectConfig) error
+}
