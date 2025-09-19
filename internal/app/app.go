@@ -97,7 +97,7 @@ func NewApp(appVersion, gitCommit, buildTime string) (*App, error) {
 	generator := filesystem.NewGenerator()
 	templateEngine := template.NewEmbeddedEngine()
 	templateManager := template.NewManager(templateEngine)
-	versionManager := version.NewManagerWithCache(cacheManager)
+	versionManager := version.NewManagerWithVersionAndCache(appVersion, cacheManager)
 	auditEngine := audit.NewEngine()
 	securityManager := security.NewSecurityManager(workspaceDir)
 

@@ -44,7 +44,8 @@ func main() {
 	// Execute the CLI application with command-line arguments
 	// This processes user input, validates configuration, and generates projects
 	if err := application.Run(os.Args[1:]); err != nil {
-		log.Printf("Error executing application: %v", err)
+		// Only log detailed error in verbose mode, otherwise just exit
+		// The CLI already printed a user-friendly error message
 		os.Exit(1)
 	}
 }

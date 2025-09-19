@@ -762,7 +762,7 @@ func (m *Manager) discoverEmbeddedTemplates() ([]*models.TemplateInfo, error) {
 			templateInfo, err := m.createTemplateInfoFromPath(path)
 			if err != nil {
 				// Log error but continue processing other templates
-				fmt.Printf("Warning: failed to process template at %s: %v\n", path, err)
+				fmt.Printf("⚠️  Failed to process template at %s: %v\n", path, err)
 				return nil
 			}
 			templates = append(templates, templateInfo)

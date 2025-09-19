@@ -196,31 +196,31 @@ func (c *CLI) outputStructuredError(err *StructuredError, cmd string, args []str
 	// Human-readable error output
 	c.ErrorOutput("%s", err.Message)
 
-	// Show details in verbose mode
+	// Show details in verbose mode with friendly formatting
 	if c.verboseMode || c.debugMode {
 		if len(err.Details) > 0 {
-			c.ErrorOutput("Details:")
+			fmt.Fprintf(os.Stderr, "\n📋 Details:\n")
 			for key, value := range err.Details {
-				c.ErrorOutput("  %s: %v", key, value)
+				fmt.Fprintf(os.Stderr, "  %s: %v\n", key, value)
 			}
 		}
 
 		if len(err.Suggestions) > 0 {
-			c.ErrorOutput("Suggestions:")
+			fmt.Fprintf(os.Stderr, "\n💡 Suggestions:\n")
 			for _, suggestion := range err.Suggestions {
-				c.ErrorOutput("  - %s", suggestion)
+				fmt.Fprintf(os.Stderr, "  - %s\n", suggestion)
 			}
 		}
 
 		if err.Context != nil {
-			c.ErrorOutput("Context:")
-			c.ErrorOutput("  Command: %s", err.Context.Command)
+			fmt.Fprintf(os.Stderr, "\n🔍 Context:\n")
+			fmt.Fprintf(os.Stderr, "  Command: %s\n", err.Context.Command)
 			if len(err.Context.Arguments) > 0 {
-				c.ErrorOutput("  Arguments: %v", err.Context.Arguments)
+				fmt.Fprintf(os.Stderr, "  Arguments: %v\n", err.Context.Arguments)
 			}
-			c.ErrorOutput("  Working Directory: %s", err.Context.WorkingDir)
+			fmt.Fprintf(os.Stderr, "  Working Directory: %s\n", err.Context.WorkingDir)
 			if err.Context.CI.IsCI {
-				c.ErrorOutput("  CI Environment: %s", err.Context.CI.Provider)
+				fmt.Fprintf(os.Stderr, "  CI Environment: %s\n", err.Context.CI.Provider)
 			}
 		}
 	}
@@ -259,9 +259,9 @@ func (c *CLI) createValidationError(message string, details map[string]interface
 		err = err.WithDetails(key, value)
 	}
 	err = err.WithSuggestions(
-		"Check the project structure and configuration files",
-		"Run with --verbose flag for more details",
-		"Use --fix flag to automatically fix common issues",
+		"Double-check your project structure and configuration files",
+		"Try running with --verbose to see more details",
+		"Use --fix to automatically fix common issues",
 	)
 	return err
 }
@@ -271,9 +271,9 @@ func (c *CLI) createConfigurationError(message string, configPath string) *Struc
 	err := NewStructuredError(ErrorTypeConfiguration, message, ExitCodeConfigurationInvalid)
 	err = err.WithDetails("config_path", configPath)
 	err = err.WithSuggestions(
-		"Check the configuration file syntax",
-		"Validate the configuration with 'generator config validate'",
-		"Use 'generator config show' to see current configuration",
+		"Double-check your configuration file syntax",
+		"Try 'generator config validate' to check for issues",
+		"Use 'generator config show' to see your current settings",
 	)
 	return err
 }
@@ -283,9 +283,9 @@ func (c *CLI) createTemplateError(message string, templateName string) *Structur
 	err := NewStructuredError(ErrorTypeTemplate, message, ExitCodeTemplateNotFound)
 	err = err.WithDetails("template_name", templateName)
 	err = err.WithSuggestions(
-		"List available templates with 'generator list-templates'",
-		"Check template name spelling",
-		"Use 'generator template info <name>' for template details",
+		"See available templates with 'generator list-templates'",
+		"Double-check the template name spelling",
+		"Get template details with 'generator template info <name>'",
 	)
 	return err
 }

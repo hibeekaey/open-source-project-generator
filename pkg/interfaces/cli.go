@@ -108,6 +108,9 @@ type CLIInterface interface {
 	GenerateReport(reportType string, format string, outputFile string) error
 	GetExitCode() int
 	SetExitCode(code int)
+
+	// Component access operations
+	GetVersionManager() VersionManager
 }
 
 // GenerateOptions defines options for project generation

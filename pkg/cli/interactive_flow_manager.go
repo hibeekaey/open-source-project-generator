@@ -54,70 +54,70 @@ func (ifm *InteractiveFlowManager) RunInteractiveFlow(ctx context.Context, optio
 
 	session, err := ifm.ui.StartSession(ctx, sessionConfig)
 	if err != nil {
-		return fmt.Errorf("failed to start interactive session: %w", err)
+		return fmt.Errorf("🚫 Couldn't start the interactive session: %w", err)
 	}
 	defer func() {
 		if endErr := ifm.ui.EndSession(ctx, session); endErr != nil {
-			ifm.logger.Error("Failed to end UI session", "error", endErr)
+			ifm.logger.Error("🖥️  Couldn't end UI session properly", "error", endErr)
 		}
 	}()
 
 	// Step 1: Template Selection
-	ifm.cli.VerboseOutput("Starting interactive template selection")
+	ifm.cli.VerboseOutput("🎯 Let's choose your project templates...")
 	selectedTemplates, err := ifm.runTemplateSelection(ctx)
 	if err != nil {
-		return fmt.Errorf("template selection failed: %w", err)
+		return fmt.Errorf("🚫 Couldn't select templates: %w", err)
 	}
 
 	// Step 2: Project Configuration Collection
-	ifm.cli.VerboseOutput("Starting interactive project configuration")
+	ifm.cli.VerboseOutput("⚙️  Now let's configure your project details...")
 	config, err := ifm.runProjectConfiguration(ctx, selectedTemplates)
 	if err != nil {
-		return fmt.Errorf("project configuration failed: %w", err)
+		return fmt.Errorf("🚫 Couldn't configure your project: %w", err)
 	}
 
 	// Step 3: Output Directory Selection
-	ifm.cli.VerboseOutput("Starting interactive directory selection")
+	ifm.cli.VerboseOutput("📁 Where would you like to create your project?")
 	outputPath, err := ifm.runDirectorySelection(ctx, options.OutputPath, config.Name)
 	if err != nil {
 		return fmt.Errorf("directory selection failed: %w", err)
 	}
 
 	// Step 4: Project Structure Preview
-	ifm.cli.VerboseOutput("Generating project structure preview")
+	ifm.cli.VerboseOutput("👀 Preparing a preview of your project structure...")
 	preview, err := ifm.runStructurePreview(ctx, config, selectedTemplates, outputPath)
 	if err != nil {
 		return fmt.Errorf("preview generation failed: %w", err)
 	}
 
 	// Step 5: Final Confirmation
-	ifm.cli.VerboseOutput("Requesting final confirmation")
+	ifm.cli.VerboseOutput("✅ Ready to generate! Let's confirm everything looks good...")
 	confirmed, err := ifm.runFinalConfirmation(ctx, config, preview, options)
 	if err != nil {
 		return fmt.Errorf("confirmation failed: %w", err)
 	}
 
 	if !confirmed {
-		ifm.cli.QuietOutput("Generation cancelled by user")
+		ifm.cli.QuietOutput("❌ Project generation cancelled")
 		return nil
 	}
 
 	// Step 6: Configuration Persistence (optional)
 	if err := ifm.runConfigurationPersistence(ctx, config, selectedTemplates); err != nil {
-		ifm.logger.WarnWithFields("Failed to save configuration", map[string]interface{}{
+		ifm.logger.WarnWithFields("💾 Couldn't save your configuration", map[string]interface{}{
 			"error": err.Error(),
 		})
 	}
 
 	// Step 7: Project Generation
-	ifm.cli.VerboseOutput("Starting project generation")
+	ifm.cli.VerboseOutput("🚀 Generating your project now...")
 	return ifm.runProjectGeneration(ctx, config, selectedTemplates, outputPath, options)
 }
 
 // runTemplateSelection handles interactive template selection
 func (ifm *InteractiveFlowManager) runTemplateSelection(ctx context.Context) ([]interfaces.TemplateSelection, error) {
 	if err := ifm.ui.ShowBreadcrumb(ctx, []string{"Generator", "Template Selection"}); err != nil {
-		ifm.logger.Error("Failed to show breadcrumb", "error", err)
+		ifm.logger.Error("🧭 Couldn't update navigation breadcrumb", "error", err)
 	}
 
 	// For now, return a default template selection
@@ -141,7 +141,7 @@ func (ifm *InteractiveFlowManager) runTemplateSelection(ctx context.Context) ([]
 // runProjectConfiguration handles interactive project configuration collection
 func (ifm *InteractiveFlowManager) runProjectConfiguration(ctx context.Context, templates []interfaces.TemplateSelection) (*models.ProjectConfig, error) {
 	if err := ifm.ui.ShowBreadcrumb(ctx, []string{"Generator", "Project Configuration"}); err != nil {
-		ifm.logger.Error("Failed to show breadcrumb", "error", err)
+		ifm.logger.Error("🧭 Couldn't update navigation breadcrumb", "error", err)
 	}
 
 	// Use existing interactive project configuration method
@@ -151,7 +151,7 @@ func (ifm *InteractiveFlowManager) runProjectConfiguration(ctx context.Context, 
 // runDirectorySelection handles interactive output directory selection
 func (ifm *InteractiveFlowManager) runDirectorySelection(ctx context.Context, defaultPath, projectName string) (string, error) {
 	if err := ifm.ui.ShowBreadcrumb(ctx, []string{"Generator", "Directory Selection"}); err != nil {
-		ifm.logger.Error("Failed to show breadcrumb", "error", err)
+		ifm.logger.Error("🧭 Couldn't update navigation breadcrumb", "error", err)
 	}
 
 	// Determine default path
@@ -170,7 +170,7 @@ func (ifm *InteractiveFlowManager) runDirectorySelection(ctx context.Context, de
 // runStructurePreview handles project structure preview generation and display
 func (ifm *InteractiveFlowManager) runStructurePreview(ctx context.Context, config *models.ProjectConfig, templates []interfaces.TemplateSelection, outputPath string) (*interfaces.ProjectStructurePreview, error) {
 	if err := ifm.ui.ShowBreadcrumb(ctx, []string{"Generator", "Project Preview"}); err != nil {
-		ifm.logger.Error("Failed to show breadcrumb", "error", err)
+		ifm.logger.Error("🧭 Couldn't update navigation breadcrumb", "error", err)
 	}
 
 	// Create a basic preview structure
@@ -215,7 +215,7 @@ func (ifm *InteractiveFlowManager) runStructurePreview(ctx context.Context, conf
 	}
 
 	if err := ifm.ui.ShowTable(ctx, tableConfig); err != nil {
-		ifm.logger.WarnWithFields("Failed to show preview table", map[string]interface{}{
+		ifm.logger.WarnWithFields("📋 Couldn't display preview table", map[string]interface{}{
 			"error": err.Error(),
 		})
 	}
@@ -226,7 +226,7 @@ func (ifm *InteractiveFlowManager) runStructurePreview(ctx context.Context, conf
 // runFinalConfirmation handles final confirmation before generation
 func (ifm *InteractiveFlowManager) runFinalConfirmation(ctx context.Context, config *models.ProjectConfig, preview *interfaces.ProjectStructurePreview, options interfaces.GenerateOptions) (bool, error) {
 	if err := ifm.ui.ShowBreadcrumb(ctx, []string{"Generator", "Final Confirmation"}); err != nil {
-		ifm.logger.Error("Failed to show breadcrumb", "error", err)
+		ifm.logger.Error("🧭 Couldn't update navigation breadcrumb", "error", err)
 	}
 
 	// Use existing confirmation method
@@ -237,14 +237,14 @@ func (ifm *InteractiveFlowManager) runFinalConfirmation(ctx context.Context, con
 func (ifm *InteractiveFlowManager) runConfigurationPersistence(ctx context.Context, config *models.ProjectConfig, templates []interfaces.TemplateSelection) error {
 	// For now, skip configuration persistence
 	// This will be implemented in future tasks when configuration management is enhanced
-	ifm.cli.VerboseOutput("Configuration persistence skipped for now")
+	ifm.cli.VerboseOutput("💾 Configuration persistence will be available in a future update")
 	return nil
 }
 
 // runProjectGeneration handles the actual project generation with progress tracking
 func (ifm *InteractiveFlowManager) runProjectGeneration(ctx context.Context, config *models.ProjectConfig, templates []interfaces.TemplateSelection, outputPath string, options interfaces.GenerateOptions) error {
 	if err := ifm.ui.ShowBreadcrumb(ctx, []string{"Generator", "Generation"}); err != nil {
-		ifm.logger.Error("Failed to show breadcrumb", "error", err)
+		ifm.logger.Error("🧭 Couldn't update navigation breadcrumb", "error", err)
 	}
 
 	// Use existing interactive generation method

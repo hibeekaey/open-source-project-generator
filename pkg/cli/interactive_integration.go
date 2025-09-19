@@ -13,7 +13,7 @@ import (
 
 // runInteractiveDirectorySelection handles interactive directory selection
 func (c *CLI) runInteractiveDirectorySelection(ctx context.Context, defaultPath string) (string, error) {
-	c.VerboseOutput("Starting interactive directory selection")
+	c.VerboseOutput("📁 Choosing where to create your project...")
 
 	// Create directory selector
 	directorySelector := ui.NewDirectorySelector(c.interactiveUI, c.logger)
@@ -21,7 +21,7 @@ func (c *CLI) runInteractiveDirectorySelection(ctx context.Context, defaultPath 
 	// Select output directory
 	result, err := directorySelector.SelectOutputDirectory(ctx, defaultPath)
 	if err != nil {
-		return "", fmt.Errorf("directory selection failed: %w", err)
+		return "", fmt.Errorf("🚫 Couldn't select a directory: %w", err)
 	}
 
 	if result.Cancelled {
@@ -30,19 +30,19 @@ func (c *CLI) runInteractiveDirectorySelection(ctx context.Context, defaultPath 
 
 	// Handle directory preparation
 	if result.RequiresCreation {
-		c.VerboseOutput("Creating output directory: %s", result.Path)
+		c.VerboseOutput("📁 Creating directory: %s", result.Path)
 		if err := directorySelector.CreateDirectory(result.Path); err != nil {
-			return "", fmt.Errorf("failed to create directory: %w", err)
+			return "", fmt.Errorf("🚫 Couldn't create the directory: %w", err)
 		}
 	}
 
 	// Handle backup if needed
 	if result.ConflictResolution == "overwrite" && result.BackupPath != "" {
-		c.VerboseOutput("Creating backup: %s", result.BackupPath)
+		c.VerboseOutput("💾 Creating backup: %s", result.BackupPath)
 		if err := directorySelector.CreateBackup(result.Path, result.BackupPath); err != nil {
 			return "", fmt.Errorf("failed to create backup: %w", err)
 		}
-		c.QuietOutput("Backup created: %s", result.BackupPath)
+		c.QuietOutput("💾 Backup created at: %s", result.BackupPath)
 	}
 
 	return result.Path, nil

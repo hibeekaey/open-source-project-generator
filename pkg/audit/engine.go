@@ -955,7 +955,7 @@ func (e *Engine) AuditProject(path string, options *interfaces.AuditOptions) (*i
 	if options.Security {
 		securityResult, err := e.AuditSecurity(path)
 		if err != nil {
-			return nil, fmt.Errorf("security audit failed: %w", err)
+			return nil, fmt.Errorf("🚫 Couldn't check security: %w", err)
 		}
 		result.Security = securityResult
 		totalScore += securityResult.Score
@@ -966,7 +966,7 @@ func (e *Engine) AuditProject(path string, options *interfaces.AuditOptions) (*i
 	if options.Quality {
 		qualityResult, err := e.AuditCodeQuality(path)
 		if err != nil {
-			return nil, fmt.Errorf("quality audit failed: %w", err)
+			return nil, fmt.Errorf("🚫 Couldn't check code quality: %w", err)
 		}
 		result.Quality = qualityResult
 		totalScore += qualityResult.Score
@@ -977,7 +977,7 @@ func (e *Engine) AuditProject(path string, options *interfaces.AuditOptions) (*i
 	if options.Licenses {
 		licenseResult, err := e.AuditLicenses(path)
 		if err != nil {
-			return nil, fmt.Errorf("license audit failed: %w", err)
+			return nil, fmt.Errorf("🚫 Couldn't check licenses: %w", err)
 		}
 		result.Licenses = licenseResult
 		totalScore += licenseResult.Score
@@ -988,7 +988,7 @@ func (e *Engine) AuditProject(path string, options *interfaces.AuditOptions) (*i
 	if options.Performance {
 		performanceResult, err := e.AuditPerformance(path)
 		if err != nil {
-			return nil, fmt.Errorf("performance audit failed: %w", err)
+			return nil, fmt.Errorf("🚫 Couldn't check performance: %w", err)
 		}
 		result.Performance = performanceResult
 		totalScore += performanceResult.Score

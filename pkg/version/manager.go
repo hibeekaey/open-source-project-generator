@@ -44,6 +44,7 @@ type Manager struct {
 	versionConfig *interfaces.VersionConfig
 	cacheManager  interfaces.CacheManager
 	buildInfo     *BuildInfo
+	currentVersion string
 }
 
 // BuildInfo contains build-time information
@@ -60,6 +61,11 @@ type BuildInfo struct {
 
 // NewManager creates a new version manager with all clients
 func NewManager() *Manager {
+	return NewManagerWithVersion("dev")
+}
+
+// NewManagerWithVersion creates a new version manager with a specific version
+func NewManagerWithVersion(version string) *Manager {
 	httpClient := &http.Client{
 		Timeout: 30 * time.Second,
 	}
@@ -69,8 +75,9 @@ func NewManager() *Manager {
 		npmClient:    NewNPMClient(httpClient),
 		goClient:     NewGoClient(httpClient),
 		githubClient: NewGitHubClient(httpClient),
+		currentVersion: version,
 		buildInfo: &BuildInfo{
-			Version:      "1.0.0", // This would be set at build time
+			Version:      version,
 			GitCommit:    "unknown",
 			GitBranch:    "main",
 			BuildDate:    time.Now().Format(time.RFC3339),
@@ -85,6 +92,13 @@ func NewManager() *Manager {
 // NewManagerWithCache creates a new version manager with cache support
 func NewManagerWithCache(cacheManager interfaces.CacheManager) *Manager {
 	manager := NewManager()
+	manager.cacheManager = cacheManager
+	return manager
+}
+
+// NewManagerWithVersionAndCache creates a new version manager with version and cache support
+func NewManagerWithVersionAndCache(version string, cacheManager interfaces.CacheManager) *Manager {
+	manager := NewManagerWithVersion(version)
 	manager.cacheManager = cacheManager
 	return manager
 }
@@ -190,8 +204,10 @@ func (m *Manager) GetVersionHistory(packageName string) ([]string, error) {
 
 // GetCurrentVersion gets the current version
 func (m *Manager) GetCurrentVersion() string {
-	// This would typically be set at build time via ldflags
-	return "1.0.0"
+	if m.currentVersion != "" {
+		return m.currentVersion
+	}
+	return "dev"
 }
 
 // GetLatestVersion gets the latest version info with caching support
@@ -236,7 +252,7 @@ func (m *Manager) GetLatestVersion() (*interfaces.VersionInfo, error) {
 	// Cache the version info
 	if err := m.CacheVersionInfo(versionInfo); err != nil {
 		// Log warning but don't fail
-		fmt.Printf("Warning: failed to cache version info: %v\n", err)
+		fmt.Printf("⚠️  Failed to cache version info: %v\n", err)
 	}
 
 	return versionInfo, nil
@@ -304,7 +320,7 @@ func (m *Manager) GetAllPackageVersions() (map[string]string, error) {
 			cacheTTL = config.CacheTTL
 		}
 		if err := m.cacheManager.Set(cacheKey, packages, cacheTTL); err != nil {
-			fmt.Printf("Warning: failed to cache package versions: %v\n", err)
+			fmt.Printf("⚠️  Failed to cache package versions: %v\n", err)
 		}
 	}
 
@@ -536,7 +552,7 @@ func (m *Manager) RefreshVersionCache() error {
 
 	for _, key := range keys {
 		if err := m.cacheManager.Delete(key); err != nil {
-			fmt.Printf("Warning: failed to delete cache key %s: %v\n", key, err)
+			fmt.Printf("⚠️  Failed to delete cache key %s: %v\n", key, err)
 		}
 	}
 

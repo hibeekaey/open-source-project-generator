@@ -265,7 +265,7 @@ func (c *CLI) runConfigList(cmd *cobra.Command, args []string) error {
 	// Get configurations
 	configs, err := persistence.ListConfigurations(options)
 	if err != nil {
-		return fmt.Errorf("failed to list configurations: %w", err)
+		return fmt.Errorf("🚫 Couldn't find your configurations: %w", err)
 	}
 
 	// Output results
@@ -285,7 +285,7 @@ func (c *CLI) runConfigView(cmd *cobra.Command, args []string) error {
 	// Load configuration
 	config, err := persistence.LoadConfiguration(configName)
 	if err != nil {
-		return fmt.Errorf("failed to load configuration '%s': %w", configName, err)
+		return fmt.Errorf("🚫 Couldn't load configuration '%s': %w", configName, err)
 	}
 
 	// Output configuration details
@@ -302,16 +302,16 @@ func (c *CLI) runConfigDelete(cmd *cobra.Command, args []string) error {
 
 	// Check if configuration exists
 	if !persistence.ConfigurationExists(configName) {
-		return fmt.Errorf("configuration '%s' not found", configName)
+		return fmt.Errorf("🚫 Can't find configuration '%s'", configName)
 	}
 
 	// Confirm deletion if not forced
 	if !force && !c.isNonInteractiveMode() {
-		fmt.Printf("Are you sure you want to delete configuration '%s'? (y/N): ", configName)
+		fmt.Printf("🗑️  Are you sure you want to delete configuration '%s'? (y/N): ", configName)
 		var response string
 		_, _ = fmt.Scanln(&response)
 		if strings.ToLower(strings.TrimSpace(response)) != "y" {
-			c.QuietOutput("Deletion cancelled")
+			c.QuietOutput("❌ Deletion cancelled")
 			return nil
 		}
 	}
@@ -321,7 +321,7 @@ func (c *CLI) runConfigDelete(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to delete configuration: %w", err)
 	}
 
-	c.SuccessOutput("Configuration '%s' deleted successfully", configName)
+	c.SuccessOutput("🗑️  Configuration '%s' deleted successfully", configName)
 	return nil
 }
 
@@ -345,7 +345,7 @@ func (c *CLI) runConfigExport(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("failed to export current configuration: %w", err)
 		}
 
-		c.SuccessOutput("Current configuration exported to '%s'", output)
+		c.SuccessOutput("📤 Configuration exported to '%s'", output)
 		return nil
 	}
 
@@ -358,7 +358,7 @@ func (c *CLI) runConfigExport(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("failed to export current configuration: %w", err)
 		}
 
-		c.SuccessOutput("Current configuration exported to '%s'", arg)
+		c.SuccessOutput("📤 Configuration exported to '%s'", arg)
 		return nil
 	}
 
@@ -387,7 +387,7 @@ func (c *CLI) runConfigExport(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("failed to write output file: %w", err)
 		}
 
-		c.SuccessOutput("Configuration '%s' exported to '%s'", configName, output)
+		c.SuccessOutput("📤 Configuration '%s' exported to '%s'", configName, output)
 	} else {
 		// Output to stdout
 		fmt.Print(string(data))
@@ -436,11 +436,11 @@ func (c *CLI) runConfigImport(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("configuration '%s' already exists (use --force to overwrite)", name)
 		}
 
-		fmt.Printf("Configuration '%s' already exists. Overwrite? (y/N): ", name)
+		fmt.Printf("⚠️  Configuration '%s' already exists. Overwrite? (y/N): ", name)
 		var response string
 		_, _ = fmt.Scanln(&response)
 		if strings.ToLower(strings.TrimSpace(response)) != "y" {
-			c.QuietOutput("Import cancelled")
+			c.QuietOutput("❌ Import cancelled")
 			return nil
 		}
 	}
@@ -450,7 +450,7 @@ func (c *CLI) runConfigImport(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to import configuration: %w", err)
 	}
 
-	c.SuccessOutput("Configuration imported as '%s'", name)
+	c.SuccessOutput("📥 Configuration imported as '%s'", name)
 	return nil
 }
 
@@ -494,7 +494,7 @@ func (c *CLI) getConfigDirectory() string {
 // outputConfigurationList outputs a list of configurations
 func (c *CLI) outputConfigurationList(configs []*config.SavedConfiguration, format string) error {
 	if len(configs) == 0 {
-		c.QuietOutput("No saved configurations found")
+		c.QuietOutput("📋 No saved configurations found")
 		return nil
 	}
 
@@ -510,8 +510,8 @@ func (c *CLI) outputConfigurationList(configs []*config.SavedConfiguration, form
 
 // outputConfigurationListTable outputs configurations in table format
 func (c *CLI) outputConfigurationListTable(configs []*config.SavedConfiguration) error {
-	c.QuietOutput("Saved Configurations:")
-	c.QuietOutput("===================")
+	c.QuietOutput("📋 Saved Configurations:")
+	c.QuietOutput("========================")
 	c.QuietOutput("")
 
 	for _, config := range configs {
@@ -598,8 +598,8 @@ func (c *CLI) outputConfigurationDetails(config *config.SavedConfiguration, show
 
 // outputConfigurationDetailsTable outputs configuration details in table format
 func (c *CLI) outputConfigurationDetailsTable(config *config.SavedConfiguration, showTemplates, showSettings bool) error {
-	c.QuietOutput("Configuration Details: %s", config.Name)
-	c.QuietOutput("============================")
+	c.QuietOutput("📋 Configuration Details: %s", config.Name)
+	c.QuietOutput("===============================")
 	c.QuietOutput("")
 
 	// Basic information

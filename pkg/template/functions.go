@@ -429,7 +429,8 @@ func isNonEmpty(value interface{}) bool {
 func hasFrontendComponent(config *models.ProjectConfig) bool {
 	return config.Components.Frontend.NextJS.App ||
 		config.Components.Frontend.NextJS.Home ||
-		config.Components.Frontend.NextJS.Admin
+		config.Components.Frontend.NextJS.Admin ||
+		config.Components.Frontend.NextJS.Shared
 }
 
 func hasBackendComponent(config *models.ProjectConfig) bool {
@@ -437,7 +438,7 @@ func hasBackendComponent(config *models.ProjectConfig) bool {
 }
 
 func hasMobileComponent(config *models.ProjectConfig) bool {
-	return config.Components.Mobile.Android || config.Components.Mobile.IOS
+	return config.Components.Mobile.Android || config.Components.Mobile.IOS || config.Components.Mobile.Shared
 }
 
 func hasInfrastructureComponent(config *models.ProjectConfig) bool {
@@ -456,6 +457,8 @@ func hasComponent(config *models.ProjectConfig, componentType, componentName str
 			return config.Components.Frontend.NextJS.Home
 		case "admin":
 			return config.Components.Frontend.NextJS.Admin
+		case "shared":
+			return config.Components.Frontend.NextJS.Shared
 		}
 	case constants.TemplateBackend:
 		switch componentName {
@@ -468,6 +471,8 @@ func hasComponent(config *models.ProjectConfig, componentType, componentName str
 			return config.Components.Mobile.Android
 		case "ios":
 			return config.Components.Mobile.IOS
+		case "shared":
+			return config.Components.Mobile.Shared
 		}
 	case "infrastructure":
 		switch componentName {

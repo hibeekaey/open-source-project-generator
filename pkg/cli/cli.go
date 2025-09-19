@@ -25,8 +25,23 @@ import (
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/interfaces"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/template"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/ui"
 	"github.com/spf13/cobra"
+)
+
+// Color constants for beautiful CLI output
+const (
+	ColorReset  = "\033[0m"
+	ColorRed    = "\033[31m"
+	ColorGreen  = "\033[32m"
+	ColorYellow = "\033[33m"
+	ColorBlue   = "\033[34m"
+	ColorPurple = "\033[35m"
+	ColorCyan   = "\033[36m"
+	ColorWhite  = "\033[37m"
+	ColorBold   = "\033[1m"
+	ColorDim    = "\033[2m"
 )
 
 // CLI implements the CLIInterface for comprehensive CLI operations.
@@ -125,76 +140,28 @@ func (c *CLI) setupCommands() {
 	c.rootCmd = &cobra.Command{
 		Use:   "generator",
 		Short: "Open Source Project Generator - Create production-ready projects with modern best practices",
-		Long: `A comprehensive tool for generating production-ready, enterprise-grade
-open source project structures following modern best practices and security standards.
+		Long: `Generate production-ready projects with modern best practices.
 
-SUPPORTED TECHNOLOGY STACKS:
-  • Backend: Go 1.21+ with Gin framework, PostgreSQL, Redis, JWT auth
-  • Frontend: Node.js 20+, Next.js 15+, React 19+, TypeScript 5+, Tailwind CSS
-  • Mobile: Android (Kotlin 2.0+), iOS (Swift 5.9+), shared components
-  • Infrastructure: Docker 24+, Kubernetes 1.28+, Terraform 1.6+, monitoring
+Supports Go, Next.js, React, Android, iOS, Docker, Kubernetes, and Terraform.
 
-CORE FEATURES:
-  • Interactive project configuration with intelligent defaults
-  • Template-based code generation with version management
-  • Comprehensive project validation and security auditing
-  • Advanced configuration management with multiple sources
-  • Offline mode support with intelligent caching
-  • Enterprise-grade security and compliance features
-  • Automated documentation and CI/CD workflow generation
-  • Multi-format output (JSON, YAML, HTML) for automation
-
-QUICK START:
-  1. Run 'generator generate' for interactive project creation
-  2. Use 'generator list-templates' to explore available templates
-  3. Run 'generator validate' to check existing projects
-  4. Use 'generator audit' for security and quality analysis
-
-AUTOMATION SUPPORT:
-  • Non-interactive mode for CI/CD pipelines
-  • Configuration file support (YAML/JSON)
-  • Environment variable configuration
-  • Machine-readable output formats
-  • Proper exit codes for automation
-
-For detailed help on any command, use: generator <command> --help
-For troubleshooting, use: generator logs --level error`,
+Quick start:
+  generator generate              # Interactive project creation
+  generator list-templates        # Browse available templates
+  generator validate <path>       # Check project structure
+  generator audit <path>          # Security and quality analysis`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
-		Example: `  # Interactive project generation (recommended for first-time users)
+		Example: `  # Interactive project creation
   generator generate
 
-  # Generate from configuration file (ideal for automation)
-  generator generate --config project.yaml --output ./my-app
+  # Generate from config file
+  generator generate --config project.yaml
 
-  # Generate minimal project structure (quick prototyping)
-  generator generate --minimal --template go-gin --non-interactive
+  # Validate project
+  generator validate ./my-project
 
-  # Generate in offline mode using cached templates
-  generator generate --offline --template nextjs-app
-
-  # Validate existing project with auto-fix
-  generator validate ./my-project --fix --report --report-format html
-
-  # Comprehensive security and quality audit
-  generator audit ./my-project --security --quality --detailed --output-format json
-
-  # List and filter available templates
-  generator list-templates --category backend --technology go
-
-  # Show version information and check for updates
-  generator version --packages --check-updates --output-format json
-
-  # Manage configuration settings
-  generator config show
-  generator config set default.license MIT
-
-  # Cache management for offline usage
-  generator cache show
-  generator cache clean
-
-  # View recent logs for troubleshooting
-  generator logs --level error --lines 50`,
+  # Audit project security
+  generator audit ./my-project`,
 	}
 
 	// Add global flags
@@ -277,10 +244,10 @@ func (c *CLI) handleGlobalFlags(cmd *cobra.Command) error {
 
 	// Handle conflicting flags
 	if verbose && quiet {
-		return fmt.Errorf("cannot use both --verbose and --quiet flags")
+		return fmt.Errorf("🚫 You can't use both --verbose and --quiet at the same time")
 	}
 	if debug && quiet {
-		return fmt.Errorf("cannot use both --debug and --quiet flags")
+		return fmt.Errorf("🚫 You can't use both --debug and --quiet at the same time")
 	}
 
 	// Set log level based on flags (priority: debug > verbose > explicit level > quiet)
@@ -305,7 +272,7 @@ func (c *CLI) handleGlobalFlags(cmd *cobra.Command) error {
 		}
 	}
 	if !isValidLogLevel {
-		return fmt.Errorf("invalid log level: %s (valid levels: %s)", logLevel, strings.Join(validLogLevels, ", "))
+		return fmt.Errorf("🚫 '%s' isn't a valid log level. Try one of these: %s", logLevel, strings.Join(validLogLevels, ", "))
 	}
 
 	// Validate output format
@@ -318,7 +285,7 @@ func (c *CLI) handleGlobalFlags(cmd *cobra.Command) error {
 		}
 	}
 	if !isValidOutputFormat {
-		return fmt.Errorf("invalid output format: %s (valid formats: %s)", outputFormat, strings.Join(validOutputFormats, ", "))
+		return fmt.Errorf("🚫 '%s' isn't a valid output format. Try one of these: %s", outputFormat, strings.Join(validOutputFormats, ", "))
 	}
 
 	// Configure logger based on flags
@@ -345,7 +312,7 @@ func (c *CLI) handleGlobalFlags(cmd *cobra.Command) error {
 
 		// Log configuration changes in debug mode
 		if c.debugMode {
-			c.logger.DebugWithFields("CLI configuration", map[string]interface{}{
+			c.logger.DebugWithFields("🔧 Setting up CLI configuration", map[string]interface{}{
 				"command":         cmd.Name(),
 				"verbose":         verbose,
 				"quiet":           quiet,
@@ -360,7 +327,7 @@ func (c *CLI) handleGlobalFlags(cmd *cobra.Command) error {
 
 		// Log operation start for verbose mode
 		if c.verboseMode || c.debugMode {
-			c.logger.InfoWithFields("Starting command execution", map[string]interface{}{
+			c.logger.InfoWithFields("🚀 Starting your command", map[string]interface{}{
 				"command": cmd.Name(),
 				"args":    cmd.Flags().Args(),
 			})
@@ -369,18 +336,50 @@ func (c *CLI) handleGlobalFlags(cmd *cobra.Command) error {
 
 	// Store global settings for use in commands
 	if c.verboseMode && !c.quietMode {
-		fmt.Printf("Verbose: Running command '%s' with detailed output\n", cmd.Name())
+		fmt.Printf("🔍 Running '%s' with detailed output\n", cmd.Name())
 	}
 
 	if c.debugMode && !c.quietMode {
-		fmt.Printf("Debug: Running command '%s' with debug logging and performance metrics\n", cmd.Name())
+		fmt.Printf("🐛 Running '%s' with debug logging and performance metrics\n", cmd.Name())
 	}
 
 	if nonInteractive && (c.verboseMode || c.debugMode) && !c.quietMode {
-		fmt.Printf("Info: Running in non-interactive mode\n")
+		fmt.Printf("🤖 Running in non-interactive mode\n")
 	}
 
 	return nil
+}
+
+// Color helper functions for beautiful output
+func (c *CLI) colorize(color, text string) string {
+	if c.quietMode {
+		return text // No colors in quiet mode
+	}
+	return color + text + ColorReset
+}
+
+func (c *CLI) success(text string) string {
+	return c.colorize(ColorGreen+ColorBold, text)
+}
+
+func (c *CLI) info(text string) string {
+	return c.colorize(ColorBlue, text)
+}
+
+func (c *CLI) warning(text string) string {
+	return c.colorize(ColorYellow, text)
+}
+
+func (c *CLI) error(text string) string {
+	return c.colorize(ColorRed+ColorBold, text)
+}
+
+func (c *CLI) highlight(text string) string {
+	return c.colorize(ColorCyan+ColorBold, text)
+}
+
+func (c *CLI) dim(text string) string {
+	return c.colorize(ColorDim, text)
 }
 
 // Verbose output methods for enhanced debugging and user feedback
@@ -388,9 +387,9 @@ func (c *CLI) handleGlobalFlags(cmd *cobra.Command) error {
 // VerboseOutput prints verbose information if verbose mode is enabled
 func (c *CLI) VerboseOutput(format string, args ...interface{}) {
 	if c.verboseMode && !c.quietMode {
-		fmt.Printf("Verbose: "+format+"\n", args...)
+		fmt.Printf(format+"\n", args...)
 	}
-	if c.logger != nil && c.logger.IsInfoEnabled() {
+	if c.logger != nil && c.verboseMode && c.logger.IsInfoEnabled() {
 		c.logger.Info(format, args...)
 	}
 }
@@ -398,7 +397,7 @@ func (c *CLI) VerboseOutput(format string, args ...interface{}) {
 // DebugOutput prints debug information if debug mode is enabled
 func (c *CLI) DebugOutput(format string, args ...interface{}) {
 	if c.debugMode && !c.quietMode {
-		fmt.Printf("Debug: "+format+"\n", args...)
+		fmt.Printf("🐛 "+format+"\n", args...)
 	}
 	if c.logger != nil && c.logger.IsDebugEnabled() {
 		c.logger.Debug(format, args...)
@@ -410,15 +409,14 @@ func (c *CLI) QuietOutput(format string, args ...interface{}) {
 	if !c.quietMode {
 		fmt.Printf(format+"\n", args...)
 	}
-	if c.logger != nil {
-		c.logger.Info(format, args...)
-	}
+	// Don't log to structured logger for QuietOutput - it's meant for user-facing messages
 }
 
 // ErrorOutput prints error information (always shown unless completely silent)
 func (c *CLI) ErrorOutput(format string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, "Error: "+format+"\n", args...)
-	if c.logger != nil {
+	// Only log to logger in verbose or debug mode to avoid cluttering output
+	if c.logger != nil && (c.verboseMode || c.debugMode) {
 		c.logger.Error(format, args...)
 	}
 }
@@ -426,7 +424,7 @@ func (c *CLI) ErrorOutput(format string, args ...interface{}) {
 // WarningOutput prints warning information if not in quiet mode
 func (c *CLI) WarningOutput(format string, args ...interface{}) {
 	if !c.quietMode {
-		fmt.Printf("Warning: "+format+"\n", args...)
+		fmt.Printf("⚠️  "+format+"\n", args...)
 	}
 	if c.logger != nil {
 		c.logger.Warn(format, args...)
@@ -436,19 +434,17 @@ func (c *CLI) WarningOutput(format string, args ...interface{}) {
 // SuccessOutput prints success information if not in quiet mode
 func (c *CLI) SuccessOutput(format string, args ...interface{}) {
 	if !c.quietMode {
-		fmt.Printf("Success: "+format+"\n", args...)
+		fmt.Printf(format+"\n", args...)
 	}
-	if c.logger != nil {
-		c.logger.Info("Success: "+format, args...)
-	}
+	// Don't log to structured logger for SuccessOutput - it's meant for user-facing messages
 }
 
 // PerformanceOutput prints performance metrics if debug mode is enabled
 func (c *CLI) PerformanceOutput(operation string, duration time.Duration, metrics map[string]interface{}) {
 	if c.debugMode && !c.quietMode {
-		fmt.Printf("Performance: %s completed in %v\n", operation, duration)
+		fmt.Printf("⚡ %s completed in %v\n", operation, duration)
 		if len(metrics) > 0 {
-			fmt.Printf("Performance Metrics:\n")
+			fmt.Printf("📊 Performance Metrics:\n")
 			for k, v := range metrics {
 				fmt.Printf("  %s: %v\n", k, v)
 			}
@@ -467,10 +463,10 @@ func (c *CLI) PerformanceOutput(operation string, duration time.Duration, metric
 
 // StartOperationWithOutput starts an operation with verbose output
 func (c *CLI) StartOperationWithOutput(operation string, description string) *interfaces.OperationContext {
-	c.VerboseOutput("Starting %s: %s", operation, description)
+	c.VerboseOutput("%s", description)
 
 	var ctx *interfaces.OperationContext
-	if c.logger != nil {
+	if c.logger != nil && c.verboseMode {
 		ctx = c.logger.StartOperation(operation, map[string]interface{}{
 			"description": description,
 		})
@@ -481,12 +477,12 @@ func (c *CLI) StartOperationWithOutput(operation string, description string) *in
 
 // FinishOperationWithOutput completes an operation with verbose output
 func (c *CLI) FinishOperationWithOutput(ctx *interfaces.OperationContext, operation string, description string) {
-	if ctx != nil && c.logger != nil {
+	if ctx != nil && c.logger != nil && c.verboseMode {
 		c.logger.FinishOperation(ctx, map[string]interface{}{
 			"description": description,
 		})
 	}
-	c.VerboseOutput("Completed %s: %s", operation, description)
+	c.VerboseOutput("%s", description)
 }
 
 // FinishOperationWithError completes an operation with error output
@@ -494,7 +490,7 @@ func (c *CLI) FinishOperationWithError(ctx *interfaces.OperationContext, operati
 	if ctx != nil && c.logger != nil {
 		c.logger.FinishOperationWithError(ctx, err, nil)
 	}
-	c.ErrorOutput("Failed %s: %v", operation, err)
+	c.ErrorOutput("❌ %s failed: %v", operation, err)
 }
 
 // GetExitCode returns the current exit code
@@ -505,6 +501,11 @@ func (c *CLI) GetExitCode() int {
 // SetExitCode sets the exit code for the CLI
 func (c *CLI) SetExitCode(code int) {
 	c.exitCode = code
+}
+
+// GetVersionManager returns the version manager instance
+func (c *CLI) GetVersionManager() interfaces.VersionManager {
+	return c.versionManager
 }
 
 // PromptProjectDetails collects basic project configuration from user input.
@@ -615,122 +616,22 @@ func (c *CLI) setupGenerateCommand() {
 	generateCmd := &cobra.Command{
 		Use:   "generate [flags]",
 		Short: "Generate a new project from templates with modern best practices",
-		Long: `Generate production-ready project structures using interactive prompts or configuration files.
-Creates comprehensive projects with security, testing, and deployment configurations built-in.
+		Long: `Generate production-ready projects with modern best practices.
 
-GENERATION MODES:
-  Interactive Mode (default):
-    • Guided prompts for project configuration
-    • Component selection with dependency validation
-    • Real-time configuration preview
-    • Intelligent defaults based on selections
-
-  Configuration File Mode:
-    • Generate from YAML/JSON configuration files
-    • Supports environment variable substitution
-    • Ideal for automation and CI/CD pipelines
-    • Validation and error reporting
-
-  Template-Specific Mode:
-    • Use specific templates with custom options
-    • Override default configurations
-    • Combine multiple templates
-
-  Minimal Mode:
-    • Generate only essential project structure
-    • Faster generation for prototyping
-    • Reduced dependencies and complexity
-
-SUPPORTED TECHNOLOGY STACKS:
-  Backend (Go 1.21+):
-    • Gin web framework with middleware
-    • PostgreSQL with GORM and migrations
-    • Redis for caching and sessions
-    • JWT authentication with refresh tokens
-    • Swagger/OpenAPI documentation
-    • Comprehensive testing suite
-
-  Frontend (Node.js 20+, Next.js 15+):
-    • React 19+ with TypeScript 5+
-    • Tailwind CSS 3.4+ for styling
-    • ESLint, Prettier for code quality
-    • Jest and Cypress for testing
-    • Performance optimization built-in
-
-  Mobile Development:
-    • Android: Kotlin 2.0+ with Jetpack Compose
-    • iOS: Swift 5.9+ with SwiftUI
-    • Shared design system and API specs
-    • Modern architecture patterns (MVVM, Clean)
-
-  Infrastructure (Latest Versions):
-    • Docker 24+ with multi-stage builds
-    • Kubernetes 1.28+ with security policies
-    • Terraform 1.6+ for infrastructure as code
-    • Monitoring with Prometheus and Grafana
-    • CI/CD with GitHub Actions
-
-SECURITY & COMPLIANCE:
-  • Security-first configurations and defaults
-  • Dependency vulnerability scanning
-  • Code quality and best practices enforcement
-  • License compliance checking
-  • Secrets management and environment configuration
-
-AUTOMATION FEATURES:
-  • Non-interactive mode for CI/CD
-  • Environment variable configuration
-  • Dry-run mode for validation
-  • Backup and rollback capabilities
-  • Progress reporting and logging`,
+Supports Go, Next.js, React, Android, iOS, Docker, Kubernetes, and Terraform.
+Use interactive mode or provide a configuration file.`,
 		RunE: c.runGenerate,
-		Example: `  INTERACTIVE GENERATION:
-  # Start interactive project creation (recommended for new users)
+		Example: `  # Interactive project creation
   generator generate
   
-  # Interactive with specific output directory
-  generator generate --output ./my-awesome-project
-
-  CONFIGURATION FILE GENERATION:
-  # Generate from YAML configuration
-  generator generate --config project.yaml --output ./my-app
+  # Generate from configuration file
+  generator generate --config project.yaml
   
-  # Generate with environment variable substitution
-  GENERATOR_PROJECT_NAME=myapp generator generate --config template.yaml
-
-  TEMPLATE-SPECIFIC GENERATION:
-  # Use specific template (skips template selection)
-  generator generate --template go-gin --output ./api-server
+  # Use specific template
+  generator generate --template go-gin
   
-  # Minimal project structure for quick prototyping
-  generator generate --minimal --template nextjs-app
-
-  ADVANCED OPTIONS:
-  # Generate with latest package versions (slower but current)
-  generator generate --update-versions --template go-gin
-  
-  # Offline generation using cached templates and versions
-  generator generate --offline --template nextjs-app
-  
-  # Preview generation without creating files
-  generator generate --dry-run --config project.yaml
-
-  AUTOMATION & CI/CD:
-  # Non-interactive generation for automation
-  generator generate --non-interactive --config ci-config.yaml
-  
-  # Force overwrite with backup (useful for updates)
-  generator generate --force --backup-existing --config project.yaml
-  
-  # Skip validation for faster generation (not recommended)
-  generator generate --skip-validation --template go-gin
-
-  TROUBLESHOOTING:
-  # Verbose output for debugging
-  generator generate --verbose --config project.yaml
-  
-  # Debug mode with performance metrics
-  generator generate --debug --template nextjs-app`,
+  # Non-interactive mode for automation
+  generator generate --config project.yaml --non-interactive`,
 	}
 
 	// Basic flags
@@ -772,119 +673,21 @@ func (c *CLI) setupValidateCommand() {
 	validateCmd := &cobra.Command{
 		Use:   "validate [path] [flags]",
 		Short: "Validate project structure, configuration, and dependencies",
-		Long: `Perform comprehensive validation of project structure, configuration files, dependencies,
-and best practices compliance. Provides detailed reports and automatic fixing capabilities.
+		Long: `Validate project structure, configuration files, and dependencies.
 
-VALIDATION CATEGORIES:
-  Project Structure:
-    • Directory layout and organization
-    • Required files and naming conventions
-    • File permissions and security settings
-    • Git configuration and ignore patterns
-
-  Configuration Files:
-    • YAML/JSON syntax validation
-    • Schema compliance checking
-    • Value range and type validation
-    • Environment variable usage
-
-  Dependencies:
-    • Version compatibility checking
-    • Security vulnerability scanning
-    • License compatibility analysis
-    • Outdated package detection
-
-  Code Quality:
-    • Code style and formatting
-    • Test coverage analysis
-    • Documentation completeness
-    • Best practices compliance
-
-  Security:
-    • Secrets and sensitive data detection
-    • File permission validation
-    • Security policy compliance
-    • Dependency security analysis
-
-AUTO-FIX CAPABILITIES:
-  The validator can automatically fix many common issues:
-    • Code formatting and style issues
-    • Missing configuration files
-    • Incorrect file permissions
-    • Outdated dependency versions
-    • Documentation template generation
-
-REPORTING FORMATS:
-  • Text: Human-readable console output (default)
-  • JSON: Machine-readable for CI/CD integration
-  • HTML: Rich web-based report with charts
-  • Markdown: Documentation-friendly format
-
-INTEGRATION:
-  • CI/CD pipeline integration with proper exit codes
-  • Webhook support for automated reporting
-  • Custom rule configuration
-  • Severity-based filtering and failure conditions`,
+Checks code quality, security, and best practices. Can automatically fix common issues.`,
 		RunE: c.runValidate,
-		Example: `  BASIC VALIDATION:
-  # Validate current directory
+		Example: `  # Validate current directory
   generator validate
   
-  # Validate specific project path
+  # Validate specific project
   generator validate ./my-project
   
-  # Validate with verbose output for debugging
-  generator validate ./my-project --verbose
-
-  AUTO-FIX AND REPAIR:
-  # Validate and automatically fix common issues
+  # Validate and fix issues
   generator validate ./my-project --fix
   
-  # Show available fixes without applying them
-  generator validate ./my-project --show-fixes
-  
-  # Fix only specific types of issues
-  generator validate --fix --rules structure,formatting
-
-  REPORTING AND OUTPUT:
-  # Generate detailed HTML report
-  generator validate --report --report-format html --output-file validation-report.html
-  
-  # Generate JSON report for CI/CD integration
-  generator validate --report --report-format json --output-file results.json
-  
-  # Generate markdown report for documentation
-  generator validate --report --report-format markdown --output-file VALIDATION.md
-
-  FILTERING AND RULES:
-  # Validate only specific categories
-  generator validate --rules structure,dependencies,security
-  
-  # Exclude specific validation rules
-  generator validate --exclude-rules formatting,documentation
-  
-  # Ignore warnings, show only errors
-  generator validate --ignore-warnings
-  
-  # Use strict validation mode (more rigorous checks)
-  generator validate --strict
-
-  CI/CD INTEGRATION:
-  # Non-interactive mode with JSON output
-  generator validate --non-interactive --output-format json
-  
-  # Summary-only output for quick checks
-  generator validate --summary-only --quiet
-  
-  # Fail fast on first error (useful for CI)
-  generator validate --fail-fast --strict
-
-  TROUBLESHOOTING:
-  # Debug validation issues
-  generator validate --debug --verbose
-  
-  # Validate specific files only
-  generator validate --include-only package.json,go.mod`,
+  # Generate HTML report
+  generator validate --report --report-format html`,
 	}
 
 	validateCmd.Flags().Bool("fix", false, "Automatically fix common validation issues")
@@ -909,122 +712,21 @@ func (c *CLI) setupAuditCommand() {
 	auditCmd := &cobra.Command{
 		Use:   "audit [path] [flags]",
 		Short: "Comprehensive security, quality, and compliance auditing",
-		Long: `Perform enterprise-grade auditing of projects including security vulnerability scanning,
-code quality analysis, license compliance checking, and performance optimization recommendations.
+		Long: `Audit project security, code quality, license compliance, and performance.
 
-AUDIT CATEGORIES:
-  Security Analysis:
-    • CVE vulnerability scanning across all dependencies
-    • Secret and sensitive data detection
-    • Security policy compliance checking
-    • Authentication and authorization review
-    • Cryptographic implementation analysis
-    • Container and infrastructure security
-
-  Code Quality Assessment:
-    • Code complexity and maintainability metrics
-    • Code duplication and smell detection
-    • Test coverage analysis and recommendations
-    • Documentation quality and completeness
-    • Architecture and design pattern compliance
-    • Performance bottleneck identification
-
-  License Compliance:
-    • License compatibility matrix analysis
-    • Conflict detection and resolution suggestions
-    • Commercial license usage tracking
-    • Open source compliance verification
-    • License change impact assessment
-    • Legal risk evaluation
-
-  Performance Optimization:
-    • Bundle size analysis and optimization
-    • Load time and runtime performance metrics
-    • Memory usage and leak detection
-    • Database query optimization
-    • API performance analysis
-    • Resource utilization assessment
-
-  Dependency Management:
-    • Outdated package detection
-    • Security vulnerability assessment
-    • Dependency tree analysis
-    • Breaking change impact evaluation
-    • Alternative package recommendations
-    • Supply chain security analysis
-
-SCORING SYSTEM:
-  • Overall project score (0-10 scale)
-  • Category-specific scores and trends
-  • Severity-based issue classification
-  • Improvement recommendations with priority
-  • Benchmark comparison with industry standards
-  • Progress tracking over time
-
-REPORTING CAPABILITIES:
-  • Executive summary for stakeholders
-  • Technical detailed reports for developers
-  • Compliance reports for legal/security teams
-  • Trend analysis and historical comparison
-  • Integration with security dashboards
-  • Automated alert and notification system`,
+Provides detailed reports with scores and recommendations for improvement.`,
 		RunE: c.runAudit,
-		Example: `  COMPREHENSIVE AUDITING:
-  # Full audit with all categories (recommended)
+		Example: `  # Audit current directory
   generator audit
   
-  # Audit specific project directory
+  # Audit specific project
   generator audit ./my-project
   
-  # Detailed audit with comprehensive reporting
-  generator audit --detailed --output-format html --output-file full-audit.html
-
-  CATEGORY-SPECIFIC AUDITS:
-  # Security-focused audit only
-  generator audit --security --no-quality --no-licenses --no-performance
+  # Security audit only
+  generator audit --security
   
-  # Code quality and performance audit
-  generator audit --quality --performance --no-security --no-licenses
-  
-  # License compliance audit for legal review
-  generator audit --licenses --detailed --output-format json
-
-  REPORTING AND OUTPUT:
-  # Generate executive summary report
-  generator audit --summary-only --output-format html --output-file executive-summary.html
-  
-  # Detailed technical report in JSON for automation
-  generator audit --detailed --output-format json --output-file audit-results.json
-  
-  # Markdown report for documentation
-  generator audit --output-format markdown --output-file AUDIT_REPORT.md
-
-  FAILURE CONDITIONS AND CI/CD:
-  # Fail build if high-severity issues found
-  generator audit --fail-on-high --non-interactive
-  
-  # Fail if overall score below threshold
-  generator audit --min-score 7.5 --fail-on-medium
-  
-  # Quick audit for CI pipelines
-  generator audit --summary-only --quiet --output-format json
-
-  FILTERING AND CUSTOMIZATION:
-  # Exclude specific audit categories
-  generator audit --exclude-categories performance,licenses
-  
-  # Audit with custom severity thresholds
-  generator audit --fail-on-medium --min-score 8.0
-  
-  # Focus on specific security aspects
-  generator audit --security --detailed --verbose
-
-  TROUBLESHOOTING AND DEBUGGING:
-  # Debug audit process with verbose output
-  generator audit --debug --verbose
-  
-  # Audit with performance metrics
-  generator audit --debug --detailed`,
+  # Generate detailed report
+  generator audit --detailed --output-format html`,
 	}
 
 	auditCmd.Flags().Bool("security", true, "Perform security vulnerability scanning")
@@ -1047,7 +749,7 @@ REPORTING CAPABILITIES:
 
 // setupVersionCommand sets up the version command with all documented flags
 func (c *CLI) setupVersionCommand() {
-	versionCmd := NewVersionCommand()
+	versionCmd := NewVersionCommand(c)
 
 	// Add additional flags for the main CLI
 	versionCmd.Flags().Bool("packages", false, "Show latest package versions for all supported technologies")
@@ -1112,127 +814,21 @@ func (c *CLI) setupListTemplatesCommand() {
 	listTemplatesCmd := &cobra.Command{
 		Use:   "list-templates [flags]",
 		Short: "List and discover available project templates",
-		Long: `List all available project templates with advanced filtering, search, and discovery capabilities.
-Provides comprehensive information about each template including compatibility, dependencies, and usage examples.
+		Long: `List available project templates with filtering and search.
 
-TEMPLATE CATEGORIES:
-  Frontend Templates:
-    • Next.js applications with React 19+ and TypeScript
-    • Landing pages optimized for performance and SEO
-    • Admin dashboards with comprehensive UI components
-    • Component libraries with Storybook integration
-    • Progressive Web Apps (PWA) with offline support
-
-  Backend Templates:
-    • Go APIs with Gin framework and PostgreSQL
-    • Microservices with gRPC and service mesh
-    • GraphQL servers with schema-first development
-    • Serverless functions with cloud integration
-    • Event-driven architectures with message queues
-
-  Mobile Templates:
-    • Android apps with Kotlin 2.0+ and Jetpack Compose
-    • iOS apps with Swift 5.9+ and SwiftUI
-    • Cross-platform shared components and design systems
-    • Mobile-first API integration patterns
-    • Platform-specific optimization templates
-
-  Infrastructure Templates:
-    • Docker configurations with multi-stage builds
-    • Kubernetes manifests with security policies
-    • Terraform modules for multi-cloud deployment
-    • CI/CD pipelines with comprehensive testing
-    • Monitoring and observability stacks
-
-  Full-Stack Templates:
-    • Complete application stacks with all components
-    • Monorepo configurations with workspace management
-    • Microservices architectures with service discovery
-    • Event-driven systems with real-time features
-    • Enterprise-grade applications with compliance
-
-TEMPLATE INFORMATION:
-  • Detailed descriptions and use cases
-  • Technology stack and version requirements
-  • Dependencies and compatibility matrix
-  • Configuration options and customization points
-  • Documentation and example projects
-  • Maintainer information and support channels
-
-FILTERING AND SEARCH:
-  • Category-based filtering (frontend, backend, mobile, infrastructure)
-  • Technology stack filtering (Go, Node.js, React, Kotlin, Swift)
-  • Tag-based search with multiple criteria
-  • Text search across names, descriptions, and documentation
-  • Version and compatibility filtering
-  • Popularity and maintenance status filtering`,
+Browse templates for frontend, backend, mobile, and infrastructure projects.`,
 		RunE: c.runListTemplates,
-		Example: `  BASIC TEMPLATE LISTING:
-  # List all available templates
+		Example: `  # List all templates
   generator list-templates
   
-  # Show detailed information for all templates
-  generator list-templates --detailed
-  
-  # List templates with descriptions and tags
-  generator list-templates --verbose
-
-  CATEGORY AND TECHNOLOGY FILTERING:
-  # List backend templates only
+  # Filter by category
   generator list-templates --category backend
   
-  # List Go-based templates
-  generator list-templates --technology go
-  
-  # List mobile templates for iOS
-  generator list-templates --category mobile --technology swift
-
-  SEARCH AND DISCOVERY:
-  # Search for API-related templates
+  # Search for templates
   generator list-templates --search api
   
-  # Find templates with specific tags
-  generator list-templates --tags rest,microservice,docker
-  
-  # Search in descriptions and documentation
-  generator list-templates --search "authentication jwt"
-
-  DETAILED INFORMATION:
-  # Show comprehensive template details
-  generator list-templates --detailed --category frontend
-  
-  # List templates with compatibility information
-  generator list-templates --compatibility --technology go
-  
-  # Show template dependencies and requirements
-  generator list-templates --dependencies --detailed
-
-  OUTPUT FORMATS:
-  # JSON output for automation and parsing
-  generator list-templates --output-format json
-  
-  # YAML output for configuration
-  generator list-templates --output-format yaml --category backend
-  
-  # Table format for easy reading
-  generator list-templates --output-format table --detailed
-
-  FILTERING COMBINATIONS:
-  # Find React templates with TypeScript support
-  generator list-templates --technology react --tags typescript
-  
-  # List infrastructure templates with Kubernetes
-  generator list-templates --category infrastructure --search kubernetes
-  
-  # Find full-stack templates with specific technologies
-  generator list-templates --category fullstack --tags go,react,postgresql
-
-  TROUBLESHOOTING:
-  # Debug template discovery issues
-  generator list-templates --debug --verbose
-  
-  # Show template loading and validation status
-  generator list-templates --detailed --debug`,
+  # Show detailed information
+  generator list-templates --detailed`,
 	}
 
 	listTemplatesCmd.Flags().String("category", "", "Filter by category (frontend, backend, mobile, infrastructure)")
@@ -1250,18 +846,6 @@ func (c *CLI) setupTemplateCommand() {
 		Use:   "template",
 		Short: "Template management operations",
 		Long: `Manage templates including viewing detailed information and validation.
-
-The template command provides operations for:
-  • Viewing detailed template information
-  • Validating custom templates
-  • Managing template dependencies
-  • Checking template compatibility
-
-Template Operations:
-  • info: Show detailed information about a specific template
-  • validate: Validate template structure and metadata
-  • dependencies: Show template dependencies
-  • compatibility: Check template compatibility
 
 Use these commands to inspect templates before using them
 or to validate custom templates you've created.`,
@@ -1402,124 +986,21 @@ func (c *CLI) setupUpdateCommand() {
 	updateCmd := &cobra.Command{
 		Use:   "update [flags]",
 		Short: "Update generator, templates, and package information",
-		Long: `Comprehensive update management for the generator, templates, and package information.
-Includes safety checks, rollback capabilities, and multiple update channels.
+		Long: `Update generator, templates, and package information.
 
-UPDATE COMPONENTS:
-  Generator Updates:
-    • Core generator binary and functionality
-    • New features and bug fixes
-    • Security patches and vulnerability fixes
-    • Performance improvements and optimizations
-    • Breaking change notifications and migration guides
-
-  Template Updates:
-    • New project templates and improvements
-    • Updated technology stack versions
-    • Security and best practice updates
-    • Bug fixes and compatibility improvements
-    • Community-contributed templates
-
-  Package Information:
-    • Latest version information for all technologies
-    • Security vulnerability database updates
-    • Compatibility matrix updates
-    • New package additions and removals
-    • License and compliance information updates
-
-UPDATE CHANNELS:
-  Stable Channel (default):
-    • Production-ready releases with full testing
-    • Recommended for production environments
-    • Comprehensive documentation and migration guides
-    • Long-term support and stability guarantees
-
-  Beta Channel:
-    • Pre-release versions with new features
-    • Early access to upcoming functionality
-    • Community testing and feedback integration
-    • Suitable for development and testing environments
-
-  Alpha Channel:
-    • Development versions with latest changes
-    • Experimental features and improvements
-    • Frequent updates with potential instability
-    • For advanced users and contributors only
-
-SAFETY AND SECURITY:
-  • Automatic backup creation before updates
-  • Digital signature verification for security
-  • Compatibility checking with existing projects
-  • Rollback support for failed installations
-  • Network security and integrity validation
-  • Offline update support with cached packages
-
-UPDATE AUTOMATION:
-  • Scheduled update checking
-  • CI/CD integration with update notifications
-  • Automated security update installation
-  • Update policy configuration and enforcement
-  • Integration with package managers and deployment tools`,
+Includes safety checks, rollback capabilities, and multiple update channels.`,
 		RunE: c.runUpdate,
-		Example: `  UPDATE CHECKING:
-  # Check for available updates
+		Example: `  # Check for updates
   generator update --check
   
-  # Check with detailed release information
-  generator update --check --release-notes --verbose
-  
-  # Check compatibility with current projects
-  generator update --check --compatibility
-
-  UPDATE INSTALLATION:
-  # Install available updates (safe mode)
+  # Install updates
   generator update --install
   
-  # Install updates with backup creation
-  generator update --install --backup --verify
+  # Update templates only
+  generator update --templates
   
-  # Force update even if compatibility issues exist
-  generator update --install --force
-
-  COMPONENT-SPECIFIC UPDATES:
-  # Update only template cache and package information
-  generator update --templates --packages
-  
-  # Update to specific version
-  generator update --install --version v2.1.0
-  
-  # Update using specific channel
-  generator update --channel beta --install
-
-  AUTOMATION AND CI/CD:
-  # Non-interactive update checking for CI
-  generator update --check --non-interactive --output-format json
-  
-  # Automated security update installation
-  generator update --install --security-only --non-interactive
-  
-  # Update with custom timeout for CI environments
-  generator update --check --timeout 30s
-
-  SAFETY AND ROLLBACK:
-  # Update with comprehensive backup
-  generator update --install --backup --verify --compatibility
-  
-  # Show rollback options for failed updates
-  generator update --rollback --list
-  
-  # Perform rollback to previous version
-  generator update --rollback --version v2.0.5
-
-  TROUBLESHOOTING:
-  # Debug update process
-  generator update --check --debug --verbose
-  
-  # Verify update integrity and signatures
-  generator update --verify --check-signatures
-  
-  # Test update process without installation
-  generator update --dry-run --install`,
+  # Use beta channel
+  generator update --channel beta --install`,
 	}
 
 	updateCmd.Flags().Bool("check", false, "Check for updates without installing")
@@ -1541,49 +1022,9 @@ func (c *CLI) setupCacheCommand() {
 	cacheCmd := &cobra.Command{
 		Use:   "cache <command> [flags]",
 		Short: "Manage local cache for offline mode and performance",
-		Long: `Comprehensive cache management for templates, package versions, and other data.
-Enables offline mode operation and improves performance through intelligent caching.
+		Long: `Manage local cache for templates, package versions, and other data.
 
-CACHE COMPONENTS:
-  Template Cache:
-    • Project templates and their metadata
-    • Template dependencies and compatibility information
-    • Custom templates and user modifications
-    • Template validation results and checksums
-
-  Version Cache:
-    • Package version information from registries
-    • Security vulnerability data
-    • Compatibility matrices and dependency graphs
-    • Update notifications and release information
-
-  Configuration Cache:
-    • User preferences and default settings
-    • Project configuration templates
-    • Validation rules and custom configurations
-    • Performance optimization settings
-
-CACHE OPERATIONS:
-  • View cache statistics and health information
-  • Clear all cached data or specific components
-  • Clean expired and invalid cache entries
-  • Validate cache integrity and repair corruption
-  • Configure cache policies and retention settings
-  • Enable/disable offline mode operation
-
-OFFLINE MODE:
-  • Complete offline operation using cached data
-  • Automatic fallback to cache when network unavailable
-  • Cache validation and freshness checking
-  • Offline-first operation with periodic sync
-  • Manual cache population for air-gapped environments
-
-PERFORMANCE OPTIMIZATION:
-  • Intelligent cache warming and preloading
-  • Compression and deduplication
-  • Cache hit rate monitoring and optimization
-  • Memory usage optimization
-  • Background cache maintenance and cleanup`,
+Enables offline mode operation and improves performance through intelligent caching.`,
 	}
 
 	// cache show
@@ -1675,67 +1116,9 @@ func (c *CLI) setupLogsCommand() {
 	logsCmd := &cobra.Command{
 		Use:   "logs [flags]",
 		Short: "View and analyze application logs for debugging and monitoring",
-		Long: `Comprehensive log viewing and analysis capabilities for debugging, monitoring, and troubleshooting.
-Provides filtering, search, real-time following, and multiple output formats.
+		Long: `View and analyze application logs for debugging and monitoring.
 
-LOG CATEGORIES:
-  Application Logs:
-    • CLI command execution and user interactions
-    • Template processing and generation operations
-    • Configuration loading and validation
-    • Network requests and API communications
-    • File system operations and permissions
-
-  System Logs:
-    • Performance metrics and resource usage
-    • Cache operations and hit/miss statistics
-    • Background tasks and scheduled operations
-    • Error recovery and retry mechanisms
-    • Security events and access control
-
-  Debug Logs:
-    • Detailed execution traces and call stacks
-    • Variable values and state changes
-    • Template rendering and variable substitution
-    • Dependency resolution and version checking
-    • Internal component communications
-
-FILTERING CAPABILITIES:
-  Log Level Filtering:
-    • DEBUG: Detailed debugging information
-    • INFO: General operational information
-    • WARN: Warning conditions and potential issues
-    • ERROR: Error conditions requiring attention
-    • FATAL: Critical errors causing application termination
-
-  Component Filtering:
-    • CLI: Command-line interface operations
-    • Config: Configuration management
-    • Template: Template processing and rendering
-    • Version: Version management and updates
-    • Cache: Cache operations and management
-    • Audit: Security and quality auditing
-    • Validation: Project validation operations
-
-  Time-Based Filtering:
-    • Recent entries (last N lines or time period)
-    • Specific time ranges and date filters
-    • Real-time log following and monitoring
-    • Historical log analysis and trends
-
-OUTPUT FORMATS:
-  • Text: Human-readable console output with colors
-  • JSON: Structured data for automation and parsing
-  • Raw: Unprocessed log file content
-  • CSV: Tabular format for analysis tools
-  • Syslog: Standard syslog format for integration
-
-ANALYSIS FEATURES:
-  • Log pattern recognition and anomaly detection
-  • Performance metrics extraction and visualization
-  • Error correlation and root cause analysis
-  • Trend analysis and historical comparison
-  • Integration with monitoring and alerting systems`,
+Provides filtering, search, real-time following, and multiple output formats.`,
 		RunE: c.runLogs,
 		Example: `  BASIC LOG VIEWING:
   # Show recent log entries (default: 50 lines)
@@ -1897,15 +1280,15 @@ func (c *CLI) runGenerate(cmd *cobra.Command, args []string) error {
 
 	// Perform comprehensive validation before generation
 	if !options.SkipValidation {
-		c.VerboseOutput("Performing pre-generation validation...")
+		c.VerboseOutput("🔍 Validating your configuration...")
 		if err := c.validateGenerateOptions(options); err != nil {
-			return fmt.Errorf("generate options validation failed: %w", err)
+			return fmt.Errorf("🚫 Your configuration has some issues: %w", err)
 		}
 	}
 
 	// Mode detection and routing logic
 	mode := c.detectGenerationMode(configPath, nonInteractive, interactive, explicitMode)
-	c.VerboseOutput("Detected generation mode: %s", mode)
+	c.VerboseOutput("🎯 Using %s mode for project generation", mode)
 
 	// Route to appropriate generation method based on detected mode
 	return c.routeToGenerationMethod(mode, configPath, options)
@@ -1973,7 +1356,7 @@ func (c *CLI) runValidate(cmd *cobra.Command, args []string) error {
 	// Validate project
 	result, err := c.ValidateProject(path, options)
 	if err != nil {
-		return fmt.Errorf("validation failed: %w", err)
+		return fmt.Errorf("🚫 Couldn't validate your project: %w", err)
 	}
 
 	// Output results based on format and mode
@@ -1984,13 +1367,17 @@ func (c *CLI) runValidate(cmd *cobra.Command, args []string) error {
 
 	// Human-readable output
 	if !c.quietMode {
-		c.QuietOutput("Validation completed for: %s", path)
-		c.QuietOutput("Valid: %t", result.Valid)
-		c.QuietOutput("Issues: %d", len(result.Issues))
-		c.QuietOutput("Warnings: %d", len(result.Warnings))
+		c.QuietOutput("🔍 Validation completed for: %s", path)
+		if result.Valid {
+			c.QuietOutput("✅ Project looks good!")
+		} else {
+			c.QuietOutput("❌ Found some issues that need attention")
+		}
+		c.QuietOutput("📊 Issues: %d", len(result.Issues))
+		c.QuietOutput("⚠️  Warnings: %d", len(result.Warnings))
 
 		if len(result.Issues) > 0 && !summaryOnly {
-			c.QuietOutput("\nIssues found:")
+			c.QuietOutput("\n🚨 Issues that need fixing:")
 			for _, issue := range result.Issues {
 				c.QuietOutput("  - %s: %s", issue.Severity, issue.Message)
 				if issue.File != "" {
@@ -2000,7 +1387,7 @@ func (c *CLI) runValidate(cmd *cobra.Command, args []string) error {
 		}
 
 		if len(result.Warnings) > 0 && !ignoreWarnings && !summaryOnly {
-			c.QuietOutput("\nWarnings:")
+			c.QuietOutput("\n⚠️  Things to consider:")
 			for _, warning := range result.Warnings {
 				c.QuietOutput("  - %s: %s", warning.Severity, warning.Message)
 				if warning.File != "" {
@@ -2036,7 +1423,17 @@ func (c *CLI) runValidate(cmd *cobra.Command, args []string) error {
 			"warnings_count": len(result.Warnings),
 			"path":           path,
 		}
-		return c.createValidationError(fmt.Sprintf("validation failed with %d issues", len(result.Issues)), details)
+		
+		var message string
+		if len(result.Issues) > 0 {
+			message = fmt.Sprintf("🚫 Found %d validation issues that need to be fixed", len(result.Issues))
+		} else if len(result.Warnings) > 0 {
+			message = fmt.Sprintf("⚠️ Found %d warnings that should be addressed", len(result.Warnings))
+		} else {
+			message = "🚫 Validation failed - please check your project structure"
+		}
+		
+		return c.createValidationError(message, details)
 	}
 
 	return nil
@@ -2051,11 +1448,19 @@ func (c *CLI) generateValidationReport(result *interfaces.ValidationResult, form
 	case "json":
 		content, err = json.MarshalIndent(result, "", "  ")
 	case "text":
-		content = []byte(fmt.Sprintf("Validation Report\n=================\n\nValid: %t\nIssues: %d\nWarnings: %d\n",
-			result.Valid, len(result.Issues), len(result.Warnings)))
+		status := "✅ Looks good!"
+		if !result.Valid {
+			status = "❌ Needs attention"
+		}
+		content = []byte(fmt.Sprintf("🔍 Validation Report\n===================\n\nStatus: %s\n📊 Issues: %d\n⚠️  Warnings: %d\n",
+			status, len(result.Issues), len(result.Warnings)))
 	default:
-		content = []byte(fmt.Sprintf("Validation Report\n=================\n\nValid: %t\nIssues: %d\nWarnings: %d\n",
-			result.Valid, len(result.Issues), len(result.Warnings)))
+		status := "✅ Looks good!"
+		if !result.Valid {
+			status = "❌ Needs attention"
+		}
+		content = []byte(fmt.Sprintf("🔍 Validation Report\n===================\n\nStatus: %s\n📊 Issues: %d\n⚠️  Warnings: %d\n",
+			status, len(result.Issues), len(result.Warnings)))
 	}
 
 	if err != nil {
@@ -2128,7 +1533,7 @@ func (c *CLI) runAudit(cmd *cobra.Command, args []string) error {
 	// Audit project
 	result, err := c.AuditProject(path, options)
 	if err != nil {
-		return fmt.Errorf("audit failed: %w", err)
+		return err
 	}
 
 	// Output results based on format and mode
@@ -2139,17 +1544,38 @@ func (c *CLI) runAudit(cmd *cobra.Command, args []string) error {
 
 	// Human-readable output
 	if !c.quietMode {
-		c.QuietOutput("Audit completed for: %s", path)
-		c.QuietOutput("Overall Score: %.2f", result.OverallScore)
+		c.QuietOutput("🔍 Audit completed for: %s", path)
+		scoreEmoji := "🎉"
+		if result.OverallScore < 70 {
+			scoreEmoji = "⚠️ "
+		}
+		if result.OverallScore < 50 {
+			scoreEmoji = "🚨"
+		}
+		c.QuietOutput("%s Overall Score: %.1f/100", scoreEmoji, result.OverallScore)
 		c.VerboseOutput("Audit Time: %s", result.AuditTime.Format("2006-01-02 15:04:05"))
 
 		if result.Security != nil && !summaryOnly {
-			c.QuietOutput("Security Score: %.2f", result.Security.Score)
+			securityEmoji := "🔒"
+			if result.Security.Score < 70 {
+				securityEmoji = "⚠️ "
+			}
+			if result.Security.Score < 50 {
+				securityEmoji = "🚨"
+			}
+			c.QuietOutput("%s Security Score: %.1f/100", securityEmoji, result.Security.Score)
 			c.VerboseOutput("Vulnerabilities: %d", len(result.Security.Vulnerabilities))
 		}
 
 		if result.Quality != nil && !summaryOnly {
-			c.QuietOutput("Quality Score: %.2f", result.Quality.Score)
+			qualityEmoji := "✨"
+			if result.Quality.Score < 70 {
+				qualityEmoji = "⚠️ "
+			}
+			if result.Quality.Score < 50 {
+				qualityEmoji = "🚨"
+			}
+			c.QuietOutput("%s Quality Score: %.1f/100", qualityEmoji, result.Quality.Score)
 			c.VerboseOutput("Code Smells: %d", len(result.Quality.CodeSmells))
 		}
 
@@ -2159,7 +1585,14 @@ func (c *CLI) runAudit(cmd *cobra.Command, args []string) error {
 		}
 
 		if result.Performance != nil && !summaryOnly {
-			c.QuietOutput("Performance Score: %.2f", result.Performance.Score)
+			perfEmoji := "⚡"
+			if result.Performance.Score < 70 {
+				perfEmoji = "⚠️ "
+			}
+			if result.Performance.Score < 50 {
+				perfEmoji = "🚨"
+			}
+			c.QuietOutput("%s Performance Score: %.1f/100", perfEmoji, result.Performance.Score)
 			c.VerboseOutput("Bundle Size: %d bytes", result.Performance.BundleSize)
 		}
 
@@ -2173,15 +1606,15 @@ func (c *CLI) runAudit(cmd *cobra.Command, args []string) error {
 
 	// Check fail conditions and return appropriate exit codes
 	if failOnHigh && result.OverallScore < 7.0 {
-		return c.createAuditError(fmt.Sprintf("audit failed: high severity issues found (score: %.2f)", result.OverallScore), result.OverallScore)
+		return c.createAuditError(fmt.Sprintf("🚫 Found high severity issues (score: %.2f/10)", result.OverallScore), result.OverallScore)
 	}
 
 	if failOnMedium && result.OverallScore < 5.0 {
-		return c.createAuditError(fmt.Sprintf("audit failed: medium or higher severity issues found (score: %.2f)", result.OverallScore), result.OverallScore)
+		return c.createAuditError(fmt.Sprintf("🚫 Found medium or high severity issues (score: %.2f/10)", result.OverallScore), result.OverallScore)
 	}
 
 	if minScore > 0 && result.OverallScore < minScore {
-		return c.createAuditError(fmt.Sprintf("audit failed: score %.2f is below minimum required score %.2f", result.OverallScore, minScore), result.OverallScore)
+		return c.createAuditError(fmt.Sprintf("🚫 Score %.2f/10 is below your minimum requirement of %.2f/10", result.OverallScore, minScore), result.OverallScore)
 	}
 
 	return nil
@@ -2311,7 +1744,7 @@ func (c *CLI) runUpdate(cmd *cobra.Command, args []string) error {
 		if err := c.versionManager.SetUpdateChannel(channel); err != nil {
 			return fmt.Errorf("failed to set update channel: %w", err)
 		}
-		fmt.Printf("Using update channel: %s\n", channel)
+		fmt.Printf("📡 Using update channel: %s\n", channel)
 	}
 
 	if check {
@@ -2321,13 +1754,13 @@ func (c *CLI) runUpdate(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("failed to check for updates: %w", err)
 		}
 
-		fmt.Printf("Current Version: %s\n", updateInfo.CurrentVersion)
-		fmt.Printf("Latest Version: %s\n", updateInfo.LatestVersion)
-		fmt.Printf("Update Available: %t\n", updateInfo.UpdateAvailable)
+		fmt.Printf("📦 Current Version: %s\n", updateInfo.CurrentVersion)
+		fmt.Printf("🆕 Latest Version: %s\n", updateInfo.LatestVersion)
+		fmt.Printf("🔄 Update Available: %t\n", updateInfo.UpdateAvailable)
 
 		if updateInfo.UpdateAvailable {
-			fmt.Printf("Release Date: %s\n", updateInfo.ReleaseDate.Format("2006-01-02"))
-			fmt.Printf("Download Size: %s\n", formatBytes(updateInfo.Size))
+			fmt.Printf("📅 Release Date: %s\n", updateInfo.ReleaseDate.Format("2006-01-02"))
+			fmt.Printf("💾 Download Size: %s\n", formatBytes(updateInfo.Size))
 
 			if updateInfo.Breaking {
 				fmt.Println("⚠️  This update contains breaking changes")
@@ -2341,18 +1774,18 @@ func (c *CLI) runUpdate(cmd *cobra.Command, args []string) error {
 
 			// Show release notes if requested
 			if releaseNotes && updateInfo.ReleaseNotes != "" {
-				fmt.Printf("\nRelease Notes:\n%s\n", updateInfo.ReleaseNotes)
+				fmt.Printf("\n📝 Release Notes:\n%s\n", updateInfo.ReleaseNotes)
 			}
 
 			// Check compatibility if requested
 			if compatibility {
-				fmt.Println("\nChecking compatibility...")
+				fmt.Println("\n🔍 Checking compatibility...")
 				compatResult, err := c.versionManager.CheckCompatibility(".")
 				if err != nil {
-					fmt.Printf("Warning: Failed to check compatibility: %v\n", err)
+					fmt.Printf("⚠️  Failed to check compatibility: %v\n", err)
 				} else {
 					if compatResult.Compatible {
-						fmt.Println("✅ Update is compatible with current project")
+						fmt.Println("✅ Update is compatible with your current project")
 					} else {
 						fmt.Printf("⚠️  Compatibility issues found (%d issues)\n", len(compatResult.Issues))
 						for _, issue := range compatResult.Issues {
@@ -2374,7 +1807,7 @@ func (c *CLI) runUpdate(cmd *cobra.Command, args []string) error {
 		}
 
 		if !updateInfo.UpdateAvailable && version == "" {
-			fmt.Println("No updates available")
+			fmt.Println("✅ No updates available - you're up to date!")
 			return nil
 		}
 
@@ -2385,14 +1818,14 @@ func (c *CLI) runUpdate(cmd *cobra.Command, args []string) error {
 
 		// Check compatibility unless forced
 		if !force && compatibility {
-			fmt.Println("Checking compatibility...")
+			fmt.Println("🔍 Checking compatibility...")
 			compatResult, err := c.versionManager.CheckCompatibility(".")
 			if err != nil {
 				return fmt.Errorf("failed to check compatibility: %w", err)
 			}
 
 			if !compatResult.Compatible {
-				fmt.Printf("Compatibility issues found:\n")
+				fmt.Printf("⚠️  Compatibility issues found:\n")
 				for _, issue := range compatResult.Issues {
 					fmt.Printf("  - %s: %s\n", issue.Type, issue.Description)
 				}
@@ -2405,22 +1838,22 @@ func (c *CLI) runUpdate(cmd *cobra.Command, args []string) error {
 		// Warn about breaking changes unless forced
 		if updateInfo.Breaking && !force {
 			fmt.Println("⚠️  This update contains breaking changes.")
-			fmt.Print("Continue with installation? (y/N): ")
+			fmt.Print("🤔 Continue with installation? (y/N): ")
 			var response string
 			if _, err := fmt.Scanln(&response); err != nil || (response != "y" && response != "Y") {
-				fmt.Println("Update cancelled")
+				fmt.Println("❌ Update cancelled")
 				return nil
 			}
 		}
 
-		fmt.Printf("Installing update to version %s...\n", targetVersion)
+		fmt.Printf("⬇️  Installing update to version %s...\n", targetVersion)
 
 		// Configure update options
 		if !backup {
-			fmt.Println("Warning: Backup disabled - no rollback possible")
+			fmt.Println("⚠️  Backup disabled - no rollback possible")
 		}
 		if !verify {
-			fmt.Println("Warning: Signature verification disabled")
+			fmt.Println("⚠️  Signature verification disabled")
 		}
 
 		err = c.InstallUpdates()
@@ -2428,14 +1861,14 @@ func (c *CLI) runUpdate(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("failed to install updates: %w", err)
 		}
 
-		fmt.Printf("✅ Successfully updated to version %s\n", targetVersion)
-		fmt.Println("Restart any running instances to use the new version")
+		fmt.Printf("🎉 Successfully updated to version %s\n", targetVersion)
+		fmt.Println("🔄 Restart any running instances to use the new version")
 		return nil
 	}
 
 	if templates {
 		// Update templates cache
-		fmt.Println("Updating templates cache...")
+		fmt.Println("📦 Updating templates cache...")
 		if err := c.versionManager.RefreshVersionCache(); err != nil {
 			return fmt.Errorf("failed to update templates cache: %w", err)
 		}
@@ -2454,10 +1887,10 @@ func (c *CLI) runUpdate(cmd *cobra.Command, args []string) error {
 		if updateInfo.Security {
 			fmt.Println("🔒 This update contains security fixes - update recommended")
 		}
-		fmt.Println("Run 'generator update --install' to install the update")
-		fmt.Println("Run 'generator update --check --release-notes' to see what's new")
+		fmt.Println("💡 Run 'generator update --install' to install the update")
+		fmt.Println("📝 Run 'generator update --check --release-notes' to see what's new")
 	} else {
-		fmt.Println("✅ You are running the latest version")
+		fmt.Println("✅ You're running the latest version!")
 	}
 
 	return nil
@@ -2481,11 +1914,11 @@ func (c *CLI) runCacheClear(cmd *cobra.Command, args []string) error {
 		var response string
 		if _, err := fmt.Scanln(&response); err != nil {
 			// If there's an error reading input, default to cancelling
-			fmt.Println("Cache clear cancelled")
+			fmt.Println("❌ Cache clear cancelled")
 			return nil
 		}
 		if strings.ToLower(response) != "y" && strings.ToLower(response) != "yes" {
-			fmt.Println("Cache clear cancelled")
+			fmt.Println("❌ Cache clear cancelled")
 			return nil
 		}
 	}
@@ -2496,24 +1929,24 @@ func (c *CLI) runCacheClear(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to clear cache: %w", err)
 	}
 
-	fmt.Println("Cache cleared successfully")
+	fmt.Println("🗑️  Cache cleared successfully")
 	return nil
 }
 
 func (c *CLI) runCacheClean(cmd *cobra.Command, args []string) error {
 	// Clean expired and invalid cache entries
-	fmt.Println("Cleaning cache...")
+	fmt.Println("🧹 Cleaning cache...")
 	err := c.CleanCache()
 	if err != nil {
 		return fmt.Errorf("failed to clean cache: %w", err)
 	}
 
-	fmt.Println("Cache cleaned successfully")
+	fmt.Println("✨ Cache cleaned successfully")
 	return nil
 }
 
 func (c *CLI) runCacheValidate(cmd *cobra.Command, args []string) error {
-	fmt.Println("Validating cache...")
+	fmt.Println("🔍 Validating cache...")
 	err := c.ValidateCache()
 	if err != nil {
 		fmt.Printf("Cache validation failed: %v\n", err)
@@ -2687,23 +2120,23 @@ func (c *CLI) SelectComponents() ([]string, error) {
 // validateGenerateConfiguration validates the configuration for generation
 func (c *CLI) validateGenerateConfiguration(config *models.ProjectConfig, options interfaces.GenerateOptions) error {
 	if config.Name == "" {
-		return c.createConfigurationError("project name is required", "Set project name in configuration file or GENERATOR_PROJECT_NAME environment variable")
+		err := c.createConfigurationError("🚫 Your project needs a name", "")
+		err = err.WithSuggestions("Set project name in configuration file or GENERATOR_PROJECT_NAME environment variable")
+		return err
 	}
 
 	// Validate project name format
 	if !isValidProjectName(config.Name) {
-		return c.createConfigurationError(
-			fmt.Sprintf("invalid project name '%s'", config.Name),
-			"Project name must contain only letters, numbers, hyphens, and underscores",
-		)
+		err := c.createConfigurationError(fmt.Sprintf("🚫 '%s' isn't a valid project name", config.Name), "")
+		err = err.WithSuggestions("Project names can only contain letters, numbers, hyphens, and underscores")
+		return err
 	}
 
 	// Validate license if specified
 	if config.License != "" && !isValidLicense(config.License) {
-		return c.createConfigurationError(
-			fmt.Sprintf("invalid license '%s'", config.License),
-			"Use a valid SPDX license identifier (e.g., MIT, Apache-2.0, GPL-3.0)",
-		)
+		err := c.createConfigurationError(fmt.Sprintf("🚫 '%s' isn't a valid license", config.License), "")
+		err = err.WithSuggestions("Use a valid SPDX license identifier like MIT, Apache-2.0, or GPL-3.0")
+		return err
 	}
 
 	return nil
@@ -2715,30 +2148,33 @@ func (c *CLI) performPreGenerationChecks(outputPath string, options interfaces.G
 	if _, err := os.Stat(outputPath); err == nil {
 		// Directory exists
 		if !options.Force {
-			return fmt.Errorf("output directory '%s' already exists, use --force to overwrite", outputPath)
+			return fmt.Errorf("🚫 Oops! The directory '%s' already exists. Use --force if you want to overwrite it", outputPath)
 		}
 
 		// Check if directory is empty
 		entries, err := os.ReadDir(outputPath)
 		if err != nil {
-			return fmt.Errorf("failed to read output directory: %w", err)
+			return fmt.Errorf("🚫 Can't read the output directory: %w", err)
 		}
 
 		if len(entries) > 0 && options.BackupExisting {
 			c.VerboseOutput("Creating backup of existing files in %s", outputPath)
 			if err := c.createBackup(outputPath); err != nil {
-				c.WarningOutput("Failed to create backup: %v", err)
+				c.WarningOutput("💾 Couldn't create backup: %v", err)
 			}
 		}
 	}
 
-	// Check write permissions
-	parentDir := outputPath
+	// Create output directory if it doesn't exist
 	if _, err := os.Stat(outputPath); os.IsNotExist(err) {
-		parentDir = filepath.Dir(outputPath)
+		if err := os.MkdirAll(outputPath, 0755); err != nil {
+			return fmt.Errorf("🚫 Can't create the output directory: %w", err)
+		}
+		c.VerboseOutput("📁 Created output directory: %s", c.info(outputPath))
 	}
 
-	if err := c.checkWritePermissions(parentDir); err != nil {
+	// Check write permissions on the output directory
+	if err := c.checkWritePermissions(outputPath); err != nil {
 		return fmt.Errorf("insufficient permissions for output directory: %w", err)
 	}
 
@@ -2760,11 +2196,276 @@ func (c *CLI) updatePackageVersions(config *models.ProjectConfig) error {
 	return nil
 }
 
+// generateProjectFromComponents generates project structure based on selected components
+func (c *CLI) generateProjectFromComponents(config *models.ProjectConfig, outputPath string, options interfaces.GenerateOptions) error {
+	c.VerboseOutput("🏗️  Building your project structure...")
+
+	// Create the base project structure first
+	if err := c.generateBaseStructure(config, outputPath); err != nil {
+		return fmt.Errorf("🚫 Couldn't create the project structure: %w", err)
+	}
+
+	// Process frontend components
+	if err := c.processFrontendComponents(config, outputPath); err != nil {
+		return fmt.Errorf("🚫 Couldn't set up the frontend components: %w", err)
+	}
+
+	// Process backend components
+	if err := c.processBackendComponents(config, outputPath); err != nil {
+		return fmt.Errorf("🚫 Couldn't set up the backend components: %w", err)
+	}
+
+	// Process mobile components
+	if err := c.processMobileComponents(config, outputPath); err != nil {
+		return fmt.Errorf("🚫 Couldn't set up the mobile components: %w", err)
+	}
+
+	// Process infrastructure components
+	if err := c.processInfrastructureComponents(config, outputPath); err != nil {
+		return fmt.Errorf("🚫 Couldn't set up the infrastructure components: %w", err)
+	}
+
+	c.SuccessOutput("🎉 Successfully created project %s at %s", 
+		c.highlight(config.Name), 
+		c.info(outputPath))
+	return nil
+}
+
+// generateBaseStructure generates the base project structure
+func (c *CLI) generateBaseStructure(config *models.ProjectConfig, outputPath string) error {
+	c.VerboseOutput("📋 Creating project foundation...")
+
+	// Create the main project directories first
+	dirs := []string{"Docs", "Scripts"}
+	for _, dir := range dirs {
+		dirPath := filepath.Join(outputPath, dir)
+		if err := os.MkdirAll(dirPath, 0755); err != nil {
+			return fmt.Errorf("failed to create directory %s: %w", dir, err)
+		}
+	}
+
+	// Process base template files directly from the embedded filesystem
+	// The base directory contains common files like README, LICENSE, etc.
+	if err := c.processBaseTemplateFiles(config, outputPath); err != nil {
+		return fmt.Errorf("failed to process base template files: %w", err)
+	}
+
+	// Process GitHub workflow templates
+	if err := c.templateManager.ProcessTemplate("github", config, filepath.Join(outputPath, ".github")); err != nil {
+		c.VerboseOutput("GitHub template not processed (optional): %v", err)
+	}
+
+	// Process Scripts templates
+	if err := c.templateManager.ProcessTemplate("scripts", config, filepath.Join(outputPath, "Scripts")); err != nil {
+		c.VerboseOutput("Scripts template not processed (optional): %v", err)
+	}
+
+	return nil
+}
+
+// processBaseTemplateFiles processes base template files directly
+func (c *CLI) processBaseTemplateFiles(config *models.ProjectConfig, outputPath string) error {
+	// Create an embedded template engine to process the base directory directly
+	embeddedEngine := template.NewEmbeddedEngine()
+	
+	// Process the base template directory directly
+	return embeddedEngine.ProcessDirectory("templates/base", outputPath, config)
+}
+
+// processFrontendComponents processes frontend components
+func (c *CLI) processFrontendComponents(config *models.ProjectConfig, outputPath string) error {
+	if !c.hasFrontendComponents(config) {
+		c.VerboseOutput("No frontend components selected, skipping")
+		return nil
+	}
+
+	c.VerboseOutput("🎨 Setting up frontend applications...")
+
+	// Create App directory structure
+	appDir := filepath.Join(outputPath, "App")
+	if err := os.MkdirAll(appDir, 0755); err != nil {
+		return fmt.Errorf("failed to create App directory: %w", err)
+	}
+
+	// Process Next.js components based on configuration
+	if config.Components.Frontend.NextJS.App {
+		c.VerboseOutput("   ✨ Creating main Next.js application")
+		mainAppPath := filepath.Join(appDir, "main")
+		if err := c.templateManager.ProcessTemplate("nextjs-app", config, mainAppPath); err != nil {
+			return fmt.Errorf("failed to process nextjs-app template: %w", err)
+		}
+	}
+
+	if config.Components.Frontend.NextJS.Home {
+		c.VerboseOutput("   🏠 Creating landing page application")
+		homePath := filepath.Join(appDir, "home")
+		if err := c.templateManager.ProcessTemplate("nextjs-home", config, homePath); err != nil {
+			return fmt.Errorf("failed to process nextjs-home template: %w", err)
+		}
+	}
+
+	if config.Components.Frontend.NextJS.Admin {
+		c.VerboseOutput("   👑 Creating admin dashboard")
+		adminPath := filepath.Join(appDir, "admin")
+		if err := c.templateManager.ProcessTemplate("nextjs-admin", config, adminPath); err != nil {
+			return fmt.Errorf("failed to process nextjs-admin template: %w", err)
+		}
+	}
+
+	if config.Components.Frontend.NextJS.Shared {
+		c.VerboseOutput("📦 Creating shared component library...")
+		sharedPath := filepath.Join(appDir, "shared-components")
+		if err := c.templateManager.ProcessTemplate("shared-components", config, sharedPath); err != nil {
+			return fmt.Errorf("failed to process shared-components template: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// processBackendComponents processes backend components
+func (c *CLI) processBackendComponents(config *models.ProjectConfig, outputPath string) error {
+	if !c.hasBackendComponents(config) {
+		c.VerboseOutput("No backend components selected, skipping")
+		return nil
+	}
+
+	c.VerboseOutput("⚙️  Setting up backend services...")
+
+	// Create CommonServer directory
+	serverDir := filepath.Join(outputPath, "CommonServer")
+	if err := os.MkdirAll(serverDir, 0755); err != nil {
+		return fmt.Errorf("failed to create CommonServer directory: %w", err)
+	}
+
+	// Process Go Gin backend
+	if config.Components.Backend.GoGin {
+		c.VerboseOutput("   🔧 Creating Go API server")
+		if err := c.templateManager.ProcessTemplate("go-gin", config, serverDir); err != nil {
+			return fmt.Errorf("failed to process go-gin template: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// processMobileComponents processes mobile components
+func (c *CLI) processMobileComponents(config *models.ProjectConfig, outputPath string) error {
+	if !c.hasMobileComponents(config) {
+		c.VerboseOutput("No mobile components selected, skipping")
+		return nil
+	}
+
+	c.VerboseOutput("📱 Setting up mobile applications...")
+
+	// Create Mobile directory
+	mobileDir := filepath.Join(outputPath, "Mobile")
+	if err := os.MkdirAll(mobileDir, 0755); err != nil {
+		return fmt.Errorf("failed to create Mobile directory: %w", err)
+	}
+
+	// Process Android components
+	if config.Components.Mobile.Android {
+		c.VerboseOutput("   🤖 Creating Android application")
+		androidPath := filepath.Join(mobileDir, "android")
+		if err := c.templateManager.ProcessTemplate("android-kotlin", config, androidPath); err != nil {
+			return fmt.Errorf("failed to process android-kotlin template: %w", err)
+		}
+	}
+
+	// Process iOS components
+	if config.Components.Mobile.IOS {
+		c.VerboseOutput("   🍎 Creating iOS application")
+		iosPath := filepath.Join(mobileDir, "ios")
+		if err := c.templateManager.ProcessTemplate("ios-swift", config, iosPath); err != nil {
+			return fmt.Errorf("failed to process ios-swift template: %w", err)
+		}
+	}
+
+	// Process shared mobile components
+	if config.Components.Mobile.Android || config.Components.Mobile.IOS {
+		c.VerboseOutput("🔗 Creating shared mobile resources...")
+		sharedPath := filepath.Join(mobileDir, "shared")
+		if err := c.templateManager.ProcessTemplate("shared", config, sharedPath); err != nil {
+			return fmt.Errorf("failed to process mobile shared template: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// processInfrastructureComponents processes infrastructure components
+func (c *CLI) processInfrastructureComponents(config *models.ProjectConfig, outputPath string) error {
+	if !c.hasInfrastructureComponents(config) {
+		c.VerboseOutput("No infrastructure components selected, skipping")
+		return nil
+	}
+
+	c.VerboseOutput("🚀 Setting up deployment infrastructure...")
+
+	// Create Deploy directory
+	deployDir := filepath.Join(outputPath, "Deploy")
+	if err := os.MkdirAll(deployDir, 0755); err != nil {
+		return fmt.Errorf("failed to create Deploy directory: %w", err)
+	}
+
+	// Process Docker components
+	if config.Components.Infrastructure.Docker {
+		c.VerboseOutput("   🐳 Setting up Docker containers")
+		dockerPath := filepath.Join(deployDir, "docker")
+		if err := c.templateManager.ProcessTemplate("docker", config, dockerPath); err != nil {
+			return fmt.Errorf("failed to process docker template: %w", err)
+		}
+	}
+
+	// Process Kubernetes components
+	if config.Components.Infrastructure.Kubernetes {
+		c.VerboseOutput("   ☸️  Setting up Kubernetes deployment")
+		k8sPath := filepath.Join(deployDir, "k8s")
+		if err := c.templateManager.ProcessTemplate("kubernetes", config, k8sPath); err != nil {
+			return fmt.Errorf("failed to process kubernetes template: %w", err)
+		}
+	}
+
+	// Process Terraform components
+	if config.Components.Infrastructure.Terraform {
+		c.VerboseOutput("   🏗️  Setting up Terraform infrastructure")
+		terraformPath := filepath.Join(deployDir, "terraform")
+		if err := c.templateManager.ProcessTemplate("terraform", config, terraformPath); err != nil {
+			return fmt.Errorf("failed to process terraform template: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// Helper methods to check if components are selected
+func (c *CLI) hasFrontendComponents(config *models.ProjectConfig) bool {
+	return config.Components.Frontend.NextJS.App ||
+		config.Components.Frontend.NextJS.Home ||
+		config.Components.Frontend.NextJS.Admin ||
+		config.Components.Frontend.NextJS.Shared
+}
+
+func (c *CLI) hasBackendComponents(config *models.ProjectConfig) bool {
+	return config.Components.Backend.GoGin
+}
+
+func (c *CLI) hasMobileComponents(config *models.ProjectConfig) bool {
+	return config.Components.Mobile.Android || config.Components.Mobile.IOS
+}
+
+func (c *CLI) hasInfrastructureComponents(config *models.ProjectConfig) bool {
+	return config.Components.Infrastructure.Docker ||
+		config.Components.Infrastructure.Kubernetes ||
+		config.Components.Infrastructure.Terraform
+}
+
 // selectDefaultTemplate selects a default template based on configuration
 func (c *CLI) selectDefaultTemplate(config *models.ProjectConfig) string {
-	// This would analyze the config and select an appropriate template
-	// For now, return a sensible default
-	return "go-gin"
+	// This method is now deprecated in favor of component-based generation
+	// But kept for backward compatibility
+	return "base"
 }
 
 // createBackup creates a backup of the existing directory
@@ -2793,10 +2494,10 @@ func (c *CLI) checkWritePermissions(path string) error {
 		return fmt.Errorf("no write permission to directory %s: %w", path, err)
 	}
 	if err := file.Close(); err != nil {
-		c.WarningOutput("Failed to close temporary file: %v", err)
+		c.WarningOutput("📄 Couldn't close temporary file: %v", err)
 	}
 	if err := os.Remove(tempFile); err != nil {
-		c.WarningOutput("Failed to remove temporary file: %v", err)
+		c.WarningOutput("🗑️  Couldn't remove temporary file: %v", err)
 	}
 	return nil
 }
@@ -2893,7 +2594,7 @@ func (c *CLI) validateDependencies(config *models.ProjectConfig, templateName st
 	// Get template information
 	templateInfo, err := c.templateManager.GetTemplateInfo(templateName)
 	if err != nil {
-		return fmt.Errorf("failed to get template information: %w", err)
+		return fmt.Errorf("🚫 Couldn't find template '%s': %w", templateName, err)
 	}
 
 	// Validate template dependencies
@@ -3072,10 +2773,10 @@ func isValidTemplateName(name string) bool {
 }
 
 func (c *CLI) GenerateFromConfig(configPath string, options interfaces.GenerateOptions) error {
-	ctx := c.StartOperationWithOutput("generate-from-config", fmt.Sprintf("Loading configuration from %s", configPath))
+	ctx := c.StartOperationWithOutput("generate-from-config", fmt.Sprintf("📄 Loading your project configuration from %s", configPath))
 	defer func() {
 		if ctx != nil {
-			c.FinishOperationWithOutput(ctx, "generate-from-config", "Configuration loading completed")
+			c.FinishOperationWithOutput(ctx, "generate-from-config", "✅ Configuration loaded successfully")
 		}
 	}()
 
@@ -3090,15 +2791,15 @@ func (c *CLI) GenerateFromConfig(configPath string, options interfaces.GenerateO
 		return fmt.Errorf("failed to load configuration from %s: %w", configPath, err)
 	}
 
-	c.VerboseOutput("Successfully loaded configuration for project: %s", config.Name)
+	c.VerboseOutput("✅ Configuration loaded for project: %s", c.highlight(config.Name))
 
 	// Validate configuration if not skipped
 	if !options.SkipValidation {
-		c.VerboseOutput("Validating configuration...")
+		c.VerboseOutput("🔍 Checking configuration validity...")
 		if err := c.validateGenerateConfiguration(config, options); err != nil {
-			return fmt.Errorf("configuration validation failed: %w", err)
+			return err
 		}
-		c.VerboseOutput("Configuration validation passed")
+		c.VerboseOutput("✅ Configuration looks good!")
 	}
 
 	// Set output path from options or config
@@ -3107,15 +2808,18 @@ func (c *CLI) GenerateFromConfig(configPath string, options interfaces.GenerateO
 		outputPath = config.OutputPath
 	}
 	if outputPath == "" {
-		outputPath = "./" + config.Name
+		outputPath = "./output/generated"
 	}
+	
+	// Always append project name to the output path
+	outputPath = filepath.Join(outputPath, config.Name)
 
 	// Handle offline mode
 	if options.Offline {
 		c.VerboseOutput("Running in offline mode - using cached templates and versions")
 		if c.cacheManager != nil {
 			if err := c.cacheManager.EnableOfflineMode(); err != nil {
-				c.WarningOutput("Failed to enable offline mode: %v", err)
+				c.WarningOutput("📡 Couldn't enable offline mode: %v", err)
 			}
 		}
 	}
@@ -3130,42 +2834,22 @@ func (c *CLI) GenerateFromConfig(configPath string, options interfaces.GenerateO
 
 	// Pre-generation checks
 	if err := c.performPreGenerationChecks(outputPath, options); err != nil {
-		return fmt.Errorf("pre-generation checks failed: %w", err)
+		return fmt.Errorf("%w", err)
 	}
 
-	// Select template
-	templateName := ""
-	if len(options.Templates) > 0 {
-		templateName = options.Templates[0]
-	}
-	if templateName == "" {
-		templateName = c.selectDefaultTemplate(config)
-	}
-
-	c.VerboseOutput("Using template: %s", templateName)
-
-	// Validate dependencies if not skipped
-	if !options.SkipValidation {
-		c.VerboseOutput("Validating dependencies...")
-		if err := c.validateDependencies(config, templateName); err != nil {
-			return fmt.Errorf("dependency validation failed: %w", err)
-		}
-		c.VerboseOutput("Dependency validation passed")
-	}
-
-	// Generate project
+	// Generate project structure based on components
 	if options.DryRun {
-		c.QuietOutput("Dry run mode - would generate project '%s' using template '%s' in directory '%s'",
-			config.Name, templateName, outputPath)
+		c.QuietOutput("Dry run mode - would generate project '%s' with selected components in directory '%s'",
+			config.Name, outputPath)
 		return nil
 	}
 
-	// Process template
+	// Process multiple templates based on configuration components
 	if c.templateManager == nil {
 		return fmt.Errorf("template manager not initialized")
 	}
 
-	return c.templateManager.ProcessTemplate(templateName, config, outputPath)
+	return c.generateProjectFromComponents(config, outputPath, options)
 }
 
 func (c *CLI) ValidateProject(path string, options interfaces.ValidationOptions) (*interfaces.ValidationResult, error) {
@@ -3234,7 +2918,7 @@ func (c *CLI) AuditProject(path string, options interfaces.AuditOptions) (*inter
 	// Perform comprehensive project audit
 	result, err := c.auditEngine.AuditProject(path, &options)
 	if err != nil {
-		return nil, fmt.Errorf("audit failed: %w", err)
+		return nil, err
 	}
 
 	// Generate report if output file is specified
@@ -3285,7 +2969,7 @@ func (c *CLI) runTemplateInfo(cmd *cobra.Command, args []string) error {
 	// Get template info
 	templateInfo, err := c.GetTemplateInfo(templateName)
 	if err != nil {
-		return fmt.Errorf("failed to get template info: %w", err)
+		return fmt.Errorf("🚫 Couldn't find template '%s': %w", templateName, err)
 	}
 
 	// Display basic information
@@ -3868,41 +3552,51 @@ func (c *CLI) ShowCache() error {
 	}
 
 	// Display cache information
-	fmt.Println("Cache Information")
+	fmt.Println("💾 Cache Information")
+	fmt.Println("===================")
+	fmt.Printf("📁 Location: %s\n", stats.CacheLocation)
+	
+	statusEmoji := "✅"
+	if stats.CacheHealth != "healthy" {
+		statusEmoji = "⚠️ "
+	}
+	fmt.Printf("%s Status: %s\n", statusEmoji, stats.CacheHealth)
+	
+	offlineEmoji := "🌐"
+	if stats.OfflineMode {
+		offlineEmoji = "📴"
+	}
+	fmt.Printf("%s Offline Mode: %t\n", offlineEmoji, stats.OfflineMode)
+	fmt.Println()
+
+	fmt.Println("📊 Statistics")
+	fmt.Println("=============")
+	fmt.Printf("📦 Total Entries: %d\n", stats.TotalEntries)
+	fmt.Printf("💾 Total Size: %s\n", formatBytes(stats.TotalSize))
+	fmt.Printf("🎯 Hit Rate: %.1f%%\n", stats.HitRate*100)
+	fmt.Printf("⏰ Expired Entries: %d\n", stats.ExpiredEntries)
+	fmt.Printf("🧹 Last Cleanup: %s\n", stats.LastCleanup.Format("2006-01-02 15:04:05"))
+	fmt.Println()
+
+	fmt.Println("⚙️  Configuration")
 	fmt.Println("=================")
-	fmt.Printf("Location: %s\n", stats.CacheLocation)
-	fmt.Printf("Status: %s\n", stats.CacheHealth)
-	fmt.Printf("Offline Mode: %t\n", stats.OfflineMode)
-	fmt.Println()
-
-	fmt.Println("Statistics")
-	fmt.Println("----------")
-	fmt.Printf("Total Entries: %d\n", stats.TotalEntries)
-	fmt.Printf("Total Size: %s\n", formatBytes(stats.TotalSize))
-	fmt.Printf("Hit Rate: %.1f%%\n", stats.HitRate*100)
-	fmt.Printf("Expired Entries: %d\n", stats.ExpiredEntries)
-	fmt.Printf("Last Cleanup: %s\n", stats.LastCleanup.Format("2006-01-02 15:04:05"))
-	fmt.Println()
-
-	fmt.Println("Configuration")
-	fmt.Println("-------------")
-	fmt.Printf("Max Size: %s\n", formatBytes(config.MaxSize))
-	fmt.Printf("Max Entries: %d\n", config.MaxEntries)
-	fmt.Printf("Default TTL: %s\n", config.DefaultTTL)
-	fmt.Printf("Eviction Policy: %s\n", config.EvictionPolicy)
-	fmt.Printf("Compression: %t\n", config.EnableCompression)
-	fmt.Printf("Persist to Disk: %t\n", config.PersistToDisk)
+	fmt.Printf("📏 Max Size: %s\n", formatBytes(config.MaxSize))
+	fmt.Printf("🔢 Max Entries: %d\n", config.MaxEntries)
+	fmt.Printf("⏱️  Default TTL: %s\n", config.DefaultTTL)
+	fmt.Printf("🔄 Eviction Policy: %s\n", config.EvictionPolicy)
+	fmt.Printf("🗜️  Compression: %t\n", config.EnableCompression)
+	fmt.Printf("💿 Persist to Disk: %t\n", config.PersistToDisk)
 
 	// Show cache health warnings if any
 	if stats.CacheHealth != "healthy" {
 		fmt.Println()
-		fmt.Println("Health Issues")
-		fmt.Println("-------------")
+		fmt.Println("🚨 Health Issues")
+		fmt.Println("================")
 		if stats.ExpiredEntries > 0 {
-			fmt.Printf("⚠ %d expired entries found - consider running 'generator cache clean'\n", stats.ExpiredEntries)
+			fmt.Printf("⚠️  %d expired entries found - consider running 'generator cache clean'\n", stats.ExpiredEntries)
 		}
 		if stats.CacheHealth == "corrupted" {
-			fmt.Println("⚠ Cache corruption detected - consider running 'generator cache repair'")
+			fmt.Println("🚨 Cache corruption detected - consider running 'generator cache repair'")
 		}
 		if stats.CacheHealth == "missing" {
 			fmt.Println("⚠ Cache directory missing - will be created on next cache operation")
@@ -4086,7 +3780,7 @@ func (c *CLI) SelectTemplateInteractively(filter interfaces.TemplateFilter) (*in
 	}
 
 	if selection < 1 || selection > len(templates) {
-		return nil, fmt.Errorf("invalid template selection: %d", selection)
+		return nil, fmt.Errorf("🚫 That's not a valid choice. Please pick a number between 1 and %d", len(templates))
 	}
 
 	return &templates[selection-1], nil
@@ -4677,13 +4371,13 @@ func (c *CLI) applySettingToConfig(config *models.ProjectConfig, key, value stri
 		if val, err := strconv.ParseBool(value); err == nil {
 			config.Components.Frontend.NextJS.App = val
 		} else {
-			return fmt.Errorf("invalid boolean value for %s: %s", key, value)
+			return fmt.Errorf("🚫 '%s' should be true or false, not '%s'", key, value)
 		}
 	case "components.frontend.nextjs.home":
 		if val, err := strconv.ParseBool(value); err == nil {
 			config.Components.Frontend.NextJS.Home = val
 		} else {
-			return fmt.Errorf("invalid boolean value for %s: %s", key, value)
+			return fmt.Errorf("🚫 '%s' should be true or false, not '%s'", key, value)
 		}
 	case "components.frontend.nextjs.admin":
 		if val, err := strconv.ParseBool(value); err == nil {
@@ -4961,7 +4655,7 @@ func (c *CLI) runInteractiveProjectConfiguration(ctx context.Context) (*models.P
 
 	// Show breadcrumb
 	if err := c.interactiveUI.ShowBreadcrumb(ctx, []string{"Generator", "Project Configuration", "Basic Details"}); err != nil {
-		c.logger.Error("Failed to show breadcrumb", "error", err)
+		c.logger.Error("🧭 Couldn't update navigation breadcrumb", "error", err)
 	}
 
 	// Collect project name
@@ -5052,7 +4746,7 @@ func (c *CLI) runInteractiveProjectConfiguration(ctx context.Context) (*models.P
 
 	// Select license
 	if err := c.interactiveUI.ShowBreadcrumb(ctx, []string{"Generator", "Project Configuration", "License"}); err != nil {
-		c.logger.Error("Failed to show breadcrumb", "error", err)
+		c.logger.Error("🧭 Couldn't update navigation breadcrumb", "error", err)
 	}
 
 	licenseConfig := interfaces.MenuConfig{
@@ -5084,7 +4778,7 @@ func (c *CLI) runInteractiveProjectConfiguration(ctx context.Context) (*models.P
 
 	// Select components
 	if err := c.interactiveUI.ShowBreadcrumb(ctx, []string{"Generator", "Project Configuration", "Components"}); err != nil {
-		c.logger.Error("Failed to show breadcrumb", "error", err)
+		c.logger.Error("🧭 Couldn't update navigation breadcrumb", "error", err)
 	}
 
 	componentsConfig := interfaces.MultiSelectConfig{
@@ -5174,7 +4868,7 @@ func (c *CLI) runInteractiveProjectConfiguration(ctx context.Context) (*models.P
 // runInteractiveConfirmation shows configuration summary and confirms generation
 func (c *CLI) runInteractiveConfirmation(ctx context.Context, config *models.ProjectConfig, options interfaces.GenerateOptions) bool {
 	if err := c.interactiveUI.ShowBreadcrumb(ctx, []string{"Generator", "Confirmation"}); err != nil {
-		c.logger.Error("Failed to show breadcrumb", "error", err)
+		c.logger.Error("🧭 Couldn't update navigation breadcrumb", "error", err)
 	}
 
 	// Show configuration summary in a table
@@ -5196,7 +4890,7 @@ func (c *CLI) runInteractiveConfirmation(ctx context.Context, config *models.Pro
 	}
 
 	if err := c.interactiveUI.ShowTable(ctx, tableConfig); err != nil {
-		c.logger.WarnWithFields("Failed to show configuration table", map[string]interface{}{
+		c.logger.WarnWithFields("📋 Couldn't display configuration table", map[string]interface{}{
 			"error": err.Error(),
 		})
 	}
@@ -5216,7 +4910,7 @@ func (c *CLI) runInteractiveConfirmation(ctx context.Context, config *models.Pro
 
 	confirmResult, err := c.interactiveUI.PromptConfirm(ctx, confirmConfig)
 	if err != nil {
-		c.logger.ErrorWithFields("Failed to get confirmation", map[string]interface{}{
+		c.logger.ErrorWithFields("❓ Couldn't get your confirmation", map[string]interface{}{
 			"error": err.Error(),
 		})
 		return false
@@ -5228,7 +4922,7 @@ func (c *CLI) runInteractiveConfirmation(ctx context.Context, config *models.Pro
 // runInteractiveGeneration handles project generation with progress tracking
 func (c *CLI) runInteractiveGeneration(ctx context.Context, templateName string, config *models.ProjectConfig, outputPath string) error {
 	if err := c.interactiveUI.ShowBreadcrumb(ctx, []string{"Generator", "Generation"}); err != nil {
-		c.logger.Error("Failed to show breadcrumb", "error", err)
+		c.logger.Error("🧭 Couldn't update navigation breadcrumb", "error", err)
 	}
 
 	// Create progress tracker
@@ -5253,19 +4947,19 @@ func (c *CLI) runInteractiveGeneration(ctx context.Context, templateName string,
 	}
 	defer func() {
 		if closeErr := tracker.Close(); closeErr != nil {
-			c.logger.Error("Failed to close progress tracker", "error", closeErr)
+			c.logger.Error("📊 Couldn't close progress tracker", "error", closeErr)
 		}
 	}()
 
 	// Step 1: Initialize project structure
 	if err := tracker.SetCurrentStep(0, "Creating directory structure"); err != nil {
-		c.logger.Error("Failed to set current step", "error", err)
+		c.logger.Error("📋 Couldn't update progress step", "error", err)
 	}
 	if err := tracker.SetProgress(0.1); err != nil {
-		c.logger.Error("Failed to set progress", "error", err)
+		c.logger.Error("📊 Couldn't update progress bar", "error", err)
 	}
 	if err := tracker.AddLog("Creating output directory: " + outputPath); err != nil {
-		c.logger.Error("Failed to add log", "error", err)
+		c.logger.Error("📝 Couldn't add progress log", "error", err)
 	}
 
 	if err := os.MkdirAll(outputPath, 0750); err != nil {
@@ -5428,36 +5122,36 @@ func (c *CLI) formatSelectedComponents(components models.Components) string {
 func (c *CLI) detectGenerationMode(configPath string, nonInteractive, interactive bool, explicitMode string) string {
 	// Priority 1: Explicit mode flag (highest priority)
 	if explicitMode != "" {
-		c.DebugOutput("Mode detection: Explicit mode flag set (%s)", explicitMode)
+		c.DebugOutput("🎯 You specified %s mode explicitly", explicitMode)
 		return c.validateAndNormalizeMode(explicitMode)
 	}
 
 	// Priority 2: Configuration file mode
 	if configPath != "" {
-		c.DebugOutput("Mode detection: Configuration file provided (%s)", configPath)
+		c.DebugOutput("📄 Found configuration file: %s", configPath)
 		return "config-file"
 	}
 
 	// Priority 3: Explicit non-interactive flag (overrides auto-detection)
 	if nonInteractive {
-		c.DebugOutput("Mode detection: Explicit non-interactive flag set")
+		c.DebugOutput("🤖 Non-interactive mode requested")
 		return "non-interactive"
 	}
 
 	// Priority 4: Auto-detect non-interactive environment (CI, piped input, etc.)
 	if c.isNonInteractiveMode() {
-		c.DebugOutput("Mode detection: Auto-detected non-interactive environment")
+		c.DebugOutput("🤖 Detected automated environment (CI/scripts)")
 		return "non-interactive"
 	}
 
 	// Priority 5: Explicit interactive flag or default
 	if interactive {
-		c.DebugOutput("Mode detection: Interactive mode (explicit or default)")
+		c.DebugOutput("👤 Interactive mode selected")
 		return "interactive"
 	}
 
 	// Fallback: Interactive mode (should not reach here with current logic)
-	c.DebugOutput("Mode detection: Fallback to interactive mode")
+	c.DebugOutput("👤 Defaulting to interactive mode")
 	return "interactive"
 }
 
@@ -5479,7 +5173,7 @@ func (c *CLI) validateModeFlags(nonInteractive, interactive, forceInteractive, f
 	}
 
 	if conflictCount > 1 {
-		return fmt.Errorf("cannot specify multiple mode flags simultaneously")
+		return fmt.Errorf("🚫 You can only use one mode flag at a time")
 	}
 
 	// Validate explicit mode value
@@ -5493,7 +5187,7 @@ func (c *CLI) validateModeFlags(nonInteractive, interactive, forceInteractive, f
 			}
 		}
 		if !isValid {
-			return fmt.Errorf("invalid mode '%s', valid modes are: %s", explicitMode, strings.Join(validModes, ", "))
+			return fmt.Errorf("🚫 '%s' isn't a valid mode. Try one of these: %s", explicitMode, strings.Join(validModes, ", "))
 		}
 	}
 
@@ -5560,7 +5254,9 @@ func (c *CLI) runNonInteractiveGeneration(options interfaces.GenerateOptions) er
 
 	// Validate required fields for non-interactive mode
 	if config.Name == "" {
-		return c.createConfigurationError("project name is required in non-interactive mode", "GENERATOR_PROJECT_NAME environment variable")
+		err := c.createConfigurationError("🚫 Your project needs a name for non-interactive mode", "")
+		err = err.WithSuggestions("Set the GENERATOR_PROJECT_NAME environment variable")
+		return err
 	}
 
 	// Override with command-line flags and environment variables
@@ -5600,9 +5296,9 @@ func (c *CLI) runNonInteractiveGeneration(options interfaces.GenerateOptions) er
 
 	// Validate configuration if not skipped
 	if !options.SkipValidation {
-		c.VerboseOutput("Validating configuration...")
+		c.VerboseOutput("🔍 Double-checking configuration...")
 		if err := c.validateGenerateConfiguration(config, options); err != nil {
-			return fmt.Errorf("configuration validation failed: %w", err)
+			return err
 		}
 	}
 
@@ -5628,7 +5324,7 @@ func (c *CLI) runNonInteractiveGeneration(options interfaces.GenerateOptions) er
 
 	// Perform pre-generation checks
 	if err := c.performPreGenerationChecks(options.OutputPath, options); err != nil {
-		return fmt.Errorf("pre-generation checks failed: %w", err)
+		return fmt.Errorf("%w", err)
 	}
 
 	// Handle dry-run mode
@@ -5643,7 +5339,7 @@ func (c *CLI) runNonInteractiveGeneration(options interfaces.GenerateOptions) er
 
 // routeToGenerationMethod routes to the appropriate generation method based on mode
 func (c *CLI) routeToGenerationMethod(mode, configPath string, options interfaces.GenerateOptions) error {
-	c.VerboseOutput("Routing to %s generation method", mode)
+	c.VerboseOutput("🚀 Starting %s generation...", mode)
 
 	switch mode {
 	case "config-file":
@@ -5659,12 +5355,12 @@ func (c *CLI) routeToGenerationMethod(mode, configPath string, options interface
 
 // handleConfigFileGeneration handles configuration file-based generation
 func (c *CLI) handleConfigFileGeneration(configPath string, options interfaces.GenerateOptions) error {
-	c.VerboseOutput("Starting configuration file generation")
-	c.DebugOutput("Configuration file: %s", configPath)
+	c.VerboseOutput("📄 Loading your project configuration...")
+	c.DebugOutput("📄 Using configuration: %s", configPath)
 
 	// Validate configuration file exists and is readable
 	if err := c.validateConfigurationFile(configPath); err != nil {
-		return fmt.Errorf("configuration file validation failed: %w", err)
+		return fmt.Errorf("%w", err)
 	}
 
 	// Use existing GenerateFromConfig method
@@ -5706,17 +5402,17 @@ func (c *CLI) validateConfigurationFile(configPath string) error {
 
 	// Check if file exists
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		return fmt.Errorf("configuration file does not exist: %s", configPath)
+		return fmt.Errorf("🚫 Can't find the configuration file: %s", configPath)
 	}
 
 	// Check if file is readable
-	file, err := os.Open(configPath)
+	file, err := os.Open(configPath) // #nosec G304 - configPath is validated before use
 	if err != nil {
-		return fmt.Errorf("cannot read configuration file: %w", err)
+		return fmt.Errorf("🚫 Can't read the configuration file: %w", err)
 	}
 	_ = file.Close()
 
-	c.DebugOutput("Configuration file validation passed: %s", configPath)
+	c.DebugOutput("✅ Configuration file looks good: %s", configPath) // #nosec G304 - configPath is validated and only used for logging
 	return nil
 }
 

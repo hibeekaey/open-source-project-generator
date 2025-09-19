@@ -68,6 +68,7 @@ type BackendComponents struct {
 type MobileComponents struct {
 	Android bool `yaml:"android" json:"android"`
 	IOS     bool `yaml:"ios" json:"ios"`
+	Shared  bool `yaml:"shared" json:"shared"`
 }
 
 // InfrastructureComponents defines infrastructure options
