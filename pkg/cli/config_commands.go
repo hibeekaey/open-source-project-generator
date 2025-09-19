@@ -23,28 +23,8 @@ func (c *CLI) setupConfigCommand() {
 		Use:   "config",
 		Short: "Manage saved project configurations",
 		Long: `Manage saved project configurations for reuse in future project generation.
-Configurations store project metadata, template selections, and generation settings
-that can be loaded to skip the interactive setup process.
 
-CONFIGURATION MANAGEMENT:
-  • Save configurations after interactive project setup
-  • Load saved configurations to reuse project settings
-  • List all saved configurations with filtering options
-  • View detailed information about specific configurations
-  • Delete configurations you no longer need
-  • Export configurations for sharing or backup
-  • Import configurations from files
-
-CONFIGURATION STORAGE:
-  Configurations are stored in YAML format in your user configuration directory:
-  • Linux/macOS: ~/.generator/configs/
-  • Windows: %USERPROFILE%\.generator\configs\
-
-AUTOMATION SUPPORT:
-  • Non-interactive mode for CI/CD pipelines
-  • JSON output format for machine processing
-  • Batch operations for multiple configurations
-  • Environment variable configuration`,
+Save, load, view, and manage project configurations to skip interactive setup.`,
 		Example: `  # List all saved configurations
   generator config list
 
