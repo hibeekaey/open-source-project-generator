@@ -34,23 +34,23 @@ func NewDryRunGenerator() interfaces.FileSystemGenerator {
 // CreateProject creates the complete project structure based on configuration
 func (g *Generator) CreateProject(config *models.ProjectConfig, outputPath string) error {
 	if config == nil {
-		return fmt.Errorf("project config cannot be nil")
+		return fmt.Errorf("🚫 Project configuration is required")
 	}
 
 	if outputPath == "" {
-		return fmt.Errorf("output path cannot be empty")
+		return fmt.Errorf("🚫 Output path is required")
 	}
 
 	// Ensure the output path is absolute
 	absOutputPath, err := filepath.Abs(outputPath)
 	if err != nil {
-		return fmt.Errorf("failed to resolve absolute path for %s: %w", outputPath, err)
+		return fmt.Errorf("🚫 Unable to resolve output path '%s'. Check if the path is valid", outputPath)
 	}
 
 	// Create the root project directory
 	projectPath := filepath.Join(absOutputPath, config.Name)
 	if err := g.EnsureDirectory(projectPath); err != nil {
-		return fmt.Errorf("failed to create project directory %s: %w", projectPath, err)
+		return fmt.Errorf("🚫 Unable to create project directory '%s'. Check permissions and available disk space", projectPath)
 	}
 
 	return nil
@@ -59,7 +59,7 @@ func (g *Generator) CreateProject(config *models.ProjectConfig, outputPath strin
 // CreateDirectory creates a directory with proper permissions
 func (g *Generator) CreateDirectory(path string) error {
 	if path == "" {
-		return fmt.Errorf("directory path cannot be empty")
+		return fmt.Errorf("🚫 Directory path is required")
 	}
 
 	// Validate that the path doesn't contain dangerous elements before cleaning

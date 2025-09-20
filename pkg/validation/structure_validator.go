@@ -59,17 +59,23 @@ func (sv *StructureValidator) ValidateProjectStructure(projectPath string) (*int
 
 	// Validate required files
 	if err := sv.validateRequiredFiles(projectPath, result); err != nil {
-		return nil, fmt.Errorf("failed to validate required files: %w", err)
+		return nil, fmt.Errorf("🚫 %s %s", 
+			"Unable to validate required project files.", 
+			"Some essential files may be missing or inaccessible")
 	}
 
 	// Validate directory structure
 	if err := sv.validateDirectoryStructure(projectPath, result); err != nil {
-		return nil, fmt.Errorf("failed to validate directory structure: %w", err)
+		return nil, fmt.Errorf("🚫 %s %s", 
+			"Unable to validate project structure.", 
+			"Check if your project follows the expected directory layout")
 	}
 
 	// Validate naming conventions
 	if err := sv.validateNamingConventions(projectPath, result); err != nil {
-		return nil, fmt.Errorf("failed to validate naming conventions: %w", err)
+		return nil, fmt.Errorf("🚫 %s %s", 
+			"Unable to validate naming conventions.", 
+			"Some files or directories may not follow standard naming patterns")
 	}
 
 	// Validate file permissions

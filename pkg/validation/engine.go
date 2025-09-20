@@ -91,17 +91,23 @@ func (e *Engine) ValidateProject(projectPath string) (*models.ValidationResult, 
 
 	// Perform structure validation
 	if err := e.validateProjectStructureBasic(projectPath, result); err != nil {
-		return nil, fmt.Errorf("🚫 Couldn't validate project structure: %w", err)
+		return nil, fmt.Errorf("🚫 %s %s", 
+			"Project structure validation failed.", 
+			"Run with --verbose to see detailed information")
 	}
 
 	// Perform dependency validation
 	if err := e.validateProjectDependenciesBasic(projectPath, result); err != nil {
-		return nil, fmt.Errorf("🚫 Couldn't validate project dependencies: %w", err)
+		return nil, fmt.Errorf("🚫 %s %s", 
+			"Dependency validation failed.", 
+			"Check your package.json, go.mod, or other dependency files")
 	}
 
 	// Perform configuration validation
 	if err := e.validateProjectConfigurationFiles(projectPath, result); err != nil {
-		return nil, fmt.Errorf("🚫 Couldn't validate project configuration: %w", err)
+		return nil, fmt.Errorf("🚫 %s %s", 
+			"Configuration file validation failed.", 
+			"Check your YAML, JSON, and other config files for syntax errors")
 	}
 
 	return result, nil
@@ -116,7 +122,9 @@ func (e *Engine) ValidatePackageJSON(path string) error {
 
 	content, err := utils.SafeReadFile(path)
 	if err != nil {
-		return fmt.Errorf("failed to read package.json: %w", err)
+		return fmt.Errorf("🚫 %s %s", 
+			"Unable to read package.json file.", 
+			"Check if the file exists and has proper permissions")
 	}
 
 	var pkg map[string]interface{}
@@ -162,7 +170,9 @@ func (e *Engine) ValidateGoMod(path string) error {
 
 	content, err := utils.SafeReadFile(path)
 	if err != nil {
-		return fmt.Errorf("failed to read go.mod: %w", err)
+		return fmt.Errorf("🚫 %s %s", 
+			"Unable to read go.mod file.", 
+			"Check if the file exists and has proper permissions")
 	}
 
 	contentStr := string(content)
@@ -200,7 +210,9 @@ func (e *Engine) ValidateDockerfile(path string) error {
 
 	content, err := utils.SafeReadFile(path)
 	if err != nil {
-		return fmt.Errorf("failed to read Dockerfile: %w", err)
+		return fmt.Errorf("🚫 %s %s", 
+			"Unable to read Dockerfile.", 
+			"Check if the file exists and has proper permissions")
 	}
 
 	contentStr := string(content)
@@ -232,7 +244,9 @@ func (e *Engine) ValidateYAML(path string) error {
 
 	content, err := utils.SafeReadFile(path)
 	if err != nil {
-		return fmt.Errorf("failed to read YAML file: %w", err)
+		return fmt.Errorf("🚫 %s %s", 
+			"Unable to read YAML file.", 
+			"Check if the file exists and has proper permissions")
 	}
 
 	var data interface{}
@@ -252,7 +266,9 @@ func (e *Engine) ValidateJSON(path string) error {
 
 	content, err := utils.SafeReadFile(path)
 	if err != nil {
-		return fmt.Errorf("failed to read JSON file: %w", err)
+		return fmt.Errorf("🚫 %s %s", 
+			"Unable to read JSON file.", 
+			"Check if the file exists and has proper permissions")
 	}
 
 	var data interface{}
@@ -290,7 +306,9 @@ func (e *Engine) ValidateTemplate(path string) error {
 		// Use filesystem validation
 		err := templateValidator.validateTemplateFile(path, result)
 		if err != nil {
-			return fmt.Errorf("template validation failed: %w", err)
+			return fmt.Errorf("🚫 %s %s", 
+				"Template validation failed.", 
+				"The template may be corrupted or have invalid syntax")
 		}
 	}
 
@@ -562,7 +580,9 @@ func (e *Engine) ValidateProjectSecurity(path string) (*interfaces.SecurityValid
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to scan for secrets: %w", err)
+		return nil, fmt.Errorf("🚫 %s %s", 
+			"Security scan failed.", 
+			"Unable to analyze project for security vulnerabilities")
 	}
 
 	return result, nil
@@ -618,7 +638,9 @@ func (e *Engine) ValidateProjectQuality(path string) (*interfaces.QualityValidat
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to analyze code quality: %w", err)
+		return nil, fmt.Errorf("🚫 %s %s", 
+			"Code quality analysis failed.", 
+			"Unable to analyze project code quality metrics")
 	}
 
 	return result, nil

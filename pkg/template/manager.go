@@ -37,7 +37,7 @@ func NewManager(templateEngine interfaces.TemplateEngine) interfaces.TemplateMan
 func (m *Manager) ListTemplates(filter interfaces.TemplateFilter) ([]interfaces.TemplateInfo, error) {
 	templates, err := m.discoverTemplates()
 	if err != nil {
-		return nil, fmt.Errorf("failed to discover templates: %w", err)
+		return nil, fmt.Errorf("🚫 couldn't find available templates: %w", err)
 	}
 
 	// Apply filters
@@ -66,7 +66,7 @@ func (m *Manager) GetTemplateInfo(name string) (*interfaces.TemplateInfo, error)
 		}
 	}
 
-	return nil, fmt.Errorf("template '%s' not found", name)
+	return nil, fmt.Errorf("🚫 Template '%s' not found. Use 'generator list-templates' to see available options", name)
 }
 
 // SearchTemplates searches for templates by query string
@@ -180,24 +180,24 @@ func (m *Manager) ValidateTemplate(path string) (*interfaces.TemplateValidationR
 func (m *Manager) ValidateTemplateStructure(template *interfaces.TemplateInfo) error {
 	// Validate required fields
 	if template.Name == "" {
-		return fmt.Errorf("template name is required")
+		return fmt.Errorf("🚫 template name is required")
 	}
 	if template.Category == "" {
-		return fmt.Errorf("template category is required")
+		return fmt.Errorf("🚫 template category is required")
 	}
 	if template.Version == "" {
-		return fmt.Errorf("template version is required")
+		return fmt.Errorf("🚫 template version is required")
 	}
 
 	// Validate name format (should be kebab-case)
 	if !m.isValidTemplateName(template.Name) {
-		return fmt.Errorf("template name must be in kebab-case format")
+		return fmt.Errorf("🚫 template name must be in kebab-case format")
 	}
 
 	// Validate category
 	validCategories := []string{"backend", "frontend", "mobile", "infrastructure", "base"}
 	if !m.contains(validCategories, template.Category) {
-		return fmt.Errorf("invalid category: %s. Valid categories: %v", template.Category, validCategories)
+		return fmt.Errorf("🚫 invalid category: %s. Valid categories: %v", template.Category, validCategories)
 	}
 
 	return nil
@@ -220,7 +220,7 @@ func (m *Manager) ProcessTemplate(templateName string, config *models.ProjectCon
 	}
 
 	if templateInfo == nil {
-		return fmt.Errorf("template '%s' not found", templateName)
+		return fmt.Errorf("🚫 Template '%s' not found. Use 'generator list-templates' to see available options", templateName)
 	}
 
 	// For embedded templates, use the embedded template engine
@@ -266,7 +266,7 @@ func (m *Manager) GetTemplateMetadata(name string) (*interfaces.TemplateMetadata
 	}
 
 	if templateInfo == nil {
-		return nil, fmt.Errorf("template '%s' not found", name)
+		return nil, fmt.Errorf("🚫 Template '%s' not found. Use 'generator list-templates' to see available options", name)
 	}
 
 	// Convert to interface metadata
@@ -310,7 +310,7 @@ func (m *Manager) GetTemplateCompatibility(name string) (*interfaces.Compatibili
 	}
 
 	if templateInfo == nil {
-		return nil, fmt.Errorf("template '%s' not found", name)
+		return nil, fmt.Errorf("🚫 Template '%s' not found. Use 'generator list-templates' to see available options", name)
 	}
 
 	// Create compatibility info based on template metadata
@@ -403,7 +403,7 @@ func (m *Manager) PreviewTemplate(templateName string, config *models.ProjectCon
 	}
 
 	if templateInfo == nil {
-		return nil, fmt.Errorf("template '%s' not found", templateName)
+		return nil, fmt.Errorf("🚫 Template '%s' not found. Use 'generator list-templates' to see available options", templateName)
 	}
 
 	preview := &interfaces.TemplatePreview{
@@ -570,7 +570,7 @@ func (m *Manager) GetTemplateVariables(name string) (map[string]interfaces.Templ
 	}
 
 	if templateInfo == nil {
-		return nil, fmt.Errorf("template '%s' not found", name)
+		return nil, fmt.Errorf("🚫 Template '%s' not found. Use 'generator list-templates' to see available options", name)
 	}
 
 	variables := make(map[string]interfaces.TemplateVariable)
@@ -669,7 +669,7 @@ func (m *Manager) GetTemplateLocation(name string) (string, error) {
 	}
 
 	if templateInfo == nil {
-		return "", fmt.Errorf("template '%s' not found", name)
+		return "", fmt.Errorf("🚫 Template '%s' not found. Use 'generator list-templates' to see available options", name)
 	}
 
 	if templateInfo.Source == "embedded" {

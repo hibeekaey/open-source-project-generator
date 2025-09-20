@@ -54,3 +54,4 @@ logs/
 # Generated files
 generated/
 *.generated.go
+test-output/

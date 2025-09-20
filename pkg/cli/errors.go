@@ -139,7 +139,7 @@ func (c *CLI) handleError(err error, cmd string, args []string) int {
 		return result.ExitCode
 	}
 
-	// Fallback to legacy error handling
+	// Handle standard error types
 	// Check if it's already a structured error
 	if structErr, ok := err.(*StructuredError); ok {
 		return c.outputStructuredError(structErr, cmd, args)

@@ -107,7 +107,9 @@ func (m *Manager) LoadConfig(configPath string) (*models.ProjectConfig, error) {
 
 	content, err := utils.SafeReadFile(configPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read config file: %w", err)
+		return nil, fmt.Errorf("🚫 %s %s", 
+			"Unable to read configuration file.", 
+			"Check if the file exists and has proper permissions")
 	}
 
 	var config models.ProjectConfig
@@ -116,14 +118,18 @@ func (m *Manager) LoadConfig(configPath string) (*models.ProjectConfig, error) {
 	switch ext {
 	case ".json":
 		if err := json.Unmarshal(content, &config); err != nil {
-			return nil, fmt.Errorf("failed to parse JSON config: %w", err)
+			return nil, fmt.Errorf("🚫 %s %s", 
+				"Invalid JSON configuration file.", 
+				"Check the file syntax and fix any JSON formatting errors")
 		}
 	case ".yaml", ".yml":
 		if err := yaml.Unmarshal(content, &config); err != nil {
-			return nil, fmt.Errorf("failed to parse YAML config: %w", err)
+			return nil, fmt.Errorf("🚫 %s %s", 
+				"Invalid YAML configuration file.", 
+				"Check the file syntax and fix any YAML formatting errors")
 		}
 	default:
-		return nil, fmt.Errorf("unsupported config file format: %s", ext)
+		return nil, fmt.Errorf("🚫 Unsupported configuration file format '%s'. Use .json, .yaml, or .yml files", ext)
 	}
 
 	return &config, nil
@@ -151,7 +157,9 @@ func (m *Manager) SaveConfig(config *models.ProjectConfig, configPath string) er
 	}
 
 	if err := utils.SafeWriteFile(configPath, content); err != nil {
-		return fmt.Errorf("failed to write config file: %w", err)
+		return fmt.Errorf("🚫 %s %s", 
+			"Unable to write configuration file.", 
+			"Check file permissions and available disk space")
 	}
 
 	return nil
@@ -170,7 +178,7 @@ func (m *Manager) ValidateConfig(config *models.ProjectConfig) error {
 		for _, validationError := range result.Errors {
 			errorMessages = append(errorMessages, validationError.Message)
 		}
-		return fmt.Errorf("configuration validation failed: %s", strings.Join(errorMessages, "; "))
+		return fmt.Errorf("🚫 Configuration validation failed: %s", strings.Join(errorMessages, "; "))
 	}
 
 	// Normalize license - set default if empty or unsupported

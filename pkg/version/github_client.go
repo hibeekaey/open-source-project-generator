@@ -51,7 +51,7 @@ func (c *GitHubClient) GetLatestRelease(owner, repo string) (string, error) {
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return "", fmt.Errorf("failed to create request: %w", err)
+		return "", fmt.Errorf("🚫 Unable to create GitHub API request. Check your internet connection")
 	}
 
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
@@ -64,25 +64,25 @@ func (c *GitHubClient) GetLatestRelease(owner, repo string) (string, error) {
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("failed to make request: %w", err)
+		return "", fmt.Errorf("🚫 Unable to connect to GitHub API. Check your internet connection")
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
-		return "", fmt.Errorf("repository %s/%s not found or has no releases", owner, repo)
+		return "", fmt.Errorf("🚫 Repository '%s/%s' not found or has no releases. Check the repository name", owner, repo)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("GitHub API returned status %d for %s/%s", resp.StatusCode, owner, repo)
+		return "", fmt.Errorf("🚫 GitHub API error (status %d) for '%s/%s'. Try again later", resp.StatusCode, owner, repo)
 	}
 
 	var release GitHubRelease
 	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
-		return "", fmt.Errorf("failed to decode response: %w", err)
+		return "", fmt.Errorf("🚫 Unable to parse GitHub API response. The API may be experiencing issues")
 	}
 
 	if release.TagName == "" {
-		return "", fmt.Errorf("no tag name found in latest release for %s/%s", owner, repo)
+		return "", fmt.Errorf("🚫 No version tag found in latest release for '%s/%s'", owner, repo)
 	}
 
 	return release.TagName, nil
@@ -97,7 +97,7 @@ func (c *GitHubClient) GetReleases(owner, repo string, limit int) ([]GitHubRelea
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		return nil, fmt.Errorf("🚫 Unable to create GitHub API request. Check your internet connection")
 	}
 
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
@@ -110,21 +110,21 @@ func (c *GitHubClient) GetReleases(owner, repo string, limit int) ([]GitHubRelea
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to make request: %w", err)
+		return nil, fmt.Errorf("🚫 Unable to connect to GitHub API. Check your internet connection")
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
-		return nil, fmt.Errorf("repository %s/%s not found", owner, repo)
+		return nil, fmt.Errorf("🚫 Repository '%s/%s' not found. Check the repository name", owner, repo)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("GitHub API returned status %d for %s/%s", resp.StatusCode, owner, repo)
+		return nil, fmt.Errorf("🚫 GitHub API error (status %d) for '%s/%s'. Try again later", resp.StatusCode, owner, repo)
 	}
 
 	var releases []GitHubRelease
 	if err := json.NewDecoder(resp.Body).Decode(&releases); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
+		return nil, fmt.Errorf("🚫 Unable to parse GitHub API response. The API may be experiencing issues")
 	}
 
 	return releases, nil
@@ -143,5 +143,5 @@ func (c *GitHubClient) GetLatestStableRelease(owner, repo string) (string, error
 		}
 	}
 
-	return "", fmt.Errorf("no stable releases found for %s/%s", owner, repo)
+	return "", fmt.Errorf("🚫 No stable releases found for '%s/%s'. The repository may not have any releases", owner, repo)
 }

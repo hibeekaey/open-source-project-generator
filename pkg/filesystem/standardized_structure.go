@@ -2,7 +2,10 @@ package filesystem
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/interfaces"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
@@ -47,52 +50,68 @@ func NewDryRunStandardizedStructureGenerator() *StandardizedStructureGenerator {
 // GenerateStandardizedStructure creates the complete standardized project structure using templates
 func (ssg *StandardizedStructureGenerator) GenerateStandardizedStructure(config *models.ProjectConfig, outputPath string) error {
 	if config == nil {
-		return fmt.Errorf("project config cannot be nil")
+		return fmt.Errorf("🚫 project configuration is required")
 	}
 
 	if outputPath == "" {
-		return fmt.Errorf("output path cannot be empty")
+		return fmt.Errorf("🚫 output directory path is required")
 	}
 
 	// Create the root project directory
 	projectPath := filepath.Join(outputPath, config.Name)
 	if err := ssg.fsGen.EnsureDirectory(projectPath); err != nil {
-		return fmt.Errorf("failed to create project root directory: %w", err)
+		return fmt.Errorf("🚫 %s %s %s", 
+			"Unable to create project directory at", 
+			fmt.Sprintf("'%s'.", projectPath), 
+			"Check permissions and available disk space")
 	}
 
 	// Always process base templates first for common project structure
 	if err := ssg.processBaseTemplate(projectPath, config); err != nil {
-		return fmt.Errorf("failed to process base template: %w", err)
+		return fmt.Errorf("🚫 %s %s", 
+			"Failed to create project structure.", 
+			"Check if base templates are available and accessible")
 	}
 
+	// Process github template separately to rename github -> .github
 	if err := ssg.processTemplate("github", filepath.Join(projectPath, ".github"), config); err != nil {
-		return fmt.Errorf("failed to process github template: %w", err)
+		return fmt.Errorf("🚫 %s %s", 
+			"Failed to set up GitHub workflows.", 
+			"Check if GitHub templates are available and accessible")
 	}
 
 	if err := ssg.processTemplate("scripts", filepath.Join(projectPath, "scripts"), config); err != nil {
-		return fmt.Errorf("failed to process scripts template: %w", err)
+		return fmt.Errorf("🚫 %s %s", 
+			"Failed to create build scripts.", 
+			"Check if script templates are available and accessible")
 	}
 
 	// Process frontend templates based on selected components
 	if err := ssg.processFrontendTemplates(projectPath, config); err != nil {
-		return fmt.Errorf("failed to process frontend templates: %w", err)
+		return fmt.Errorf("🚫 %s %s", 
+			"Failed to create frontend applications.", 
+			"Check if frontend templates are available and accessible")
 	}
 
 	// Process backend template if selected
 	if config.Components.Backend.GoGin {
 		if err := ssg.processTemplate("go-gin", filepath.Join(projectPath, "CommonServer"), config); err != nil {
-			return fmt.Errorf("failed to process backend template: %w", err)
+			return fmt.Errorf("🚫 %s %s", 
+				"Failed to create backend API server.", 
+				"Check if Go Gin templates are available and accessible")
 		}
 	}
 
 	// Process mobile templates if selected
 	if err := ssg.processMobileTemplates(projectPath, config); err != nil {
-		return fmt.Errorf("failed to process mobile templates: %w", err)
+		return fmt.Errorf("🚫 %s %s", 
+			"Failed to create mobile applications.", 
+			"Check if mobile templates are available and accessible")
 	}
 
 	// Process infrastructure templates if selected
 	if err := ssg.processInfrastructureTemplates(projectPath, config); err != nil {
-		return fmt.Errorf("failed to process infrastructure templates: %w", err)
+		return fmt.Errorf("🚫 couldn't create infrastructure configurations: %w", err)
 	}
 
 	return nil
@@ -111,7 +130,9 @@ func (ssg *StandardizedStructureGenerator) processFrontendTemplates(projectPath 
 	if config.Components.Frontend.NextJS.App {
 		appPath := filepath.Join(projectPath, "App")
 		if err := ssg.processTemplate("nextjs-app", appPath, config); err != nil {
-			return fmt.Errorf("failed to process nextjs-app template: %w", err)
+			return fmt.Errorf("🚫 %s %s", 
+				"Failed to create main Next.js application.", 
+				"Check if Next.js templates are available and accessible")
 		}
 	}
 
@@ -119,7 +140,9 @@ func (ssg *StandardizedStructureGenerator) processFrontendTemplates(projectPath 
 	if config.Components.Frontend.NextJS.Home {
 		homePath := filepath.Join(projectPath, "Home")
 		if err := ssg.processTemplate("nextjs-home", homePath, config); err != nil {
-			return fmt.Errorf("failed to process nextjs-home template: %w", err)
+			return fmt.Errorf("🚫 %s %s", 
+				"Failed to create landing page application.", 
+				"Check if Next.js home templates are available and accessible")
 		}
 	}
 
@@ -127,7 +150,9 @@ func (ssg *StandardizedStructureGenerator) processFrontendTemplates(projectPath 
 	if config.Components.Frontend.NextJS.Admin {
 		adminPath := filepath.Join(projectPath, "Admin")
 		if err := ssg.processTemplate("nextjs-admin", adminPath, config); err != nil {
-			return fmt.Errorf("failed to process nextjs-admin template: %w", err)
+			return fmt.Errorf("🚫 %s %s", 
+				"Failed to create admin dashboard.", 
+				"Check if Next.js admin templates are available and accessible")
 		}
 	}
 
@@ -135,7 +160,9 @@ func (ssg *StandardizedStructureGenerator) processFrontendTemplates(projectPath 
 	if config.Components.Frontend.NextJS.Shared {
 		sharedPath := filepath.Join(projectPath, "shared-components")
 		if err := ssg.processTemplate("shared-components", sharedPath, config); err != nil {
-			return fmt.Errorf("failed to process shared-components template: %w", err)
+			return fmt.Errorf("🚫 %s %s", 
+				"Failed to create shared component library.", 
+				"Check if shared component templates are available and accessible")
 		}
 	}
 
@@ -186,7 +213,9 @@ func (ssg *StandardizedStructureGenerator) processMobileTemplates(projectPath st
 	if config.Components.Mobile.Android {
 		androidPath := filepath.Join(projectPath, "Mobile", "android")
 		if err := ssg.processTemplate("android-kotlin", androidPath, config); err != nil {
-			return fmt.Errorf("failed to process android-kotlin template: %w", err)
+			return fmt.Errorf("🚫 %s %s", 
+				"Failed to create Android application.", 
+				"Check if Android Kotlin templates are available and accessible")
 		}
 	}
 
@@ -194,7 +223,9 @@ func (ssg *StandardizedStructureGenerator) processMobileTemplates(projectPath st
 	if config.Components.Mobile.IOS {
 		iosPath := filepath.Join(projectPath, "Mobile", "ios")
 		if err := ssg.processTemplate("ios-swift", iosPath, config); err != nil {
-			return fmt.Errorf("failed to process ios-swift template: %w", err)
+			return fmt.Errorf("🚫 %s %s", 
+				"Failed to create iOS application.", 
+				"Check if iOS Swift templates are available and accessible")
 		}
 	}
 
@@ -202,7 +233,9 @@ func (ssg *StandardizedStructureGenerator) processMobileTemplates(projectPath st
 	if ssg.hasMobileComponents(config) {
 		sharedPath := filepath.Join(projectPath, "Mobile", "shared")
 		if err := ssg.processTemplate("shared", sharedPath, config); err != nil {
-			return fmt.Errorf("failed to process mobile shared template: %w", err)
+			return fmt.Errorf("🚫 %s %s", 
+				"Failed to create shared mobile resources.", 
+				"Check if mobile shared templates are available and accessible")
 		}
 	}
 
@@ -224,7 +257,9 @@ func (ssg *StandardizedStructureGenerator) processInfrastructureTemplates(projec
 	if config.Components.Infrastructure.Docker {
 		dockerPath := filepath.Join(deployPath, "docker")
 		if err := ssg.processTemplate("docker", dockerPath, config); err != nil {
-			return fmt.Errorf("failed to process docker template: %w", err)
+			return fmt.Errorf("🚫 %s %s", 
+				"Failed to create Docker configurations.", 
+				"Check if Docker templates are available and accessible")
 		}
 	}
 
@@ -232,7 +267,9 @@ func (ssg *StandardizedStructureGenerator) processInfrastructureTemplates(projec
 	if config.Components.Infrastructure.Kubernetes {
 		k8sPath := filepath.Join(deployPath, "k8s")
 		if err := ssg.processTemplate("kubernetes", k8sPath, config); err != nil {
-			return fmt.Errorf("failed to process kubernetes template: %w", err)
+			return fmt.Errorf("🚫 %s %s", 
+				"Failed to create Kubernetes manifests.", 
+				"Check if Kubernetes templates are available and accessible")
 		}
 	}
 
@@ -240,7 +277,9 @@ func (ssg *StandardizedStructureGenerator) processInfrastructureTemplates(projec
 	if config.Components.Infrastructure.Terraform {
 		terraformPath := filepath.Join(deployPath, "terraform")
 		if err := ssg.processTemplate("terraform", terraformPath, config); err != nil {
-			return fmt.Errorf("failed to process terraform template: %w", err)
+			return fmt.Errorf("🚫 %s %s", 
+				"Failed to create Terraform configurations.", 
+				"Check if Terraform templates are available and accessible")
 		}
 	}
 
@@ -269,9 +308,111 @@ func (ssg *StandardizedStructureGenerator) processTemplate(templateName, outputP
 }
 
 // processBaseTemplate processes the base template directory directly using the template engine
+// Excludes the github folder which is processed separately to handle renaming to .github
 func (ssg *StandardizedStructureGenerator) processBaseTemplate(outputPath string, config *models.ProjectConfig) error {
-	// Process the base template directory directly
-	return ssg.templateEngine.ProcessDirectory("templates/base", outputPath, config)
+	// Process the base template directory but exclude github folder
+	return ssg.processBaseTemplateExcluding(outputPath, config, []string{"github"})
+}
+
+// processBaseTemplateExcluding processes base template directory excluding specified folders
+func (ssg *StandardizedStructureGenerator) processBaseTemplateExcluding(outputPath string, config *models.ProjectConfig, excludeFolders []string) error {
+	templateDir := "templates/base"
+	
+	// Create output directory if it doesn't exist
+	if err := os.MkdirAll(outputPath, 0755); err != nil {
+		return fmt.Errorf("failed to create output directory: %w", err)
+	}
+
+	// Walk through template directory
+	return filepath.Walk(templateDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Calculate relative path
+		relPath, err := filepath.Rel(templateDir, path)
+		if err != nil {
+			return err
+		}
+
+		// Skip if it's the template directory itself
+		if relPath == "." {
+			return nil
+		}
+
+		// Check if this path should be excluded
+		pathParts := strings.Split(relPath, string(filepath.Separator))
+		if len(pathParts) > 0 {
+			for _, excludeFolder := range excludeFolders {
+				if pathParts[0] == excludeFolder {
+					// Skip this entire folder tree
+					if info.IsDir() {
+						return filepath.SkipDir
+					}
+					return nil
+				}
+			}
+		}
+
+		// Skip disabled template files
+		if strings.HasSuffix(path, ".tmpl.disabled") {
+			return nil
+		}
+
+		// Calculate output path
+		outputFilePath := filepath.Join(outputPath, relPath)
+
+		// Remove .tmpl extension if present
+		outputFilePath = strings.TrimSuffix(outputFilePath, ".tmpl")
+
+		if info.IsDir() {
+			// Create directory
+			return os.MkdirAll(outputFilePath, info.Mode())
+		}
+
+		// Process file using the template engine
+		if strings.HasSuffix(path, ".tmpl") {
+			// Process template file
+			content, err := ssg.templateEngine.ProcessTemplate(path, config)
+			if err != nil {
+				return fmt.Errorf("failed to process template %s: %w", path, err)
+			}
+
+			// Write processed content
+			return os.WriteFile(outputFilePath, content, info.Mode())
+		} else {
+			// Copy non-template file
+			return ssg.copyFile(path, outputFilePath, info.Mode())
+		}
+	})
+}
+
+// copyFile copies a file from src to dst with the specified mode
+func (ssg *StandardizedStructureGenerator) copyFile(src, dst string, mode os.FileMode) error {
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("failed to open source file: %w", err)
+	}
+	defer srcFile.Close()
+
+	// Create destination directory if it doesn't exist
+	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+		return fmt.Errorf("failed to create destination directory: %w", err)
+	}
+
+	dstFile, err := os.Create(dst)
+	if err != nil {
+		return fmt.Errorf("failed to create destination file: %w", err)
+	}
+	defer dstFile.Close()
+
+	// Copy file content
+	if _, err := io.Copy(dstFile, srcFile); err != nil {
+		return fmt.Errorf("failed to copy file content: %w", err)
+	}
+
+	// Set file mode
+	return os.Chmod(dst, mode)
 }
 
 // Helper methods for checking component selections are defined above

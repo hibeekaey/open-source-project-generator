@@ -107,7 +107,7 @@ func NewManagerWithVersionAndCache(version string, cacheManager interfaces.Cache
 func (m *Manager) GetLatestNodeVersion() (string, error) {
 	version, err := m.githubClient.GetLatestRelease("nodejs", "node")
 	if err != nil {
-		return "", fmt.Errorf("failed to fetch Node.js version: %w", err)
+		return "", fmt.Errorf("🚫 Unable to fetch latest Node.js version. Check your internet connection or try --offline mode")
 	}
 
 	// Remove 'v' prefix if present
@@ -120,7 +120,7 @@ func (m *Manager) GetLatestNodeVersion() (string, error) {
 func (m *Manager) GetLatestGoVersion() (string, error) {
 	version, err := m.githubClient.GetLatestRelease("golang", "go")
 	if err != nil {
-		return "", fmt.Errorf("failed to fetch Go version: %w", err)
+		return "", fmt.Errorf("🚫 Unable to fetch latest Go version. Check your internet connection or try --offline mode")
 	}
 
 	// Remove 'go' prefix if present (e.g., go1.22.0 -> 1.22.0)
@@ -133,7 +133,7 @@ func (m *Manager) GetLatestGoVersion() (string, error) {
 func (m *Manager) GetLatestNPMPackage(packageName string) (string, error) {
 	version, err := m.npmClient.GetLatestVersion(packageName)
 	if err != nil {
-		return "", fmt.Errorf("failed to fetch NPM package %s: %w", packageName, err)
+		return "", fmt.Errorf("🚫 Unable to fetch NPM package '%s'. Check your internet connection or package name", packageName)
 	}
 
 	return version, nil
@@ -153,7 +153,7 @@ func (m *Manager) GetLatestGoModule(moduleName string) (string, error) {
 func (m *Manager) GetLatestGitHubRelease(owner, repo string) (string, error) {
 	version, err := m.githubClient.GetLatestRelease(owner, repo)
 	if err != nil {
-		return "", fmt.Errorf("failed to fetch GitHub release %s/%s: %w", owner, repo, err)
+		return "", fmt.Errorf("🚫 Unable to fetch GitHub release '%s/%s'. Check repository name and internet connection", owner, repo)
 	}
 
 	return version, nil

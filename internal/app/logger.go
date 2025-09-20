@@ -607,7 +607,7 @@ func (l *Logger) StartOperation(operation string, fields map[string]interface{})
 	return ctx
 }
 
-// LogOperationStart logs the start of an operation (legacy method)
+// LogOperationStart logs the start of an operation
 func (l *Logger) LogOperationStart(operation string, fields map[string]interface{}) {
 	if fields == nil {
 		fields = make(map[string]interface{})
