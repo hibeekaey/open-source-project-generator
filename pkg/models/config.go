@@ -27,6 +27,10 @@ type ProjectConfig struct {
 	// Features list for testing
 	Features []string `yaml:"features" json:"features"`
 
+	// Template-specific fields (populated during processing)
+	AndroidPackageOrg  string `yaml:"-" json:"-"` // Lowercase organization for Android packages
+	AndroidPackageName string `yaml:"-" json:"-"` // Lowercase name for Android packages
+
 	// Generation metadata
 	GeneratedAt      time.Time `yaml:"generated_at" json:"generated_at"`
 	GeneratorVersion string    `yaml:"generator_version" json:"generator_version"`

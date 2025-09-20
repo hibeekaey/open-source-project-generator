@@ -223,14 +223,24 @@ func (m *Manager) ProcessTemplate(templateName string, config *models.ProjectCon
 		return fmt.Errorf("🚫 Template '%s' not found. Use 'generator list-templates' to see available options", templateName)
 	}
 
+	// Create a copy of config for template-specific processing
+	processConfig := *config
+	
+	// For Android templates, add package-specific fields while keeping originals
+	if templateName == "android-kotlin" {
+		// Add Android-specific package naming fields
+		processConfig.AndroidPackageOrg = strings.ToLower(config.Organization)
+		processConfig.AndroidPackageName = strings.ToLower(config.Name)
+	}
+
 	// For embedded templates, use the embedded template engine
 	if templateInfo.Source == "embedded" {
 		templatePath := fmt.Sprintf("templates/%s/%s", templateInfo.Category, templateName)
-		return m.templateEngine.ProcessDirectory(templatePath, outputPath, config)
+		return m.templateEngine.ProcessDirectory(templatePath, outputPath, &processConfig)
 	}
 
 	// For file-based templates, process the directory directly
-	return m.templateEngine.ProcessDirectory(templateInfo.Path, outputPath, config)
+	return m.templateEngine.ProcessDirectory(templateInfo.Path, outputPath, &processConfig)
 }
 
 // ProcessCustomTemplate processes a custom template from a path

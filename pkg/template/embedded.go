@@ -197,6 +197,8 @@ func (e *EmbeddedEngine) processPathTemplate(path string, config *models.Project
 		"{{.Organization}}":         config.Organization,
 		"{{.Organization | lower}}": strings.ToLower(config.Organization),
 		"{{.Organization | upper}}": strings.ToUpper(config.Organization),
+		"{{.AndroidPackageOrg}}":    config.AndroidPackageOrg,
+		"{{.AndroidPackageName}}":   config.AndroidPackageName,
 	}
 
 	for placeholder, value := range replacements {

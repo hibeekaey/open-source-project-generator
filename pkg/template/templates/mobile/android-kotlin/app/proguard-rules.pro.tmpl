@@ -47,10 +47,10 @@
 -keepclasseswithmembers class kotlinx.serialization.json.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
--keep,includedescriptorclasses class {{.Organization}}.{{.Name | lower}}.mobile.**$$serializer { *; }
--keepclassmembers class {{.Organization}}.{{.Name | lower}}.mobile.** {
+-keep,includedescriptorclasses class {{.AndroidPackageOrg}}.{{.AndroidPackageName}}.mobile.**$$serializer { *; }
+-keepclassmembers class {{.AndroidPackageOrg}}.{{.AndroidPackageName}}.mobile.** {
     *** Companion;
 }
--keepclasseswithmembers class {{.Organization}}.{{.Name | lower}}.mobile.** {
+-keepclasseswithmembers class {{.AndroidPackageOrg}}.{{.AndroidPackageName}}.mobile.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
