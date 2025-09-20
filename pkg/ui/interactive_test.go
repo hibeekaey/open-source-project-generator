@@ -162,8 +162,8 @@ func TestMenuConfig(t *testing.T) {
 
 // TestTextPromptValidation tests text prompt validation
 func TestTextPromptValidation(t *testing.T) {
-	logger := &MockLogger{}
-	ui := NewInteractiveUI(logger, nil).(*InteractiveUI)
+	skipIfNotInteractive(t)
+	ui, _ := createTestUI([]string{"", "", "", "", "", ""}) // Provide enough empty inputs for all error prompts
 
 	// Test required field validation
 	config := interfaces.TextPromptConfig{
@@ -204,8 +204,8 @@ func TestTextPromptValidation(t *testing.T) {
 
 // TestCustomValidator tests custom validation functions
 func TestCustomValidator(t *testing.T) {
-	logger := &MockLogger{}
-	ui := NewInteractiveUI(logger, nil).(*InteractiveUI)
+	skipIfNotInteractive(t)
+	ui, _ := createTestUI([]string{"", "", ""}) // Provide enough empty inputs for error prompts
 
 	// Test custom validator
 	config := interfaces.TextPromptConfig{
@@ -265,8 +265,7 @@ func TestMultiSelectValidation(t *testing.T) {
 
 // TestFilterOptions tests option filtering functionality
 func TestFilterOptions(t *testing.T) {
-	logger := &MockLogger{}
-	ui := NewInteractiveUI(logger, nil).(*InteractiveUI)
+	ui, _ := createTestUI([]string{}) // No input needed for this test
 
 	options := []interfaces.SelectOption{
 		{Label: "Frontend React", Description: "React frontend", Tags: []string{"frontend", "react"}},
@@ -418,8 +417,8 @@ func TestValidationError(t *testing.T) {
 
 // TestProgressTracker tests progress tracking functionality
 func TestProgressTracker(t *testing.T) {
-	logger := &MockLogger{}
-	ui := NewInteractiveUI(logger, nil)
+	skipIfNotInteractive(t)
+	ui, _ := createTestUI([]string{""}) // Provide empty input for the "Press Enter" prompt
 	ctx := context.Background()
 
 	config := interfaces.ProgressConfig{

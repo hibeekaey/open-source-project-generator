@@ -166,7 +166,7 @@ func (m *MockCacheManager) GetMissRate() float64 {
 }
 
 func TestManager_GetCurrentVersion(t *testing.T) {
-	manager := NewManager()
+	manager := NewManagerWithVersion("1.0.0")
 
 	version := manager.GetCurrentVersion()
 	if version == "" {
@@ -180,7 +180,7 @@ func TestManager_GetCurrentVersion(t *testing.T) {
 
 func TestManager_WithCache_GetCurrentVersion(t *testing.T) {
 	cacheManager := NewMockCacheManager()
-	manager := NewManagerWithCache(cacheManager)
+	manager := NewManagerWithVersionAndCache("1.0.0", cacheManager)
 
 	version := manager.GetCurrentVersion()
 	if version == "" {

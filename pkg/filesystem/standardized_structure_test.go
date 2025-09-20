@@ -9,6 +9,11 @@ import (
 )
 
 func TestStandardizedStructureGenerator_GenerateStandardizedStructure(t *testing.T) {
+	// Skip test if templates directory doesn't exist
+	if _, err := os.Stat("templates/base"); os.IsNotExist(err) {
+		t.Skip("Skipping test: templates directory not found")
+	}
+
 	// Create a temporary directory for testing
 	tempDir, err := os.MkdirTemp("", "standardized_structure_test")
 	if err != nil {
@@ -175,6 +180,11 @@ func TestStandardizedStructureGenerator_GenerateStandardProjectFiles(t *testing.
 }
 
 func TestStandardizedStructureGenerator_ConditionalGeneration(t *testing.T) {
+	// Skip test if templates directory doesn't exist
+	if _, err := os.Stat("templates/base"); os.IsNotExist(err) {
+		t.Skip("Skipping test: templates directory not found")
+	}
+
 	// Create a temporary directory for testing
 	tempDir, err := os.MkdirTemp("", "conditional_generation_test")
 	if err != nil {

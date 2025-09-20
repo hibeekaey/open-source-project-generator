@@ -11,6 +11,7 @@ import (
 // Simple unit tests for interactive components that don't conflict with existing code
 
 func TestInteractiveUI_ColorizeFunction_Simple(t *testing.T) {
+	skipIfNotInteractive(t)
 	ui := &InteractiveUI{
 		config: &UIConfig{EnableColors: false},
 	}

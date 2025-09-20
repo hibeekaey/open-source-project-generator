@@ -5,6 +5,7 @@
 package ui
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"testing"
@@ -407,12 +408,36 @@ func TestRecoveryOptionsIntegration(t *testing.T) {
 
 // TestProgressTrackerIntegration tests progress tracker integration
 func TestProgressTrackerIntegration(t *testing.T) {
-	logger := &MockLogger{}
-	ui := NewInteractiveUI(logger, nil)
+	skipIfNotInteractive(t)
+	// Create a test UI with mock input to handle the "Press Enter" prompt
+	mockReader := NewMockReader([]string{"", "", ""}) // Provide multiple empty inputs for any prompts
+	mockWriter := &MockWriter{}
+	mockLogger := &MockLogger{}
+
+	config := &UIConfig{
+		EnableColors:    false,
+		EnableUnicode:   false,
+		PageSize:        10,
+		Timeout:         30 * time.Second,
+		AutoSave:        false,
+		ShowBreadcrumbs: false,
+		ShowShortcuts:   false,
+		ConfirmOnQuit:   false,
+	}
+
+	ui := &InteractiveUI{
+		reader:    bufio.NewReader(mockReader),
+		writer:    bufio.NewWriter(mockWriter),
+		shortcuts: make(map[string]interfaces.KeyboardShortcut),
+		logger:    mockLogger,
+		config:    config,
+	}
+	ui.setupDefaultShortcuts()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	config := interfaces.ProgressConfig{
+	progressConfig := interfaces.ProgressConfig{
 		Title:       "Integration Test Progress",
 		Description: "Testing progress tracking integration",
 		Steps:       []string{"Initialize", "Process", "Complete"},
@@ -421,7 +446,7 @@ func TestProgressTrackerIntegration(t *testing.T) {
 		Cancellable: true,
 	}
 
-	tracker, err := ui.ShowProgress(ctx, config)
+	tracker, err := ui.ShowProgress(ctx, progressConfig)
 	if err != nil {
 		t.Fatalf("Failed to create progress tracker: %v", err)
 	}

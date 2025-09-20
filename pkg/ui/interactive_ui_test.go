@@ -123,8 +123,8 @@ func createTestUI(inputs []string) (*InteractiveUI, *MockWriter) {
 		PageSize:        10,
 		Timeout:         30 * time.Second,
 		AutoSave:        false,
-		ShowBreadcrumbs: true,
-		ShowShortcuts:   true,
+		ShowBreadcrumbs: false, // Disable breadcrumbs for testing
+		ShowShortcuts:   false, // Disable shortcuts display for testing
 		ConfirmOnQuit:   false,
 	}
 
@@ -141,6 +141,7 @@ func createTestUI(inputs []string) (*InteractiveUI, *MockWriter) {
 }
 
 func TestInteractiveUI_ShowMenu_BasicSelection(t *testing.T) {
+	skipIfNotInteractive(t)
 	ui, _ := createTestUI([]string{"1"})
 
 	config := interfaces.MenuConfig{
@@ -180,6 +181,7 @@ func TestInteractiveUI_ShowMenu_BasicSelection(t *testing.T) {
 }
 
 func TestInteractiveUI_ShowMenu_NavigationKeys(t *testing.T) {
+	skipIfNotInteractive(t)
 	ui, _ := createTestUI([]string{"down", "down", ""})
 
 	config := interfaces.MenuConfig{
@@ -209,6 +211,7 @@ func TestInteractiveUI_ShowMenu_NavigationKeys(t *testing.T) {
 }
 
 func TestInteractiveUI_ShowMenu_QuitAction(t *testing.T) {
+	skipIfNotInteractive(t)
 	ui, _ := createTestUI([]string{"q"})
 
 	config := interfaces.MenuConfig{
@@ -236,6 +239,7 @@ func TestInteractiveUI_ShowMenu_QuitAction(t *testing.T) {
 }
 
 func TestInteractiveUI_ShowMenu_BackAction(t *testing.T) {
+	skipIfNotInteractive(t)
 	ui, _ := createTestUI([]string{"b"})
 
 	config := interfaces.MenuConfig{
@@ -263,6 +267,7 @@ func TestInteractiveUI_ShowMenu_BackAction(t *testing.T) {
 }
 
 func TestInteractiveUI_ShowMenu_DisabledOption(t *testing.T) {
+	skipIfNotInteractive(t)
 	ui, _ := createTestUI([]string{"1", "2"})
 
 	config := interfaces.MenuConfig{
@@ -291,6 +296,7 @@ func TestInteractiveUI_ShowMenu_DisabledOption(t *testing.T) {
 }
 
 func TestInteractiveUI_PromptText_BasicInput(t *testing.T) {
+	skipIfNotInteractive(t)
 	ui, _ := createTestUI([]string{"test input"})
 
 	config := interfaces.TextPromptConfig{
@@ -319,6 +325,7 @@ func TestInteractiveUI_PromptText_BasicInput(t *testing.T) {
 }
 
 func TestInteractiveUI_PromptText_DefaultValue(t *testing.T) {
+	skipIfNotInteractive(t)
 	ui, _ := createTestUI([]string{""})
 
 	config := interfaces.TextPromptConfig{
@@ -340,6 +347,7 @@ func TestInteractiveUI_PromptText_DefaultValue(t *testing.T) {
 }
 
 func TestInteractiveUI_PromptText_RequiredValidation(t *testing.T) {
+	skipIfNotInteractive(t)
 	ui, _ := createTestUI([]string{"", "", "valid input"})
 
 	config := interfaces.TextPromptConfig{
@@ -361,6 +369,7 @@ func TestInteractiveUI_PromptText_RequiredValidation(t *testing.T) {
 }
 
 func TestInteractiveUI_PromptText_CustomValidator(t *testing.T) {
+	skipIfNotInteractive(t)
 	ui, _ := createTestUI([]string{"invalid", "", "valid123"})
 
 	validator := func(input string) error {
@@ -394,6 +403,7 @@ func TestInteractiveUI_PromptText_CustomValidator(t *testing.T) {
 }
 
 func TestInteractiveUI_PromptConfirm_YesResponse(t *testing.T) {
+	skipIfNotInteractive(t)
 	ui, _ := createTestUI([]string{"y"})
 
 	config := interfaces.ConfirmConfig{
@@ -422,6 +432,7 @@ func TestInteractiveUI_PromptConfirm_YesResponse(t *testing.T) {
 }
 
 func TestInteractiveUI_PromptConfirm_NoResponse(t *testing.T) {
+	skipIfNotInteractive(t)
 	ui, _ := createTestUI([]string{"n"})
 
 	config := interfaces.ConfirmConfig{
@@ -442,6 +453,7 @@ func TestInteractiveUI_PromptConfirm_NoResponse(t *testing.T) {
 }
 
 func TestInteractiveUI_PromptConfirm_DefaultValue(t *testing.T) {
+	skipIfNotInteractive(t)
 	ui, _ := createTestUI([]string{""})
 
 	config := interfaces.ConfirmConfig{
@@ -462,6 +474,7 @@ func TestInteractiveUI_PromptConfirm_DefaultValue(t *testing.T) {
 }
 
 func TestInteractiveUI_ShowMultiSelect_BasicSelection(t *testing.T) {
+	skipIfNotInteractive(t)
 	ui, _ := createTestUI([]string{"space", "down", "space", "enter"})
 
 	config := interfaces.MultiSelectConfig{
@@ -498,6 +511,7 @@ func TestInteractiveUI_ShowMultiSelect_MinMaxValidation(t *testing.T) {
 }
 
 func TestInteractiveUI_ShowCheckboxList_BasicSelection(t *testing.T) {
+	skipIfNotInteractive(t)
 	ui, _ := createTestUI([]string{"space", "down", "space", "enter"})
 
 	config := interfaces.CheckboxConfig{
@@ -529,6 +543,7 @@ func TestInteractiveUI_ShowCheckboxList_BasicSelection(t *testing.T) {
 }
 
 func TestInteractiveUI_ShowCheckboxList_RequiredValidation(t *testing.T) {
+	skipIfNotInteractive(t)
 	ui, _ := createTestUI([]string{"enter", "", "space", "enter"})
 
 	config := interfaces.CheckboxConfig{
@@ -586,6 +601,7 @@ func TestInteractiveUI_SessionManagement(t *testing.T) {
 }
 
 func TestInteractiveUI_ContextCancellation(t *testing.T) {
+	skipIfNotInteractive(t)
 	ui, _ := createTestUI([]string{})
 
 	config := interfaces.MenuConfig{

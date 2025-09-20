@@ -28,6 +28,8 @@ import (
 	"github.com/cuesoftinc/open-source-project-generator/pkg/template"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/ui"
 	"github.com/spf13/cobra"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // Color constants for beautiful CLI output
@@ -1603,7 +1605,7 @@ func (c *CLI) runListTemplates(cmd *cobra.Command, args []string) error {
 				if emoji == "" {
 					emoji = "📦"
 				}
-				c.QuietOutput("%s  %s Templates:", emoji, strings.Title(cat))
+				c.QuietOutput("%s  %s Templates:", emoji, cases.Title(language.English).String(cat))
 
 				for _, template := range templates {
 					if detailed {
@@ -1636,7 +1638,7 @@ func (c *CLI) runListTemplates(cmd *cobra.Command, args []string) error {
 				}
 			}
 			if !found {
-				c.QuietOutput("📦  %s Templates:", strings.Title(cat))
+				c.QuietOutput("📦  %s Templates:", cases.Title(language.English).String(cat))
 				for _, template := range templates {
 					if detailed {
 						c.QuietOutput("  • %s (%s)", template.DisplayName, template.Name)
@@ -2946,7 +2948,7 @@ func (c *CLI) runTemplateInfo(cmd *cobra.Command, args []string) error {
 	c.QuietOutput("📝  %s", templateInfo.Description)
 	c.QuietOutput("")
 	c.QuietOutput("🔧  Template ID: %s", templateInfo.Name)
-	c.QuietOutput("📂  Category: %s", strings.Title(templateInfo.Category))
+	c.QuietOutput("📂  Category: %s", cases.Title(language.English).String(templateInfo.Category))
 	c.QuietOutput("⚡  Technology: %s", templateInfo.Technology)
 	c.QuietOutput("🏷️   Version: %s", templateInfo.Version)
 

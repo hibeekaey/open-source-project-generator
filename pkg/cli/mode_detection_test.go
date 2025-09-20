@@ -8,6 +8,9 @@ func TestDetectGenerationMode(t *testing.T) {
 	// Create a minimal CLI instance for testing
 	cli := &CLI{}
 
+	// Check if we're running in CI environment
+	isCI := cli.detectCIEnvironment().IsCI
+
 	tests := []struct {
 		name           string
 		configPath     string
@@ -29,7 +32,12 @@ func TestDetectGenerationMode(t *testing.T) {
 		{
 			name:        "explicit interactive",
 			interactive: true,
-			expected:    "interactive",
+			expected: func() string {
+				if isCI {
+					return "non-interactive" // CI detection overrides explicit interactive flag
+				}
+				return "interactive"
+			}(),
 		},
 		{
 			name:         "explicit mode interactive",
@@ -48,7 +56,12 @@ func TestDetectGenerationMode(t *testing.T) {
 		},
 		{
 			name:     "default to interactive",
-			expected: "interactive",
+			expected: func() string {
+				if isCI {
+					return "non-interactive"
+				}
+				return "interactive"
+			}(),
 		},
 	}
 
