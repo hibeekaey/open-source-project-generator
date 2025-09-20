@@ -102,8 +102,8 @@ func (e *Engine) AuditSecurity(path string) (*interfaces.SecurityAuditResult, er
 	// Scan for vulnerabilities
 	vulnReport, err := e.ScanVulnerabilities(path)
 	if err != nil {
-		return nil, fmt.Errorf("🚫 %s %s", 
-			"Vulnerability scan failed.", 
+		return nil, fmt.Errorf("🚫 %s %s",
+			"Vulnerability scan failed.",
 			"Unable to analyze project for security vulnerabilities")
 	}
 	result.Vulnerabilities = vulnReport.Vulnerabilities
@@ -111,8 +111,8 @@ func (e *Engine) AuditSecurity(path string) (*interfaces.SecurityAuditResult, er
 	// Check security policies
 	policyResult, err := e.CheckSecurityPolicies(path)
 	if err != nil {
-		return nil, fmt.Errorf("🚫 %s %s", 
-			"Security policy check failed.", 
+		return nil, fmt.Errorf("🚫 %s %s",
+			"Security policy check failed.",
 			"Unable to validate project security policies")
 	}
 	result.PolicyViolations = policyResult.Violations
@@ -120,8 +120,8 @@ func (e *Engine) AuditSecurity(path string) (*interfaces.SecurityAuditResult, er
 	// Detect secrets
 	secretResult, err := e.DetectSecrets(path)
 	if err != nil {
-		return nil, fmt.Errorf("🚫 %s %s", 
-			"Secret detection failed.", 
+		return nil, fmt.Errorf("🚫 %s %s",
+			"Secret detection failed.",
 			"Unable to scan project for exposed secrets")
 	}
 
@@ -961,8 +961,8 @@ func (e *Engine) AuditProject(path string, options *interfaces.AuditOptions) (*i
 	if options.Security {
 		securityResult, err := e.AuditSecurity(path)
 		if err != nil {
-			return nil, fmt.Errorf("🚫 %s %s", 
-				"Security audit failed.", 
+			return nil, fmt.Errorf("🚫 %s %s",
+				"Security audit failed.",
 				"Unable to complete security analysis")
 		}
 		result.Security = securityResult
@@ -974,8 +974,8 @@ func (e *Engine) AuditProject(path string, options *interfaces.AuditOptions) (*i
 	if options.Quality {
 		qualityResult, err := e.AuditCodeQuality(path)
 		if err != nil {
-			return nil, fmt.Errorf("🚫 %s %s", 
-				"Code quality audit failed.", 
+			return nil, fmt.Errorf("🚫 %s %s",
+				"Code quality audit failed.",
 				"Unable to analyze code quality metrics")
 		}
 		result.Quality = qualityResult
@@ -987,8 +987,8 @@ func (e *Engine) AuditProject(path string, options *interfaces.AuditOptions) (*i
 	if options.Licenses {
 		licenseResult, err := e.AuditLicenses(path)
 		if err != nil {
-			return nil, fmt.Errorf("🚫 %s %s", 
-				"License audit failed.", 
+			return nil, fmt.Errorf("🚫 %s %s",
+				"License audit failed.",
 				"Unable to analyze project license compliance")
 		}
 		result.Licenses = licenseResult
@@ -1000,8 +1000,8 @@ func (e *Engine) AuditProject(path string, options *interfaces.AuditOptions) (*i
 	if options.Performance {
 		performanceResult, err := e.AuditPerformance(path)
 		if err != nil {
-			return nil, fmt.Errorf("🚫 %s %s", 
-				"Performance audit failed.", 
+			return nil, fmt.Errorf("🚫 %s %s",
+				"Performance audit failed.",
 				"Unable to analyze performance characteristics")
 		}
 		result.Performance = performanceResult
@@ -1380,8 +1380,8 @@ func (e *Engine) projectExists(path string) error {
 		if os.IsNotExist(err) {
 			return fmt.Errorf("project path does not exist: %s", path)
 		}
-		return fmt.Errorf("🚫 %s %s", 
-			"Unable to access project path.", 
+		return fmt.Errorf("🚫 %s %s",
+			"Unable to access project path.",
 			"Check if the directory exists and has proper permissions")
 	}
 

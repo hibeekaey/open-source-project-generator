@@ -233,8 +233,8 @@ func (c *CLI) runConfigList(cmd *cobra.Command, args []string) error {
 	// Get configurations
 	configs, err := persistence.ListConfigurations(options)
 	if err != nil {
-		return fmt.Errorf("🚫 %s %s", 
-			c.error("Unable to access your saved configurations."), 
+		return fmt.Errorf("🚫 %s %s",
+			c.error("Unable to access your saved configurations."),
 			c.info("Check if the configuration directory exists and is readable"))
 	}
 
@@ -255,9 +255,9 @@ func (c *CLI) runConfigView(cmd *cobra.Command, args []string) error {
 	// Load configuration
 	config, err := persistence.LoadConfiguration(configName)
 	if err != nil {
-		return fmt.Errorf("🚫 %s %s %s", 
-			c.error("Unable to load configuration"), 
-			c.highlight(fmt.Sprintf("'%s'.", configName)), 
+		return fmt.Errorf("🚫 %s %s %s",
+			c.error("Unable to load configuration"),
+			c.highlight(fmt.Sprintf("'%s'.", configName)),
 			c.info("Check if it exists and is readable"))
 	}
 
@@ -275,9 +275,9 @@ func (c *CLI) runConfigDelete(cmd *cobra.Command, args []string) error {
 
 	// Check if configuration exists
 	if !persistence.ConfigurationExists(configName) {
-		return fmt.Errorf("🚫 %s %s %s", 
-			c.error("Configuration"), 
-			c.highlight(fmt.Sprintf("'%s'", configName)), 
+		return fmt.Errorf("🚫 %s %s %s",
+			c.error("Configuration"),
+			c.highlight(fmt.Sprintf("'%s'", configName)),
 			c.info("doesn't exist. Use 'generator config list' to see available configurations"))
 	}
 
@@ -287,8 +287,8 @@ func (c *CLI) runConfigDelete(cmd *cobra.Command, args []string) error {
 		var response string
 		_, _ = fmt.Scanln(&response)
 		if strings.ToLower(strings.TrimSpace(response)) != "y" {
-			c.QuietOutput("%s %s", 
-				c.warning("❌ Deletion cancelled."), 
+			c.QuietOutput("%s %s",
+				c.warning("❌ Deletion cancelled."),
 				c.info("Your configuration is safe"))
 			return nil
 		}
@@ -296,8 +296,8 @@ func (c *CLI) runConfigDelete(cmd *cobra.Command, args []string) error {
 
 	// Delete configuration
 	if err := persistence.DeleteConfiguration(configName); err != nil {
-		return fmt.Errorf("🚫 %s %s", 
-			c.error("Unable to delete the configuration."), 
+		return fmt.Errorf("🚫 %s %s",
+			c.error("Unable to delete the configuration."),
 			c.info("Check file permissions and try again"))
 	}
 

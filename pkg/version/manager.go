@@ -37,13 +37,13 @@ import (
 
 // Manager implements the VersionManager interface with enhanced capabilities
 type Manager struct {
-	httpClient    *http.Client
-	npmClient     *NPMClient
-	goClient      *GoClient
-	githubClient  *GitHubClient
-	versionConfig *interfaces.VersionConfig
-	cacheManager  interfaces.CacheManager
-	buildInfo     *BuildInfo
+	httpClient     *http.Client
+	npmClient      *NPMClient
+	goClient       *GoClient
+	githubClient   *GitHubClient
+	versionConfig  *interfaces.VersionConfig
+	cacheManager   interfaces.CacheManager
+	buildInfo      *BuildInfo
 	currentVersion string
 }
 
@@ -71,10 +71,10 @@ func NewManagerWithVersion(version string) *Manager {
 	}
 
 	return &Manager{
-		httpClient:   httpClient,
-		npmClient:    NewNPMClient(httpClient),
-		goClient:     NewGoClient(httpClient),
-		githubClient: NewGitHubClient(httpClient),
+		httpClient:     httpClient,
+		npmClient:      NewNPMClient(httpClient),
+		goClient:       NewGoClient(httpClient),
+		githubClient:   NewGitHubClient(httpClient),
 		currentVersion: version,
 		buildInfo: &BuildInfo{
 			Version:      version,

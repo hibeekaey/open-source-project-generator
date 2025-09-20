@@ -294,9 +294,10 @@ func (m *mockCLI) GetLogFileLocations() ([]string, error)         { return nil, 
 func (m *mockCLI) RunNonInteractive(*models.ProjectConfig, *interfaces.AdvancedOptions) error {
 	return nil
 }
-func (m *mockCLI) GenerateReport(string, string, string) error { return nil }
-func (m *mockCLI) GetExitCode() int                            { return 0 }
-func (m *mockCLI) SetExitCode(int)                             {}
+func (m *mockCLI) GenerateReport(string, string, string) error  { return nil }
+func (m *mockCLI) GetExitCode() int                             { return 0 }
+func (m *mockCLI) SetExitCode(int)                              {}
+func (m *mockCLI) GetVersionManager() interfaces.VersionManager { return nil }
 
 func TestContainerWithMockCLI(t *testing.T) {
 	container := NewContainer()

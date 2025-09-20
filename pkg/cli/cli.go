@@ -244,11 +244,11 @@ func (c *CLI) handleGlobalFlags(cmd *cobra.Command) error {
 
 	// Handle conflicting flags
 	if verbose && quiet {
-		return fmt.Errorf("🚫 %s and %s flags can't be used together - choose one or the other", 
+		return fmt.Errorf("🚫 %s and %s flags can't be used together - choose one or the other",
 			c.highlight("--verbose"), c.highlight("--quiet"))
 	}
 	if debug && quiet {
-		return fmt.Errorf("🚫 %s and %s flags can't be used together - choose one or the other", 
+		return fmt.Errorf("🚫 %s and %s flags can't be used together - choose one or the other",
 			c.highlight("--debug"), c.highlight("--quiet"))
 	}
 
@@ -274,9 +274,9 @@ func (c *CLI) handleGlobalFlags(cmd *cobra.Command) error {
 		}
 	}
 	if !isValidLogLevel {
-		return fmt.Errorf("🚫 %s isn't a valid log level. %s: %s", 
-			c.error(fmt.Sprintf("'%s'", logLevel)), 
-			c.info("Available options"), 
+		return fmt.Errorf("🚫 %s isn't a valid log level. %s: %s",
+			c.error(fmt.Sprintf("'%s'", logLevel)),
+			c.info("Available options"),
 			c.highlight(strings.Join(validLogLevels, ", ")))
 	}
 
@@ -290,9 +290,9 @@ func (c *CLI) handleGlobalFlags(cmd *cobra.Command) error {
 		}
 	}
 	if !isValidOutputFormat {
-		return fmt.Errorf("🚫 %s isn't a valid output format. %s: %s", 
-			c.error(fmt.Sprintf("'%s'", outputFormat)), 
-			c.info("Available options"), 
+		return fmt.Errorf("🚫 %s isn't a valid output format. %s: %s",
+			c.error(fmt.Sprintf("'%s'", outputFormat)),
+			c.info("Available options"),
 			c.highlight(strings.Join(validOutputFormats, ", ")))
 	}
 
@@ -519,8 +519,8 @@ func (c *CLI) GetVersionManager() interfaces.VersionManager {
 // PromptProjectDetails collects basic project configuration from user input.
 func (c *CLI) PromptProjectDetails() (*models.ProjectConfig, error) {
 	if c.isNonInteractiveMode() {
-		return nil, fmt.Errorf("🚫 %s %s", 
-			c.error("Interactive prompts not available in non-interactive mode."), 
+		return nil, fmt.Errorf("🚫 %s %s",
+			c.error("Interactive prompts not available in non-interactive mode."),
 			c.info("Use environment variables or a configuration file instead"))
 	}
 
@@ -533,8 +533,8 @@ func (c *CLI) PromptProjectDetails() (*models.ProjectConfig, error) {
 	fmt.Print("Project name: ")
 	var name string
 	if _, err := fmt.Scanln(&name); err != nil {
-		return nil, fmt.Errorf("🚫 %s %s", 
-			c.error("Unable to read project name."), 
+		return nil, fmt.Errorf("🚫 %s %s",
+			c.error("Unable to read project name."),
 			c.info("Please try typing it again or check your input"))
 	}
 	config.Name = strings.TrimSpace(name)
@@ -1109,8 +1109,8 @@ func (c *CLI) runGenerate(cmd *cobra.Command, args []string) error {
 
 	// Validate conflicting mode flags
 	if err := c.validateModeFlags(nonInteractive, interactive, forceInteractive, forceNonInteractive, explicitMode); err != nil {
-		return fmt.Errorf("🚫 %s %s", 
-			c.error("Conflicting mode flags detected."), 
+		return fmt.Errorf("🚫 %s %s",
+			c.error("Conflicting mode flags detected."),
 			c.info("Please use only one mode flag at a time"))
 	}
 
@@ -1150,9 +1150,9 @@ func (c *CLI) runGenerate(cmd *cobra.Command, args []string) error {
 	if !options.SkipValidation {
 		c.VerboseOutput("🔍 Validating your configuration...")
 		if err := c.validateGenerateOptions(options); err != nil {
-			return fmt.Errorf("🚫 %s %s", 
-			c.error("Configuration validation failed."), 
-			c.info("Please check your settings and try again"))
+			return fmt.Errorf("🚫 %s %s",
+				c.error("Configuration validation failed."),
+				c.info("Please check your settings and try again"))
 		}
 	}
 
@@ -1226,8 +1226,8 @@ func (c *CLI) runValidate(cmd *cobra.Command, args []string) error {
 	// Validate project
 	result, err := c.ValidateProject(path, options)
 	if err != nil {
-		return fmt.Errorf("🚫 %s %s", 
-			c.error("Project validation encountered an issue."), 
+		return fmt.Errorf("🚫 %s %s",
+			c.error("Project validation encountered an issue."),
 			c.info("Try running with --verbose to see more details"))
 	}
 
@@ -1243,8 +1243,8 @@ func (c *CLI) runValidate(cmd *cobra.Command, args []string) error {
 		if result.Valid {
 			c.QuietOutput("✅ Project looks good!")
 		} else {
-			c.QuietOutput("%s %s", 
-				c.error("❌ Found some issues that need attention."), 
+			c.QuietOutput("%s %s",
+				c.error("❌ Found some issues that need attention."),
 				c.info("See details below"))
 		}
 		c.QuietOutput("📊 Issues: %s", c.error(fmt.Sprintf("%d", len(result.Issues))))
@@ -1285,9 +1285,9 @@ func (c *CLI) runValidate(cmd *cobra.Command, args []string) error {
 	if report && outputFile != "" {
 		err := c.generateValidationReport(result, reportFormat, outputFile)
 		if err != nil {
-			return fmt.Errorf("🚫 %s %s", 
-			c.error("Unable to create validation report."), 
-			c.info("Check file permissions and disk space"))
+			return fmt.Errorf("🚫 %s %s",
+				c.error("Unable to create validation report."),
+				c.info("Check file permissions and disk space"))
 		}
 		c.QuietOutput("📄 Validation report saved: %s", c.info(outputFile))
 	}
@@ -1299,20 +1299,20 @@ func (c *CLI) runValidate(cmd *cobra.Command, args []string) error {
 			"warnings_count": len(result.Warnings),
 			"path":           path,
 		}
-		
+
 		var message string
 		if len(result.Issues) > 0 {
-			message = fmt.Sprintf("🚫 Found %s that need your attention", 
+			message = fmt.Sprintf("🚫 Found %s that need your attention",
 				c.error(fmt.Sprintf("%d validation issues", len(result.Issues))))
 		} else if len(result.Warnings) > 0 {
-			message = fmt.Sprintf("⚠️  Found %s that should be addressed", 
+			message = fmt.Sprintf("⚠️  Found %s that should be addressed",
 				c.warning(fmt.Sprintf("%d warnings", len(result.Warnings))))
 		} else {
-			message = fmt.Sprintf("🚫 %s %s", 
-				c.error("Validation failed."), 
+			message = fmt.Sprintf("🚫 %s %s",
+				c.error("Validation failed."),
 				c.info("Please check your project structure and configuration"))
 		}
-		
+
 		return c.createValidationError(message, details)
 	}
 
@@ -1344,15 +1344,15 @@ func (c *CLI) generateValidationReport(result *interfaces.ValidationResult, form
 	}
 
 	if err != nil {
-		return fmt.Errorf("🚫 %s %s", 
-			c.error("Unable to format validation report."), 
+		return fmt.Errorf("🚫 %s %s",
+			c.error("Unable to format validation report."),
 			c.info("The report data may be corrupted or too large"))
 	}
 
 	err = os.WriteFile(outputFile, content, 0600)
 	if err != nil {
-		return fmt.Errorf("🚫 %s %s", 
-			c.error("Unable to write report file."), 
+		return fmt.Errorf("🚫 %s %s",
+			c.error("Unable to write report file."),
 			c.info("Check file permissions and available disk space"))
 	}
 
@@ -1604,7 +1604,7 @@ func (c *CLI) runListTemplates(cmd *cobra.Command, args []string) error {
 					emoji = "📦"
 				}
 				c.QuietOutput("%s  %s Templates:", emoji, strings.Title(cat))
-				
+
 				for _, template := range templates {
 					if detailed {
 						c.QuietOutput("  • %s (%s)", template.DisplayName, template.Name)
@@ -1675,8 +1675,8 @@ func (c *CLI) runUpdate(cmd *cobra.Command, args []string) error {
 	// Set update channel if specified
 	if channel != "stable" {
 		if err := c.versionManager.SetUpdateChannel(channel); err != nil {
-			return fmt.Errorf("🚫 %s %s", 
-				c.error("Unable to set update channel."), 
+			return fmt.Errorf("🚫 %s %s",
+				c.error("Unable to set update channel."),
 				c.info("Check if the channel name is valid"))
 		}
 		fmt.Printf("📡 Using update channel: %s\n", channel)
@@ -1686,8 +1686,8 @@ func (c *CLI) runUpdate(cmd *cobra.Command, args []string) error {
 		// Check for updates without installing
 		updateInfo, err := c.CheckUpdates()
 		if err != nil {
-			return fmt.Errorf("🚫 %s %s", 
-				c.error("Unable to check for updates."), 
+			return fmt.Errorf("🚫 %s %s",
+				c.error("Unable to check for updates."),
 				c.info("Check your internet connection or try --offline mode"))
 		}
 
@@ -1740,8 +1740,8 @@ func (c *CLI) runUpdate(cmd *cobra.Command, args []string) error {
 		// Install available updates
 		updateInfo, err := c.CheckUpdates()
 		if err != nil {
-			return fmt.Errorf("🚫 %s %s", 
-				c.error("Unable to check for updates."), 
+			return fmt.Errorf("🚫 %s %s",
+				c.error("Unable to check for updates."),
 				c.info("Check your internet connection or try --offline mode"))
 		}
 
@@ -1760,8 +1760,8 @@ func (c *CLI) runUpdate(cmd *cobra.Command, args []string) error {
 			fmt.Println("🔍 Checking compatibility...")
 			compatResult, err := c.versionManager.CheckCompatibility(".")
 			if err != nil {
-				return fmt.Errorf("🚫 %s %s", 
-					c.error("Unable to check compatibility."), 
+				return fmt.Errorf("🚫 %s %s",
+					c.error("Unable to check compatibility."),
 					c.info("Try running with --force to skip compatibility checks"))
 			}
 
@@ -1771,8 +1771,8 @@ func (c *CLI) runUpdate(cmd *cobra.Command, args []string) error {
 					fmt.Printf("  - %s: %s\n", issue.Type, issue.Description)
 				}
 				if !force {
-					return fmt.Errorf("🚫 %s %s", 
-						c.error("Compatibility issues prevent update."), 
+					return fmt.Errorf("🚫 %s %s",
+						c.error("Compatibility issues prevent update."),
 						c.info("Use --force to override or fix the issues first"))
 				}
 			}
@@ -1801,8 +1801,8 @@ func (c *CLI) runUpdate(cmd *cobra.Command, args []string) error {
 
 		err = c.InstallUpdates()
 		if err != nil {
-			return fmt.Errorf("🚫 %s %s", 
-				c.error("Unable to install updates."), 
+			return fmt.Errorf("🚫 %s %s",
+				c.error("Unable to install updates."),
 				c.info("Check your internet connection and try again"))
 		}
 
@@ -1815,8 +1815,8 @@ func (c *CLI) runUpdate(cmd *cobra.Command, args []string) error {
 		// Update templates cache
 		fmt.Println("📦 Updating templates cache...")
 		if err := c.versionManager.RefreshVersionCache(); err != nil {
-			return fmt.Errorf("🚫 %s %s", 
-				c.error("Unable to update templates cache."), 
+			return fmt.Errorf("🚫 %s %s",
+				c.error("Unable to update templates cache."),
 				c.info("Check cache directory permissions and available disk space"))
 		}
 		fmt.Println("✅ Templates cache updated successfully")
@@ -1847,8 +1847,8 @@ func (c *CLI) runCacheShow(cmd *cobra.Command, args []string) error {
 	// Show cache status and statistics
 	err := c.ShowCache()
 	if err != nil {
-		return fmt.Errorf("🚫 %s %s", 
-			c.error("Unable to display cache information."), 
+		return fmt.Errorf("🚫 %s %s",
+			c.error("Unable to display cache information."),
 			c.info("The cache directory may be inaccessible or corrupted"))
 	}
 	return nil
@@ -1875,8 +1875,8 @@ func (c *CLI) runCacheClear(cmd *cobra.Command, args []string) error {
 	// Clear cache
 	err := c.ClearCache()
 	if err != nil {
-		return fmt.Errorf("🚫 %s %s", 
-			c.error("Unable to clear cache."), 
+		return fmt.Errorf("🚫 %s %s",
+			c.error("Unable to clear cache."),
 			c.info("Check file permissions and ensure cache directory is accessible"))
 	}
 
@@ -1889,8 +1889,8 @@ func (c *CLI) runCacheClean(cmd *cobra.Command, args []string) error {
 	fmt.Println("🧹 Cleaning cache...")
 	err := c.CleanCache()
 	if err != nil {
-		return fmt.Errorf("🚫 %s %s", 
-			c.error("Unable to clean cache."), 
+		return fmt.Errorf("🚫 %s %s",
+			c.error("Unable to clean cache."),
 			c.info("Some cache files may be in use or have permission issues"))
 	}
 
@@ -1913,8 +1913,8 @@ func (c *CLI) runCacheValidate(cmd *cobra.Command, args []string) error {
 func (c *CLI) runCacheRepair(cmd *cobra.Command, args []string) error {
 	err := c.RepairCache()
 	if err != nil {
-		return fmt.Errorf("🚫 %s %s", 
-			c.error("Unable to repair cache."), 
+		return fmt.Errorf("🚫 %s %s",
+			c.error("Unable to repair cache."),
 			c.info("Try clearing the cache completely with --clear"))
 	}
 	return nil
@@ -1930,8 +1930,8 @@ func (c *CLI) runCacheOfflineDisable(cmd *cobra.Command, args []string) error {
 
 func (c *CLI) runCacheOfflineStatus(cmd *cobra.Command, args []string) error {
 	if c.cacheManager == nil {
-		return fmt.Errorf("🚫 %s %s", 
-			c.error("Cache manager not initialized."), 
+		return fmt.Errorf("🚫 %s %s",
+			c.error("Cache manager not initialized."),
 			c.info("This is an internal error - please report this issue"))
 	}
 
@@ -1983,9 +1983,9 @@ func (c *CLI) runLogs(cmd *cobra.Command, args []string) error {
 			}
 		}
 		if !isValid {
-			return fmt.Errorf("🚫 %s %s %s", 
-				c.error(fmt.Sprintf("'%s' is not a valid log level.", level)), 
-				c.info("Available options:"), 
+			return fmt.Errorf("🚫 %s %s %s",
+				c.error(fmt.Sprintf("'%s' is not a valid log level.", level)),
+				c.info("Available options:"),
 				c.highlight(strings.Join(validLevels, ", ")))
 		}
 	}
@@ -2011,9 +2011,9 @@ func (c *CLI) runLogs(cmd *cobra.Command, args []string) error {
 		}
 
 		if err != nil {
-			return fmt.Errorf("🚫 %s %s %s", 
-				c.error(fmt.Sprintf("Invalid time format for --since: '%s'.", since)), 
-				c.info("Use RFC3339 format like"), 
+			return fmt.Errorf("🚫 %s %s %s",
+				c.error(fmt.Sprintf("Invalid time format for --since: '%s'.", since)),
+				c.info("Use RFC3339 format like"),
 				c.highlight("2006-01-02T15:04:05Z"))
 		}
 	}
@@ -2111,17 +2111,17 @@ func (c *CLI) performPreGenerationChecks(outputPath string, options interfaces.G
 	if _, err := os.Stat(outputPath); err == nil {
 		// Directory exists
 		if !options.Force {
-			return fmt.Errorf("🚫 %s %s %s", 
-				c.error("Directory"), 
-				c.highlight(fmt.Sprintf("'%s'", outputPath)), 
+			return fmt.Errorf("🚫 %s %s %s",
+				c.error("Directory"),
+				c.highlight(fmt.Sprintf("'%s'", outputPath)),
 				c.info("already exists. Use --force to overwrite or choose a different location"))
 		}
 
 		// Check if directory is empty
 		entries, err := os.ReadDir(outputPath)
 		if err != nil {
-			return fmt.Errorf("🚫 %s %s", 
-				c.error("Unable to read output directory."), 
+			return fmt.Errorf("🚫 %s %s",
+				c.error("Unable to read output directory."),
 				c.info("Check if the directory exists and has proper permissions"))
 		}
 
@@ -2135,9 +2135,9 @@ func (c *CLI) performPreGenerationChecks(outputPath string, options interfaces.G
 
 	// Create output directory if it doesn't exist
 	if _, err := os.Stat(outputPath); os.IsNotExist(err) {
-		if err := os.MkdirAll(outputPath, 0755); err != nil {
-			return fmt.Errorf("🚫 %s %s", 
-				c.error("Unable to create output directory."), 
+		if err := os.MkdirAll(outputPath, 0750); err != nil {
+			return fmt.Errorf("🚫 %s %s",
+				c.error("Unable to create output directory."),
 				c.info("Check parent directory permissions and available disk space"))
 		}
 		c.VerboseOutput("📁 Created output directory: %s", c.info(outputPath))
@@ -2145,8 +2145,8 @@ func (c *CLI) performPreGenerationChecks(outputPath string, options interfaces.G
 
 	// Check write permissions on the output directory
 	if err := c.checkWritePermissions(outputPath); err != nil {
-		return fmt.Errorf("🚫 %s %s", 
-			c.error("No write permission for output directory."), 
+		return fmt.Errorf("🚫 %s %s",
+			c.error("No write permission for output directory."),
 			c.info("Check directory permissions or run with appropriate privileges"))
 	}
 
@@ -2156,8 +2156,8 @@ func (c *CLI) performPreGenerationChecks(outputPath string, options interfaces.G
 // updatePackageVersions updates package versions in the configuration
 func (c *CLI) updatePackageVersions(config *models.ProjectConfig) error {
 	if c.versionManager == nil {
-		return fmt.Errorf("🚫 %s %s", 
-			c.error("Version manager not initialized."), 
+		return fmt.Errorf("🚫 %s %s",
+			c.error("Version manager not initialized."),
 			c.info("This is an internal error - please report this issue"))
 	}
 
@@ -2176,36 +2176,36 @@ func (c *CLI) generateProjectFromComponents(config *models.ProjectConfig, output
 
 	// Create the base project structure first
 	if err := c.generateBaseStructure(config, outputPath); err != nil {
-		return fmt.Errorf("🚫 %s %s", 
-			c.error("Failed to create project structure."), 
+		return fmt.Errorf("🚫 %s %s",
+			c.error("Failed to create project structure."),
 			c.info("Check output directory permissions and available disk space"))
 	}
 
 	// Process frontend components
 	if err := c.processFrontendComponents(config, outputPath); err != nil {
-		return fmt.Errorf("🚫 %s %s", 
-			c.error("Failed to set up frontend components."), 
+		return fmt.Errorf("🚫 %s %s",
+			c.error("Failed to set up frontend components."),
 			c.info("Check if frontend templates are available and accessible"))
 	}
 
 	// Process backend components
 	if err := c.processBackendComponents(config, outputPath); err != nil {
-		return fmt.Errorf("🚫 %s %s", 
-			c.error("Failed to set up backend components."), 
+		return fmt.Errorf("🚫 %s %s",
+			c.error("Failed to set up backend components."),
 			c.info("Check if backend templates are available and accessible"))
 	}
 
 	// Process mobile components
 	if err := c.processMobileComponents(config, outputPath); err != nil {
-		return fmt.Errorf("🚫 %s %s", 
-			c.error("Failed to set up mobile components."), 
+		return fmt.Errorf("🚫 %s %s",
+			c.error("Failed to set up mobile components."),
 			c.info("Check if mobile templates are available and accessible"))
 	}
 
 	// Process infrastructure components
 	if err := c.processInfrastructureComponents(config, outputPath); err != nil {
-		return fmt.Errorf("🚫 %s %s", 
-			c.error("Failed to set up infrastructure components."), 
+		return fmt.Errorf("🚫 %s %s",
+			c.error("Failed to set up infrastructure components."),
 			c.info("Check if infrastructure templates are available and accessible"))
 	}
 
@@ -2221,10 +2221,10 @@ func (c *CLI) generateBaseStructure(config *models.ProjectConfig, outputPath str
 	dirs := []string{"Docs", "Scripts"}
 	for _, dir := range dirs {
 		dirPath := filepath.Join(outputPath, dir)
-		if err := os.MkdirAll(dirPath, 0755); err != nil {
-			return fmt.Errorf("🚫 %s %s %s", 
-				c.error("Unable to create directory"), 
-				c.highlight(fmt.Sprintf("'%s'.", dir)), 
+		if err := os.MkdirAll(dirPath, 0750); err != nil {
+			return fmt.Errorf("🚫 %s %s %s",
+				c.error("Unable to create directory"),
+				c.highlight(fmt.Sprintf("'%s'.", dir)),
 				c.info("Check permissions and available disk space"))
 		}
 	}
@@ -2232,8 +2232,8 @@ func (c *CLI) generateBaseStructure(config *models.ProjectConfig, outputPath str
 	// Process base template files directly from the embedded filesystem
 	// The base directory contains common files like README, LICENSE, etc.
 	if err := c.processBaseTemplateFiles(config, outputPath); err != nil {
-		return fmt.Errorf("🚫 %s %s", 
-			c.error("Failed to process base template files."), 
+		return fmt.Errorf("🚫 %s %s",
+			c.error("Failed to process base template files."),
 			c.info("Essential project files like README and LICENSE couldn't be created"))
 	}
 
@@ -2265,7 +2265,7 @@ func (c *CLI) generateBaseStructure(config *models.ProjectConfig, outputPath str
 func (c *CLI) processBaseTemplateFiles(config *models.ProjectConfig, outputPath string) error {
 	// Create an embedded template engine to process the base directory directly
 	embeddedEngine := template.NewEmbeddedEngine()
-	
+
 	// Process the base template directory directly
 	return embeddedEngine.ProcessDirectory("templates/base", outputPath, config)
 }
@@ -2281,9 +2281,9 @@ func (c *CLI) processFrontendComponents(config *models.ProjectConfig, outputPath
 
 	// Create App directory structure
 	appDir := filepath.Join(outputPath, "App")
-	if err := os.MkdirAll(appDir, 0755); err != nil {
-		return fmt.Errorf("🚫 %s %s", 
-			c.error("Unable to create App directory."), 
+	if err := os.MkdirAll(appDir, 0750); err != nil {
+		return fmt.Errorf("🚫 %s %s",
+			c.error("Unable to create App directory."),
 			c.info("Check output directory permissions and available disk space"))
 	}
 
@@ -2292,8 +2292,8 @@ func (c *CLI) processFrontendComponents(config *models.ProjectConfig, outputPath
 		c.VerboseOutput("   ✨ Creating main Next.js application")
 		mainAppPath := filepath.Join(appDir, "main")
 		if err := c.templateManager.ProcessTemplate("nextjs-app", config, mainAppPath); err != nil {
-			return fmt.Errorf("🚫 %s %s", 
-				c.error("Failed to process Next.js app template."), 
+			return fmt.Errorf("🚫 %s %s",
+				c.error("Failed to process Next.js app template."),
 				c.info("Check if the template files are accessible and valid"))
 		}
 	}
@@ -2302,8 +2302,8 @@ func (c *CLI) processFrontendComponents(config *models.ProjectConfig, outputPath
 		c.VerboseOutput("   🏠 Creating landing page application")
 		homePath := filepath.Join(appDir, "home")
 		if err := c.templateManager.ProcessTemplate("nextjs-home", config, homePath); err != nil {
-			return fmt.Errorf("🚫 %s %s", 
-				c.error("Failed to process Next.js home template."), 
+			return fmt.Errorf("🚫 %s %s",
+				c.error("Failed to process Next.js home template."),
 				c.info("Check if the template files are accessible and valid"))
 		}
 	}
@@ -2312,8 +2312,8 @@ func (c *CLI) processFrontendComponents(config *models.ProjectConfig, outputPath
 		c.VerboseOutput("   👑 Creating admin dashboard")
 		adminPath := filepath.Join(appDir, "admin")
 		if err := c.templateManager.ProcessTemplate("nextjs-admin", config, adminPath); err != nil {
-			return fmt.Errorf("🚫 %s %s", 
-				c.error("Failed to process Next.js admin template."), 
+			return fmt.Errorf("🚫 %s %s",
+				c.error("Failed to process Next.js admin template."),
 				c.info("Check if the template files are accessible and valid"))
 		}
 	}
@@ -2322,8 +2322,8 @@ func (c *CLI) processFrontendComponents(config *models.ProjectConfig, outputPath
 		c.VerboseOutput("📦 Creating shared component library...")
 		sharedPath := filepath.Join(appDir, "shared-components")
 		if err := c.templateManager.ProcessTemplate("shared-components", config, sharedPath); err != nil {
-			return fmt.Errorf("🚫 %s %s", 
-				c.error("Failed to process shared components template."), 
+			return fmt.Errorf("🚫 %s %s",
+				c.error("Failed to process shared components template."),
 				c.info("Check if the template files are accessible and valid"))
 		}
 	}
@@ -2342,7 +2342,7 @@ func (c *CLI) processBackendComponents(config *models.ProjectConfig, outputPath 
 
 	// Create CommonServer directory
 	serverDir := filepath.Join(outputPath, "CommonServer")
-	if err := os.MkdirAll(serverDir, 0755); err != nil {
+	if err := os.MkdirAll(serverDir, 0750); err != nil {
 		return fmt.Errorf("failed to create CommonServer directory: %w", err)
 	}
 
@@ -2350,8 +2350,8 @@ func (c *CLI) processBackendComponents(config *models.ProjectConfig, outputPath 
 	if config.Components.Backend.GoGin {
 		c.VerboseOutput("   🔧 Creating Go API server")
 		if err := c.templateManager.ProcessTemplate("go-gin", config, serverDir); err != nil {
-			return fmt.Errorf("🚫 %s %s", 
-				c.error("Failed to process Go Gin template."), 
+			return fmt.Errorf("🚫 %s %s",
+				c.error("Failed to process Go Gin template."),
 				c.info("Check if the template files are accessible and valid"))
 		}
 	}
@@ -2370,7 +2370,7 @@ func (c *CLI) processMobileComponents(config *models.ProjectConfig, outputPath s
 
 	// Create Mobile directory
 	mobileDir := filepath.Join(outputPath, "Mobile")
-	if err := os.MkdirAll(mobileDir, 0755); err != nil {
+	if err := os.MkdirAll(mobileDir, 0750); err != nil {
 		return fmt.Errorf("failed to create Mobile directory: %w", err)
 	}
 
@@ -2379,8 +2379,8 @@ func (c *CLI) processMobileComponents(config *models.ProjectConfig, outputPath s
 		c.VerboseOutput("   🤖 Creating Android application")
 		androidPath := filepath.Join(mobileDir, "android")
 		if err := c.templateManager.ProcessTemplate("android-kotlin", config, androidPath); err != nil {
-			return fmt.Errorf("🚫 %s %s", 
-				c.error("Failed to process Android Kotlin template."), 
+			return fmt.Errorf("🚫 %s %s",
+				c.error("Failed to process Android Kotlin template."),
 				c.info("Check if the template files are accessible and valid"))
 		}
 	}
@@ -2390,8 +2390,8 @@ func (c *CLI) processMobileComponents(config *models.ProjectConfig, outputPath s
 		c.VerboseOutput("   🍎 Creating iOS application")
 		iosPath := filepath.Join(mobileDir, "ios")
 		if err := c.templateManager.ProcessTemplate("ios-swift", config, iosPath); err != nil {
-			return fmt.Errorf("🚫 %s %s", 
-				c.error("Failed to process iOS Swift template."), 
+			return fmt.Errorf("🚫 %s %s",
+				c.error("Failed to process iOS Swift template."),
 				c.info("Check if the template files are accessible and valid"))
 		}
 	}
@@ -2401,8 +2401,8 @@ func (c *CLI) processMobileComponents(config *models.ProjectConfig, outputPath s
 		c.VerboseOutput("🔗 Creating shared mobile resources...")
 		sharedPath := filepath.Join(mobileDir, "shared")
 		if err := c.templateManager.ProcessTemplate("shared", config, sharedPath); err != nil {
-			return fmt.Errorf("🚫 %s %s", 
-				c.error("Failed to process mobile shared template."), 
+			return fmt.Errorf("🚫 %s %s",
+				c.error("Failed to process mobile shared template."),
 				c.info("Check if the template files are accessible and valid"))
 		}
 	}
@@ -2421,7 +2421,7 @@ func (c *CLI) processInfrastructureComponents(config *models.ProjectConfig, outp
 
 	// Create Deploy directory
 	deployDir := filepath.Join(outputPath, "Deploy")
-	if err := os.MkdirAll(deployDir, 0755); err != nil {
+	if err := os.MkdirAll(deployDir, 0750); err != nil {
 		return fmt.Errorf("failed to create Deploy directory: %w", err)
 	}
 
@@ -2430,8 +2430,8 @@ func (c *CLI) processInfrastructureComponents(config *models.ProjectConfig, outp
 		c.VerboseOutput("   🐳 Setting up Docker containers")
 		dockerPath := filepath.Join(deployDir, "docker")
 		if err := c.templateManager.ProcessTemplate("docker", config, dockerPath); err != nil {
-			return fmt.Errorf("🚫 %s %s", 
-				c.error("Failed to process Docker template."), 
+			return fmt.Errorf("🚫 %s %s",
+				c.error("Failed to process Docker template."),
 				c.info("Check if the template files are accessible and valid"))
 		}
 	}
@@ -2441,8 +2441,8 @@ func (c *CLI) processInfrastructureComponents(config *models.ProjectConfig, outp
 		c.VerboseOutput("   ☸️  Setting up Kubernetes deployment")
 		k8sPath := filepath.Join(deployDir, "k8s")
 		if err := c.templateManager.ProcessTemplate("kubernetes", config, k8sPath); err != nil {
-			return fmt.Errorf("🚫 %s %s", 
-				c.error("Failed to process Kubernetes template."), 
+			return fmt.Errorf("🚫 %s %s",
+				c.error("Failed to process Kubernetes template."),
 				c.info("Check if the template files are accessible and valid"))
 		}
 	}
@@ -2452,8 +2452,8 @@ func (c *CLI) processInfrastructureComponents(config *models.ProjectConfig, outp
 		c.VerboseOutput("   🏗️  Setting up Terraform infrastructure")
 		terraformPath := filepath.Join(deployDir, "terraform")
 		if err := c.templateManager.ProcessTemplate("terraform", config, terraformPath); err != nil {
-			return fmt.Errorf("🚫 %s %s", 
-				c.error("Failed to process Terraform template."), 
+			return fmt.Errorf("🚫 %s %s",
+				c.error("Failed to process Terraform template."),
 				c.info("Check if the template files are accessible and valid"))
 		}
 	}
@@ -2481,12 +2481,6 @@ func (c *CLI) hasInfrastructureComponents(config *models.ProjectConfig) bool {
 	return config.Components.Infrastructure.Docker ||
 		config.Components.Infrastructure.Kubernetes ||
 		config.Components.Infrastructure.Terraform
-}
-
-// selectDefaultTemplate selects a default template based on configuration
-func (c *CLI) selectDefaultTemplate(config *models.ProjectConfig) string {
-	// Default to base template for simple projects
-	return "base"
 }
 
 // createBackup creates a backup of the existing directory
@@ -2603,191 +2597,192 @@ func (c *CLI) validateGenerateOptions(options interfaces.GenerateOptions) error 
 	return nil
 }
 
-// validateDependencies validates project dependencies before generation
-func (c *CLI) validateDependencies(config *models.ProjectConfig, templateName string) error {
-	c.VerboseOutput("Validating dependencies for template: %s", templateName)
+// TODO: here
+// // validateDependencies validates project dependencies before generation
+// func (c *CLI) validateDependencies(config *models.ProjectConfig, templateName string) error {
+// 	c.VerboseOutput("Validating dependencies for template: %s", templateName)
 
-	// Check if template manager is available
-	if c.templateManager == nil {
-		return fmt.Errorf("template manager not initialized")
-	}
+// 	// Check if template manager is available
+// 	if c.templateManager == nil {
+// 		return fmt.Errorf("template manager not initialized")
+// 	}
 
-	// Get template information
-	templateInfo, err := c.templateManager.GetTemplateInfo(templateName)
-	if err != nil {
-		return fmt.Errorf("🚫 %s %s %s", 
-			c.error("Template"), 
-			c.highlight(fmt.Sprintf("'%s'", templateName)), 
-			c.info("not found. Use 'generator list-templates' to see available options"))
-	}
+// 	// Get template information
+// 	templateInfo, err := c.templateManager.GetTemplateInfo(templateName)
+// 	if err != nil {
+// 		return fmt.Errorf("🚫 %s %s %s", 
+// 			c.error("Template"), 
+// 			c.highlight(fmt.Sprintf("'%s'", templateName)), 
+// 			c.info("not found. Use 'generator list-templates' to see available options"))
+// 	}
 
-	// Validate template dependencies
-	if len(templateInfo.Dependencies) > 0 {
-		c.VerboseOutput("Checking template dependencies: %v", templateInfo.Dependencies)
+// 	// Validate template dependencies
+// 	if len(templateInfo.Dependencies) > 0 {
+// 		c.VerboseOutput("Checking template dependencies: %v", templateInfo.Dependencies)
 
-		for _, dep := range templateInfo.Dependencies {
-			if err := c.validateDependency(dep); err != nil {
-				return fmt.Errorf("dependency validation failed for '%s': %w", dep, err)
-			}
-		}
-	}
+// 		for _, dep := range templateInfo.Dependencies {
+// 			if err := c.validateDependency(dep); err != nil {
+// 				return fmt.Errorf("dependency validation failed for '%s': %w", dep, err)
+// 			}
+// 		}
+// 	}
 
-	// Validate system requirements based on template
-	if err := c.validateSystemRequirements(templateInfo); err != nil {
-		return fmt.Errorf("system requirements validation failed: %w", err)
-	}
+// 	// Validate system requirements based on template
+// 	if err := c.validateSystemRequirements(templateInfo); err != nil {
+// 		return fmt.Errorf("system requirements validation failed: %w", err)
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
-// validateDependency validates a specific dependency
-func (c *CLI) validateDependency(dependency string) error {
-	// Parse dependency (format: name@version or just name)
-	parts := strings.Split(dependency, "@")
-	depName := parts[0]
+// // validateDependency validates a specific dependency
+// func (c *CLI) validateDependency(dependency string) error {
+// 	// Parse dependency (format: name@version or just name)
+// 	parts := strings.Split(dependency, "@")
+// 	depName := parts[0]
 
-	c.DebugOutput("Validating dependency: %s", depName)
+// 	c.DebugOutput("Validating dependency: %s", depName)
 
-	// Check common dependencies
-	switch depName {
-	case "go":
-		return c.validateGoVersion(parts)
-	case "node", "nodejs":
-		return c.validateNodeVersion(parts)
-	case "docker":
-		return c.validateDockerAvailability()
-	case "git":
-		return c.validateGitAvailability()
-	default:
-		c.VerboseOutput("Dependency '%s' will be validated during generation", depName)
-	}
+// 	// Check common dependencies
+// 	switch depName {
+// 	case "go":
+// 		return c.validateGoVersion(parts)
+// 	case "node", "nodejs":
+// 		return c.validateNodeVersion(parts)
+// 	case "docker":
+// 		return c.validateDockerAvailability()
+// 	case "git":
+// 		return c.validateGitAvailability()
+// 	default:
+// 		c.VerboseOutput("Dependency '%s' will be validated during generation", depName)
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
-// validateGoVersion validates Go installation and version
-func (c *CLI) validateGoVersion(parts []string) error {
-	// Check if Go is installed
-	if _, err := exec.LookPath("go"); err != nil {
-		return fmt.Errorf("go is not installed or not in PATH")
-	}
+// // validateGoVersion validates Go installation and version
+// func (c *CLI) validateGoVersion(parts []string) error {
+// 	// Check if Go is installed
+// 	if _, err := exec.LookPath("go"); err != nil {
+// 		return fmt.Errorf("go is not installed or not in PATH")
+// 	}
 
-	// Get Go version
-	cmd := exec.Command("go", "version")
-	output, err := cmd.Output()
-	if err != nil {
-		return fmt.Errorf("failed to get Go version: %w", err)
-	}
+// 	// Get Go version
+// 	cmd := exec.Command("go", "version")
+// 	output, err := cmd.Output()
+// 	if err != nil {
+// 		return fmt.Errorf("failed to get Go version: %w", err)
+// 	}
 
-	versionStr := string(output)
-	c.VerboseOutput("Found Go version: %s", strings.TrimSpace(versionStr))
+// 	versionStr := string(output)
+// 	c.VerboseOutput("Found Go version: %s", strings.TrimSpace(versionStr))
 
-	// If specific version is required, validate it
-	if len(parts) > 1 {
-		requiredVersion := parts[1]
-		c.VerboseOutput("Required Go version: %s", requiredVersion)
-		// This would implement actual version comparison
-		// For now, we'll just log it
-	}
+// 	// If specific version is required, validate it
+// 	if len(parts) > 1 {
+// 		requiredVersion := parts[1]
+// 		c.VerboseOutput("Required Go version: %s", requiredVersion)
+// 		// This would implement actual version comparison
+// 		// For now, we'll just log it
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
-// validateNodeVersion validates Node.js installation and version
-func (c *CLI) validateNodeVersion(parts []string) error {
-	// Check if Node.js is installed
-	if _, err := exec.LookPath("node"); err != nil {
-		return fmt.Errorf("node.js is not installed or not in PATH")
-	}
+// // validateNodeVersion validates Node.js installation and version
+// func (c *CLI) validateNodeVersion(parts []string) error {
+// 	// Check if Node.js is installed
+// 	if _, err := exec.LookPath("node"); err != nil {
+// 		return fmt.Errorf("node.js is not installed or not in PATH")
+// 	}
 
-	// Get Node.js version
-	cmd := exec.Command("node", "--version")
-	output, err := cmd.Output()
-	if err != nil {
-		return fmt.Errorf("failed to get Node.js version: %w", err)
-	}
+// 	// Get Node.js version
+// 	cmd := exec.Command("node", "--version")
+// 	output, err := cmd.Output()
+// 	if err != nil {
+// 		return fmt.Errorf("failed to get Node.js version: %w", err)
+// 	}
 
-	versionStr := strings.TrimSpace(string(output))
-	c.VerboseOutput("Found Node.js version: %s", versionStr)
+// 	versionStr := strings.TrimSpace(string(output))
+// 	c.VerboseOutput("Found Node.js version: %s", versionStr)
 
-	// If specific version is required, validate it
-	if len(parts) > 1 {
-		requiredVersion := parts[1]
-		c.VerboseOutput("Required Node.js version: %s", requiredVersion)
-		// This would implement actual version comparison
-	}
+// 	// If specific version is required, validate it
+// 	if len(parts) > 1 {
+// 		requiredVersion := parts[1]
+// 		c.VerboseOutput("Required Node.js version: %s", requiredVersion)
+// 		// This would implement actual version comparison
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
-// validateDockerAvailability validates Docker installation
-func (c *CLI) validateDockerAvailability() error {
-	if _, err := exec.LookPath("docker"); err != nil {
-		return fmt.Errorf("docker is not installed or not in PATH")
-	}
+// // validateDockerAvailability validates Docker installation
+// func (c *CLI) validateDockerAvailability() error {
+// 	if _, err := exec.LookPath("docker"); err != nil {
+// 		return fmt.Errorf("docker is not installed or not in PATH")
+// 	}
 
-	// Check if Docker daemon is running
-	cmd := exec.Command("docker", "info")
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("docker daemon is not running")
-	}
+// 	// Check if Docker daemon is running
+// 	cmd := exec.Command("docker", "info")
+// 	if err := cmd.Run(); err != nil {
+// 		return fmt.Errorf("docker daemon is not running")
+// 	}
 
-	c.VerboseOutput("Docker is available and running")
-	return nil
-}
+// 	c.VerboseOutput("Docker is available and running")
+// 	return nil
+// }
 
-// validateGitAvailability validates Git installation
-func (c *CLI) validateGitAvailability() error {
-	if _, err := exec.LookPath("git"); err != nil {
-		return fmt.Errorf("git is not installed or not in PATH")
-	}
+// // validateGitAvailability validates Git installation
+// func (c *CLI) validateGitAvailability() error {
+// 	if _, err := exec.LookPath("git"); err != nil {
+// 		return fmt.Errorf("git is not installed or not in PATH")
+// 	}
 
-	c.VerboseOutput("Git is available")
-	return nil
-}
+// 	c.VerboseOutput("Git is available")
+// 	return nil
+// }
 
-// validateSystemRequirements validates system requirements for a template
-func (c *CLI) validateSystemRequirements(templateInfo *interfaces.TemplateInfo) error {
-	c.VerboseOutput("Validating system requirements for template: %s", templateInfo.Name)
+// // validateSystemRequirements validates system requirements for a template
+// func (c *CLI) validateSystemRequirements(templateInfo *interfaces.TemplateInfo) error {
+// 	c.VerboseOutput("Validating system requirements for template: %s", templateInfo.Name)
 
-	// Check available disk space
-	if err := c.validateDiskSpace(); err != nil {
-		return fmt.Errorf("disk space validation failed: %w", err)
-	}
+// 	// Check available disk space
+// 	if err := c.validateDiskSpace(); err != nil {
+// 		return fmt.Errorf("disk space validation failed: %w", err)
+// 	}
 
-	// Check memory requirements (basic check)
-	if err := c.validateMemoryRequirements(); err != nil {
-		c.WarningOutput("Memory validation warning: %v", err)
-	}
+// 	// Check memory requirements (basic check)
+// 	if err := c.validateMemoryRequirements(); err != nil {
+// 		c.WarningOutput("Memory validation warning: %v", err)
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
-// validateDiskSpace validates available disk space
-func (c *CLI) validateDiskSpace() error {
-	// This would implement actual disk space checking
-	// For now, we'll just log that we would check it
-	c.VerboseOutput("Checking available disk space...")
+// // validateDiskSpace validates available disk space
+// func (c *CLI) validateDiskSpace() error {
+// 	// This would implement actual disk space checking
+// 	// For now, we'll just log that we would check it
+// 	c.VerboseOutput("Checking available disk space...")
 
-	// Minimum required space (in bytes) - 100MB
-	const minRequiredSpace = 100 * 1024 * 1024
+// 	// Minimum required space (in bytes) - 100MB
+// 	const minRequiredSpace = 100 * 1024 * 1024
 
-	// This would get actual available space
-	c.VerboseOutput("Would check for at least %d bytes of free space", minRequiredSpace)
+// 	// This would get actual available space
+// 	c.VerboseOutput("Would check for at least %d bytes of free space", minRequiredSpace)
 
-	return nil
-}
+// 	return nil
+// }
 
-// validateMemoryRequirements validates memory requirements
-func (c *CLI) validateMemoryRequirements() error {
-	// This would implement actual memory checking
-	c.VerboseOutput("Checking available memory...")
+// // validateMemoryRequirements validates memory requirements
+// func (c *CLI) validateMemoryRequirements() error {
+// 	// This would implement actual memory checking
+// 	c.VerboseOutput("Checking available memory...")
 
-	// This would check system memory
-	c.VerboseOutput("Would check system memory requirements")
+// 	// This would check system memory
+// 	c.VerboseOutput("Would check system memory requirements")
 
-	return nil
-}
+// 	return nil
+// }
 
 // isValidTemplateName validates template name format
 func isValidTemplateName(name string) bool {
@@ -2798,7 +2793,7 @@ func isValidTemplateName(name string) bool {
 
 func (c *CLI) GenerateFromConfig(configPath string, options interfaces.GenerateOptions) error {
 	c.VerboseOutput("📄 Loading project configuration from file")
-	
+
 	// Load configuration from file
 	config, err := c.loadConfigFromFile(configPath)
 	if err != nil {
@@ -2946,7 +2941,7 @@ func (c *CLI) runTemplateInfo(cmd *cobra.Command, args []string) error {
 	c.QuietOutput("%s  %s", categoryEmoji, templateInfo.DisplayName)
 	c.QuietOutput("═══════════════════════════════════════════════════")
 	c.QuietOutput("")
-	
+
 	// Basic information
 	c.QuietOutput("📝  %s", templateInfo.Description)
 	c.QuietOutput("")
@@ -3064,8 +3059,8 @@ func (c *CLI) runTemplateValidate(cmd *cobra.Command, args []string) error {
 	// Validate template
 	result, err := c.ValidateTemplate(templatePath)
 	if err != nil {
-		return fmt.Errorf("🚫 %s %s", 
-			c.error("Template validation failed."), 
+		return fmt.Errorf("🚫 %s %s",
+			c.error("Template validation failed."),
 			c.info("The template may be corrupted or incompatible"))
 	}
 
@@ -3084,23 +3079,23 @@ func (c *CLI) runTemplateValidate(cmd *cobra.Command, args []string) error {
 		c.QuietOutput("═══════════════════════════════════════════════════")
 		c.QuietOutput("")
 		c.QuietOutput("📂  Template: %s", templatePath)
-		
+
 		// Status with appropriate emoji
 		if result.Valid {
 			c.QuietOutput("✅  Status: %s", c.success("Valid"))
 		} else {
 			c.QuietOutput("❌  Status: %s", c.error("Invalid"))
 		}
-		
+
 		// Summary counts
 		issueCount := len(result.Issues)
 		warningCount := len(result.Warnings)
-		
+
 		if issueCount == 0 && warningCount == 0 {
 			c.QuietOutput("🎉  Perfect! No issues or warnings found")
 		} else {
-			c.QuietOutput("📊  Summary: %s issues, %s warnings", 
-				c.formatCount(issueCount, "error"), 
+			c.QuietOutput("📊  Summary: %s issues, %s warnings",
+				c.formatCount(issueCount, "error"),
 				c.formatCount(warningCount, "warning"))
 		}
 
@@ -3140,7 +3135,7 @@ func (c *CLI) runTemplateValidate(cmd *cobra.Command, args []string) error {
 			c.QuietOutput("")
 			c.QuietOutput("💡 Use --detailed to see more information about each issue")
 		}
-		
+
 		if !fix && (issueCount > 0 || warningCount > 0) {
 			c.QuietOutput("🔧 Use --fix to see suggestions for fixing issues")
 		}
@@ -3172,7 +3167,7 @@ func (c *CLI) displayValidationIssue(issue interfaces.ValidationIssue, index int
 	if detailed {
 		// Detailed format with all information
 		c.QuietOutput("  %s %d. %s", emoji, index, c.highlight(issue.Message))
-		
+
 		if issue.File != "" {
 			fileInfo := fmt.Sprintf("📄 File: %s", issue.File)
 			if issue.Line > 0 {
@@ -3180,19 +3175,19 @@ func (c *CLI) displayValidationIssue(issue interfaces.ValidationIssue, index int
 			}
 			c.QuietOutput("     %s", c.dim(fileInfo))
 		}
-		
+
 		if issue.Rule != "" {
 			c.QuietOutput("     %s", c.dim(fmt.Sprintf("🔍 Rule: %s", issue.Rule)))
 		}
-		
+
 		if issue.Type != "" && issue.Type != issue.Severity {
 			c.QuietOutput("     %s", c.dim(fmt.Sprintf("🏷️  Type: %s", issue.Type)))
 		}
-		
+
 		if issue.Fixable {
 			c.QuietOutput("     %s", c.success("🔧 Fixable"))
 		}
-		
+
 		c.QuietOutput("")
 	} else {
 		// Simple format for basic output
@@ -3205,7 +3200,7 @@ func (c *CLI) formatCount(count int, itemType string) string {
 	if count == 0 {
 		return c.dim("0")
 	}
-	
+
 	var color func(string) string
 	switch itemType {
 	case "error":
@@ -3215,7 +3210,7 @@ func (c *CLI) formatCount(count int, itemType string) string {
 	default:
 		color = c.info
 	}
-	
+
 	return color(fmt.Sprintf("%d", count))
 }
 
@@ -3624,13 +3619,13 @@ func (c *CLI) ShowCache() error {
 	fmt.Println("💾 Cache Information")
 	fmt.Println("===================")
 	fmt.Printf("📁 Location: %s\n", stats.CacheLocation)
-	
+
 	statusEmoji := "✅"
 	if stats.CacheHealth != "healthy" {
 		statusEmoji = "⚠️ "
 	}
 	fmt.Printf("%s Status: %s\n", statusEmoji, stats.CacheHealth)
-	
+
 	offlineEmoji := "🌐"
 	if stats.OfflineMode {
 		offlineEmoji = "📴"
@@ -3849,8 +3844,8 @@ func (c *CLI) SelectTemplateInteractively(filter interfaces.TemplateFilter) (*in
 	}
 
 	if selection < 1 || selection > len(templates) {
-		return nil, fmt.Errorf("🚫 %s %s", 
-			c.error("Invalid selection."), 
+		return nil, fmt.Errorf("🚫 %s %s",
+			c.error("Invalid selection."),
 			c.info(fmt.Sprintf("Please choose a number between 1 and %d", len(templates))))
 	}
 
@@ -4249,8 +4244,8 @@ func (c *CLI) SetLogLevel(level string) error {
 	case "fatal":
 		numLevel = 4
 	default:
-		return fmt.Errorf("🚫 %s %s", 
-			c.error(fmt.Sprintf("'%s' is not a valid log level.", level)), 
+		return fmt.Errorf("🚫 %s %s",
+			c.error(fmt.Sprintf("'%s' is not a valid log level.", level)),
 			c.info("Valid levels are: debug, info, warn, error, fatal"))
 	}
 
@@ -4444,20 +4439,20 @@ func (c *CLI) applySettingToConfig(config *models.ProjectConfig, key, value stri
 		if val, err := strconv.ParseBool(value); err == nil {
 			config.Components.Frontend.NextJS.App = val
 		} else {
-			return fmt.Errorf("🚫 %s %s %s %s", 
-				c.error("Configuration value for"), 
-				c.highlight(fmt.Sprintf("'%s'", key)), 
-				c.error("should be true or false, not"), 
+			return fmt.Errorf("🚫 %s %s %s %s",
+				c.error("Configuration value for"),
+				c.highlight(fmt.Sprintf("'%s'", key)),
+				c.error("should be true or false, not"),
 				c.highlight(fmt.Sprintf("'%s'", value)))
 		}
 	case "components.frontend.nextjs.home":
 		if val, err := strconv.ParseBool(value); err == nil {
 			config.Components.Frontend.NextJS.Home = val
 		} else {
-			return fmt.Errorf("🚫 %s %s %s %s", 
-				c.error("Configuration value for"), 
-				c.highlight(fmt.Sprintf("'%s'", key)), 
-				c.error("should be true or false, not"), 
+			return fmt.Errorf("🚫 %s %s %s %s",
+				c.error("Configuration value for"),
+				c.highlight(fmt.Sprintf("'%s'", key)),
+				c.error("should be true or false, not"),
 				c.highlight(fmt.Sprintf("'%s'", value)))
 		}
 	case "components.frontend.nextjs.admin":
@@ -5254,8 +5249,8 @@ func (c *CLI) validateModeFlags(nonInteractive, interactive, forceInteractive, f
 	}
 
 	if conflictCount > 1 {
-		return fmt.Errorf("🚫 %s %s", 
-			c.error("Multiple mode flags detected."), 
+		return fmt.Errorf("🚫 %s %s",
+			c.error("Multiple mode flags detected."),
 			c.info("Please use only one mode flag at a time"))
 	}
 
@@ -5270,9 +5265,9 @@ func (c *CLI) validateModeFlags(nonInteractive, interactive, forceInteractive, f
 			}
 		}
 		if !isValid {
-			return fmt.Errorf("🚫 %s %s %s", 
-				c.error(fmt.Sprintf("'%s' is not a valid mode.", explicitMode)), 
-				c.info("Available modes:"), 
+			return fmt.Errorf("🚫 %s %s %s",
+				c.error(fmt.Sprintf("'%s' is not a valid mode.", explicitMode)),
+				c.info("Available modes:"),
 				c.highlight(strings.Join(validModes, ", ")))
 		}
 	}
@@ -5320,25 +5315,6 @@ func (c *CLI) validateAndNormalizeMode(mode string) string {
 		c.WarningOutput("Unknown mode '%s', defaulting to interactive", mode)
 		return "interactive"
 	}
-}
-
-// runNonInteractiveGeneration handles non-interactive project generation
-func (c *CLI) runNonInteractiveGeneration(options interfaces.GenerateOptions) error {
-	c.VerboseOutput("🤖 Loading configuration from environment variables")
-	
-	// Load configuration from environment variables
-	config, err := c.loadConfigFromEnvironment()
-	if err != nil {
-		return fmt.Errorf("failed to load environment configuration: %w", err)
-	}
-
-	// Merge environment variables with command-line options
-	if err := c.mergeEnvironmentWithOptions(config, &options); err != nil {
-		return fmt.Errorf("failed to merge environment with options: %w", err)
-	}
-
-	// Execute project generation
-	return c.executeGenerationWorkflow(config, options)
 }
 
 // routeToGenerationMethod routes to the appropriate generation method based on mode
@@ -5418,17 +5394,17 @@ func (c *CLI) validateConfigurationFile(configPath string) error {
 
 	// Check if file exists
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		return fmt.Errorf("🚫 %s %s %s", 
-			c.error("Configuration file"), 
-			c.highlight(fmt.Sprintf("'%s'", configPath)), 
+		return fmt.Errorf("🚫 %s %s %s",
+			c.error("Configuration file"),
+			c.highlight(fmt.Sprintf("'%s'", configPath)),
 			c.info("not found. Check the file path and try again"))
 	}
 
 	// Check if file is readable
 	file, err := os.Open(configPath) // #nosec G304 - configPath is validated before use
 	if err != nil {
-		return fmt.Errorf("🚫 %s %s", 
-			c.error("Unable to read configuration file."), 
+		return fmt.Errorf("🚫 %s %s",
+			c.error("Unable to read configuration file."),
 			c.info("Check file permissions and ensure it's not corrupted"))
 	}
 	_ = file.Close()
@@ -5491,9 +5467,9 @@ func (c *CLI) executeGenerationWorkflow(config *models.ProjectConfig, options in
 
 	// Handle dry run mode
 	if options.DryRun {
-		c.QuietOutput("🔍 %s - would generate project %s in directory %s", 
-			c.warning("Dry run mode"), 
-			c.highlight(fmt.Sprintf("'%s'", config.Name)), 
+		c.QuietOutput("🔍 %s - would generate project %s in directory %s",
+			c.warning("Dry run mode"),
+			c.highlight(fmt.Sprintf("'%s'", config.Name)),
 			c.info(fmt.Sprintf("'%s'", outputPath)))
 		c.displayProjectSummary(config)
 		return nil
@@ -5512,7 +5488,7 @@ func (c *CLI) executeGenerationWorkflow(config *models.ProjectConfig, options in
 
 	c.SuccessOutput("🎉 Project %s %s!", c.highlight(fmt.Sprintf("'%s'", config.Name)), c.success("generated successfully"))
 	c.displayGenerationSummary(config, outputPath)
-	
+
 	return nil
 }
 
@@ -5565,7 +5541,7 @@ func (c *CLI) determineOutputPath(config *models.ProjectConfig, options interfac
 	if outputPath == "" {
 		outputPath = "./output/generated"
 	}
-	
+
 	// Always append project name to the output path
 	return filepath.Join(outputPath, config.Name)
 }
@@ -5605,7 +5581,7 @@ func (c *CLI) displayGenerationSummary(config *models.ProjectConfig, outputPath 
 	c.QuietOutput("Project: %s", c.success(config.Name))
 	c.QuietOutput("Location: %s", c.info(outputPath))
 	c.QuietOutput("Components generated: %s", c.success(fmt.Sprintf("%d", c.countSelectedComponents(config))))
-	
+
 	c.QuietOutput("\n%s", c.highlight("🚀 Next Steps:"))
 	c.QuietOutput("%s. Navigate to your project: %s", c.info("1"), c.colorize(ColorCyan, fmt.Sprintf("cd %s", outputPath)))
 	c.QuietOutput("%s. Review the generated %s for setup instructions", c.info("2"), c.highlight("README.md"))
@@ -5652,13 +5628,13 @@ func (c *CLI) performPostGenerationTasks(config *models.ProjectConfig, outputPat
 // initializeGitRepository initializes a git repository in the output directory
 func (c *CLI) initializeGitRepository(outputPath string) error {
 	c.VerboseOutput("📝 Initializing git repository...")
-	
+
 	cmd := exec.Command("git", "init")
 	cmd.Dir = outputPath
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to initialize git repository: %w", err)
 	}
-	
+
 	c.VerboseOutput("✅ Git repository initialized")
 	return nil
 }
@@ -5666,7 +5642,7 @@ func (c *CLI) initializeGitRepository(outputPath string) error {
 // setFilePermissions sets appropriate file permissions for generated files
 func (c *CLI) setFilePermissions(outputPath string) error {
 	c.VerboseOutput("🔒 Setting file permissions...")
-	
+
 	// Make script files executable
 	scriptsDir := filepath.Join(outputPath, "Scripts")
 	if _, err := os.Stat(scriptsDir); err == nil {
@@ -5675,7 +5651,7 @@ func (c *CLI) setFilePermissions(outputPath string) error {
 				return err
 			}
 			if !info.IsDir() && (strings.HasSuffix(path, ".sh") || strings.HasSuffix(path, ".py")) {
-				return os.Chmod(path, 0755)
+				return os.Chmod(path, 0600)
 			}
 			return nil
 		})
@@ -5683,45 +5659,8 @@ func (c *CLI) setFilePermissions(outputPath string) error {
 			return fmt.Errorf("failed to set script permissions: %w", err)
 		}
 	}
-	
+
 	c.VerboseOutput("✅ File permissions set")
-	return nil
-}
-
-// mergeEnvironmentWithOptions merges environment variables with command-line options
-func (c *CLI) mergeEnvironmentWithOptions(config *models.ProjectConfig, options *interfaces.GenerateOptions) error {
-	// Load environment configuration
-	envConfig, err := c.loadEnvironmentConfig()
-	if err != nil {
-		return fmt.Errorf("failed to load environment configuration: %w", err)
-	}
-
-	// Override config output path if not set
-	if options.OutputPath == "" {
-		if envConfig.OutputPath != "" {
-			config.OutputPath = envConfig.OutputPath
-		} else {
-			config.OutputPath = "./" + config.Name
-		}
-	} else {
-		config.OutputPath = options.OutputPath
-	}
-
-	// Merge boolean options (command-line flags take precedence)
-	options.Force = options.Force || envConfig.Force
-	options.Minimal = options.Minimal || envConfig.Minimal
-	options.Offline = options.Offline || envConfig.Offline
-	options.UpdateVersions = options.UpdateVersions || envConfig.UpdateVersions
-	options.SkipValidation = options.SkipValidation || envConfig.SkipValidation
-	options.BackupExisting = options.BackupExisting && envConfig.BackupExisting
-	options.IncludeExamples = options.IncludeExamples && envConfig.IncludeExamples
-
-	// Set template if not specified
-	if len(options.Templates) == 0 && envConfig.Template != "" {
-		options.Templates = []string{envConfig.Template}
-	}
-
-	c.VerboseOutput("✅ Environment variables merged with command-line options")
 	return nil
 }
 

@@ -32,7 +32,7 @@ func RunVersionCommand(cmd *cobra.Command, args []string, cli interfaces.CLIInte
 	}
 
 	currentVersion := versionManager.GetCurrentVersion()
-	
+
 	// Check for various output format flags
 	jsonOutput, _ := cmd.Flags().GetBool("json")
 	format, _ := cmd.Flags().GetString("format")
@@ -56,6 +56,6 @@ func RunVersionCommand(cmd *cobra.Command, args []string, cli interfaces.CLIInte
 		}
 		fmt.Println(string(jsonBytes))
 	}
-	
+
 	return nil
 }

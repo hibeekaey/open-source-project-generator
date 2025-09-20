@@ -225,7 +225,7 @@ func (m *Manager) ProcessTemplate(templateName string, config *models.ProjectCon
 
 	// Create a copy of config for template-specific processing
 	processConfig := *config
-	
+
 	// For Android templates, add package-specific fields while keeping originals
 	if templateName == "android-kotlin" {
 		// Add Android-specific package naming fields

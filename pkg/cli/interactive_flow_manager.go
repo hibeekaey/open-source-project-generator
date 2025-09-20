@@ -54,8 +54,8 @@ func (ifm *InteractiveFlowManager) RunInteractiveFlow(ctx context.Context, optio
 
 	session, err := ifm.ui.StartSession(ctx, sessionConfig)
 	if err != nil {
-		return fmt.Errorf("🚫 %s %s", 
-			"Unable to start interactive session.", 
+		return fmt.Errorf("🚫 %s %s",
+			"Unable to start interactive session.",
 			"Check if your terminal supports interactive mode")
 	}
 	defer func() {
@@ -68,8 +68,8 @@ func (ifm *InteractiveFlowManager) RunInteractiveFlow(ctx context.Context, optio
 	ifm.cli.VerboseOutput("🎯 Let's choose your project templates...")
 	selectedTemplates, err := ifm.runTemplateSelection(ctx)
 	if err != nil {
-		return fmt.Errorf("🚫 %s %s", 
-			"Template selection failed.", 
+		return fmt.Errorf("🚫 %s %s",
+			"Template selection failed.",
 			"Check if templates are available and accessible")
 	}
 
@@ -77,8 +77,8 @@ func (ifm *InteractiveFlowManager) RunInteractiveFlow(ctx context.Context, optio
 	ifm.cli.VerboseOutput("⚙️  Now let's configure your project details...")
 	config, err := ifm.runProjectConfiguration(ctx, selectedTemplates)
 	if err != nil {
-		return fmt.Errorf("🚫 %s %s", 
-			"Project configuration failed.", 
+		return fmt.Errorf("🚫 %s %s",
+			"Project configuration failed.",
 			"Check your input values and try again")
 	}
 
@@ -86,8 +86,8 @@ func (ifm *InteractiveFlowManager) RunInteractiveFlow(ctx context.Context, optio
 	ifm.cli.VerboseOutput("📁 Where would you like to create your project?")
 	outputPath, err := ifm.runDirectorySelection(ctx, options.OutputPath, config.Name)
 	if err != nil {
-		return fmt.Errorf("🚫 %s %s", 
-			"Directory selection failed.", 
+		return fmt.Errorf("🚫 %s %s",
+			"Directory selection failed.",
 			"Check if the directory path is valid and accessible")
 	}
 
@@ -95,8 +95,8 @@ func (ifm *InteractiveFlowManager) RunInteractiveFlow(ctx context.Context, optio
 	ifm.cli.VerboseOutput("👀 Preparing a preview of your project structure...")
 	preview, err := ifm.runStructurePreview(ctx, config, selectedTemplates, outputPath)
 	if err != nil {
-		return fmt.Errorf("🚫 %s %s", 
-			"Preview generation failed.", 
+		return fmt.Errorf("🚫 %s %s",
+			"Preview generation failed.",
 			"Check if templates are valid and accessible")
 	}
 
@@ -104,8 +104,8 @@ func (ifm *InteractiveFlowManager) RunInteractiveFlow(ctx context.Context, optio
 	ifm.cli.VerboseOutput("✅ Ready to generate! Let's confirm everything looks good...")
 	confirmed, err := ifm.runFinalConfirmation(ctx, config, preview, options)
 	if err != nil {
-		return fmt.Errorf("🚫 %s %s", 
-			"Confirmation process failed.", 
+		return fmt.Errorf("🚫 %s %s",
+			"Confirmation process failed.",
 			"Check your terminal input capabilities")
 	}
 

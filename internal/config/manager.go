@@ -107,8 +107,8 @@ func (m *Manager) LoadConfig(configPath string) (*models.ProjectConfig, error) {
 
 	content, err := utils.SafeReadFile(configPath)
 	if err != nil {
-		return nil, fmt.Errorf("🚫 %s %s", 
-			"Unable to read configuration file.", 
+		return nil, fmt.Errorf("🚫 %s %s",
+			"Unable to read configuration file.",
 			"Check if the file exists and has proper permissions")
 	}
 
@@ -118,14 +118,14 @@ func (m *Manager) LoadConfig(configPath string) (*models.ProjectConfig, error) {
 	switch ext {
 	case ".json":
 		if err := json.Unmarshal(content, &config); err != nil {
-			return nil, fmt.Errorf("🚫 %s %s", 
-				"Invalid JSON configuration file.", 
+			return nil, fmt.Errorf("🚫 %s %s",
+				"Invalid JSON configuration file.",
 				"Check the file syntax and fix any JSON formatting errors")
 		}
 	case ".yaml", ".yml":
 		if err := yaml.Unmarshal(content, &config); err != nil {
-			return nil, fmt.Errorf("🚫 %s %s", 
-				"Invalid YAML configuration file.", 
+			return nil, fmt.Errorf("🚫 %s %s",
+				"Invalid YAML configuration file.",
 				"Check the file syntax and fix any YAML formatting errors")
 		}
 	default:
@@ -157,8 +157,8 @@ func (m *Manager) SaveConfig(config *models.ProjectConfig, configPath string) er
 	}
 
 	if err := utils.SafeWriteFile(configPath, content); err != nil {
-		return fmt.Errorf("🚫 %s %s", 
-			"Unable to write configuration file.", 
+		return fmt.Errorf("🚫 %s %s",
+			"Unable to write configuration file.",
 			"Check file permissions and available disk space")
 	}
 
