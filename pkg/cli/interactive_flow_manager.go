@@ -70,29 +70,6 @@ func (ifm *InteractiveFlowManager) RunInteractiveFlow(ctx context.Context, optio
 	return ifm.runProjectGeneration(ctx, config, nil, outputPath, options)
 }
 
-// runTemplateSelection handles interactive template selection
-func (ifm *InteractiveFlowManager) runTemplateSelection(ctx context.Context) ([]interfaces.TemplateSelection, error) {
-	if err := ifm.ui.ShowBreadcrumb(ctx, []string{"Generator", "Template Selection"}); err != nil {
-		ifm.logger.Error("🧭 Couldn't update navigation breadcrumb", "error", err)
-	}
-
-	// For now, return a default template selection
-	// This will be enhanced in future tasks when template selection UI is implemented
-	defaultTemplate := interfaces.TemplateSelection{
-		Template: interfaces.TemplateInfo{
-			Name:        "go-gin",
-			DisplayName: "Go Gin API",
-			Description: "RESTful API server using Gin framework",
-			Category:    "backend",
-			Technology:  "go",
-			Version:     "1.0.0",
-		},
-		Selected: true,
-		Options:  make(map[string]interface{}),
-	}
-
-	return []interfaces.TemplateSelection{defaultTemplate}, nil
-}
 
 // runProjectConfiguration handles interactive project configuration collection
 func (ifm *InteractiveFlowManager) runProjectConfiguration(ctx context.Context, templates []interfaces.TemplateSelection) (*models.ProjectConfig, error) {
@@ -135,61 +112,6 @@ func (ifm *InteractiveFlowManager) runDirectorySelection(ctx context.Context, de
 	return outputPath, nil
 }
 
-// runStructurePreview handles project structure preview generation and display
-func (ifm *InteractiveFlowManager) runStructurePreview(ctx context.Context, config *models.ProjectConfig, templates []interfaces.TemplateSelection, outputPath string) (*interfaces.ProjectStructurePreview, error) {
-	if err := ifm.ui.ShowBreadcrumb(ctx, []string{"Generator", "Project Preview"}); err != nil {
-		ifm.logger.Error("🧭 Couldn't update navigation breadcrumb", "error", err)
-	}
-
-	// Create a basic preview structure
-	// This will be enhanced in future tasks when preview generation is fully implemented
-	preview := &interfaces.ProjectStructurePreview{
-		RootDirectory: outputPath,
-		Structure: []interfaces.DirectoryNode{
-			{
-				Name: config.Name,
-				Type: "directory",
-				Children: []interfaces.DirectoryNode{
-					{Name: "cmd", Type: "directory", Source: "go-gin"},
-					{Name: "internal", Type: "directory", Source: "go-gin"},
-					{Name: "pkg", Type: "directory", Source: "go-gin"},
-					{Name: "README.md", Type: "file", Source: "base"},
-					{Name: "go.mod", Type: "file", Source: "go-gin"},
-				},
-			},
-		},
-		FileCount:     15,
-		EstimatedSize: 1024 * 50, // 50KB estimate
-		Components: []interfaces.ComponentSummary{
-			{
-				Name:        "Go Gin API",
-				Type:        "backend",
-				Description: "RESTful API server",
-				Files:       []string{"main.go", "go.mod", "internal/", "pkg/"},
-			},
-		},
-	}
-
-	// Display preview using table
-	tableConfig := interfaces.TableConfig{
-		Title:   "Project Structure Preview",
-		Headers: []string{"Component", "Type", "Files"},
-		Rows: [][]string{
-			{"Go Gin API", "Backend", "15 files"},
-			{"Base Files", "Infrastructure", "README.md, LICENSE"},
-		},
-		MaxWidth:   80,
-		Pagination: false,
-	}
-
-	if err := ifm.ui.ShowTable(ctx, tableConfig); err != nil {
-		ifm.logger.WarnWithFields("📋 Couldn't display preview table", map[string]interface{}{
-			"error": err.Error(),
-		})
-	}
-
-	return preview, nil
-}
 
 // runFinalConfirmation handles final confirmation before generation
 func (ifm *InteractiveFlowManager) runFinalConfirmation(ctx context.Context, config *models.ProjectConfig, preview *interfaces.ProjectStructurePreview, options interfaces.GenerateOptions) bool {
@@ -246,13 +168,6 @@ func (ifm *InteractiveFlowManager) runFinalConfirmation(ctx context.Context, con
 	return confirmResult.Confirmed && !confirmResult.Cancelled
 }
 
-// runConfigurationPersistence handles saving configuration for reuse
-func (ifm *InteractiveFlowManager) runConfigurationPersistence(ctx context.Context, config *models.ProjectConfig, templates []interfaces.TemplateSelection) error {
-	// For now, skip configuration persistence
-	// This will be implemented in future tasks when configuration management is enhanced
-	ifm.cli.VerboseOutput("💾 Configuration persistence will be available in a future update")
-	return nil
-}
 
 // runProjectGeneration handles the actual project generation with progress tracking
 func (ifm *InteractiveFlowManager) runProjectGeneration(ctx context.Context, config *models.ProjectConfig, templates []interfaces.TemplateSelection, outputPath string, options interfaces.GenerateOptions) error {

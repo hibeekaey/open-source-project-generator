@@ -189,7 +189,9 @@ func (sm *ScrollableMenu) readRawInput() (string, error) {
 		// Fallback to regular input if raw mode fails
 		return sm.ui.readInput()
 	}
-	defer term.Restore(int(os.Stdin.Fd()), oldState)
+	defer func() {
+		_ = term.Restore(int(os.Stdin.Fd()), oldState)
+	}()
 
 	buf := make([]byte, 3)
 	n, err := os.Stdin.Read(buf)
@@ -295,7 +297,7 @@ func (sm *ScrollableMenu) handleScrollableMenuInput(input string, config *interf
 
 		// Check for shortcut keys
 		for i, option := range config.Options {
-			if option.Shortcut != "" && strings.ToLower(option.Shortcut) == strings.ToLower(input) {
+			if option.Shortcut != "" && strings.EqualFold(option.Shortcut, input) {
 				if !option.Disabled {
 					return &interfaces.MenuResult{
 						SelectedIndex: i,
