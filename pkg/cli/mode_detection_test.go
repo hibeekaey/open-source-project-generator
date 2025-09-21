@@ -55,7 +55,7 @@ func TestDetectGenerationMode(t *testing.T) {
 			expected:     "config-file",
 		},
 		{
-			name:     "default to interactive",
+			name: "default to interactive",
 			expected: func() string {
 				if isCI {
 					return "non-interactive"

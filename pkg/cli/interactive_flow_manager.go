@@ -44,86 +44,30 @@ func NewInteractiveFlowManager(
 
 // RunInteractiveFlow executes the complete interactive generation workflow
 func (ifm *InteractiveFlowManager) RunInteractiveFlow(ctx context.Context, options interfaces.GenerateOptions) error {
-	// Start interactive UI session
-	sessionConfig := interfaces.SessionConfig{
-		Title:       "Project Generator",
-		Description: "Interactive project configuration and generation",
-		Timeout:     30 * 60, // 30 minutes
-		AutoSave:    true,
-	}
+	fmt.Println("🚀 Project Generator")
+	fmt.Println()
 
-	session, err := ifm.ui.StartSession(ctx, sessionConfig)
+	// Step 1: Project Configuration Collection
+	config, err := ifm.runProjectConfiguration(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("🚫 %s %s",
-			"Unable to start interactive session.",
-			"Check if your terminal supports interactive mode")
-	}
-	defer func() {
-		if endErr := ifm.ui.EndSession(ctx, session); endErr != nil {
-			ifm.logger.Error("🖥️  Couldn't end UI session properly", "error", endErr)
-		}
-	}()
-
-	// Step 1: Template Selection
-	ifm.cli.VerboseOutput("🎯 Let's choose your project templates...")
-	selectedTemplates, err := ifm.runTemplateSelection(ctx)
-	if err != nil {
-		return fmt.Errorf("🚫 %s %s",
-			"Template selection failed.",
-			"Check if templates are available and accessible")
+		return fmt.Errorf("project configuration failed: %w", err)
 	}
 
-	// Step 2: Project Configuration Collection
-	ifm.cli.VerboseOutput("⚙️  Now let's configure your project details...")
-	config, err := ifm.runProjectConfiguration(ctx, selectedTemplates)
-	if err != nil {
-		return fmt.Errorf("🚫 %s %s",
-			"Project configuration failed.",
-			"Check your input values and try again")
-	}
-
-	// Step 3: Output Directory Selection
-	ifm.cli.VerboseOutput("📁 Where would you like to create your project?")
+	// Step 2: Output Directory Selection
 	outputPath, err := ifm.runDirectorySelection(ctx, options.OutputPath, config.Name)
 	if err != nil {
-		return fmt.Errorf("🚫 %s %s",
-			"Directory selection failed.",
-			"Check if the directory path is valid and accessible")
+		return fmt.Errorf("directory selection failed: %w", err)
 	}
 
-	// Step 4: Project Structure Preview
-	ifm.cli.VerboseOutput("👀 Preparing a preview of your project structure...")
-	preview, err := ifm.runStructurePreview(ctx, config, selectedTemplates, outputPath)
-	if err != nil {
-		return fmt.Errorf("🚫 %s %s",
-			"Preview generation failed.",
-			"Check if templates are valid and accessible")
-	}
-
-	// Step 5: Final Confirmation
-	ifm.cli.VerboseOutput("✅ Ready to generate! Let's confirm everything looks good...")
-	confirmed, err := ifm.runFinalConfirmation(ctx, config, preview, options)
-	if err != nil {
-		return fmt.Errorf("🚫 %s %s",
-			"Confirmation process failed.",
-			"Check your terminal input capabilities")
-	}
-
+	// Step 3: Final Confirmation
+	confirmed := ifm.runFinalConfirmation(ctx, config, nil, options)
 	if !confirmed {
-		ifm.cli.QuietOutput("❌ Project generation cancelled")
+		fmt.Println("❌ Project generation cancelled")
 		return nil
 	}
 
-	// Step 6: Configuration Persistence (optional)
-	if err := ifm.runConfigurationPersistence(ctx, config, selectedTemplates); err != nil {
-		ifm.logger.WarnWithFields("💾 Couldn't save your configuration", map[string]interface{}{
-			"error": err.Error(),
-		})
-	}
-
-	// Step 7: Project Generation
-	ifm.cli.VerboseOutput("🚀 Generating your project now...")
-	return ifm.runProjectGeneration(ctx, config, selectedTemplates, outputPath, options)
+	// Step 4: Project Generation
+	return ifm.runProjectGeneration(ctx, config, nil, outputPath, options)
 }
 
 // runTemplateSelection handles interactive template selection
@@ -162,21 +106,33 @@ func (ifm *InteractiveFlowManager) runProjectConfiguration(ctx context.Context, 
 
 // runDirectorySelection handles interactive output directory selection
 func (ifm *InteractiveFlowManager) runDirectorySelection(ctx context.Context, defaultPath, projectName string) (string, error) {
-	if err := ifm.ui.ShowBreadcrumb(ctx, []string{"Generator", "Directory Selection"}); err != nil {
-		ifm.logger.Error("🧭 Couldn't update navigation breadcrumb", "error", err)
-	}
-
-	// Determine default path
+	// Determine default path - just the base directory, not including project name
 	if defaultPath == "" {
-		if projectName != "" {
-			defaultPath = "output/generated/" + projectName
-		} else {
-			defaultPath = "output/generated"
-		}
+		defaultPath = "output/generated"
 	}
 
-	// Use existing directory selection implementation
-	return ifm.cli.runInteractiveDirectorySelection(ctx, defaultPath)
+	// Simple text prompt for output directory
+	dirConfig := interfaces.TextPromptConfig{
+		Prompt:       "Output Directory",
+		Description:  "Enter the base path where your project should be generated",
+		Required:     false,
+		DefaultValue: defaultPath,
+	}
+
+	dirResult, err := ifm.ui.PromptText(ctx, dirConfig)
+	if err != nil {
+		return "", fmt.Errorf("failed to get output directory: %w", err)
+	}
+	if dirResult.Cancelled {
+		return "", fmt.Errorf("directory selection cancelled")
+	}
+
+	outputPath := dirResult.Value
+	if outputPath == "" {
+		outputPath = defaultPath
+	}
+
+	return outputPath, nil
 }
 
 // runStructurePreview handles project structure preview generation and display
@@ -236,13 +192,58 @@ func (ifm *InteractiveFlowManager) runStructurePreview(ctx context.Context, conf
 }
 
 // runFinalConfirmation handles final confirmation before generation
-func (ifm *InteractiveFlowManager) runFinalConfirmation(ctx context.Context, config *models.ProjectConfig, preview *interfaces.ProjectStructurePreview, options interfaces.GenerateOptions) (bool, error) {
-	if err := ifm.ui.ShowBreadcrumb(ctx, []string{"Generator", "Final Confirmation"}); err != nil {
-		ifm.logger.Error("🧭 Couldn't update navigation breadcrumb", "error", err)
+func (ifm *InteractiveFlowManager) runFinalConfirmation(ctx context.Context, config *models.ProjectConfig, preview *interfaces.ProjectStructurePreview, options interfaces.GenerateOptions) bool {
+	// Show configuration summary
+	fmt.Println("\n📋 Project Summary")
+	fmt.Println("==================")
+	fmt.Printf("Name: %s\n", config.Name)
+	if config.Organization != "" {
+		fmt.Printf("Organization: %s\n", config.Organization)
+	}
+	if config.Description != "" {
+		fmt.Printf("Description: %s\n", config.Description)
+	}
+	if config.Author != "" {
+		fmt.Printf("Author: %s\n", config.Author)
+	}
+	fmt.Printf("License: %s\n", config.License)
+
+	// Show selected components
+	fmt.Println("\nComponents:")
+	if config.Components.Backend.GoGin {
+		fmt.Println("  ✅ Go Gin API")
+	}
+	if config.Components.Frontend.NextJS.App {
+		fmt.Println("  ✅ Next.js Frontend")
+	}
+	if config.Components.Database.PostgreSQL {
+		fmt.Println("  ✅ PostgreSQL Database")
+	}
+	if config.Components.Cache.Redis {
+		fmt.Println("  ✅ Redis Cache")
+	}
+	if config.Components.Infrastructure.Docker {
+		fmt.Println("  ✅ Docker Configuration")
+	}
+	if config.Components.Infrastructure.Kubernetes {
+		fmt.Println("  ✅ Kubernetes Manifests")
 	}
 
-	// Use existing confirmation method
-	return ifm.cli.runInteractiveConfirmation(ctx, config, options), nil
+	// Simple confirmation prompt
+	confirmConfig := interfaces.ConfirmConfig{
+		Prompt:       "Generate Project",
+		Description:  "Proceed with generating the project?",
+		DefaultValue: true,
+		YesLabel:     "Generate",
+		NoLabel:      "Cancel",
+	}
+
+	confirmResult, err := ifm.ui.PromptConfirm(ctx, confirmConfig)
+	if err != nil {
+		return false
+	}
+
+	return confirmResult.Confirmed && !confirmResult.Cancelled
 }
 
 // runConfigurationPersistence handles saving configuration for reuse
@@ -255,56 +256,11 @@ func (ifm *InteractiveFlowManager) runConfigurationPersistence(ctx context.Conte
 
 // runProjectGeneration handles the actual project generation with progress tracking
 func (ifm *InteractiveFlowManager) runProjectGeneration(ctx context.Context, config *models.ProjectConfig, templates []interfaces.TemplateSelection, outputPath string, options interfaces.GenerateOptions) error {
-	if err := ifm.ui.ShowBreadcrumb(ctx, []string{"Generator", "Generation"}); err != nil {
-		ifm.logger.Error("🧭 Couldn't update navigation breadcrumb", "error", err)
-	}
+	// Set the output path in options
+	options.OutputPath = outputPath
 
-	// Use existing interactive generation method
-	templateName := "go-gin"
-	if len(templates) > 0 {
-		templateName = templates[0].Template.Name
-	}
-
-	return ifm.cli.runInteractiveGeneration(ctx, templateName, config, outputPath)
+	// Use the same core generation workflow as non-interactive mode
+	return ifm.cli.executeGenerationWorkflow(config, options)
 }
 
 // Helper methods
-
-// formatSize formats a byte size into a human-readable string
-// TODO: This method will be used for displaying file sizes in progress tracking
-//
-//nolint:unused // Will be used in future progress tracking implementation
-func (ifm *InteractiveFlowManager) formatSize(bytes int64) string {
-	const unit = 1024
-	if bytes < unit {
-		return fmt.Sprintf("%d B", bytes)
-	}
-	div, exp := int64(unit), 0
-	for n := bytes / unit; n >= unit; n /= unit {
-		div *= unit
-		exp++
-	}
-	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
-}
-
-// generateProgressSteps creates progress steps based on selected templates
-// TODO: This method will be used for progress tracking during generation
-//
-//nolint:unused // Will be used in future progress tracking implementation
-func (ifm *InteractiveFlowManager) generateProgressSteps(templates []interfaces.TemplateSelection) []string {
-	steps := []string{
-		"Initializing generation",
-		"Creating directory structure",
-		"Processing templates",
-		"Generating configuration files",
-		"Setting up project files",
-		"Finalizing project",
-	}
-
-	// Add template-specific steps
-	for _, template := range templates {
-		steps = append(steps, fmt.Sprintf("Processing %s template", template.Template.DisplayName))
-	}
-
-	return steps
-}

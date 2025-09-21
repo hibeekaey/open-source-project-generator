@@ -290,48 +290,6 @@ func (c *CLI) createTemplateError(message string, templateName string) *Structur
 	return err
 }
 
-// createNetworkError creates a structured network error
-//
-//nolint:unused // May be used in future network operations
-func (c *CLI) createNetworkError(message string, url string) *StructuredError {
-	err := NewStructuredError(ErrorTypeNetwork, message, ExitCodeNetworkError)
-	err = err.WithDetails("url", url)
-	err = err.WithSuggestions(
-		"Check your internet connection",
-		"Use --offline flag to work with cached data",
-		"Check if the URL is accessible",
-	)
-	return err
-}
-
-// createFileSystemError creates a structured filesystem error
-//
-//nolint:unused // May be used in future filesystem operations
-func (c *CLI) createFileSystemError(message string, path string) *StructuredError {
-	err := NewStructuredError(ErrorTypeFileSystem, message, ExitCodeFileSystemError)
-	err = err.WithDetails("path", path)
-	err = err.WithSuggestions(
-		"Check if the path exists and is accessible",
-		"Verify file permissions",
-		"Ensure sufficient disk space",
-	)
-	return err
-}
-
-// createPermissionError creates a structured permission error
-//
-//nolint:unused // May be used in future permission-related operations
-func (c *CLI) createPermissionError(message string, path string) *StructuredError {
-	err := NewStructuredError(ErrorTypePermission, message, ExitCodePermissionDenied)
-	err = err.WithDetails("path", path)
-	err = err.WithSuggestions(
-		"Check file/directory permissions",
-		"Run with appropriate user privileges",
-		"Verify ownership of the target directory",
-	)
-	return err
-}
-
 // createAuditError creates a structured audit error
 func (c *CLI) createAuditError(message string, score float64) *StructuredError {
 	err := NewStructuredError(ErrorTypeAudit, message, ExitCodeAuditFailed)

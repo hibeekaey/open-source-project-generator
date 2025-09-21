@@ -11,7 +11,7 @@ func skipIfNotInteractive(t *testing.T) {
 	if os.Getenv("CI") != "" {
 		t.Skip("Skipping interactive test in CI environment")
 	}
-	
+
 	// Skip if not running with a TTY
 	if !isTerminal() {
 		t.Skip("Skipping interactive test - not running in a terminal")

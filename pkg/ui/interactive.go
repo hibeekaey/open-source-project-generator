@@ -93,34 +93,9 @@ func (ui *InteractiveUI) ShowMenu(ctx context.Context, config interfaces.MenuCon
 		return nil, fmt.Errorf("menu must have at least one option")
 	}
 
-	ui.clearScreen()
-	ui.showHeader(config.Title, config.Description)
-
-	currentIndex := config.DefaultItem
-	if currentIndex < 0 || currentIndex >= len(config.Options) {
-		currentIndex = 0
-	}
-
-	for {
-		select {
-		case <-ctx.Done():
-			return &interfaces.MenuResult{Cancelled: true}, ctx.Err()
-		default:
-		}
-
-		ui.displayMenu(config, currentIndex)
-		ui.showNavigationHelp(config.AllowBack, config.AllowQuit, config.ShowHelp)
-
-		input, err := ui.readInput()
-		if err != nil {
-			return nil, fmt.Errorf("failed to read input: %w", err)
-		}
-
-		result, shouldReturn := ui.handleMenuInput(input, &config, &currentIndex)
-		if shouldReturn {
-			return result, nil
-		}
-	}
+	// Always use scrollable menu for proper arrow key handling
+	scrollableMenu := NewScrollableMenu(ui)
+	return scrollableMenu.ShowScrollableMenu(ctx, config)
 }
 
 // displayMenu renders the menu options
@@ -253,36 +228,9 @@ func (ui *InteractiveUI) ShowMultiSelect(ctx context.Context, config interfaces.
 		return nil, fmt.Errorf("multi-select must have at least one option")
 	}
 
-	ui.clearScreen()
-	ui.showHeader(config.Title, config.Description)
-
-	currentIndex := 0
-	searchQuery := ""
-	filteredIndices := make([]int, len(config.Options))
-	for i := range filteredIndices {
-		filteredIndices[i] = i
-	}
-
-	for {
-		select {
-		case <-ctx.Done():
-			return &interfaces.MultiSelectResult{Cancelled: true}, ctx.Err()
-		default:
-		}
-
-		ui.displayMultiSelect(config, currentIndex, searchQuery, filteredIndices)
-		ui.showMultiSelectHelp(config.AllowBack, config.AllowQuit, config.ShowHelp, config.SearchEnabled)
-
-		input, err := ui.readInput()
-		if err != nil {
-			return nil, fmt.Errorf("failed to read input: %w", err)
-		}
-
-		result, shouldReturn := ui.handleMultiSelectInput(input, &config, &currentIndex, &searchQuery, &filteredIndices)
-		if shouldReturn {
-			return result, nil
-		}
-	}
+	// Always use scrollable multi-select for proper arrow key handling
+	scrollableMenu := NewScrollableMenu(ui)
+	return scrollableMenu.ShowScrollableMultiSelect(ctx, config)
 }
 
 // displayMultiSelect renders the multi-selection interface

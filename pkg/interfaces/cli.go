@@ -30,7 +30,6 @@ type CLIInterface interface {
 
 	// Interactive operations
 	PromptProjectDetails() (*models.ProjectConfig, error)
-	SelectComponents() ([]string, error)
 	ConfirmGeneration(*models.ProjectConfig) bool
 
 	// Advanced interactive operations

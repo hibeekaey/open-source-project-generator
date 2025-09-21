@@ -392,12 +392,12 @@ func (ssg *StandardizedStructureGenerator) copyFile(src, dst string, mode os.Fil
 	// Validate paths to prevent directory traversal
 	cleanSrc := filepath.Clean(src)
 	cleanDst := filepath.Clean(dst)
-	
+
 	// Ensure paths don't contain directory traversal sequences
 	if strings.Contains(cleanSrc, "..") || strings.Contains(cleanDst, "..") {
 		return fmt.Errorf("invalid path: directory traversal detected")
 	}
-	
+
 	srcFile, err := os.Open(cleanSrc)
 	if err != nil {
 		return fmt.Errorf("failed to open source file: %w", err)

@@ -217,9 +217,9 @@ func TestContainerNilHandling(t *testing.T) {
 // Mock implementations for testing
 type mockCLI struct{}
 
-func (m *mockCLI) Run(args []string) error                                     { return nil }
-func (m *mockCLI) PromptProjectDetails() (*models.ProjectConfig, error)        { return nil, nil }
-func (m *mockCLI) SelectComponents() ([]string, error)                         { return nil, nil }
+func (m *mockCLI) Run(args []string) error                              { return nil }
+func (m *mockCLI) PromptProjectDetails() (*models.ProjectConfig, error) { return nil, nil }
+
 func (m *mockCLI) ConfirmGeneration(*models.ProjectConfig) bool                { return true }
 func (m *mockCLI) GenerateFromConfig(string, interfaces.GenerateOptions) error { return nil }
 func (m *mockCLI) ValidateProject(string, interfaces.ValidationOptions) (*interfaces.ValidationResult, error) {

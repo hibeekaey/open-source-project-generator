@@ -1681,7 +1681,7 @@ func (c *CLI) runUpdate(cmd *cobra.Command, args []string) error {
 				c.error("Unable to set update channel."),
 				c.info("Check if the channel name is valid"))
 		}
-		fmt.Printf("📡 Using update channel: %s\n", channel)
+		fmt.Printf("📡 Using update channel: %s\n", c.highlight(channel))
 	}
 
 	if check {
@@ -1693,9 +1693,9 @@ func (c *CLI) runUpdate(cmd *cobra.Command, args []string) error {
 				c.info("Check your internet connection or try --offline mode"))
 		}
 
-		fmt.Printf("📦 Current Version: %s\n", updateInfo.CurrentVersion)
-		fmt.Printf("🆕 Latest Version: %s\n", updateInfo.LatestVersion)
-		fmt.Printf("🔄 Update Available: %t\n", updateInfo.UpdateAvailable)
+		fmt.Printf("📦 Current Version: %s\n", c.info(updateInfo.CurrentVersion))
+		fmt.Printf("🆕 Latest Version: %s\n", c.success(updateInfo.LatestVersion))
+		fmt.Printf("🔄 Update Available: %s\n", c.highlight(fmt.Sprintf("%t", updateInfo.UpdateAvailable)))
 
 		if updateInfo.UpdateAvailable {
 			fmt.Printf("📅 Release Date: %s\n", updateInfo.ReleaseDate.Format("2006-01-02"))
@@ -1791,7 +1791,7 @@ func (c *CLI) runUpdate(cmd *cobra.Command, args []string) error {
 			}
 		}
 
-		fmt.Printf("⬇️  Installing update to version %s...\n", targetVersion)
+		fmt.Printf("⬇️  Installing update to version %s...\n", c.highlight(targetVersion))
 
 		// Configure update options
 		if !backup {
@@ -1808,7 +1808,7 @@ func (c *CLI) runUpdate(cmd *cobra.Command, args []string) error {
 				c.info("Check your internet connection and try again"))
 		}
 
-		fmt.Printf("🎉 Successfully updated to version %s\n", targetVersion)
+		fmt.Printf("🎉 Successfully updated to version %s\n", c.success(targetVersion))
 		fmt.Println("🔄 Restart any running instances to use the new version")
 		return nil
 	}
@@ -1832,7 +1832,7 @@ func (c *CLI) runUpdate(cmd *cobra.Command, args []string) error {
 	}
 
 	if updateInfo.UpdateAvailable {
-		fmt.Printf("🎉 Update available: %s -> %s\n", updateInfo.CurrentVersion, updateInfo.LatestVersion)
+		fmt.Printf("🎉 Update available: %s -> %s\n", c.info(updateInfo.CurrentVersion), c.success(updateInfo.LatestVersion))
 		if updateInfo.Security {
 			fmt.Println("🔒 This update contains security fixes - update recommended")
 		}
@@ -2034,52 +2034,6 @@ func (c *CLI) runLogs(cmd *cobra.Command, args []string) error {
 
 // Interface implementation methods - these will be implemented in subsequent tasks
 
-func (c *CLI) SelectComponents() ([]string, error) {
-	if c.isNonInteractiveMode() {
-		// Return default components in non-interactive mode
-		return []string{"backend-go-gin", "frontend-nextjs", "infrastructure-docker"}, nil
-	}
-
-	c.QuietOutput("Component Selection")
-	c.QuietOutput("==================")
-	c.QuietOutput("Select components to include in your project:")
-
-	components := []string{}
-
-	// Backend components
-	c.QuietOutput("\nBackend Components:")
-	fmt.Print("Include Go Gin API? (Y/n): ")
-	var response string
-	_, _ = fmt.Scanln(&response) // Ignore error for user input
-	if strings.ToLower(strings.TrimSpace(response)) != "n" {
-		components = append(components, "backend-go-gin")
-	}
-
-	// Frontend components
-	c.QuietOutput("\nFrontend Components:")
-	fmt.Print("Include Next.js App? (Y/n): ")
-	_, _ = fmt.Scanln(&response) // Ignore error for user input
-	if strings.ToLower(strings.TrimSpace(response)) != "n" {
-		components = append(components, "frontend-nextjs")
-	}
-
-	// Infrastructure components
-	c.QuietOutput("\nInfrastructure Components:")
-	fmt.Print("Include Docker configuration? (Y/n): ")
-	_, _ = fmt.Scanln(&response) // Ignore error for user input
-	if strings.ToLower(strings.TrimSpace(response)) != "n" {
-		components = append(components, "infrastructure-docker")
-	}
-
-	fmt.Print("Include Kubernetes configuration? (y/N): ")
-	_, _ = fmt.Scanln(&response) // Ignore error for user input
-	if strings.ToLower(strings.TrimSpace(response)) == "y" {
-		components = append(components, "infrastructure-kubernetes")
-	}
-
-	return components, nil
-}
-
 // Helper methods for generate command
 
 // validateGenerateConfiguration validates the configuration for generation
@@ -2111,27 +2065,27 @@ func (c *CLI) validateGenerateConfiguration(config *models.ProjectConfig, option
 func (c *CLI) performPreGenerationChecks(outputPath string, options interfaces.GenerateOptions) error {
 	// Check if output directory exists
 	if _, err := os.Stat(outputPath); err == nil {
-		// Directory exists
-		if !options.Force {
-			return fmt.Errorf("🚫 %s %s %s",
-				c.error("Directory"),
-				c.highlight(fmt.Sprintf("'%s'", outputPath)),
-				c.info("already exists. Use --force to overwrite or choose a different location"))
-		}
+		if !options.Force && !options.NonInteractive {
+			// Ask user for confirmation
+			fmt.Printf("\n⚠️  Directory %s already exists.\n", c.highlight(fmt.Sprintf("'%s'", outputPath)))
+			fmt.Printf("Do you want to overwrite it? %s: ", c.dim("(y/N)"))
 
-		// Check if directory is empty
-		entries, err := os.ReadDir(outputPath)
-		if err != nil {
-			return fmt.Errorf("🚫 %s %s",
-				c.error("Unable to read output directory."),
-				c.info("Check if the directory exists and has proper permissions"))
-		}
+			var response string
+			fmt.Scanln(&response)
+			response = strings.ToLower(strings.TrimSpace(response))
 
-		if len(entries) > 0 && options.BackupExisting {
-			c.VerboseOutput("Creating backup of existing files in %s", outputPath)
-			if err := c.createBackup(outputPath); err != nil {
-				c.WarningOutput("💾 Couldn't create backup: %v", err)
+			if response != "y" && response != "yes" {
+				return fmt.Errorf("🚫 %s %s",
+					c.error("Project generation cancelled by user."),
+					c.info("Run again with --force to automatically overwrite existing directories"))
 			}
+		}
+
+		c.VerboseOutput("🗑️  Removing existing directory: %s", c.highlight(outputPath))
+		if err := os.RemoveAll(outputPath); err != nil {
+			return fmt.Errorf("🚫 %s %s",
+				c.error("Unable to remove existing directory."),
+				c.info("Check directory permissions and ensure no files are in use"))
 		}
 	}
 
@@ -2599,22 +2553,9 @@ func (c *CLI) validateGenerateOptions(options interfaces.GenerateOptions) error 
 	return nil
 }
 
-// TODO: here
-// // validateDependencies validates project dependencies before generation
-// func (c *CLI) validateDependencies(config *models.ProjectConfig, templateName string) error {
-// 	c.VerboseOutput("Validating dependencies for template: %s", templateName)
-
-// 	// Check if template manager is available
-// 	if c.templateManager == nil {
-// 		return fmt.Errorf("template manager not initialized")
-// 	}
-
-// 	// Get template information
-// 	templateInfo, err := c.templateManager.GetTemplateInfo(templateName)
-// 	if err != nil {
-// 		return fmt.Errorf("🚫 %s %s %s", 
-// 			c.error("Template"), 
-// 			c.highlight(fmt.Sprintf("'%s'", templateName)), 
+// 		return fmt.Errorf("🚫 %s %s %s",
+// 			c.error("Template"),
+// 			c.highlight(fmt.Sprintf("'%s'", templateName)),
 // 			c.info("not found. Use 'generator list-templates' to see available options"))
 // 	}
 
@@ -4731,266 +4672,351 @@ func (c *CLI) followLogs(lines int, level string, component string, since time.T
 func (c *CLI) runInteractiveProjectConfiguration(ctx context.Context) (*models.ProjectConfig, error) {
 	config := &models.ProjectConfig{}
 
-	// Show breadcrumb
-	if err := c.interactiveUI.ShowBreadcrumb(ctx, []string{"Generator", "Project Configuration", "Basic Details"}); err != nil {
-		c.logger.Error("🧭 Couldn't update navigation breadcrumb", "error", err)
+	fmt.Println("📝 Project Setup")
+	fmt.Println("================")
+
+	// Collect basic project information
+	if err := c.collectBasicProjectInfo(ctx, config); err != nil {
+		return nil, err
 	}
 
-	// Collect project name
+	fmt.Println("\n🏗️  Project Components")
+	fmt.Println("======================")
+
+	// Select components
+	if err := c.selectComponents(ctx, config, "fullstack"); err != nil {
+		return nil, err
+	}
+
+	return config, nil
+}
+
+// collectBasicProjectInfo collects essential project information
+func (c *CLI) collectBasicProjectInfo(ctx context.Context, config *models.ProjectConfig) error {
+	// Project name
 	nameConfig := interfaces.TextPromptConfig{
 		Prompt:      "Project Name",
-		Description: "Enter a name for your project (letters, numbers, hyphens, and underscores only)",
+		Description: "Enter your project name",
 		Required:    true,
-		Validator:   ui.ProjectConfigValidation().Validate,
-		AllowBack:   false,
-		AllowQuit:   true,
-		ShowHelp:    true,
-		HelpText:    "Project name will be used for directories, packages, and documentation. Use lowercase letters, numbers, hyphens, and underscores.",
 		MaxLength:   50,
 		MinLength:   2,
 	}
 
 	nameResult, err := c.interactiveUI.PromptText(ctx, nameConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get project name: %w", err)
-	}
-	if nameResult.Cancelled {
-		return nil, fmt.Errorf("project configuration cancelled")
+	if err != nil || nameResult.Cancelled {
+		return fmt.Errorf("🚫 %s %s",
+			c.error("Project name is required for generation."),
+			c.info("Please enter a valid project name to continue"))
 	}
 	config.Name = nameResult.Value
 
-	// Collect organization (optional)
+	// Organization
 	orgConfig := interfaces.TextPromptConfig{
 		Prompt:      "Organization",
-		Description: "Enter your organization name (optional)",
+		Description: "Organization or company name (optional)",
 		Required:    false,
-		AllowBack:   true,
-		AllowQuit:   true,
-		ShowHelp:    true,
-		HelpText:    "Organization name will be used in package names and documentation. Leave empty if not applicable.",
 		MaxLength:   100,
 	}
 
 	orgResult, err := c.interactiveUI.PromptText(ctx, orgConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get organization: %w", err)
+	if err == nil && !orgResult.Cancelled {
+		config.Organization = orgResult.Value
 	}
-	if orgResult.Cancelled {
-		return nil, fmt.Errorf("project configuration cancelled")
-	}
-	config.Organization = orgResult.Value
 
-	// Collect description (optional)
+	// Description
 	descConfig := interfaces.TextPromptConfig{
 		Prompt:      "Description",
-		Description: "Enter a brief description of your project (optional)",
+		Description: "Brief project description (optional)",
 		Required:    false,
-		AllowBack:   true,
-		AllowQuit:   true,
-		ShowHelp:    true,
-		HelpText:    "Description will be used in README files and package documentation.",
 		MaxLength:   500,
 	}
 
 	descResult, err := c.interactiveUI.PromptText(ctx, descConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get description: %w", err)
-	}
-	if descResult.Cancelled {
-		return nil, fmt.Errorf("project configuration cancelled")
-	}
-	config.Description = descResult.Value
-
-	// Collect author (optional)
-	authorConfig := interfaces.TextPromptConfig{
-		Prompt:      "Author",
-		Description: "Enter the author name (optional)",
-		Required:    false,
-		AllowBack:   true,
-		AllowQuit:   true,
-		ShowHelp:    true,
-		HelpText:    "Author name will be used in license files and package documentation.",
-		MaxLength:   100,
+	if err == nil && !descResult.Cancelled {
+		config.Description = descResult.Value
 	}
 
-	authorResult, err := c.interactiveUI.PromptText(ctx, authorConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get author: %w", err)
-	}
-	if authorResult.Cancelled {
-		return nil, fmt.Errorf("project configuration cancelled")
-	}
-	config.Author = authorResult.Value
-
-	// Select license
-	if err := c.interactiveUI.ShowBreadcrumb(ctx, []string{"Generator", "Project Configuration", "License"}); err != nil {
-		c.logger.Error("🧭 Couldn't update navigation breadcrumb", "error", err)
-	}
-
+	// License selection
 	licenseConfig := interfaces.MenuConfig{
-		Title:       "Select License",
+		Title:       "License",
 		Description: "Choose a license for your project",
 		Options: []interfaces.MenuOption{
 			{Label: "MIT License", Description: "Permissive license with minimal restrictions", Value: "MIT"},
 			{Label: "Apache License 2.0", Description: "Permissive license with patent protection", Value: "Apache-2.0"},
-			{Label: "GNU GPL v3", Description: "Copyleft license requiring derivative works to be open source", Value: "GPL-3.0"},
+			{Label: "GNU GPL v3", Description: "Copyleft license requiring source disclosure", Value: "GPL-3.0"},
 			{Label: "BSD 3-Clause", Description: "Permissive license similar to MIT", Value: "BSD-3-Clause"},
+			{Label: "ISC License", Description: "Simplified permissive license", Value: "ISC"},
 			{Label: "Mozilla Public License 2.0", Description: "Weak copyleft license", Value: "MPL-2.0"},
-			{Label: "Unlicense", Description: "Public domain dedication", Value: "Unlicense"},
+			{Label: "Unlicensed", Description: "No license (all rights reserved)", Value: "UNLICENSED"},
 		},
 		DefaultItem: 0, // MIT as default
-		AllowBack:   true,
-		AllowQuit:   true,
-		ShowHelp:    true,
-		HelpText:    "Choose a license that fits your project's goals. MIT is recommended for most open source projects.",
 	}
 
 	licenseResult, err := c.interactiveUI.ShowMenu(ctx, licenseConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to select license: %w", err)
-	}
-	if licenseResult.Cancelled {
-		return nil, fmt.Errorf("project configuration cancelled")
-	}
-	config.License = licenseResult.SelectedValue.(string)
-
-	// Select components
-	if err := c.interactiveUI.ShowBreadcrumb(ctx, []string{"Generator", "Project Configuration", "Components"}); err != nil {
-		c.logger.Error("🧭 Couldn't update navigation breadcrumb", "error", err)
+	if err == nil && !licenseResult.Cancelled {
+		config.License = licenseResult.SelectedValue.(string)
+	} else {
+		// Default to MIT if selection fails
+		config.License = "MIT"
 	}
 
-	componentsConfig := interfaces.MultiSelectConfig{
-		Title:        "Select Project Components",
-		Description:  "Choose the components to include in your project",
-		MinSelection: 1,
-		MaxSelection: 0, // No limit
-		Options: []interfaces.SelectOption{
-			{
-				Label:       "Go Gin API",
-				Description: "RESTful API server using Gin framework",
-				Value:       "go-gin",
-				Selected:    true, // Default selection
-				Tags:        []string{"backend", "api", "go"},
-			},
-			{
-				Label:       "Next.js Frontend",
-				Description: "React-based frontend with Next.js framework",
-				Value:       "nextjs",
-				Selected:    false,
-				Tags:        []string{"frontend", "react", "nextjs"},
-			},
-			{
-				Label:       "PostgreSQL Database",
-				Description: "PostgreSQL database with migrations",
-				Value:       "postgresql",
-				Selected:    false,
-				Tags:        []string{"database", "sql"},
-			},
-			{
-				Label:       "Redis Cache",
-				Description: "Redis for caching and session storage",
-				Value:       "redis",
-				Selected:    false,
-				Tags:        []string{"cache", "session"},
-			},
-			{
-				Label:       "Docker Configuration",
-				Description: "Docker and Docker Compose setup",
-				Value:       "docker",
-				Selected:    true, // Default selection
-				Tags:        []string{"infrastructure", "containerization"},
-			},
-			{
-				Label:       "Kubernetes Manifests",
-				Description: "Kubernetes deployment manifests",
-				Value:       "kubernetes",
-				Selected:    false,
-				Tags:        []string{"infrastructure", "orchestration"},
-			},
-			{
-				Label:       "CI/CD Pipeline",
-				Description: "GitHub Actions workflow for CI/CD",
-				Value:       "cicd",
-				Selected:    false,
-				Tags:        []string{"automation", "deployment"},
-			},
-			{
-				Label:       "Monitoring Setup",
-				Description: "Prometheus and Grafana monitoring",
-				Value:       "monitoring",
-				Selected:    false,
-				Tags:        []string{"observability", "metrics"},
-			},
+	// Author
+	authorConfig := interfaces.TextPromptConfig{
+		Prompt:      "Author",
+		Description: "Author name (optional)",
+		Required:    false,
+		MaxLength:   100,
+	}
+
+	authorResult, err := c.interactiveUI.PromptText(ctx, authorConfig)
+	if err == nil && !authorResult.Cancelled {
+		config.Author = authorResult.Value
+	}
+
+	// Email
+	emailConfig := interfaces.TextPromptConfig{
+		Prompt:      "Email",
+		Description: "Author email (optional)",
+		Required:    false,
+		MaxLength:   100,
+	}
+
+	emailResult, err := c.interactiveUI.PromptText(ctx, emailConfig)
+	if err == nil && !emailResult.Cancelled {
+		config.Email = emailResult.Value
+	}
+
+	// Repository
+	repoConfig := interfaces.TextPromptConfig{
+		Prompt:      "Repository",
+		Description: "Git repository URL (optional)",
+		Required:    false,
+		MaxLength:   200,
+	}
+
+	repoResult, err := c.interactiveUI.PromptText(ctx, repoConfig)
+	if err == nil && !repoResult.Cancelled {
+		config.Repository = repoResult.Value
+	}
+
+	return nil
+}
+
+// selectProjectType allows user to select the type of project
+func (c *CLI) selectProjectType(ctx context.Context) (string, error) {
+	typeConfig := interfaces.MenuConfig{
+		Title:       "Project Type",
+		Description: "What type of project are you building?",
+		Options: []interfaces.MenuOption{
+			{Label: "Full Stack Web App", Description: "Frontend + Backend + Database", Value: "fullstack"},
+			{Label: "API Server", Description: "Backend API only", Value: "api"},
+			{Label: "Frontend App", Description: "Frontend application only", Value: "frontend"},
+			{Label: "Microservices", Description: "Multiple interconnected services", Value: "microservices"},
+			{Label: "CLI Tool", Description: "Command-line application", Value: "cli"},
+			{Label: "Library/Package", Description: "Reusable library or package", Value: "library"},
 		},
-		AllowBack:     true,
-		AllowQuit:     true,
-		ShowHelp:      true,
-		HelpText:      "Select the components you want to include. You can search by typing / followed by your search term.",
+		DefaultItem: 0,
+	}
+
+	result, err := c.interactiveUI.ShowMenu(ctx, typeConfig)
+	if err != nil || result.Cancelled {
+		return "fullstack", nil // Default
+	}
+
+	return result.SelectedValue.(string), nil
+}
+
+// selectComponents allows user to select components based on project type
+func (c *CLI) selectComponents(ctx context.Context, config *models.ProjectConfig, projectType string) error {
+	// Get template information from template manager
+	frontendOptions, err := c.getTemplateOptions("frontend", []string{"nextjs-app", "nextjs-home", "nextjs-admin", "shared-components"})
+	if err != nil {
+		c.VerboseOutput("📋 Using default frontend options - template metadata not available")
+		frontendOptions = []interfaces.SelectOption{
+			{Label: "Next.js App", Description: "Main React application", Value: "nextjs-app", Selected: true},
+			{Label: "Landing Page", Description: "Marketing/home page", Value: "nextjs-home", Selected: true},
+			{Label: "Admin Dashboard", Description: "Admin interface", Value: "nextjs-admin", Selected: true},
+			{Label: "Shared Components", Description: "Reusable UI components", Value: "nextjs-shared", Selected: true},
+		}
+	}
+
+	// Frontend components
+	frontendConfig := interfaces.MultiSelectConfig{
+		Title:         "Frontend Components",
+		Description:   "Select frontend technologies",
+		MinSelection:  0,
+		Options:       frontendOptions,
+		SearchEnabled: false,
+	}
+
+	frontendResult, err := c.interactiveUI.ShowMultiSelect(ctx, frontendConfig)
+	if err == nil && !frontendResult.Cancelled {
+		config.Components.Frontend.NextJS.App = c.isSelected(frontendResult.SelectedValues, "nextjs-app")
+		config.Components.Frontend.NextJS.Home = c.isSelected(frontendResult.SelectedValues, "nextjs-home")
+		config.Components.Frontend.NextJS.Admin = c.isSelected(frontendResult.SelectedValues, "nextjs-admin")
+		config.Components.Frontend.NextJS.Shared = c.isSelected(frontendResult.SelectedValues, "nextjs-shared")
+	}
+
+	// Backend components
+	backendOptions, err := c.getTemplateOptions("backend", []string{"go-gin"})
+	if err != nil {
+		c.VerboseOutput("📋 Using default backend options - template metadata not available")
+		backendOptions = []interfaces.SelectOption{
+			{Label: "Go Gin API", Description: "RESTful API server", Value: "go-gin", Selected: true},
+		}
+	}
+
+	backendConfig := interfaces.MultiSelectConfig{
+		Title:         "Backend Components",
+		Description:   "Select backend technologies",
+		MinSelection:  0,
+		Options:       backendOptions,
+		SearchEnabled: false,
+	}
+
+	backendResult, err := c.interactiveUI.ShowMultiSelect(ctx, backendConfig)
+	if err == nil && !backendResult.Cancelled {
+		config.Components.Backend.GoGin = c.isSelected(backendResult.SelectedValues, "go-gin")
+	}
+
+	// Mobile components
+	mobileOptions, err := c.getTemplateOptions("mobile", []string{"android-kotlin", "ios-swift", "shared"})
+	if err != nil {
+		c.VerboseOutput("📋 Using default mobile options - template metadata not available")
+		mobileOptions = []interfaces.SelectOption{
+			{Label: "Android App", Description: "Native Android application", Value: "android", Selected: true},
+			{Label: "iOS App", Description: "Native iOS application", Value: "ios", Selected: true},
+			{Label: "Shared Mobile Code", Description: "Shared mobile components", Value: "mobile-shared", Selected: true},
+		}
+	}
+
+	mobileConfig := interfaces.MultiSelectConfig{
+		Title:         "Mobile Components",
+		Description:   "Select mobile platforms",
+		MinSelection:  0,
+		Options:       mobileOptions,
+		SearchEnabled: false,
+	}
+
+	mobileResult, err := c.interactiveUI.ShowMultiSelect(ctx, mobileConfig)
+	if err == nil && !mobileResult.Cancelled {
+		config.Components.Mobile.Android = c.isSelected(mobileResult.SelectedValues, "android")
+		config.Components.Mobile.IOS = c.isSelected(mobileResult.SelectedValues, "ios")
+		config.Components.Mobile.Shared = c.isSelected(mobileResult.SelectedValues, "mobile-shared")
+	}
+
+	// Infrastructure components
+	infraOptions, err := c.getTemplateOptions("infrastructure", []string{"docker", "kubernetes", "terraform"})
+	if err != nil {
+		c.VerboseOutput("📋 Using default infrastructure options - template metadata not available")
+		infraOptions = []interfaces.SelectOption{
+			{Label: "Docker", Description: "Containerization", Value: "docker", Selected: true},
+			{Label: "Kubernetes", Description: "Container orchestration", Value: "kubernetes", Selected: true},
+			{Label: "Terraform", Description: "Infrastructure as code", Value: "terraform", Selected: true},
+		}
+	}
+
+	infraConfig := interfaces.MultiSelectConfig{
+		Title:         "Infrastructure Components",
+		Description:   "Select deployment and infrastructure tools",
+		MinSelection:  0,
+		Options:       infraOptions,
+		SearchEnabled: false,
+	}
+
+	infraResult, err := c.interactiveUI.ShowMultiSelect(ctx, infraConfig)
+	if err == nil && !infraResult.Cancelled {
+		config.Components.Infrastructure.Docker = c.isSelected(infraResult.SelectedValues, "docker")
+		config.Components.Infrastructure.Kubernetes = c.isSelected(infraResult.SelectedValues, "kubernetes")
+		config.Components.Infrastructure.Terraform = c.isSelected(infraResult.SelectedValues, "terraform")
+	}
+
+	return nil
+}
+
+// getTemplateOptions gets template options from template manager for a specific category
+func (c *CLI) getTemplateOptions(category string, templateNames []string) ([]interfaces.SelectOption, error) {
+	var options []interfaces.SelectOption
+
+	for _, templateName := range templateNames {
+		templateInfo, err := c.templateManager.GetTemplateInfo(templateName)
+		if err != nil {
+			// If template not found, create a default option
+			options = append(options, interfaces.SelectOption{
+				Label:       templateName,
+				Description: fmt.Sprintf("%s template", templateName),
+				Value:       templateName,
+				Selected:    true,
+			})
+			continue
+		}
+
+		options = append(options, interfaces.SelectOption{
+			Label:       templateInfo.DisplayName,
+			Description: templateInfo.Description,
+			Value:       templateName,
+			Selected:    true,
+		})
+	}
+
+	return options, nil
+}
+
+// selectFeatures allows user to select additional features
+func (c *CLI) selectFeatures(ctx context.Context, config *models.ProjectConfig) error {
+	featuresConfig := interfaces.MultiSelectConfig{
+		Title:        "Additional Features",
+		Description:  "Select additional features to include",
+		MinSelection: 0,
+		Options: []interfaces.SelectOption{
+			{Label: "Authentication", Description: "User login/signup system", Value: "auth", Selected: false},
+			{Label: "Authorization", Description: "Role-based access control", Value: "authz", Selected: false},
+			{Label: "API Documentation", Description: "Swagger/OpenAPI docs", Value: "api-docs", Selected: false},
+			{Label: "Testing Framework", Description: "Unit and integration tests", Value: "testing", Selected: true},
+			{Label: "Logging", Description: "Structured logging", Value: "logging", Selected: true},
+			{Label: "Rate Limiting", Description: "API rate limiting", Value: "rate-limit", Selected: false},
+			{Label: "File Upload", Description: "File upload handling", Value: "file-upload", Selected: false},
+			{Label: "Email Notifications", Description: "Email sending capability", Value: "email", Selected: false},
+			{Label: "Background Jobs", Description: "Async task processing", Value: "jobs", Selected: false},
+			{Label: "Search", Description: "Full-text search", Value: "search", Selected: false},
+			{Label: "Internationalization", Description: "Multi-language support", Value: "i18n", Selected: false},
+		},
 		SearchEnabled: true,
 	}
 
-	componentsResult, err := c.interactiveUI.ShowMultiSelect(ctx, componentsConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to select components: %w", err)
-	}
-	if componentsResult.Cancelled {
-		return nil, fmt.Errorf("project configuration cancelled")
+	featuresResult, err := c.interactiveUI.ShowMultiSelect(ctx, featuresConfig)
+	if err == nil && !featuresResult.Cancelled {
+		// Store selected features (you may need to add a Features field to ProjectConfig)
+		// For now, we'll just log them
+		c.VerboseOutput("Selected features: %v", featuresResult.SelectedValues)
 	}
 
-	// Convert selected components to project config
-	config.Components = c.convertSelectedComponents(componentsResult.SelectedValues)
+	return nil
+}
 
-	return config, nil
+// isSelected checks if a value is in the selected values slice
+func (c *CLI) isSelected(selectedValues []interface{}, value string) bool {
+	for _, selected := range selectedValues {
+		if selected.(string) == value {
+			return true
+		}
+	}
+	return false
 }
 
 // runInteractiveConfirmation shows configuration summary and confirms generation
 func (c *CLI) runInteractiveConfirmation(ctx context.Context, config *models.ProjectConfig, options interfaces.GenerateOptions) bool {
-	if err := c.interactiveUI.ShowBreadcrumb(ctx, []string{"Generator", "Confirmation"}); err != nil {
-		c.logger.Error("🧭 Couldn't update navigation breadcrumb", "error", err)
-	}
-
-	// Show configuration summary in a table
-	tableConfig := interfaces.TableConfig{
-		Title:   "Project Configuration Summary",
-		Headers: []string{"Setting", "Value"},
-		Rows: [][]string{
-			{"Project Name", config.Name},
-			{"Organization", config.Organization},
-			{"Description", config.Description},
-			{"Author", config.Author},
-			{"License", config.License},
-			{"Components", c.formatSelectedComponents(config.Components)},
-		},
-		MaxWidth:   80,
-		Pagination: false,
-		Sortable:   false,
-		Searchable: false,
-	}
-
-	if err := c.interactiveUI.ShowTable(ctx, tableConfig); err != nil {
-		c.logger.WarnWithFields("📋 Couldn't display configuration table", map[string]interface{}{
-			"error": err.Error(),
-		})
-	}
-
-	// Confirm generation
+	// Simple confirmation prompt
 	confirmConfig := interfaces.ConfirmConfig{
 		Prompt:       "Generate Project",
-		Description:  "Do you want to proceed with generating the project with the above configuration?",
+		Description:  "Proceed with generating the project?",
 		DefaultValue: true,
 		YesLabel:     "Generate",
 		NoLabel:      "Cancel",
-		AllowBack:    true,
-		AllowQuit:    true,
-		ShowHelp:     true,
-		HelpText:     "Confirm to start project generation or go back to modify the configuration.",
 	}
 
 	confirmResult, err := c.interactiveUI.PromptConfirm(ctx, confirmConfig)
 	if err != nil {
-		c.logger.ErrorWithFields("❓ Couldn't get your confirmation", map[string]interface{}{
-			"error": err.Error(),
-		})
 		return false
 	}
 
@@ -5705,4 +5731,290 @@ func (c *CLI) validateInteractiveEnvironment() error {
 
 	c.DebugOutput("Interactive environment validation passed")
 	return nil
+}
+
+// Simple interactive prompt methods
+
+// promptInput prompts for text input
+func (c *CLI) promptInput(prompt, defaultValue string, required bool) string {
+	for {
+		if defaultValue != "" {
+			fmt.Printf("%s [%s]: ", prompt, defaultValue)
+		} else {
+			fmt.Printf("%s: ", prompt)
+		}
+
+		var input string
+		fmt.Scanln(&input)
+		input = strings.TrimSpace(input)
+
+		if input == "" && defaultValue != "" {
+			return defaultValue
+		}
+
+		if required && input == "" {
+			fmt.Println("This field is required. Please enter a value.")
+			continue
+		}
+
+		return input
+	}
+}
+
+// promptSelect prompts for single selection from a list
+func (c *CLI) promptSelect(options []string, defaultIndex int) int {
+	for {
+		fmt.Println("Options:")
+		for i, option := range options {
+			marker := " "
+			if i == defaultIndex {
+				marker = "*"
+			}
+			fmt.Printf("  %s %d. %s\n", marker, i+1, option)
+		}
+
+		fmt.Printf("Select option [%d]: ", defaultIndex+1)
+
+		var input string
+		fmt.Scanln(&input)
+		input = strings.TrimSpace(input)
+
+		if input == "" {
+			return defaultIndex
+		}
+
+		if choice, err := strconv.Atoi(input); err == nil {
+			if choice >= 1 && choice <= len(options) {
+				return choice - 1
+			}
+		}
+
+		fmt.Println("Invalid selection. Please try again.")
+	}
+}
+
+// promptMultiSelect prompts for multiple selections from a list
+func (c *CLI) promptMultiSelect(options []string, defaultSelected []bool) []bool {
+	selected := make([]bool, len(options))
+	copy(selected, defaultSelected)
+
+	for {
+		fmt.Println("\nComponents (space to toggle, enter to confirm):")
+		for i, option := range options {
+			marker := "☐"
+			if selected[i] {
+				marker = "☑"
+			}
+			fmt.Printf("  %s %d. %s\n", marker, i+1, option)
+		}
+
+		fmt.Print("Toggle option (1-6) or press enter to confirm: ")
+
+		var input string
+		fmt.Scanln(&input)
+		input = strings.TrimSpace(input)
+
+		if input == "" {
+			// Check if at least one is selected
+			hasSelection := false
+			for _, sel := range selected {
+				if sel {
+					hasSelection = true
+					break
+				}
+			}
+			if hasSelection {
+				return selected
+			}
+			fmt.Println("Please select at least one component.")
+			continue
+		}
+
+		if choice, err := strconv.Atoi(input); err == nil {
+			if choice >= 1 && choice <= len(options) {
+				selected[choice-1] = !selected[choice-1]
+			} else {
+				fmt.Println("Invalid option number.")
+			}
+		} else {
+			fmt.Println("Invalid input. Enter a number or press enter to confirm.")
+		}
+	}
+}
+
+// promptConfirm prompts for yes/no confirmation
+func (c *CLI) promptConfirm(prompt string, defaultValue bool) bool {
+	defaultText := "y/N"
+	if defaultValue {
+		defaultText = "Y/n"
+	}
+
+	for {
+		fmt.Printf("%s [%s]: ", prompt, defaultText)
+
+		var input string
+		fmt.Scanln(&input)
+		input = strings.ToLower(strings.TrimSpace(input))
+
+		if input == "" {
+			return defaultValue
+		}
+
+		if input == "y" || input == "yes" {
+			return true
+		}
+		if input == "n" || input == "no" {
+			return false
+		}
+
+		fmt.Println("Please enter 'y' for yes or 'n' for no.")
+	}
+}
+
+// handleDirectoryConflict handles directory conflicts interactively
+func (c *CLI) handleDirectoryConflict(outputPath string) (action string, newPath string, err error) {
+	// Check if directory has files
+	entries, err := os.ReadDir(outputPath)
+	if err != nil {
+		return "", "", fmt.Errorf("unable to read directory: %w", err)
+	}
+
+	isEmpty := len(entries) == 0
+
+	fmt.Printf("\n⚠️  %s\n", c.warning("Directory Conflict"))
+	fmt.Printf("%s\n", c.dim("==================="))
+	fmt.Printf("The directory %s already exists", c.highlight(fmt.Sprintf("'%s'", outputPath)))
+	if isEmpty {
+		fmt.Printf(" (empty).\n")
+	} else {
+		fmt.Printf(" and contains %d items.\n", len(entries))
+
+		// Show some of the existing files
+		fmt.Printf("\nExisting files:\n")
+		for i, entry := range entries {
+			if i >= 5 { // Show max 5 files
+				fmt.Printf("  ... and %d more items\n", len(entries)-5)
+				break
+			}
+			if entry.IsDir() {
+				fmt.Printf("  📁 %s/\n", entry.Name())
+			} else {
+				fmt.Printf("  📄 %s\n", entry.Name())
+			}
+		}
+	}
+
+	fmt.Printf("\nWhat would you like to do?\n\n")
+
+	options := []string{
+		"Overwrite - Delete existing directory and create new project",
+		"Merge - Add new files to existing directory (may overwrite files)",
+		"Backup & Overwrite - Create backup then overwrite",
+		"Choose Different Directory - Select a different location",
+		"Cancel - Stop generation",
+	}
+
+	if isEmpty {
+		// If directory is empty, simplify options
+		options = []string{
+			"Use Empty Directory - Generate project in the empty directory",
+			"Choose Different Directory - Select a different location",
+			"Cancel - Stop generation",
+		}
+	}
+
+	for i, option := range options {
+		fmt.Printf("  %d. %s\n", i+1, option)
+	}
+
+	fmt.Printf("\nEnter your choice (1-%d): ", len(options))
+
+	var choice int
+	_, err = fmt.Scanf("%d", &choice)
+	if err != nil || choice < 1 || choice > len(options) {
+		return "", "", fmt.Errorf("invalid choice")
+	}
+
+	if isEmpty {
+		switch choice {
+		case 1:
+			return "merge", "", nil // Use empty directory
+		case 2:
+			return c.promptForNewDirectory()
+		case 3:
+			return "cancel", "", nil
+		}
+	} else {
+		switch choice {
+		case 1:
+			return "overwrite", "", nil
+		case 2:
+			return "merge", "", nil
+		case 3:
+			return "backup", "", nil
+		case 4:
+			return c.promptForNewDirectory()
+		case 5:
+			return "cancel", "", nil
+		}
+	}
+
+	return "cancel", "", nil
+}
+
+// promptForNewDirectory prompts user for a new directory path
+func (c *CLI) promptForNewDirectory() (action string, newPath string, err error) {
+	fmt.Printf("\nEnter new directory path: ")
+	var path string
+	_, err = fmt.Scanf("%s", &path)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to read directory path: %w", err)
+	}
+
+	path = strings.TrimSpace(path)
+	if path == "" {
+		return "", "", fmt.Errorf("directory path cannot be empty")
+	}
+
+	return "different", path, nil
+}
+
+// setDefaultComponents sets comprehensive default components like test-config.yaml
+func (c *CLI) setDefaultComponents(config *models.ProjectConfig) {
+	// Set comprehensive components matching test-config.yaml
+	config.Components = models.Components{
+		Frontend: models.FrontendComponents{
+			NextJS: models.NextJSComponents{
+				App:    true,
+				Home:   true,
+				Admin:  true,
+				Shared: true,
+			},
+		},
+		Backend: models.BackendComponents{
+			GoGin: true,
+		},
+		Mobile: models.MobileComponents{
+			Android: true,
+			IOS:     true,
+			Shared:  true,
+		},
+		Infrastructure: models.InfrastructureComponents{
+			Docker:     true,
+			Kubernetes: true,
+			Terraform:  true,
+		},
+		Database: models.DatabaseComponents{
+			PostgreSQL: true,
+			MySQL:      true,
+			MongoDB:    true,
+			SQLite:     true,
+		},
+		Cache: models.CacheComponents{
+			Redis: true,
+		},
+	}
+
+	// Set output path
+	config.OutputPath = "output/generated"
 }
