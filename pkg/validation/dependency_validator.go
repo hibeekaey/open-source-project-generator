@@ -302,7 +302,7 @@ func (dv *DependencyValidator) validatePackageJSONStructure(pkg map[string]inter
 // validateGoVersion validates Go version format
 func (dv *DependencyValidator) validateGoVersion(version string, result *interfaces.DependencyValidationResult) error {
 	// Go version should be in format like "1.19", "1.20", etc.
-	goVersionRegex := regexp.MustCompile(`^1\.\d+(\.\d+)?$`)
+	goVersionRegex := utils.GoVersionPattern
 	if !goVersionRegex.MatchString(version) {
 		result.Valid = false
 		return fmt.Errorf("invalid Go version format: %s", version)
@@ -512,7 +512,7 @@ func (dv *DependencyValidator) checkOutdatedDependencies(result *interfaces.Depe
 // validateNpmPackageName validates NPM package name format
 func (dv *DependencyValidator) validateNpmPackageName(name string) error {
 	// NPM package names must be lowercase and can contain hyphens, dots, and underscores
-	npmNameRegex := regexp.MustCompile(`^(@[a-z0-9-~][a-z0-9-._~]*/)?[a-z0-9-~][a-z0-9-._~]*$`)
+	npmNameRegex := utils.NPMNamePattern
 	if !npmNameRegex.MatchString(name) {
 		return fmt.Errorf("invalid NPM package name: %s", name)
 	}
@@ -540,7 +540,7 @@ func (dv *DependencyValidator) validateSemanticVersion(version string) error {
 	// Remove 'v' prefix if present
 	version = strings.TrimPrefix(version, "v")
 
-	semverRegex := regexp.MustCompile(`^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$`)
+	semverRegex := utils.SemverPattern
 	if !semverRegex.MatchString(version) {
 		return fmt.Errorf("invalid semantic version: %s", version)
 	}
@@ -550,7 +550,7 @@ func (dv *DependencyValidator) validateSemanticVersion(version string) error {
 // validatePythonPackageName validates Python package name format
 func (dv *DependencyValidator) validatePythonPackageName(name string) error {
 	// Python package names can contain letters, numbers, hyphens, underscores, and dots
-	pythonNameRegex := regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$`)
+	pythonNameRegex := utils.PythonNamePattern
 	if !pythonNameRegex.MatchString(name) {
 		return fmt.Errorf("invalid Python package name: %s", name)
 	}

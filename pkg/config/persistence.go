@@ -120,15 +120,15 @@ func NewConfigurationPersistence(configDir string, logger interfaces.Logger) *Co
 	}
 
 	validator := &ConfigurationValidator{
-		nameRegex:    regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\-_\s]*$`),
-		versionRegex: regexp.MustCompile(`^\d+\.\d+\.\d+$`),
+		nameRegex:    utils.ProjectNamePattern,
+		versionRegex: utils.VersionPattern,
 	}
 
 	return &ConfigurationPersistence{
 		configDir:       configDir,
 		logger:          logger,
 		validator:       validator,
-		nameRegex:       regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\-_\s]*$`),
+		nameRegex:       utils.ProjectNamePattern,
 		maxConfigs:      100, // Limit to prevent excessive storage
 		compressionMode: false,
 	}

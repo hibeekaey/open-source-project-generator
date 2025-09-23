@@ -2,9 +2,10 @@ package version
 
 import (
 	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/cuesoftinc/open-source-project-generator/pkg/utils"
 )
 
 // SemVer represents a semantic version
@@ -18,7 +19,7 @@ type SemVer struct {
 }
 
 // semverRegex matches semantic version strings
-var semverRegex = regexp.MustCompile(`^v?(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z\-\.]+))?(?:\+([0-9A-Za-z\-\.]+))?$`)
+var semverRegex = utils.SemverPattern
 
 // ParseSemVer parses a semantic version string
 func ParseSemVer(version string) (*SemVer, error) {

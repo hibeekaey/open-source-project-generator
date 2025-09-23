@@ -13,6 +13,7 @@ import (
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/interfaces"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/utils"
 )
 
 // ProjectConfigCollector handles interactive collection of project configuration
@@ -41,9 +42,9 @@ type ProjectConfigDefaults struct {
 // NewProjectConfigCollector creates a new project configuration collector
 func NewProjectConfigCollector(ui interfaces.InteractiveUIInterface, logger interfaces.Logger) *ProjectConfigCollector {
 	validator := &ProjectConfigValidator{
-		projectNameRegex: regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\-_]*$`),
-		emailRegex:       regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`),
-		urlRegex:         regexp.MustCompile(`^https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$`),
+		projectNameRegex: utils.ProjectNamePattern,
+		emailRegex:       utils.EmailPattern,
+		urlRegex:         utils.URLPattern,
 	}
 
 	defaults := &ProjectConfigDefaults{

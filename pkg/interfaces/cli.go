@@ -59,9 +59,6 @@ type CLIInterface interface {
 	ValidateCustomTemplate(path string) (*TemplateValidationResult, error)
 
 	// Configuration operations
-	ShowConfig() error
-	SetConfig(key, value string) error
-	EditConfig() error
 	ValidateConfig() error
 	ExportConfig(path string) error
 

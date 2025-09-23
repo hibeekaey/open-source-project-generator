@@ -3,10 +3,10 @@ package config
 import (
 	"os"
 	"path/filepath"
-	"regexp"
 	"testing"
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/utils"
 )
 
 func TestConfigurationPersistence(t *testing.T) {
@@ -142,8 +142,8 @@ func TestConfigurationPersistence(t *testing.T) {
 
 func TestConfigurationValidator(t *testing.T) {
 	validator := &ConfigurationValidator{
-		nameRegex:    regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\-_\s]*$`),
-		versionRegex: regexp.MustCompile(`^\d+\.\d+\.\d+$`),
+		nameRegex:    utils.ProjectNamePattern,
+		versionRegex: utils.VersionPattern,
 	}
 
 	// Test valid configuration

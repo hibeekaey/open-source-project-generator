@@ -644,7 +644,6 @@ func (m *Manager) getDefaultTemplateVariables() map[string]interfaces.TemplateVa
 	}
 }
 
-
 // GetTemplateLocation gets template location
 func (m *Manager) GetTemplateLocation(name string) (string, error) {
 	// Get template info from internal models

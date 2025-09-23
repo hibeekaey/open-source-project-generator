@@ -2,18 +2,18 @@ package ui
 
 import (
 	"context"
-	"regexp"
 	"strings"
 	"testing"
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/interfaces"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/utils"
 )
 
 // TestProjectConfigValidator_ValidateProjectName tests project name validation
 func TestProjectConfigValidator_ValidateProjectName(t *testing.T) {
 	validator := &ProjectConfigValidator{
-		projectNameRegex: regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\-_]*$`),
+		projectNameRegex: utils.ProjectNamePattern,
 	}
 
 	tests := []struct {
@@ -103,7 +103,7 @@ func TestProjectConfigValidator_ValidateProjectName(t *testing.T) {
 
 func TestProjectConfigValidator_ValidateEmail(t *testing.T) {
 	validator := &ProjectConfigValidator{
-		emailRegex: regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`),
+		emailRegex: utils.EmailPattern,
 	}
 
 	tests := []struct {

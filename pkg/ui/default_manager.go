@@ -10,10 +10,10 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
-	"regexp"
 	"strings"
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/interfaces"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/utils"
 )
 
 // DefaultManager manages default values for project configuration
@@ -408,9 +408,9 @@ func (dm *DefaultManager) GetUserDefaults() *UserDefaults {
 // ValidateDefaults validates all default values
 func (dm *DefaultManager) ValidateDefaults() error {
 	validator := &ProjectConfigValidator{
-		projectNameRegex: regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\-_]*$`),
-		emailRegex:       regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`),
-		urlRegex:         regexp.MustCompile(`^https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$`),
+		projectNameRegex: utils.ProjectNamePattern,
+		emailRegex:       utils.EmailPattern,
+		urlRegex:         utils.URLPattern,
 	}
 
 	// Validate author

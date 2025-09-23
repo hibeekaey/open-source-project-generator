@@ -1142,7 +1142,7 @@ func (cv *ConfigValidator) validatePackageName(name string) error {
 // validateEnvKey validates environment variable key format
 func (cv *ConfigValidator) validateEnvKey(key string) error {
 	// Environment variable names should be uppercase with underscores
-	envKeyRegex := regexp.MustCompile(`^[A-Z][A-Z0-9_]*$`)
+	envKeyRegex := utils.EnvKeyPattern
 	if !envKeyRegex.MatchString(key) {
 		return fmt.Errorf("environment variable names should be uppercase with underscores")
 	}

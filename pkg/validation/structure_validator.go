@@ -520,7 +520,7 @@ func (sv *StructureValidator) validateDirectoryNaming(path string, info os.FileI
 	}
 
 	// Check for camelCase in directory names (should be kebab-case or snake_case)
-	camelCaseRegex := regexp.MustCompile(`^[a-z]+([A-Z][a-z]*)+$`)
+	camelCaseRegex := utils.CamelCasePattern
 	if camelCaseRegex.MatchString(name) {
 		issue := interfaces.NamingValidationIssue{
 			Path:       path,
@@ -552,7 +552,7 @@ func (sv *StructureValidator) validateFileNaming(path string, info os.FileInfo, 
 	baseName := strings.TrimSuffix(name, ext)
 
 	// Check for camelCase in file names (context-dependent)
-	camelCaseRegex := regexp.MustCompile(`^[a-z]+([A-Z][a-z]*)+$`)
+	camelCaseRegex := utils.CamelCasePattern
 	if camelCaseRegex.MatchString(baseName) {
 		// Allow camelCase for certain file types (JavaScript, TypeScript)
 		allowedExts := []string{".js", ".ts", ".jsx", ".tsx"}
