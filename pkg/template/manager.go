@@ -644,23 +644,6 @@ func (m *Manager) getDefaultTemplateVariables() map[string]interfaces.TemplateVa
 	}
 }
 
-// InstallTemplate installs a template
-func (m *Manager) InstallTemplate(source string, name string) error {
-	// For now, return not implemented as this requires external template support
-	return fmt.Errorf("template installation from external sources not yet implemented")
-}
-
-// UninstallTemplate uninstalls a template
-func (m *Manager) UninstallTemplate(name string) error {
-	// For now, return not implemented as this requires external template support
-	return fmt.Errorf("template uninstallation not yet implemented for embedded templates")
-}
-
-// UpdateTemplate updates a template
-func (m *Manager) UpdateTemplate(name string) error {
-	// For now, return not implemented as this requires external template support
-	return fmt.Errorf("template updates not yet implemented for embedded templates")
-}
 
 // GetTemplateLocation gets template location
 func (m *Manager) GetTemplateLocation(name string) (string, error) {

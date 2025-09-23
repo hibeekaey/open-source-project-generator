@@ -66,9 +66,6 @@ type TemplateManager interface {
 	GetTemplateVariables(name string) (map[string]TemplateVariable, error)
 
 	// Template management
-	InstallTemplate(source string, name string) error
-	UninstallTemplate(name string) error
-	UpdateTemplate(name string) error
 	GetTemplateLocation(name string) (string, error)
 
 	// Template caching

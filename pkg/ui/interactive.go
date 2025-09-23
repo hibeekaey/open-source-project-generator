@@ -98,8 +98,6 @@ func (ui *InteractiveUI) ShowMenu(ctx context.Context, config interfaces.MenuCon
 	return scrollableMenu.ShowScrollableMenu(ctx, config)
 }
 
-
-
 // ShowMultiSelect displays a multi-selection interface
 func (ui *InteractiveUI) ShowMultiSelect(ctx context.Context, config interfaces.MultiSelectConfig) (*interfaces.MultiSelectResult, error) {
 	if len(config.Options) == 0 {
@@ -110,8 +108,6 @@ func (ui *InteractiveUI) ShowMultiSelect(ctx context.Context, config interfaces.
 	scrollableMenu := NewScrollableMenu(ui)
 	return scrollableMenu.ShowScrollableMultiSelect(ctx, config)
 }
-
-
 
 // PromptText displays a text input prompt with validation
 func (ui *InteractiveUI) PromptText(ctx context.Context, config interfaces.TextPromptConfig) (*interfaces.TextResult, error) {
@@ -352,7 +348,6 @@ func (ui *InteractiveUI) showNavigationHelp(allowBack, allowQuit, showHelp bool)
 	fmt.Printf("%s\n", ui.colorize(strings.Join(help, " | "), "gray"))
 }
 
-
 // showContextHelp displays context-sensitive help
 func (ui *InteractiveUI) showContextHelp(helpText, context string) {
 	ui.clearScreen()
@@ -401,7 +396,6 @@ func (ui *InteractiveUI) showContextHelp(helpText, context string) {
 		fmt.Printf("\nError reading input: %v\n", err)
 	}
 }
-
 
 // filterOptions filters options based on search query
 func (ui *InteractiveUI) filterOptions(options []interfaces.SelectOption, query string) []int {

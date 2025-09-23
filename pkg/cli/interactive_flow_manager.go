@@ -70,7 +70,6 @@ func (ifm *InteractiveFlowManager) RunInteractiveFlow(ctx context.Context, optio
 	return ifm.runProjectGeneration(ctx, config, nil, outputPath, options)
 }
 
-
 // runProjectConfiguration handles interactive project configuration collection
 func (ifm *InteractiveFlowManager) runProjectConfiguration(ctx context.Context, templates []interfaces.TemplateSelection) (*models.ProjectConfig, error) {
 	if err := ifm.ui.ShowBreadcrumb(ctx, []string{"Generator", "Project Configuration"}); err != nil {
@@ -111,7 +110,6 @@ func (ifm *InteractiveFlowManager) runDirectorySelection(ctx context.Context, de
 
 	return outputPath, nil
 }
-
 
 // runFinalConfirmation handles final confirmation before generation
 func (ifm *InteractiveFlowManager) runFinalConfirmation(ctx context.Context, config *models.ProjectConfig, preview *interfaces.ProjectStructurePreview, options interfaces.GenerateOptions) bool {
@@ -167,7 +165,6 @@ func (ifm *InteractiveFlowManager) runFinalConfirmation(ctx context.Context, con
 
 	return confirmResult.Confirmed && !confirmResult.Cancelled
 }
-
 
 // runProjectGeneration handles the actual project generation with progress tracking
 func (ifm *InteractiveFlowManager) runProjectGeneration(ctx context.Context, config *models.ProjectConfig, templates []interfaces.TemplateSelection, outputPath string, options interfaces.GenerateOptions) error {

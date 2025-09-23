@@ -645,26 +645,8 @@ func TestManager_GetTemplateLocation(t *testing.T) {
 }
 
 func TestManager_TemplateManagement(t *testing.T) {
-	mockEngine := NewMockTemplateEngine()
-	manager := NewManager(mockEngine)
-
-	// Test install template (should return not implemented)
-	err := manager.InstallTemplate("https://github.com/test/template", "test-template")
-	if err == nil {
-		t.Error("Expected error for unimplemented InstallTemplate")
-	}
-
-	// Test uninstall template (should return not implemented)
-	err = manager.UninstallTemplate("test-template")
-	if err == nil {
-		t.Error("Expected error for unimplemented UninstallTemplate")
-	}
-
-	// Test update template (should return not implemented)
-	err = manager.UpdateTemplate("test-template")
-	if err == nil {
-		t.Error("Expected error for unimplemented UpdateTemplate")
-	}
+	// Template management tests removed as the methods were unimplemented
+	// and not used in the actual application
 }
 
 func TestManager_ErrorHandling(t *testing.T) {

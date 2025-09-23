@@ -4924,7 +4924,6 @@ func (c *CLI) getTemplateOptions(category string, templateNames []string) ([]int
 	return options, nil
 }
 
-
 // isSelected checks if a value is in the selected values slice
 func (c *CLI) isSelected(selectedValues []interface{}, value string) bool {
 	for _, selected := range selectedValues {
@@ -4934,9 +4933,6 @@ func (c *CLI) isSelected(selectedValues []interface{}, value string) bool {
 	}
 	return false
 }
-
-
-
 
 // detectGenerationMode determines which generation mode to use based on flags and environment
 func (c *CLI) detectGenerationMode(configPath string, nonInteractive, interactive bool, explicitMode string) string {
@@ -5452,5 +5448,3 @@ func (c *CLI) validateInteractiveEnvironment() error {
 // Simple interactive prompt methods
 
 // promptInput prompts for text input
-
-
