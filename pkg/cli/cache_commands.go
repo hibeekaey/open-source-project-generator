@@ -125,7 +125,7 @@ func (c *CLI) runCacheClear(cmd *cobra.Command, args []string) error {
 	if !force {
 		c.WarningOutput("⚠️  This will clear all cached data. This action cannot be undone.")
 		c.QuietOutput("")
-		
+
 		// In non-interactive mode, require force flag
 		if c.isNonInteractiveMode() {
 			return fmt.Errorf("use --force flag to clear cache in non-interactive mode")
@@ -162,7 +162,7 @@ func (c *CLI) runCacheClear(cmd *cobra.Command, args []string) error {
 // runCacheClean removes expired and invalid cache entries
 func (c *CLI) runCacheClean(cmd *cobra.Command, args []string) error {
 	c.VerboseOutput("Cleaning cache...")
-	
+
 	err := c.cacheManager.Clean()
 	if err != nil {
 		return fmt.Errorf("failed to clean cache: %w", err)
@@ -175,7 +175,7 @@ func (c *CLI) runCacheClean(cmd *cobra.Command, args []string) error {
 // runCacheValidate validates cache integrity
 func (c *CLI) runCacheValidate(cmd *cobra.Command, args []string) error {
 	c.VerboseOutput("Validating cache integrity...")
-	
+
 	err := c.cacheManager.ValidateCache()
 	if err != nil {
 		return fmt.Errorf("cache validation failed: %w", err)
@@ -188,7 +188,7 @@ func (c *CLI) runCacheValidate(cmd *cobra.Command, args []string) error {
 // runCacheRepair repairs corrupted cache data
 func (c *CLI) runCacheRepair(cmd *cobra.Command, args []string) error {
 	c.VerboseOutput("Repairing cache...")
-	
+
 	err := c.cacheManager.RepairCache()
 	if err != nil {
 		return fmt.Errorf("failed to repair cache: %w", err)
@@ -227,7 +227,7 @@ func (c *CLI) runCacheOfflineStatus(cmd *cobra.Command, args []string) error {
 	}
 
 	c.QuietOutput("Offline Mode: %s", c.highlight(status))
-	
+
 	if offlineEnabled {
 		c.QuietOutput("Sync Status: %s", c.highlight("Offline mode active"))
 	} else {
