@@ -44,7 +44,6 @@ func TestTemplateFixesComprehensive(t *testing.T) {
 }
 
 func testImportDetectionUtility(t *testing.T) {
-	t.Log("Testing import detection utility...")
 
 	// Test the core functionality of the import detector
 	detector := NewImportDetector()
@@ -62,7 +61,6 @@ func testImportDetectionUtility(t *testing.T) {
 		t.Fatal("Function package map is empty")
 	}
 
-	t.Logf("Import detector initialized with %d function mappings", len(detector.functionPackageMap))
 
 	// Test critical function mappings
 	criticalMappings := map[string]string{
@@ -83,11 +81,9 @@ func testImportDetectionUtility(t *testing.T) {
 		}
 	}
 
-	t.Log("✓ Import detection utility tests passed")
 }
 
 func testTemplateCompilationIntegration(t *testing.T) {
-	t.Log("Testing template compilation integration...")
 
 	// Check if embedded templates are available
 	if !checkEmbeddedTemplatesAvailable() {
@@ -144,32 +140,24 @@ func testTemplateCompilationIntegration(t *testing.T) {
 		t.Fatalf("Failed to walk embedded templates directory: %v", err)
 	}
 
-	t.Logf("Template compilation results:")
-	t.Logf("  Total: %d", totalTemplates)
-	t.Logf("  Successful: %d", successfulTemplates)
-	t.Logf("  Failed: %d", failedTemplates)
 
 	if failedTemplates > 0 {
-		t.Logf("Failed templates:")
 		for _, failure := range failures {
-			t.Logf("  - %s", failure)
+			t.Logf("Failed template: %s", failure)
 		}
 	}
 
 	// Calculate success rate
 	successRate := float64(successfulTemplates) / float64(totalTemplates) * 100
-	t.Logf("Success rate: %.1f%%", successRate)
 
 	// We expect at least 80% success rate
 	if successRate < 80.0 {
 		t.Errorf("Template compilation success rate too low: %.1f%% (expected at least 80%%)", successRate)
 	}
 
-	t.Log("✓ Template compilation integration tests completed")
 }
 
 func testTemplateEdgeCases(t *testing.T) {
-	t.Log("Testing template edge cases...")
 
 	detector := NewImportDetector()
 
@@ -259,11 +247,9 @@ func main() {
 		})
 	}
 
-	t.Log("✓ Template edge cases tests passed")
 }
 
 func testCompilationVerification(t *testing.T) {
-	t.Log("Testing compilation verification...")
 
 	// Test that known problematic templates now compile successfully
 	knownIssues := []struct {
@@ -364,11 +350,9 @@ func main() {
 		})
 	}
 
-	t.Log("✓ Compilation verification tests passed")
 }
 
 func testRegressionScenarios(t *testing.T) {
-	t.Log("Testing regression scenarios...")
 
 	// Test scenarios that were previously broken to ensure they don't regress
 	regressionTests := []struct {
@@ -400,12 +384,10 @@ func testRegressionScenarios(t *testing.T) {
 
 	for _, test := range regressionTests {
 		t.Run(test.name, func(t *testing.T) {
-			t.Logf("Running regression test: %s", test.description)
 			test.scenario(t)
 		})
 	}
 
-	t.Log("✓ Regression tests passed")
 }
 
 func testAuthMiddlewareTimeImport(t *testing.T) {

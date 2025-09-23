@@ -180,37 +180,6 @@ func TestInteractiveUI_ShowMenu_BasicSelection(t *testing.T) {
 	}
 }
 
-func TestInteractiveUI_ShowMenu_NavigationKeys(t *testing.T) {
-	skipIfNotInteractive(t)
-	t.Skip("Skipping navigation keys test - requires complex input simulation")
-
-	ui, _ := createTestUI([]string{"down", "down", ""})
-
-	config := interfaces.MenuConfig{
-		Title: "Test Menu",
-		Options: []interfaces.MenuOption{
-			{Label: "Option 1", Value: "opt1"},
-			{Label: "Option 2", Value: "opt2"},
-			{Label: "Option 3", Value: "opt3"},
-		},
-	}
-
-	ctx := context.Background()
-	result, err := ui.ShowMenu(ctx, config)
-
-	if err != nil {
-		t.Fatalf("Expected no error, got: %v", err)
-	}
-
-	// After two "down" commands, should be at index 2 (third option)
-	if result.SelectedIndex != 2 {
-		t.Errorf("Expected selected index 2, got %d", result.SelectedIndex)
-	}
-
-	if result.SelectedValue != "opt3" {
-		t.Errorf("Expected selected value 'opt3', got %v", result.SelectedValue)
-	}
-}
 
 func TestInteractiveUI_ShowMenu_QuitAction(t *testing.T) {
 	skipIfNotInteractive(t)
@@ -507,10 +476,6 @@ func TestInteractiveUI_ShowMultiSelect_BasicSelection(t *testing.T) {
 	}
 }
 
-func TestInteractiveUI_ShowMultiSelect_MinMaxValidation(t *testing.T) {
-	// Skip this complex test for now as it requires precise UI interaction simulation
-	t.Skip("Skipping complex multi-select validation test - requires precise UI simulation")
-}
 
 func TestInteractiveUI_ShowCheckboxList_BasicSelection(t *testing.T) {
 	skipIfNotInteractive(t)
