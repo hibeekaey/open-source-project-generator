@@ -189,5 +189,3 @@ func (of *OutputFormatter) FinishOperationWithError(ctx *interfaces.OperationCon
 		})
 	}
 }
-
-
