@@ -180,7 +180,6 @@ func TestInteractiveUI_ShowMenu_BasicSelection(t *testing.T) {
 	}
 }
 
-
 func TestInteractiveUI_ShowMenu_QuitAction(t *testing.T) {
 	skipIfNotInteractive(t)
 	ui, _ := createTestUI([]string{"q"})
@@ -475,7 +474,6 @@ func TestInteractiveUI_ShowMultiSelect_BasicSelection(t *testing.T) {
 		t.Error("Expected result not to be cancelled")
 	}
 }
-
 
 func TestInteractiveUI_ShowCheckboxList_BasicSelection(t *testing.T) {
 	skipIfNotInteractive(t)

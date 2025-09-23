@@ -61,7 +61,6 @@ func testImportDetectionUtility(t *testing.T) {
 		t.Fatal("Function package map is empty")
 	}
 
-
 	// Test critical function mappings
 	criticalMappings := map[string]string{
 		"time.Now":         "time",
@@ -139,7 +138,6 @@ func testTemplateCompilationIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to walk embedded templates directory: %v", err)
 	}
-
 
 	if failedTemplates > 0 {
 		for _, failure := range failures {

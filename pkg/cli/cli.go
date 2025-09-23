@@ -32,19 +32,6 @@ import (
 	"golang.org/x/text/language"
 )
 
-// Color constants for beautiful CLI output
-const (
-	ColorReset  = "\033[0m"
-	ColorRed    = "\033[31m"
-	ColorGreen  = "\033[32m"
-	ColorYellow = "\033[33m"
-	ColorBlue   = "\033[34m"
-	ColorPurple = "\033[35m"
-	ColorCyan   = "\033[36m"
-	ColorWhite  = "\033[37m"
-	ColorBold   = "\033[1m"
-	ColorDim    = "\033[2m"
-)
 
 // CLI implements the CLIInterface for comprehensive CLI operations.
 //
@@ -66,6 +53,7 @@ type CLI struct {
 	logger                 interfaces.Logger
 	interactiveUI          interfaces.InteractiveUIInterface
 	interactiveFlowManager *InteractiveFlowManager
+	outputFormatter        *OutputFormatter
 	generatorVersion       string
 	rootCmd                *cobra.Command
 	verboseMode            bool
@@ -266,6 +254,9 @@ func (c *CLI) handleGlobalFlags(cmd *cobra.Command) error {
 		c.quietMode = true
 	}
 
+	// Initialize output formatter with current mode settings
+	c.outputFormatter = NewOutputFormatter(c.verboseMode, c.quietMode, c.debugMode, c.logger)
+
 	// Validate log level
 	validLogLevels := []string{"debug", "info", "warn", "error", "fatal"}
 	isValidLogLevel := false
@@ -361,146 +352,85 @@ func (c *CLI) handleGlobalFlags(cmd *cobra.Command) error {
 }
 
 // Color helper functions for beautiful output
+// Color formatting methods now use OutputFormatter
 func (c *CLI) colorize(color, text string) string {
-	if c.quietMode {
-		return text // No colors in quiet mode
-	}
-	return color + text + ColorReset
+	return c.outputFormatter.Colorize(color, text)
 }
 
 func (c *CLI) success(text string) string {
-	return c.colorize(ColorGreen+ColorBold, text)
+	return c.outputFormatter.Success(text)
 }
 
 func (c *CLI) info(text string) string {
-	return c.colorize(ColorBlue, text)
+	return c.outputFormatter.Info(text)
 }
 
 func (c *CLI) warning(text string) string {
-	return c.colorize(ColorYellow, text)
+	return c.outputFormatter.Warning(text)
 }
 
 func (c *CLI) error(text string) string {
-	return c.colorize(ColorRed+ColorBold, text)
+	return c.outputFormatter.Error(text)
 }
 
 func (c *CLI) highlight(text string) string {
-	return c.colorize(ColorCyan+ColorBold, text)
+	return c.outputFormatter.Highlight(text)
 }
 
 func (c *CLI) dim(text string) string {
-	return c.colorize(ColorDim, text)
+	return c.outputFormatter.Dim(text)
 }
 
 // Verbose output methods for enhanced debugging and user feedback
 
 // VerboseOutput prints verbose information if verbose mode is enabled
 func (c *CLI) VerboseOutput(format string, args ...interface{}) {
-	if c.verboseMode && !c.quietMode {
-		fmt.Printf(format+"\n", args...)
-	}
-	if c.logger != nil && c.verboseMode && c.logger.IsInfoEnabled() {
-		c.logger.Info(format, args...)
-	}
+	c.outputFormatter.VerboseOutput(format, args...)
 }
 
 // DebugOutput prints debug information if debug mode is enabled
 func (c *CLI) DebugOutput(format string, args ...interface{}) {
-	if c.debugMode && !c.quietMode {
-		fmt.Printf("🐛 "+format+"\n", args...)
-	}
-	if c.logger != nil && c.logger.IsDebugEnabled() {
-		c.logger.Debug(format, args...)
-	}
+	c.outputFormatter.DebugOutput(format, args...)
 }
 
 // QuietOutput prints information only if not in quiet mode
 func (c *CLI) QuietOutput(format string, args ...interface{}) {
-	if !c.quietMode {
-		fmt.Printf(format+"\n", args...)
-	}
-	// Don't log to structured logger for QuietOutput - it's meant for user-facing messages
+	c.outputFormatter.QuietOutput(format, args...)
 }
 
 // ErrorOutput prints error information (always shown unless completely silent)
 func (c *CLI) ErrorOutput(format string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, "Error: "+format+"\n", args...)
-	// Only log to logger in verbose or debug mode to avoid cluttering output
-	if c.logger != nil && (c.verboseMode || c.debugMode) {
-		c.logger.Error(format, args...)
-	}
+	c.outputFormatter.ErrorOutput(format, args...)
 }
 
 // WarningOutput prints warning information if not in quiet mode
 func (c *CLI) WarningOutput(format string, args ...interface{}) {
-	if !c.quietMode {
-		fmt.Printf("⚠️  "+format+"\n", args...)
-	}
-	if c.logger != nil {
-		c.logger.Warn(format, args...)
-	}
+	c.outputFormatter.WarningOutput(format, args...)
 }
 
 // SuccessOutput prints success information if not in quiet mode
 func (c *CLI) SuccessOutput(format string, args ...interface{}) {
-	if !c.quietMode {
-		fmt.Printf(format+"\n", args...)
-	}
-	// Don't log to structured logger for SuccessOutput - it's meant for user-facing messages
+	c.outputFormatter.SuccessOutput(format, args...)
 }
 
 // PerformanceOutput prints performance metrics if debug mode is enabled
 func (c *CLI) PerformanceOutput(operation string, duration time.Duration, metrics map[string]interface{}) {
-	if c.debugMode && !c.quietMode {
-		fmt.Printf("⚡ %s completed in %v\n", operation, duration)
-		if len(metrics) > 0 {
-			fmt.Printf("📊 Performance Metrics:\n")
-			for k, v := range metrics {
-				fmt.Printf("  %s: %v\n", k, v)
-			}
-		}
-	}
-	if c.logger != nil {
-		allMetrics := make(map[string]interface{})
-		allMetrics["duration_ms"] = duration.Milliseconds()
-		allMetrics["duration_human"] = duration.String()
-		for k, v := range metrics {
-			allMetrics[k] = v
-		}
-		c.logger.LogPerformanceMetrics(operation, allMetrics)
-	}
+	c.outputFormatter.PerformanceOutput(operation, duration, metrics)
 }
 
 // StartOperationWithOutput starts an operation with verbose output
 func (c *CLI) StartOperationWithOutput(operation string, description string) *interfaces.OperationContext {
-	c.VerboseOutput("%s", description)
-
-	var ctx *interfaces.OperationContext
-	if c.logger != nil && c.verboseMode {
-		ctx = c.logger.StartOperation(operation, map[string]interface{}{
-			"description": description,
-		})
-	}
-
-	return ctx
+	return c.outputFormatter.StartOperationWithOutput(operation, description)
 }
 
 // FinishOperationWithOutput completes an operation with verbose output
 func (c *CLI) FinishOperationWithOutput(ctx *interfaces.OperationContext, operation string, description string) {
-	if ctx != nil && c.logger != nil && c.verboseMode {
-		c.logger.FinishOperation(ctx, map[string]interface{}{
-			"description": description,
-		})
-	}
-	c.VerboseOutput("%s", description)
+	c.outputFormatter.FinishOperationWithOutput(ctx, operation, description)
 }
 
 // FinishOperationWithError completes an operation with error output
 func (c *CLI) FinishOperationWithError(ctx *interfaces.OperationContext, operation string, err error) {
-	if ctx != nil && c.logger != nil {
-		c.logger.FinishOperationWithError(ctx, err, nil)
-	}
-	c.ErrorOutput("❌ %s failed: %v", operation, err)
+	c.outputFormatter.FinishOperationWithError(ctx, operation, err)
 }
 
 // GetExitCode returns the current exit code
@@ -951,98 +881,6 @@ Includes safety checks, rollback capabilities, and multiple update channels.`,
 }
 
 // setupCacheCommand sets up the cache command with all subcommands
-func (c *CLI) setupCacheCommand() {
-	cacheCmd := &cobra.Command{
-		Use:   "cache <command> [flags]",
-		Short: "Manage local cache for offline mode and performance",
-		Long: `Manage local cache for templates, package versions, and other data.
-
-Enables offline mode operation and improves performance through intelligent caching.`,
-	}
-
-	// cache show
-	cacheShowCmd := &cobra.Command{
-		Use:   "show",
-		Short: "Show cache status and statistics",
-		Long:  "Display cache location, size, statistics, and health information",
-		RunE:  c.runCacheShow,
-	}
-	cacheCmd.AddCommand(cacheShowCmd)
-
-	// cache clear
-	cacheClearCmd := &cobra.Command{
-		Use:   "clear",
-		Short: "Clear all cached data",
-		Long:  "Remove all cached templates, versions, and other data",
-		RunE:  c.runCacheClear,
-	}
-	cacheClearCmd.Flags().Bool("force", false, "Clear cache without confirmation")
-	cacheCmd.AddCommand(cacheClearCmd)
-
-	// cache clean
-	cacheCleanCmd := &cobra.Command{
-		Use:   "clean",
-		Short: "Remove expired and invalid cache entries",
-		Long:  "Clean up expired cache entries and repair corrupted cache data",
-		RunE:  c.runCacheClean,
-	}
-	cacheCmd.AddCommand(cacheCleanCmd)
-
-	// cache validate
-	cacheValidateCmd := &cobra.Command{
-		Use:   "validate",
-		Short: "Validate cache integrity",
-		Long:  "Check cache integrity and report any issues",
-		RunE:  c.runCacheValidate,
-	}
-	cacheCmd.AddCommand(cacheValidateCmd)
-
-	// cache repair
-	cacheRepairCmd := &cobra.Command{
-		Use:   "repair",
-		Short: "Repair corrupted cache data",
-		Long:  "Attempt to repair corrupted cache entries and fix cache issues",
-		RunE:  c.runCacheRepair,
-	}
-	cacheCmd.AddCommand(cacheRepairCmd)
-
-	// cache offline
-	cacheOfflineCmd := &cobra.Command{
-		Use:   "offline",
-		Short: "Manage offline mode",
-		Long:  "Enable or disable offline mode for the cache",
-	}
-
-	// cache offline enable
-	cacheOfflineEnableCmd := &cobra.Command{
-		Use:   "enable",
-		Short: "Enable offline mode",
-		Long:  "Enable offline mode to use only cached data",
-		RunE:  c.runCacheOfflineEnable,
-	}
-	cacheOfflineCmd.AddCommand(cacheOfflineEnableCmd)
-
-	// cache offline disable
-	cacheOfflineDisableCmd := &cobra.Command{
-		Use:   "disable",
-		Short: "Disable offline mode",
-		Long:  "Disable offline mode to allow network access",
-		RunE:  c.runCacheOfflineDisable,
-	}
-	cacheOfflineCmd.AddCommand(cacheOfflineDisableCmd)
-
-	// cache offline status
-	cacheOfflineStatusCmd := &cobra.Command{
-		Use:   "status",
-		Short: "Show offline mode status",
-		Long:  "Display current offline mode status and readiness",
-		RunE:  c.runCacheOfflineStatus,
-	}
-	cacheOfflineCmd.AddCommand(cacheOfflineStatusCmd)
-
-	cacheCmd.AddCommand(cacheOfflineCmd)
-	c.rootCmd.AddCommand(cacheCmd)
-}
 
 // setupLogsCommand sets up the logs command
 func (c *CLI) setupLogsCommand() {
@@ -1845,124 +1683,6 @@ func (c *CLI) runUpdate(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func (c *CLI) runCacheShow(cmd *cobra.Command, args []string) error {
-	// Show cache status and statistics
-	err := c.ShowCache()
-	if err != nil {
-		return fmt.Errorf("🚫 %s %s",
-			c.error("Unable to display cache information."),
-			c.info("The cache directory may be inaccessible or corrupted"))
-	}
-	return nil
-}
-
-func (c *CLI) runCacheClear(cmd *cobra.Command, args []string) error {
-	// Get flags
-	force, _ := cmd.Flags().GetBool("force")
-
-	if !force {
-		fmt.Print("Are you sure you want to clear all cached data? (y/N): ")
-		var response string
-		if _, err := fmt.Scanln(&response); err != nil {
-			// If there's an error reading input, default to cancelling
-			fmt.Println("❌ Cache clear cancelled")
-			return nil
-		}
-		if strings.ToLower(response) != "y" && strings.ToLower(response) != "yes" {
-			fmt.Println("❌ Cache clear cancelled")
-			return nil
-		}
-	}
-
-	// Clear cache
-	err := c.ClearCache()
-	if err != nil {
-		return fmt.Errorf("🚫 %s %s",
-			c.error("Unable to clear cache."),
-			c.info("Check file permissions and ensure cache directory is accessible"))
-	}
-
-	fmt.Println("🗑️  Cache cleared successfully")
-	return nil
-}
-
-func (c *CLI) runCacheClean(cmd *cobra.Command, args []string) error {
-	// Clean expired and invalid cache entries
-	fmt.Println("🧹 Cleaning cache...")
-	err := c.CleanCache()
-	if err != nil {
-		return fmt.Errorf("🚫 %s %s",
-			c.error("Unable to clean cache."),
-			c.info("Some cache files may be in use or have permission issues"))
-	}
-
-	fmt.Println("✨ Cache cleaned successfully")
-	return nil
-}
-
-func (c *CLI) runCacheValidate(cmd *cobra.Command, args []string) error {
-	fmt.Println("🔍 Validating cache...")
-	err := c.ValidateCache()
-	if err != nil {
-		fmt.Printf("Cache validation failed: %v\n", err)
-		return err
-	}
-
-	fmt.Println("Cache validation passed - cache is healthy")
-	return nil
-}
-
-func (c *CLI) runCacheRepair(cmd *cobra.Command, args []string) error {
-	err := c.RepairCache()
-	if err != nil {
-		return fmt.Errorf("🚫 %s %s",
-			c.error("Unable to repair cache."),
-			c.info("Try clearing the cache completely with --clear"))
-	}
-	return nil
-}
-
-func (c *CLI) runCacheOfflineEnable(cmd *cobra.Command, args []string) error {
-	return c.EnableOfflineMode()
-}
-
-func (c *CLI) runCacheOfflineDisable(cmd *cobra.Command, args []string) error {
-	return c.DisableOfflineMode()
-}
-
-func (c *CLI) runCacheOfflineStatus(cmd *cobra.Command, args []string) error {
-	if c.cacheManager == nil {
-		return fmt.Errorf("🚫 %s %s",
-			c.error("Cache manager not initialized."),
-			c.info("This is an internal error - please report this issue"))
-	}
-
-	isOffline := c.cacheManager.IsOfflineMode()
-	fmt.Printf("Offline Mode: %t\n", isOffline)
-
-	if isOffline {
-		fmt.Println("Status: Using cached data only")
-		fmt.Println("Network requests are disabled")
-	} else {
-		fmt.Println("Status: Network access enabled")
-		fmt.Println("Will use network resources when available")
-	}
-
-	// Show cache readiness for offline mode
-	stats, err := c.cacheManager.GetStats()
-	if err == nil {
-		fmt.Printf("\nCache Readiness:\n")
-		fmt.Printf("  Entries: %d\n", stats.TotalEntries)
-		fmt.Printf("  Size: %s\n", formatBytes(stats.TotalSize))
-		fmt.Printf("  Health: %s\n", stats.CacheHealth)
-
-		if stats.TotalEntries == 0 {
-			fmt.Println("  Warning: No cached data available for offline mode")
-		}
-	}
-
-	return nil
-}
 
 func (c *CLI) runLogs(cmd *cobra.Command, args []string) error {
 	// Get flags
@@ -4257,20 +3977,6 @@ func (c *CLI) applySettingToConfig(config *models.ProjectConfig, key, value stri
 	}
 
 	return nil
-}
-
-// formatBytes formats a byte count as a human-readable string
-func formatBytes(bytes int64) string {
-	const unit = 1024
-	if bytes < unit {
-		return fmt.Sprintf("%d B", bytes)
-	}
-	div, exp := int64(unit), 0
-	for n := bytes / unit; n >= unit; n /= unit {
-		div *= unit
-		exp++
-	}
-	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
 }
 
 // LoadConfigFromFile loads configuration from a file
