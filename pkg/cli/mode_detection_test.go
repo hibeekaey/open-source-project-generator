@@ -7,6 +7,8 @@ import (
 func TestDetectGenerationMode(t *testing.T) {
 	// Create a minimal CLI instance for testing
 	cli := &CLI{}
+	// Initialize the OutputFormatter
+	cli.outputFormatter = NewOutputFormatter(false, false, false, nil)
 
 	// Check if we're running in CI environment
 	isCI := cli.detectCIEnvironment().IsCI
@@ -77,6 +79,8 @@ func TestDetectGenerationMode(t *testing.T) {
 
 func TestValidateModeFlags(t *testing.T) {
 	cli := &CLI{}
+	// Initialize the OutputFormatter
+	cli.outputFormatter = NewOutputFormatter(false, false, false, nil)
 
 	tests := []struct {
 		name                string
@@ -144,6 +148,8 @@ func TestValidateModeFlags(t *testing.T) {
 
 func TestApplyModeOverrides(t *testing.T) {
 	cli := &CLI{}
+	// Initialize the OutputFormatter
+	cli.outputFormatter = NewOutputFormatter(false, false, false, nil)
 
 	tests := []struct {
 		name                string
@@ -199,6 +205,8 @@ func TestApplyModeOverrides(t *testing.T) {
 
 func TestValidateAndNormalizeMode(t *testing.T) {
 	cli := &CLI{}
+	// Initialize the OutputFormatter
+	cli.outputFormatter = NewOutputFormatter(false, false, false, nil)
 
 	tests := []struct {
 		name     string

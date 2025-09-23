@@ -19,6 +19,8 @@ func TestCLI_runInteractiveDirectorySelection(t *testing.T) {
 	cli := &CLI{
 		logger: &MockCLILogger{},
 	}
+	// Initialize the OutputFormatter
+	cli.outputFormatter = NewOutputFormatter(false, false, false, cli.logger)
 
 	// Create a mock UI that will return our test path
 	mockUI := &MockCLIInteractiveUI{
