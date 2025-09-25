@@ -18,6 +18,7 @@ import (
 	"github.com/cuesoftinc/open-source-project-generator/pkg/cli"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/filesystem"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/interfaces"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/logger"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/security"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/template"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/validation"
@@ -72,9 +73,21 @@ type App struct {
 //   - error: Any error that occurred during initialization
 func NewApp(appVersion, gitCommit, buildTime string) (*App, error) {
 	// Initialize logger first
-	logger, err := NewLogger(LogLevelInfo, true)
+	// Create logger config
+	loggerConfig := &logger.LoggerConfig{
+		Level:        logger.LevelInfo,
+		Component:    "app",
+		EnableJSON:   true,
+		EnableCaller: false,
+		EnableColors: false,
+		LogFile:      "",
+	}
+
+	// Initialize logger
+	appLogger, err := logger.NewUnifiedLogger(loggerConfig)
 	if err != nil {
-		return nil, err
+		// Fallback to default config
+		appLogger, _ = logger.NewUnifiedLogger(logger.DefaultLoggerConfig())
 	}
 
 	// Initialize workspace directory for security manager
@@ -109,7 +122,7 @@ func NewApp(appVersion, gitCommit, buildTime string) (*App, error) {
 		cacheManager,
 		versionManager,
 		auditEngine,
-		logger,
+		appLogger,
 		appVersion,
 	)
 
@@ -127,7 +140,7 @@ func NewApp(appVersion, gitCommit, buildTime string) (*App, error) {
 		cli:            cli,
 		generator:      generator,
 		templateEngine: templateEngine,
-		logger:         logger,
+		logger:         appLogger,
 
 		// Version information
 		version:   appVersion,

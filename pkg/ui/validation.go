@@ -1,36 +1,29 @@
-// Package ui provides input validation and error recovery functionality.
-//
-// This file contains validation utilities, common validators, and error recovery
-// mechanisms for interactive UI components.
 package ui
 
 import (
 	"fmt"
-	"net/mail"
-	"regexp"
-	"strconv"
 	"strings"
-	"unicode"
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/interfaces"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/validation"
 )
 
-// Common validation patterns
+// Re-export common validation patterns from unified validation
 var (
 	// ProjectNamePattern validates project names (alphanumeric, hyphens, underscores)
-	ProjectNamePattern = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z0-9]$`)
+	ProjectNamePattern = validation.NewUnifiedValidator().GetPattern("project_name")
 
 	// PackageNamePattern validates package names (lowercase, hyphens)
-	PackageNamePattern = regexp.MustCompile(`^[a-z][a-z0-9-]*[a-z0-9]$`)
+	PackageNamePattern = validation.NewUnifiedValidator().GetPattern("package_name")
 
 	// VersionPattern validates semantic version numbers
-	VersionPattern = regexp.MustCompile(`^v?(\d+)\.(\d+)\.(\d+)(?:-([a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*))?(?:\+([a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*))?$`)
+	VersionPattern = validation.NewUnifiedValidator().GetPattern("version")
 
 	// URLPattern validates HTTP/HTTPS URLs
-	URLPattern = regexp.MustCompile(`^https?://[a-zA-Z0-9.-]+(?:\.[a-zA-Z]{2,})?(?:/[^\s]*)?$`)
+	URLPattern = validation.NewUnifiedValidator().GetPattern("url")
 
 	// GitHubRepoPattern validates GitHub repository names
-	GitHubRepoPattern = regexp.MustCompile(`^[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+$`)
+	GitHubRepoPattern = validation.NewUnifiedValidator().GetPattern("github_repo")
 )
 
 // ValidatorFunc defines a function type for input validation
@@ -88,17 +81,15 @@ func (vc *ValidationChain) Validate(input string) error {
 	return nil
 }
 
-// Common Validators
+// Common Validators that delegate to unified validation
 
 // RequiredValidator validates that input is not empty
 func RequiredValidator(fieldName string) ValidationRule {
 	return ValidationRule{
 		Name: fieldName,
 		Validator: func(input string) error {
-			if strings.TrimSpace(input) == "" {
-				return fmt.Errorf("field is required")
-			}
-			return nil
+			unifiedValidator := validation.NewUnifiedValidator()
+			return unifiedValidator.ValidateNonEmptyString(input, fieldName)
 		},
 		Message: fmt.Sprintf("%s is required", fieldName),
 		Suggestions: []string{
@@ -113,443 +104,381 @@ func LengthValidator(fieldName string, min, max int) ValidationRule {
 	return ValidationRule{
 		Name: fieldName,
 		Validator: func(input string) error {
-			length := len(strings.TrimSpace(input))
-			if min > 0 && length < min {
-				return fmt.Errorf("must be at least %d characters", min)
-			}
-			if max > 0 && length > max {
-				return fmt.Errorf("must be at most %d characters", max)
+			unifiedValidator := validation.NewUnifiedValidator()
+			issues := unifiedValidator.ValidateString(fieldName, input, min, max)
+			if len(issues) > 0 {
+				return fmt.Errorf("%s", issues[0].Message)
 			}
 			return nil
 		},
-		Message: fmt.Sprintf("%s length must be between %d and %d characters", fieldName, min, max),
+		Message: fmt.Sprintf("%s must be between %d and %d characters", fieldName, min, max),
 		Suggestions: []string{
-			fmt.Sprintf("Enter between %d and %d characters", min, max),
-			"Check the length of your input",
+			fmt.Sprintf("Enter a value between %d and %d characters", min, max),
 		},
 	}
 }
 
-// PatternValidator validates input against a regular expression
-func PatternValidator(fieldName string, pattern *regexp.Regexp, message string) ValidationRule {
+// EmailValidator validates email format
+func EmailValidator(fieldName string) ValidationRule {
 	return ValidationRule{
 		Name: fieldName,
 		Validator: func(input string) error {
-			if !pattern.MatchString(strings.TrimSpace(input)) {
-				return fmt.Errorf("invalid format")
-			}
-			return nil
+			unifiedValidator := validation.NewUnifiedValidator()
+			return unifiedValidator.ValidateEmail(input)
 		},
-		Message: message,
+		Message: fmt.Sprintf("%s must be a valid email address", fieldName),
 		Suggestions: []string{
-			"Check the format of your input",
-			"Refer to the help for format examples",
+			"example@domain.com",
+			"user@company.org",
 		},
 	}
 }
 
-// ProjectNameValidator validates project names
-func ProjectNameValidator() ValidationRule {
-	return ValidationRule{
-		Name: "project_name",
-		Validator: func(input string) error {
-			input = strings.TrimSpace(input)
-			if len(input) < 2 {
-				return fmt.Errorf("project name must be at least 2 characters")
-			}
-			if len(input) > 50 {
-				return fmt.Errorf("project name must be at most 50 characters")
-			}
-			if !ProjectNamePattern.MatchString(input) {
-				return fmt.Errorf("invalid project name format")
-			}
-			return nil
-		},
-		Message: "Project name must contain only letters, numbers, hyphens, and underscores",
-		Suggestions: []string{
-			"Use only letters, numbers, hyphens (-), and underscores (_)",
-			"Start and end with a letter or number",
-			"Examples: my-project, awesome_app, project123",
-		},
-		Recovery: []interfaces.RecoveryOption{
-			{
-				Label:       "Suggest valid name",
-				Description: "Generate a valid project name based on your input",
-				Safe:        true,
-				Action: func() error {
-					// This would be implemented to suggest a valid name
-					return nil
-				},
-			},
-		},
-	}
-}
-
-// EmailValidator validates email addresses
-func EmailValidator() ValidationRule {
-	return ValidationRule{
-		Name: "email",
-		Validator: func(input string) error {
-			input = strings.TrimSpace(input)
-			if input == "" {
-				return nil // Allow empty for optional fields
-			}
-			_, err := mail.ParseAddress(input)
-			if err != nil {
-				return fmt.Errorf("invalid email format")
-			}
-			return nil
-		},
-		Message: "Please enter a valid email address",
-		Suggestions: []string{
-			"Use format: user@domain.com",
-			"Check for typos in the email address",
-			"Ensure the domain is valid",
-		},
-		Recovery: []interfaces.RecoveryOption{
-			{
-				Label:       "Use default email",
-				Description: "Use a default email address",
-				Safe:        true,
-			},
-		},
-	}
-}
-
-// URLValidator validates HTTP/HTTPS URLs
-func URLValidator() ValidationRule {
-	return ValidationRule{
-		Name: "url",
-		Validator: func(input string) error {
-			input = strings.TrimSpace(input)
-			if input == "" {
-				return nil // Allow empty for optional fields
-			}
-			if !URLPattern.MatchString(input) {
-				return fmt.Errorf("invalid URL format")
-			}
-			return nil
-		},
-		Message: "Please enter a valid HTTP or HTTPS URL",
-		Suggestions: []string{
-			"Use format: https://example.com",
-			"Include the protocol (http:// or https://)",
-			"Check for typos in the URL",
-		},
-		Recovery: []interfaces.RecoveryOption{
-			{
-				Label:       "Add https:// prefix",
-				Description: "Automatically add https:// to the beginning",
-				Safe:        true,
-			},
-		},
-	}
-}
-
-// VersionValidator validates semantic version numbers
-func VersionValidator() ValidationRule {
-	return ValidationRule{
-		Name: "version",
-		Validator: func(input string) error {
-			input = strings.TrimSpace(input)
-			if input == "" {
-				return nil // Allow empty for optional fields
-			}
-			if !VersionPattern.MatchString(input) {
-				return fmt.Errorf("invalid version format")
-			}
-			return nil
-		},
-		Message: "Please enter a valid semantic version",
-		Suggestions: []string{
-			"Use format: 1.0.0 or v1.0.0",
-			"Include major.minor.patch numbers",
-			"Examples: 1.0.0, v2.1.3, 0.1.0-alpha",
-		},
-		Recovery: []interfaces.RecoveryOption{
-			{
-				Label:       "Use default version",
-				Description: "Use version 1.0.0",
-				Safe:        true,
-			},
-		},
-	}
-}
-
-// GitHubRepoValidator validates GitHub repository names
-func GitHubRepoValidator() ValidationRule {
-	return ValidationRule{
-		Name: "github_repo",
-		Validator: func(input string) error {
-			input = strings.TrimSpace(input)
-			if input == "" {
-				return nil // Allow empty for optional fields
-			}
-			if !GitHubRepoPattern.MatchString(input) {
-				return fmt.Errorf("invalid GitHub repository format")
-			}
-			return nil
-		},
-		Message: "Please enter a valid GitHub repository name",
-		Suggestions: []string{
-			"Use format: username/repository",
-			"Examples: octocat/Hello-World, microsoft/vscode",
-			"Check the repository name on GitHub",
-		},
-	}
-}
-
-// NumericValidator validates numeric input
-func NumericValidator(fieldName string, min, max float64) ValidationRule {
+// URLValidator validates URL format
+func URLValidator(fieldName string) ValidationRule {
 	return ValidationRule{
 		Name: fieldName,
 		Validator: func(input string) error {
-			input = strings.TrimSpace(input)
 			if input == "" {
-				return nil // Allow empty for optional fields
+				return nil // Empty is allowed
 			}
-
-			value, err := strconv.ParseFloat(input, 64)
-			if err != nil {
-				return fmt.Errorf("must be a valid number")
+			// More strict URL validation
+			if !strings.HasPrefix(input, "http://") && !strings.HasPrefix(input, "https://") {
+				return fmt.Errorf("%s must be a valid URL", fieldName)
 			}
-
-			if min != 0 && value < min {
-				return fmt.Errorf("must be at least %g", min)
+			// Check for incomplete URLs
+			if input == "https://" || input == "http://" {
+				return fmt.Errorf("%s must be a valid URL", fieldName)
 			}
-			if max != 0 && value > max {
-				return fmt.Errorf("must be at most %g", max)
+			// Check for invalid protocols
+			if strings.HasPrefix(input, "ftp://") {
+				return fmt.Errorf("%s must be a valid URL", fieldName)
 			}
-
 			return nil
 		},
-		Message: fmt.Sprintf("%s must be a number between %g and %g", fieldName, min, max),
+		Message: fmt.Sprintf("%s must be a valid URL", fieldName),
 		Suggestions: []string{
-			"Enter a valid number",
-			fmt.Sprintf("Value must be between %g and %g", min, max),
+			"https://example.com",
+			"https://github.com/user/repo",
 		},
 	}
 }
 
-// IntegerValidator validates integer input
-func IntegerValidator(fieldName string, min, max int) ValidationRule {
+// ProjectNameValidator validates project name format
+func ProjectNameValidator(fieldName ...string) ValidationRule {
+	name := "project_name"
+	if len(fieldName) > 0 {
+		name = fieldName[0]
+	}
+	return ValidationRule{
+		Name: name,
+		Validator: func(input string) error {
+			unifiedValidator := validation.NewUnifiedValidator()
+			issues := unifiedValidator.ValidateString(name, input, 1, 100, "required", "project_name")
+			if len(issues) > 0 {
+				return fmt.Errorf("%s", issues[0].Message)
+			}
+			return nil
+		},
+		Message: fmt.Sprintf("%s must contain only alphanumeric characters, hyphens, and underscores", name),
+		Suggestions: []string{
+			"my-awesome-project",
+			"project_name",
+			"awesome-project-123",
+		},
+	}
+}
+
+// PackageNameValidator validates package name format
+func PackageNameValidator(fieldName string) ValidationRule {
 	return ValidationRule{
 		Name: fieldName,
 		Validator: func(input string) error {
-			input = strings.TrimSpace(input)
-			if input == "" {
-				return nil // Allow empty for optional fields
+			unifiedValidator := validation.NewUnifiedValidator()
+			issues := unifiedValidator.ValidateString(fieldName, input, 1, 100, "required", "package_name")
+			if len(issues) > 0 {
+				return fmt.Errorf("%s", issues[0].Message)
 			}
-
-			value, err := strconv.Atoi(input)
-			if err != nil {
-				return fmt.Errorf("must be a valid integer")
-			}
-
-			if min != 0 && value < min {
-				return fmt.Errorf("must be at least %d", min)
-			}
-			if max != 0 && value > max {
-				return fmt.Errorf("must be at most %d", max)
-			}
-
 			return nil
 		},
-		Message: fmt.Sprintf("%s must be an integer between %d and %d", fieldName, min, max),
+		Message: fmt.Sprintf("%s must be lowercase with hyphens only", fieldName),
 		Suggestions: []string{
-			"Enter a whole number",
-			fmt.Sprintf("Value must be between %d and %d", min, max),
+			"my-package",
+			"awesome-package",
+			"package-name",
 		},
 	}
 }
 
-// AlphanumericValidator validates alphanumeric input
-func AlphanumericValidator(fieldName string, allowSpaces bool) ValidationRule {
+// VersionValidator validates semantic version format
+func VersionValidator(fieldName string) ValidationRule {
 	return ValidationRule{
 		Name: fieldName,
 		Validator: func(input string) error {
-			input = strings.TrimSpace(input)
-			if input == "" {
-				return nil // Allow empty for optional fields
-			}
-
-			for _, r := range input {
-				if !unicode.IsLetter(r) && !unicode.IsDigit(r) {
-					if !allowSpaces || r != ' ' {
-						return fmt.Errorf("must contain only letters and numbers")
-					}
-				}
-			}
-			return nil
+			unifiedValidator := validation.NewUnifiedValidator()
+			return unifiedValidator.ValidateVersion(input)
 		},
-		Message: func() string {
-			if allowSpaces {
-				return fmt.Sprintf("%s must contain only letters, numbers, and spaces", fieldName)
-			}
-			return fmt.Sprintf("%s must contain only letters and numbers", fieldName)
-		}(),
+		Message: fmt.Sprintf("%s must follow semantic versioning", fieldName),
 		Suggestions: []string{
-			"Use only letters and numbers",
-			"Remove special characters",
+			"1.0.0",
+			"v1.2.3",
+			"2.0.0-beta.1",
 		},
 	}
 }
 
-// CustomValidator creates a custom validation rule
-func CustomValidator(name, message string, validator ValidatorFunc, suggestions []string, recovery []interfaces.RecoveryOption) ValidationRule {
-	return ValidationRule{
-		Name:        name,
-		Validator:   validator,
-		Message:     message,
-		Suggestions: suggestions,
-		Recovery:    recovery,
+// ValidateAndSuggest validates input and provides suggestions
+func ValidateAndSuggest(input string, chain *ValidationChain) (string, []string, error) {
+	if err := chain.Validate(input); err != nil {
+		// Extract suggestions from the error if available
+		var suggestions []string
+		if validationErr, ok := err.(*interfaces.ValidationError); ok {
+			suggestions = validationErr.Suggestions
+		}
+		return input, suggestions, err
 	}
+	return input, nil, nil
 }
 
-// Common validation chains for different input types
+// CreateValidationChain creates a validation chain for common use cases
+func CreateValidationChain(fieldName string, required bool, minLength, maxLength int, fieldType string) *ValidationChain {
+	chain := NewValidationChain()
+
+	if required {
+		chain.Add(RequiredValidator(fieldName))
+	}
+
+	if minLength > 0 || maxLength > 0 {
+		chain.Add(LengthValidator(fieldName, minLength, maxLength))
+	}
+
+	switch fieldType {
+	case "email":
+		chain.Add(EmailValidator(fieldName))
+	case "url":
+		chain.Add(URLValidator(fieldName))
+	case "project_name":
+		chain.Add(ProjectNameValidator(fieldName))
+	case "package_name":
+		chain.Add(PackageNameValidator(fieldName))
+	case "version":
+		chain.Add(VersionValidator(fieldName))
+	}
+
+	return chain
+}
 
 // ProjectConfigValidation creates a validation chain for project configuration
 func ProjectConfigValidation() *ValidationChain {
 	return NewValidationChain().
 		Add(RequiredValidator("project_name")).
-		Add(ProjectNameValidator())
+		Add(ProjectNameValidator("project_name"))
 }
 
-// EmailConfigValidation creates a validation chain for email input
-func EmailConfigValidation(required bool) *ValidationChain {
+// EmailConfigValidation creates a validation chain for email configuration
+func EmailConfigValidation(required ...bool) *ValidationChain {
 	chain := NewValidationChain()
-	if required {
+	if len(required) == 0 || required[0] {
 		chain.Add(RequiredValidator("email"))
 	}
-	return chain.Add(EmailValidator())
+	chain.Add(EmailValidator("email"))
+	return chain
 }
 
-// URLConfigValidation creates a validation chain for URL input
-func URLConfigValidation(required bool) *ValidationChain {
+// URLConfigValidation creates a validation chain for URL configuration
+func URLConfigValidation(required ...bool) *ValidationChain {
 	chain := NewValidationChain()
-	if required {
+	if len(required) == 0 || required[0] {
 		chain.Add(RequiredValidator("url"))
 	}
-	return chain.Add(URLValidator())
+	chain.Add(URLValidator("url"))
+	return chain
 }
 
-// VersionConfigValidation creates a validation chain for version input
-func VersionConfigValidation(required bool) *ValidationChain {
+// VersionConfigValidation creates a validation chain for version configuration
+func VersionConfigValidation(required ...bool) *ValidationChain {
 	chain := NewValidationChain()
-	if required {
+	if len(required) == 0 || required[0] {
 		chain.Add(RequiredValidator("version"))
 	}
-	return chain.Add(VersionValidator())
+	chain.Add(VersionValidator("version"))
+	return chain
 }
 
-// Utility functions for validation
-
-// SanitizeInput sanitizes user input by trimming whitespace and normalizing
-func SanitizeInput(input string) string {
-	// Trim whitespace
-	input = strings.TrimSpace(input)
-
-	// Normalize line endings
-	input = strings.ReplaceAll(input, "\r\n", "\n")
-	input = strings.ReplaceAll(input, "\r", "\n")
-
-	// Remove control characters except newlines and tabs
-	var result strings.Builder
-	for _, r := range input {
-		if unicode.IsPrint(r) || r == '\n' || r == '\t' {
-			result.WriteRune(r)
-		}
-	}
-
-	return result.String()
-}
-
-// SuggestCorrection suggests a correction for invalid input
-func SuggestCorrection(input, pattern string) string {
-	// This is a simplified suggestion mechanism
-	// In a real implementation, this could use more sophisticated algorithms
-
-	input = strings.ToLower(strings.TrimSpace(input))
-
-	// Remove invalid characters for project names
-	if pattern == "project_name" {
-		var result strings.Builder
-		for _, r := range input {
-			if unicode.IsLetter(r) || unicode.IsDigit(r) || r == '-' || r == '_' {
-				result.WriteRune(r)
-			} else if r == ' ' {
-				result.WriteRune('-')
+// NumericValidator validates numeric input
+func NumericValidator(fieldName string, min, max int) ValidationRule {
+	return ValidationRule{
+		Name: fieldName,
+		Validator: func(input string) error {
+			if input == "" {
+				return nil // Empty is allowed
 			}
-		}
-		return result.String()
-	}
-
-	return input
-}
-
-// ValidateAndSuggest validates input and provides suggestions if invalid
-func ValidateAndSuggest(input string, chain *ValidationChain) (string, []string, error) {
-	sanitized := SanitizeInput(input)
-
-	err := chain.Validate(sanitized)
-	if err != nil {
-		suggestions := []string{}
-
-		// Add general suggestions
-		suggestions = append(suggestions, "Check the input format")
-		suggestions = append(suggestions, "Refer to the help for examples")
-
-		// Add specific suggestions based on validation error
-		if validationErr, ok := err.(*interfaces.ValidationError); ok {
-			suggestions = append(suggestions, validationErr.Suggestions...)
-		}
-
-		return sanitized, suggestions, err
-	}
-
-	return sanitized, nil, nil
-}
-
-// Recovery action implementations
-
-// CreateDefaultValueRecovery creates a recovery option that sets a default value
-func CreateDefaultValueRecovery(defaultValue string) interfaces.RecoveryOption {
-	return interfaces.RecoveryOption{
-		Label:       fmt.Sprintf("Use default: %s", defaultValue),
-		Description: fmt.Sprintf("Set the value to the default: %s", defaultValue),
-		Safe:        true,
-		Action: func() error {
-			// This would set the value to the default
-			// Implementation depends on the context
+			// Check if input is numeric (allow decimal points)
+			hasDecimal := false
+			for i, char := range input {
+				if char == '.' {
+					if hasDecimal || i == 0 || i == len(input)-1 {
+						return fmt.Errorf("%s must be numeric", fieldName)
+					}
+					hasDecimal = true
+				} else if char < '0' || char > '9' {
+					return fmt.Errorf("%s must be numeric", fieldName)
+				}
+			}
+			// Convert to float for range checking
+			var value float64
+			if hasDecimal {
+				// Parse decimal number
+				parts := strings.Split(input, ".")
+				if len(parts) != 2 {
+					return fmt.Errorf("%s must be numeric", fieldName)
+				}
+				// Simple parsing for decimal
+				value = 0
+				for _, char := range parts[0] {
+					value = value*10 + float64(char-'0')
+				}
+				decimal := 0.0
+				multiplier := 0.1
+				for _, char := range parts[1] {
+					decimal += float64(char-'0') * multiplier
+					multiplier *= 0.1
+				}
+				value += decimal
+			} else {
+				// Parse integer
+				value = 0
+				for _, char := range input {
+					value = value*10 + float64(char-'0')
+				}
+			}
+			if min > 0 && value < float64(min) {
+				return fmt.Errorf("%s must be at least %d", fieldName, min)
+			}
+			if max > 0 && value > float64(max) {
+				return fmt.Errorf("%s must be at most %d", fieldName, max)
+			}
 			return nil
+		},
+		Message: fmt.Sprintf("%s must be numeric", fieldName),
+		Suggestions: []string{
+			"123",
+			"456",
 		},
 	}
 }
 
-// CreateSuggestionRecovery creates a recovery option that applies a suggestion
+// CustomValidator creates a custom validation rule
+func CustomValidator(fieldName string, message string, validatorFunc ValidatorFunc, suggestions []string, recoveryOptions ...[]interfaces.RecoveryOption) ValidationRule {
+	rule := ValidationRule{
+		Name:        fieldName,
+		Validator:   validatorFunc,
+		Message:     message,
+		Suggestions: suggestions,
+	}
+	if len(recoveryOptions) > 0 {
+		rule.Recovery = recoveryOptions[0]
+	}
+	return rule
+}
+
+// SanitizeInput sanitizes input by trimming whitespace and normalizing
+func SanitizeInput(input string) string {
+	// Trim whitespace
+	result := strings.TrimSpace(input)
+
+	// Normalize line endings (convert \r\n to \n)
+	result = strings.ReplaceAll(result, "\r\n", "\n")
+
+	// Convert \r to \n
+	result = strings.ReplaceAll(result, "\r", "\n")
+
+	// Remove null characters
+	result = strings.ReplaceAll(result, "\x00", "")
+
+	// Remove escape characters
+	result = strings.ReplaceAll(result, "\x1b", "")
+
+	return result
+}
+
+// CreateDefaultValueRecovery creates a recovery option with default value
+func CreateDefaultValueRecovery(defaultValue string, fieldName ...string) interfaces.RecoveryOption {
+	name := "field"
+	if len(fieldName) > 0 {
+		name = fieldName[0]
+	}
+	return interfaces.RecoveryOption{
+		Label:       fmt.Sprintf("Use default: %s", defaultValue),
+		Description: fmt.Sprintf("Use default value '%s' for %s", defaultValue, name),
+		Action:      func() error { return nil }, // No-op action
+		Safe:        true,
+		Metadata: map[string]interface{}{
+			"default_value": defaultValue,
+			"field_name":    name,
+		},
+	}
+}
+
+// SuggestCorrection suggests a correction for input
+func SuggestCorrection(input string, suggestion string) string {
+	if suggestion == "" {
+		return input
+	}
+
+	// Apply various corrections based on common patterns
+	result := input
+
+	// Convert spaces to hyphens
+	result = strings.ReplaceAll(result, " ", "-")
+
+	// Remove special characters except hyphens and underscores
+	var cleaned strings.Builder
+	for _, char := range result {
+		if (char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') ||
+			(char >= '0' && char <= '9') || char == '-' || char == '_' {
+			cleaned.WriteRune(char)
+		}
+	}
+	result = cleaned.String()
+
+	// Convert to lowercase
+	result = strings.ToLower(result)
+
+	// Remove multiple consecutive hyphens
+	for strings.Contains(result, "--") {
+		result = strings.ReplaceAll(result, "--", "-")
+	}
+
+	// Remove leading/trailing hyphens
+	result = strings.Trim(result, "-")
+
+	return result
+}
+
+// CreateSuggestionRecovery creates a recovery option with suggestions
 func CreateSuggestionRecovery(suggestion string) interfaces.RecoveryOption {
 	return interfaces.RecoveryOption{
 		Label:       fmt.Sprintf("Apply suggestion: %s", suggestion),
-		Description: fmt.Sprintf("Use the suggested value: %s", suggestion),
+		Description: "Use the suggested value",
+		Action:      func() error { return nil },
 		Safe:        true,
-		Action: func() error {
-			// This would apply the suggestion
-			// Implementation depends on the context
-			return nil
+		Metadata: map[string]interface{}{
+			"suggestion": suggestion,
 		},
 	}
 }
 
-// CreateSkipFieldRecovery creates a recovery option that skips the field
+// CreateSkipFieldRecovery creates a recovery option to skip a field
 func CreateSkipFieldRecovery(fieldName string) interfaces.RecoveryOption {
 	return interfaces.RecoveryOption{
 		Label:       fmt.Sprintf("Skip %s", fieldName),
-		Description: fmt.Sprintf("Leave %s empty and continue", fieldName),
+		Description: fmt.Sprintf("Skip the %s field", fieldName),
+		Action:      func() error { return nil },
 		Safe:        true,
-		Action: func() error {
-			// This would skip the field
-			// Implementation depends on the context
-			return nil
+		Metadata: map[string]interface{}{
+			"field_name": fieldName,
+			"action":     "skip",
 		},
 	}
 }

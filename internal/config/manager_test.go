@@ -202,6 +202,7 @@ func TestValidateConfig(t *testing.T) {
 			config: &models.ProjectConfig{
 				Name:         "test-project",
 				Organization: "test-org",
+				Author:       "Test Author",
 				Description:  "A valid test project",
 				License:      "MIT",
 				OutputPath:   "./test-output",

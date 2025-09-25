@@ -155,7 +155,9 @@ func (h *ErrorHandler) formatStructuredLogMessage(err *AppError) string {
 
 // logErrorDetails logs additional error details based on log level
 func (h *ErrorHandler) logErrorDetails(err *AppError, minLevel LogLevel) {
-	if h.logger.level > minLevel {
+	// Get current logger level
+	currentLevel := h.logger.GetLevel()
+	if currentLevel > int(minLevel) {
 		return
 	}
 
@@ -165,7 +167,7 @@ func (h *ErrorHandler) logErrorDetails(err *AppError, minLevel LogLevel) {
 	}
 
 	// Log stack trace for debug level
-	if h.logger.level <= LogLevelDebug && err.Stack != "" {
+	if currentLevel <= int(LogLevelDebug) && err.Stack != "" {
 		h.logger.Debug("stack_trace=\"%s\"", err.Stack)
 	}
 }

@@ -37,6 +37,14 @@ func TestConfigManagerIntegration(t *testing.T) {
 	})
 
 	t.Run("LoadAndValidateConfig", func(t *testing.T) {
+		// Ensure config file exists
+		if _, err := os.Stat(configPath); os.IsNotExist(err) {
+			err := manager.CreateDefaultConfig(configPath)
+			if err != nil {
+				t.Fatalf("CreateDefaultConfig failed: %v", err)
+			}
+		}
+
 		config, err := manager.LoadConfig(configPath)
 		if err != nil {
 			t.Fatalf("LoadConfig failed: %v", err)
@@ -50,6 +58,14 @@ func TestConfigManagerIntegration(t *testing.T) {
 	})
 
 	t.Run("ValidateConfigFromFile", func(t *testing.T) {
+		// Ensure config file exists
+		if _, err := os.Stat(configPath); os.IsNotExist(err) {
+			err := manager.CreateDefaultConfig(configPath)
+			if err != nil {
+				t.Fatalf("CreateDefaultConfig failed: %v", err)
+			}
+		}
+
 		result, err := manager.ValidateConfigFromFile(configPath)
 		if err != nil {
 			t.Fatalf("ValidateConfigFromFile failed: %v", err)
@@ -71,6 +87,7 @@ func TestConfigManagerIntegration(t *testing.T) {
 		config := &models.ProjectConfig{
 			Name:         "modified-project",
 			Organization: "modified-org",
+			Author:       "Modified Author",
 			License:      "Apache-2.0",
 			OutputPath:   "./modified-output",
 		}

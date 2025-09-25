@@ -5,7 +5,6 @@ import (
 	"runtime"
 	"sync"
 	"testing"
-	"time"
 )
 
 // ResourceCleanup provides utilities for cleaning up test resources
@@ -51,7 +50,7 @@ func (rc *ResourceCleanup) Cleanup(t *testing.T) {
 	rc.mu.Lock()
 	defer rc.mu.Unlock()
 
-	// Clean up custom functions first
+	// Execute custom cleanup functions
 	for _, cleanup := range rc.cleanupFunc {
 		if err := cleanup(); err != nil {
 			t.Logf("Cleanup function failed: %v", err)
@@ -72,47 +71,12 @@ func (rc *ResourceCleanup) Cleanup(t *testing.T) {
 		}
 	}
 
-	// Force garbage collection to free memory
+	// Force garbage collection
 	runtime.GC()
-	runtime.GC() // Double GC to ensure cleanup
+	runtime.GC()
 }
 
 // MemoryCleanup performs memory-specific cleanup operations
 func MemoryCleanup() {
-	// Force garbage collection
 	runtime.GC()
-
-	// Give some time for GC to complete
-	time.Sleep(10 * time.Millisecond)
-
-	// Another GC cycle to ensure thorough cleanup
-	runtime.GC()
-}
-
-// WithCleanup is a helper that automatically cleans up resources when the test completes
-func WithCleanup(t *testing.T, testFunc func(cleanup *ResourceCleanup)) {
-	cleanup := NewResourceCleanup()
-	defer cleanup.Cleanup(t)
-	testFunc(cleanup)
-}
-
-// EnsureNoResourceLeaks checks for potential resource leaks by monitoring file descriptors and memory
-func EnsureNoResourceLeaks(t *testing.T, testFunc func()) {
-	var startMem runtime.MemStats
-	runtime.GC()
-	runtime.ReadMemStats(&startMem)
-
-	testFunc()
-
-	// Force cleanup and measure memory again
-	runtime.GC()
-	runtime.GC()
-	var endMem runtime.MemStats
-	runtime.ReadMemStats(&endMem)
-
-	// Check for significant memory increase (indicating potential leaks)
-	memoryIncrease := endMem.Alloc - startMem.Alloc
-	if memoryIncrease > 50*1024*1024 { // 50MB threshold
-		t.Logf("WARNING: Memory increased by %d bytes, potential memory leak", memoryIncrease)
-	}
 }
