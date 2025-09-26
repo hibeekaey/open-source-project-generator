@@ -29,7 +29,7 @@ type ValidationEngine interface {
 	ValidateJSON(path string) error
 	ValidateTemplate(path string) error
 
-	// Enhanced project validation
+	// Comprehensive project validation
 	ValidateProjectStructure(path string) (*StructureValidationResult, error)
 	ValidateProjectDependencies(path string) (*DependencyValidationResult, error)
 	ValidateProjectSecurity(path string) (*SecurityValidationResult, error)
@@ -40,7 +40,7 @@ type ValidationEngine interface {
 	ValidateConfigurationSchema(config any, schema *ConfigSchema) error
 	ValidateConfigurationValues(config *models.ProjectConfig) (*ConfigValidationResult, error)
 
-	// Template validation (enhanced versions)
+	// Template validation (comprehensive versions)
 	ValidateTemplateAdvanced(path string) (*TemplateValidationResult, error)
 	ValidateTemplateMetadata(metadata *TemplateMetadata) error
 	ValidateTemplateStructure(path string) (*StructureValidationResult, error)
@@ -63,7 +63,7 @@ type ValidationEngine interface {
 	GetValidationSummary(results []*ValidationResult) (*ValidationSummary, error)
 }
 
-// Enhanced validation types and structures
+// Comprehensive validation types and structures
 
 // ValidationRule defines a validation rule with its configuration
 type ValidationRule struct {

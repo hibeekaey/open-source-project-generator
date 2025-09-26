@@ -1,4 +1,4 @@
-// Package validation provides a unified validation system for the entire application.
+// Package validation provides a comprehensive validation system for the entire application.
 //
 // This package consolidates all validation logic from various packages into a single,
 // comprehensive validation system that can be used across the application.
@@ -62,8 +62,8 @@ type ValidationResult struct {
 	Summary interfaces.ValidationSummary `json:"summary"`
 }
 
-// UnifiedValidator provides comprehensive validation for all application needs
-type UnifiedValidator struct {
+// Validator provides comprehensive validation for all application needs
+type Validator struct {
 	patterns map[string]*regexp.Regexp
 	rules    map[string]ValidationRule
 }
@@ -77,9 +77,9 @@ type ValidationRule struct {
 	Level       ValidationLevel
 }
 
-// NewUnifiedValidator creates a new unified validator with all common patterns
-func NewUnifiedValidator() *UnifiedValidator {
-	validator := &UnifiedValidator{
+// NewValidator creates a new validator with all common patterns
+func NewValidator() *Validator {
+	validator := &Validator{
 		patterns: make(map[string]*regexp.Regexp),
 		rules:    make(map[string]ValidationRule),
 	}
@@ -91,7 +91,7 @@ func NewUnifiedValidator() *UnifiedValidator {
 }
 
 // initializePatterns sets up common regex patterns
-func (v *UnifiedValidator) initializePatterns() {
+func (v *Validator) initializePatterns() {
 	v.patterns = map[string]*regexp.Regexp{
 		"project_name":    regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z0-9]$`),
 		"package_name":    regexp.MustCompile(`^[a-z][a-z0-9-]*[a-z0-9]$`),
@@ -104,7 +104,7 @@ func (v *UnifiedValidator) initializePatterns() {
 }
 
 // initializeRules sets up common validation rules
-func (v *UnifiedValidator) initializeRules() {
+func (v *Validator) initializeRules() {
 	v.rules = map[string]ValidationRule{
 		"required": {
 			Name: "required",
@@ -215,7 +215,7 @@ func (v *UnifiedValidator) initializeRules() {
 }
 
 // ValidateField validates a single field with specified rules
-func (v *UnifiedValidator) ValidateField(field string, value interface{}, rules ...string) []ValidationIssue {
+func (v *Validator) ValidateField(field string, value interface{}, rules ...string) []ValidationIssue {
 	var issues []ValidationIssue
 
 	for _, ruleName := range rules {
@@ -238,7 +238,7 @@ func (v *UnifiedValidator) ValidateField(field string, value interface{}, rules 
 }
 
 // ValidateString validates a string with length constraints
-func (v *UnifiedValidator) ValidateString(field, value string, minLen, maxLen int, rules ...string) []ValidationIssue {
+func (v *Validator) ValidateString(field, value string, minLen, maxLen int, rules ...string) []ValidationIssue {
 	var issues []ValidationIssue
 
 	// Add length validation rules
@@ -276,7 +276,7 @@ func (v *UnifiedValidator) ValidateString(field, value string, minLen, maxLen in
 }
 
 // ValidateProjectConfig validates a complete project configuration
-func (v *UnifiedValidator) ValidateProjectConfig(config *models.ProjectConfig) *ValidationResult {
+func (v *Validator) ValidateProjectConfig(config *models.ProjectConfig) *ValidationResult {
 	result := &ValidationResult{
 		Valid:  true,
 		Issues: []ValidationIssue{},
@@ -322,7 +322,7 @@ func (v *UnifiedValidator) ValidateProjectConfig(config *models.ProjectConfig) *
 }
 
 // calculateSummary calculates validation summary statistics
-func (v *UnifiedValidator) calculateSummary(result *ValidationResult) {
+func (v *Validator) calculateSummary(result *ValidationResult) {
 	result.Summary.TotalFiles = 1 // Single config validation
 	result.Summary.ValidFiles = 0
 	if result.Valid {
@@ -340,17 +340,17 @@ func (v *UnifiedValidator) calculateSummary(result *ValidationResult) {
 }
 
 // AddCustomRule adds a custom validation rule
-func (v *UnifiedValidator) AddCustomRule(name string, rule ValidationRule) {
+func (v *Validator) AddCustomRule(name string, rule ValidationRule) {
 	v.rules[name] = rule
 }
 
 // GetPattern returns a compiled regex pattern by name
-func (v *UnifiedValidator) GetPattern(name string) *regexp.Regexp {
+func (v *Validator) GetPattern(name string) *regexp.Regexp {
 	return v.patterns[name]
 }
 
 // ValidateEmail validates an email address
-func (v *UnifiedValidator) ValidateEmail(email string) error {
+func (v *Validator) ValidateEmail(email string) error {
 	if email == "" {
 		return nil // Empty email is allowed
 	}
@@ -360,7 +360,7 @@ func (v *UnifiedValidator) ValidateEmail(email string) error {
 }
 
 // ValidateURL validates a URL
-func (v *UnifiedValidator) ValidateURL(urlStr string) error {
+func (v *Validator) ValidateURL(urlStr string) error {
 	if urlStr == "" {
 		return nil // Empty URL is allowed
 	}
@@ -370,7 +370,7 @@ func (v *UnifiedValidator) ValidateURL(urlStr string) error {
 }
 
 // ValidateNonEmptyString validates that a string is not empty
-func (v *UnifiedValidator) ValidateNonEmptyString(value, fieldName string) error {
+func (v *Validator) ValidateNonEmptyString(value, fieldName string) error {
 	if strings.TrimSpace(value) == "" {
 		return fmt.Errorf("%s is required", fieldName)
 	}
@@ -378,7 +378,7 @@ func (v *UnifiedValidator) ValidateNonEmptyString(value, fieldName string) error
 }
 
 // ValidatePath validates a file path
-func (v *UnifiedValidator) ValidatePath(path string, allowedBasePaths ...string) error {
+func (v *Validator) ValidatePath(path string, allowedBasePaths ...string) error {
 	if path == "" {
 		return fmt.Errorf("path cannot be empty")
 	}
@@ -408,7 +408,7 @@ func (v *UnifiedValidator) ValidatePath(path string, allowedBasePaths ...string)
 }
 
 // ValidatePassword validates a password for security requirements
-func (v *UnifiedValidator) ValidatePassword(password string) error {
+func (v *Validator) ValidatePassword(password string) error {
 	if len(password) < 8 {
 		return fmt.Errorf("password must be at least 8 characters long")
 	}
@@ -448,7 +448,7 @@ func (v *UnifiedValidator) ValidatePassword(password string) error {
 }
 
 // ValidateVersion validates a semantic version string
-func (v *UnifiedValidator) ValidateVersion(version string) error {
+func (v *Validator) ValidateVersion(version string) error {
 	if version == "" {
 		return nil
 	}
@@ -462,7 +462,7 @@ func (v *UnifiedValidator) ValidateVersion(version string) error {
 }
 
 // ValidateSlice validates that a slice is not empty
-func (v *UnifiedValidator) ValidateSlice(slice interface{}, fieldName string) error {
+func (v *Validator) ValidateSlice(slice interface{}, fieldName string) error {
 	if slice == nil {
 		return fmt.Errorf("%s cannot be nil", fieldName)
 	}

@@ -279,7 +279,7 @@ func (e *Engine) ValidateJSON(path string) error {
 	return nil
 }
 
-// ValidateTemplate validates a template file using the enhanced TemplateValidator
+// ValidateTemplate validates a template file using the comprehensive TemplateValidator
 func (e *Engine) ValidateTemplate(path string) error {
 	// Use the new TemplateValidator for comprehensive validation
 	templateValidator := NewTemplateValidator()
@@ -291,7 +291,7 @@ func (e *Engine) ValidateTemplate(path string) error {
 		Summary: "Template validation",
 	}
 
-	// Validate template content using the enhanced validator
+	// Validate template content using the comprehensive validator
 	if templateValidator.useEmbedded {
 		// Try embedded validation first
 		err := templateValidator.validateEmbeddedTemplateFile(path, result)
@@ -498,7 +498,7 @@ func (e *Engine) initializeDefaultRules() {
 	_ = e.SetValidationRules(defaultRules)
 }
 
-// Enhanced validation methods
+// Comprehensive validation methods
 
 // ValidateProjectDependencies performs comprehensive dependency validation
 func (e *Engine) ValidateProjectDependencies(path string) (*interfaces.DependencyValidationResult, error) {
@@ -627,7 +627,7 @@ func (e *Engine) ValidateProjectQuality(path string) (*interfaces.QualityValidat
 		}
 
 		contentStr := string(content)
-		// Simple complexity check - count nested if statements
+		// Basic complexity check - count nested if statements
 		nestedIfs := strings.Count(contentStr, "if") - strings.Count(contentStr, "} else if")
 		if nestedIfs > 5 {
 			result.Summary.ComplexityIssues++

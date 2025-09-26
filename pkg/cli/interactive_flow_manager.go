@@ -87,7 +87,7 @@ func (ifm *InteractiveFlowManager) runDirectorySelection(ctx context.Context, de
 		defaultPath = "output/generated"
 	}
 
-	// Simple text prompt for output directory
+	// Basic text prompt for output directory
 	dirConfig := interfaces.TextPromptConfig{
 		Prompt:       "Output Directory",
 		Description:  "Enter the base path where your project should be generated",
@@ -149,7 +149,7 @@ func (ifm *InteractiveFlowManager) runFinalConfirmation(ctx context.Context, con
 		fmt.Println("  ✅ Kubernetes Manifests")
 	}
 
-	// Simple confirmation prompt
+	// Basic confirmation prompt
 	confirmConfig := interfaces.ConfirmConfig{
 		Prompt:       "Generate Project",
 		Description:  "Proceed with generating the project?",

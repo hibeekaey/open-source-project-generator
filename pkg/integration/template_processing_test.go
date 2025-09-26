@@ -43,7 +43,7 @@ func TestTemplateProcessingWorkflows(t *testing.T) {
 }
 
 func testBasicTemplateProcessing(t *testing.T, tempDir string) {
-	// Create a simple template
+	// Create a basic template
 	templateDir := filepath.Join(tempDir, "basic-template")
 	err := os.MkdirAll(templateDir, 0755)
 	if err != nil {

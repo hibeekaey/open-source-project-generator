@@ -366,7 +366,7 @@ func (cv *ConfigValidator) validateTOMLFile(filePath string) (*interfaces.Config
 		return result, nil
 	}
 
-	// Simple TOML validation - check for basic syntax issues
+	// Basic TOML validation - check for basic syntax issues
 	lines := strings.Split(string(content), "\n")
 	for lineNum, line := range lines {
 		line = strings.TrimSpace(line)

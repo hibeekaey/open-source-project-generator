@@ -39,7 +39,7 @@ func RunVersionCommand(cmd *cobra.Command, args []string, cli interfaces.CLIInte
 	outputFormat, _ := cmd.Flags().GetString("output-format")
 	short, _ := cmd.Flags().GetBool("short")
 
-	// Simple version output (just the version string) - this is the default
+	// Basic version output (just the version string) - this is the default
 	if short || (!jsonOutput && format != "json" && outputFormat != "json") {
 		fmt.Println(currentVersion)
 		return nil

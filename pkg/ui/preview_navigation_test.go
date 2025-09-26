@@ -8,7 +8,7 @@ import (
 )
 
 func TestPreviewNavigationManager_Basic(t *testing.T) {
-	// Create a simple preview navigation manager
+	// Create a basic preview navigation manager
 	manager := &PreviewNavigationManager{}
 
 	// Test that the manager can be created

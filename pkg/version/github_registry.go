@@ -59,7 +59,7 @@ func (r *GitHubRegistry) GetLatestVersion(repoPath string) (*models.VersionInfo,
 // GetVersionHistory retrieves version history for a GitHub repository
 func (r *GitHubRegistry) GetVersionHistory(repoPath string, limit int) ([]*models.VersionInfo, error) {
 	// For now, just return the latest version
-	// This could be enhanced to fetch multiple releases from GitHub API
+	// This could be improved to fetch multiple releases from GitHub API
 	latest, err := r.GetLatestVersion(repoPath)
 	if err != nil {
 		return nil, err
@@ -70,7 +70,7 @@ func (r *GitHubRegistry) GetVersionHistory(repoPath string, limit int) ([]*model
 
 // IsAvailable checks if the GitHub registry is currently accessible
 func (r *GitHubRegistry) IsAvailable() bool {
-	// Simple check by trying to get a well-known repository
+	// Basic check by trying to get a well-known repository
 	_, err := r.client.GetLatestRelease("golang", "go")
 	return err == nil
 }

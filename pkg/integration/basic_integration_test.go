@@ -93,7 +93,7 @@ func TestTemplateProcessingBasic(t *testing.T) {
 	tempDir := t.TempDir()
 	templateEngine := template.NewEngine()
 
-	// Create a simple template
+	// Create a basic template
 	templateContent := `# {{.Name}}
 
 {{.Description}}

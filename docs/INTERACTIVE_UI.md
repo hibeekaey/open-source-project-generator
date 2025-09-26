@@ -185,7 +185,7 @@ The interactive UI framework consists of several key components:
 The interactive UI is integrated with the CLI through:
 
 - **CLI Struct**: Includes `interactiveUI` field for UI operations
-- **Generate Command**: Enhanced with interactive mode support
+- **Generate Command**: Comprehensive with interactive mode support
 - **Session Management**: Automatic session lifecycle management
 - **Progress Tracking**: Real-time feedback during generation
 

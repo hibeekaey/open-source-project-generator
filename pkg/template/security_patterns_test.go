@@ -62,9 +62,9 @@ func checkInsecureRandomPatterns(t *testing.T, filePath, content string) {
 		t.Errorf("SECURITY ISSUE in %s: Found math/rand usage without crypto/rand - use crypto/rand for security-sensitive operations", filePath)
 	}
 
-	// Pattern 3: Simple timestamp-based ID generation
-	simpleIDPattern := regexp.MustCompile(`fmt\.Sprintf\([^)]*%d[^)]*time\.Now\(\)`)
-	if matches := simpleIDPattern.FindAllString(content, -1); len(matches) > 0 {
+	// Pattern 3: Basic timestamp-based ID generation
+	basicIDPattern := regexp.MustCompile(`fmt\.Sprintf\([^)]*%d[^)]*time\.Now\(\)`)
+	if matches := basicIDPattern.FindAllString(content, -1); len(matches) > 0 {
 		t.Errorf("SECURITY ISSUE in %s: Found timestamp-based ID generation: %v", filePath, matches)
 	}
 }

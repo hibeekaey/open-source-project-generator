@@ -291,11 +291,11 @@ func (el *ErrorLogger) writeLogEntry(entry *LogEntry) {
 		if jsonData, err := json.Marshal(entry); err == nil {
 			output = string(jsonData) + "\n"
 		} else {
-			// Fallback to simple format if JSON marshaling fails
-			output = el.formatSimpleEntry(entry)
+			// Fallback to basic format if JSON marshaling fails
+			output = el.formatBasicEntry(entry)
 		}
 	} else {
-		output = el.formatSimpleEntry(entry)
+		output = el.formatBasicEntry(entry)
 	}
 
 	if _, err := el.logFile.WriteString(output); err != nil {
@@ -310,12 +310,12 @@ func (el *ErrorLogger) writeLogEntry(entry *LogEntry) {
 
 // writeToStderr writes a log entry to stderr
 func (el *ErrorLogger) writeToStderr(entry *LogEntry) {
-	output := el.formatSimpleEntry(entry)
+	output := el.formatBasicEntry(entry)
 	fmt.Fprint(os.Stderr, output)
 }
 
-// formatSimpleEntry formats a log entry in simple text format
-func (el *ErrorLogger) formatSimpleEntry(entry *LogEntry) string {
+// formatBasicEntry formats a log entry in basic text format
+func (el *ErrorLogger) formatBasicEntry(entry *LogEntry) string {
 	timestamp := entry.Timestamp.Format("2006-01-02 15:04:05")
 
 	var parts []string

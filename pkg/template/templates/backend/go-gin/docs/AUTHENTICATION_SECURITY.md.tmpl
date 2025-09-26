@@ -28,7 +28,7 @@ This document outlines the security enhancements implemented in the authenticati
 - **Generic error messages**: All authentication failures return generic "Authentication required" messages to prevent information leakage
 - **No sensitive information exposure**: Error responses don't reveal whether users exist, tokens are malformed, or other sensitive details
 
-#### Enhanced User Validation
+#### Comprehensive User Validation
 - **Account status checks**: Validates user is active and not locked
 - **Password change validation**: Invalidates tokens issued before password changes
 - **Admin privilege expiration**: Supports time-limited admin privileges

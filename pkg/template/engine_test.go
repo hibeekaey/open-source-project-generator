@@ -236,7 +236,7 @@ func TestLoadTemplate(t *testing.T) {
 func TestRenderTemplate(t *testing.T) {
 	engine := NewEngine().(*Engine)
 
-	// Create a simple template using text/template directly
+	// Create a basic template using text/template directly
 	tmpl, err := texttemplate.New("test").Funcs(engine.funcMap).Parse("Hello {{.Name}}!")
 	if err != nil {
 		t.Fatalf("Failed to parse template: %v", err)

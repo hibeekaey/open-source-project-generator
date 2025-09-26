@@ -464,7 +464,7 @@ func TestValidateProjectStructure(t *testing.T) {
 	}
 }
 
-// Enhanced tests from engine_enhanced_test.go
+// Comprehensive tests from engine_comprehensive_test.go
 
 func TestEngine_ValidateProjectStructure(t *testing.T) {
 	engine := NewEngine()
@@ -561,7 +561,7 @@ func TestEngine_ValidateProjectQuality(t *testing.T) {
 	// Create temporary directory with test files
 	tempDir := t.TempDir()
 
-	// Create a simple Go file
+	// Create a basic Go file
 	goFile := `package main
 
 import "fmt"

@@ -385,7 +385,7 @@ func (ts *TemplateSelector) ShowTemplateInfo(ctx context.Context, template inter
 		}
 	}
 
-	// Show as a simple text display (we'll implement a proper info dialog later)
+	// Show as a basic text display (we'll implement a proper info dialog later)
 	fmt.Println("\n" + strings.Repeat("=", 60))
 	fmt.Println("TEMPLATE INFORMATION")
 	fmt.Println(strings.Repeat("=", 60))
@@ -393,7 +393,7 @@ func (ts *TemplateSelector) ShowTemplateInfo(ctx context.Context, template inter
 	fmt.Println(strings.Repeat("=", 60))
 	fmt.Print("Press Enter to continue...")
 
-	// Simple input reading for now
+	// Basic input reading for now
 	var input string
 	_, _ = fmt.Scanln(&input)
 

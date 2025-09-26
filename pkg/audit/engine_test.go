@@ -436,7 +436,7 @@ func TestEngine_MeasureComplexity(t *testing.T) {
 	// Create a complex Go function
 	complexFile := `package main
 
-func simpleFunction() {
+func basicFunction() {
 	return
 }
 

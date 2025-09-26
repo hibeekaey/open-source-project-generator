@@ -17,7 +17,7 @@ type VersionManager interface {
 	GetLatestGitHubRelease(owner, repo string) (string, error)
 	GetVersionHistory(packageName string) ([]string, error)
 
-	// Enhanced version information
+	// Comprehensive version information
 	GetCurrentVersion() string
 	GetLatestVersion() (*VersionInfo, error)
 	GetAllPackageVersions() (map[string]string, error)
@@ -59,7 +59,7 @@ type VersionManager interface {
 	SetUpdateNotifications(enabled bool) error
 }
 
-// Enhanced version types and structures
+// Comprehensive version types and structures
 
 // VersionInfo contains detailed version information
 type VersionInfo struct {

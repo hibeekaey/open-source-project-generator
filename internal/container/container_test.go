@@ -248,7 +248,7 @@ func (m *mockCLI) ClearCache() error                             { return nil }
 func (m *mockCLI) CleanCache() error                             { return nil }
 func (m *mockCLI) ShowLogs() error                               { return nil }
 
-// Additional methods required by the enhanced CLIInterface
+// Additional methods required by the comprehensive CLIInterface
 func (m *mockCLI) PromptAdvancedOptions() (*interfaces.AdvancedOptions, error) { return nil, nil }
 func (m *mockCLI) ConfirmAdvancedGeneration(*models.ProjectConfig, *interfaces.AdvancedOptions) bool {
 	return true

@@ -183,7 +183,7 @@ func tryCompileGoFile(filePath string) (string, error) {
 		return "", fmt.Errorf("failed to write temp file: %w", writeErr)
 	}
 
-	// Create a simple go.mod for the temp directory
+	// Create a basic go.mod for the temp directory
 	goModContent := `module temp-validation
 go 1.25
 `

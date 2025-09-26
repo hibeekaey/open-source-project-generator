@@ -44,7 +44,7 @@ func (r *GoRegistry) GetLatestVersion(moduleName string) (*models.VersionInfo, e
 // GetVersionHistory retrieves version history for a Go module
 func (r *GoRegistry) GetVersionHistory(moduleName string, limit int) ([]*models.VersionInfo, error) {
 	// For now, just return the latest version
-	// This could be enhanced to fetch actual version history from Go proxy
+	// This could be improved to fetch actual version history from Go proxy
 	latest, err := r.GetLatestVersion(moduleName)
 	if err != nil {
 		return nil, err

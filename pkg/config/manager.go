@@ -1,4 +1,4 @@
-// Package config provides a unified configuration management system for the entire application.
+// Package config provides a comprehensive configuration management system for the entire application.
 //
 // This package consolidates all configuration management logic from various packages into a single,
 // comprehensive configuration system that can be used across the application.
@@ -23,19 +23,19 @@ func intPtr(i int) *int {
 	return &i
 }
 
-// UnifiedConfigManager provides comprehensive configuration management
-type UnifiedConfigManager struct {
+// ConfigManager provides comprehensive configuration management
+type ConfigManager struct {
 	configDir    string
 	defaultsPath string
 	settings     map[string]interface{}
 	schema       *interfaces.ConfigSchema
 	envPrefix    string
-	persistence  *UnifiedConfigurationPersistence
-	validator    *UnifiedConfigValidator
+	persistence  *ConfigPersistence
+	validator    *ConfigValidator
 }
 
-// UnifiedConfigValidator provides unified configuration validation
-type UnifiedConfigValidator struct {
+// ConfigValidator provides configuration validation
+type ConfigValidator struct {
 	rules map[string]ConfigValidationRule
 }
 
@@ -48,31 +48,31 @@ type ConfigValidationRule struct {
 	Required    bool
 }
 
-// UnifiedConfigurationPersistence handles saving and loading configurations
-type UnifiedConfigurationPersistence struct {
+// ConfigPersistence handles saving and loading configurations
+type ConfigPersistence struct {
 	configDir   string
 	compression bool
 	maxConfigs  int
 }
 
-// NewUnifiedConfigManager creates a new unified configuration manager
-func NewUnifiedConfigManager(configDir, defaultsPath string) *UnifiedConfigManager {
+// NewConfigManager creates a new configuration manager
+func NewConfigManager(configDir, defaultsPath string) *ConfigManager {
 	if configDir == "" {
 		homeDir, _ := os.UserHomeDir()
 		configDir = filepath.Join(homeDir, ".generator")
 	}
 
-	manager := &UnifiedConfigManager{
+	manager := &ConfigManager{
 		configDir:    configDir,
 		defaultsPath: defaultsPath,
 		settings:     make(map[string]interface{}),
 		envPrefix:    "GENERATOR",
-		persistence: &UnifiedConfigurationPersistence{
+		persistence: &ConfigPersistence{
 			configDir:   filepath.Join(configDir, "configs"),
 			compression: false,
 			maxConfigs:  100,
 		},
-		validator: &UnifiedConfigValidator{
+		validator: &ConfigValidator{
 			rules: make(map[string]ConfigValidationRule),
 		},
 	}
@@ -87,7 +87,7 @@ func NewUnifiedConfigManager(configDir, defaultsPath string) *UnifiedConfigManag
 }
 
 // createConfigSchema creates the configuration schema
-func (m *UnifiedConfigManager) createConfigSchema() *interfaces.ConfigSchema {
+func (m *ConfigManager) createConfigSchema() *interfaces.ConfigSchema {
 	return &interfaces.ConfigSchema{
 		Version:     "1.0",
 		Title:       "Project Configuration",
@@ -141,7 +141,7 @@ func (m *UnifiedConfigManager) createConfigSchema() *interfaces.ConfigSchema {
 }
 
 // initializeValidationRules sets up configuration validation rules
-func (m *UnifiedConfigManager) initializeValidationRules() {
+func (m *ConfigManager) initializeValidationRules() {
 	m.validator.rules = map[string]ConfigValidationRule{
 		"required": {
 			Name: "required",
@@ -248,7 +248,7 @@ func (m *UnifiedConfigManager) initializeValidationRules() {
 }
 
 // LoadDefaults loads default configuration values
-func (m *UnifiedConfigManager) LoadDefaults() (*models.ProjectConfig, error) {
+func (m *ConfigManager) LoadDefaults() (*models.ProjectConfig, error) {
 	config := &models.ProjectConfig{
 		Name:             "my-project",
 		Organization:     "my-organization",
@@ -295,7 +295,7 @@ func (m *UnifiedConfigManager) LoadDefaults() (*models.ProjectConfig, error) {
 }
 
 // LoadFromFile loads configuration from a file
-func (m *UnifiedConfigManager) LoadFromFile(path string, config *models.ProjectConfig) error {
+func (m *ConfigManager) LoadFromFile(path string, config *models.ProjectConfig) error {
 	if path == "" {
 		return fmt.Errorf("file path cannot be empty")
 	}
@@ -329,7 +329,7 @@ func (m *UnifiedConfigManager) LoadFromFile(path string, config *models.ProjectC
 }
 
 // SaveToFile saves configuration to a file
-func (m *UnifiedConfigManager) SaveToFile(config *models.ProjectConfig, path string) error {
+func (m *ConfigManager) SaveToFile(config *models.ProjectConfig, path string) error {
 	if path == "" {
 		return fmt.Errorf("file path cannot be empty")
 	}
@@ -366,7 +366,7 @@ func (m *UnifiedConfigManager) SaveToFile(config *models.ProjectConfig, path str
 }
 
 // LoadFromEnvironment loads configuration from environment variables
-func (m *UnifiedConfigManager) LoadFromEnvironment() *models.ProjectConfig {
+func (m *ConfigManager) LoadFromEnvironment() *models.ProjectConfig {
 	config := &models.ProjectConfig{}
 
 	// Map environment variables to config fields
@@ -391,7 +391,7 @@ func (m *UnifiedConfigManager) LoadFromEnvironment() *models.ProjectConfig {
 }
 
 // MergeConfigurations merges multiple configurations with precedence
-func (m *UnifiedConfigManager) MergeConfigurations(configs ...*models.ProjectConfig) *models.ProjectConfig {
+func (m *ConfigManager) MergeConfigurations(configs ...*models.ProjectConfig) *models.ProjectConfig {
 	result := &models.ProjectConfig{}
 
 	for _, config := range configs {
@@ -444,8 +444,8 @@ func (m *UnifiedConfigManager) MergeConfigurations(configs ...*models.ProjectCon
 	return result
 }
 
-// ValidateConfig validates a configuration using unified validation rules
-func (m *UnifiedConfigManager) ValidateConfig(config *models.ProjectConfig) (*interfaces.ConfigValidationResult, error) {
+// ValidateConfig validates a configuration using comprehensive validation rules
+func (m *ConfigManager) ValidateConfig(config *models.ProjectConfig) (*interfaces.ConfigValidationResult, error) {
 	result := &interfaces.ConfigValidationResult{
 		Valid:    true,
 		Errors:   []interfaces.ConfigValidationError{},
@@ -564,7 +564,7 @@ func (m *UnifiedConfigManager) ValidateConfig(config *models.ProjectConfig) (*in
 }
 
 // getFieldValue gets the value of a field from a config struct using reflection
-func (m *UnifiedConfigManager) getFieldValue(config *models.ProjectConfig, fieldName string) interface{} {
+func (m *ConfigManager) getFieldValue(config *models.ProjectConfig, fieldName string) interface{} {
 	v := reflect.ValueOf(config).Elem()
 	t := reflect.TypeOf(config).Elem()
 
@@ -579,7 +579,7 @@ func (m *UnifiedConfigManager) getFieldValue(config *models.ProjectConfig, field
 }
 
 // GetSetting gets a setting value
-func (m *UnifiedConfigManager) GetSetting(key string) (interface{}, error) {
+func (m *ConfigManager) GetSetting(key string) (interface{}, error) {
 	if value, exists := m.settings[key]; exists {
 		return value, nil
 	}
@@ -587,18 +587,18 @@ func (m *UnifiedConfigManager) GetSetting(key string) (interface{}, error) {
 }
 
 // SetSetting sets a setting value
-func (m *UnifiedConfigManager) SetSetting(key string, value interface{}) error {
+func (m *ConfigManager) SetSetting(key string, value interface{}) error {
 	m.settings[key] = value
 	return nil
 }
 
 // GetConfigLocation returns the configuration directory
-func (m *UnifiedConfigManager) GetConfigLocation() string {
+func (m *ConfigManager) GetConfigLocation() string {
 	return m.configDir
 }
 
 // CreateDefaultConfig creates a default configuration file
-func (m *UnifiedConfigManager) CreateDefaultConfig(path string) error {
+func (m *ConfigManager) CreateDefaultConfig(path string) error {
 	defaultConfig, err := m.LoadDefaults()
 	if err != nil {
 		return fmt.Errorf("failed to load defaults: %v", err)

@@ -274,7 +274,7 @@ type OfflineStatus struct {
 // DetectOfflineMode detects if the system should operate in offline mode
 func DetectOfflineMode() bool {
 	// Check for network connectivity
-	// This is a simple implementation - in production you might want more sophisticated detection
+	// This is a basic implementation - in production you might want more sophisticated detection
 
 	// Check if we're in a CI environment (often offline for caching)
 	if os.Getenv("CI") != "" || os.Getenv("GITHUB_ACTIONS") != "" {

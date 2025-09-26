@@ -58,7 +58,7 @@ func (e *Engine) registerDefaultFunctions() {
 		"matrix":  githubMatrix,
 		"github":  githubContext,
 
-		// Enhanced Node.js version functions
+		// Comprehensive Node.js version functions
 		"nodeRuntime":      getNodeRuntime,
 		"nodeTypesVersion": getNodeTypesVersion,
 		"nodeNPMVersion":   getNodeNPMVersion,
@@ -242,7 +242,7 @@ func getSemverPatch(version string) string {
 }
 
 func compareSemver(v1, v2 string) int {
-	// Simple semver comparison - returns -1, 0, or 1
+	// Basic semver comparison - returns -1, 0, or 1
 	v1Clean := strings.TrimPrefix(v1, "v")
 	v2Clean := strings.TrimPrefix(v2, "v")
 
@@ -558,7 +558,7 @@ func nindent(spaces int, text string) string {
 	return "\n" + indent(spaces, text)
 }
 
-// Enhanced Node.js version functions
+// Comprehensive Node.js version functions
 
 func getNodeRuntime(config *models.ProjectConfig) string {
 	if config.Versions != nil && config.Versions.Node != "" {

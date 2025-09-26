@@ -84,10 +84,10 @@ func NewApp(appVersion, gitCommit, buildTime string) (*App, error) {
 	}
 
 	// Initialize logger
-	appLogger, err := logger.NewUnifiedLogger(loggerConfig)
+	appLogger, err := logger.NewLogger(loggerConfig)
 	if err != nil {
 		// Fallback to default config
-		appLogger, _ = logger.NewUnifiedLogger(logger.DefaultLoggerConfig())
+		appLogger, _ = logger.NewLogger(logger.DefaultLoggerConfig())
 	}
 
 	// Initialize workspace directory for security manager

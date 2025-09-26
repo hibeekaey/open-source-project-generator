@@ -22,7 +22,7 @@ type ValidationIssue struct {
 
 // ConfigValidator handles basic configuration validation
 type ConfigValidator struct {
-	// Simple validator with no complex features
+	// Basic validator with no complex features
 }
 
 // NewConfigValidator creates a new configuration validator

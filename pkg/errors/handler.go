@@ -1,4 +1,4 @@
-// Package errors provides a unified error handling system for the CLI application
+// Package errors provides a comprehensive error handling system for the CLI application
 package errors
 
 import (
@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// ErrorHandler provides a unified interface for comprehensive error handling
+// ErrorHandler provides a comprehensive interface for error handling
 type ErrorHandler struct {
 	logger           *ErrorLogger
 	reporter         *ErrorReporter

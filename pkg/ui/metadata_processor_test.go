@@ -89,7 +89,7 @@ func TestMetadataProcessor_createSlug(t *testing.T) {
 		expected string
 	}{
 		{
-			name:     "simple name",
+			name:     "basic name",
 			input:    "MyProject",
 			expected: "myproject",
 		},

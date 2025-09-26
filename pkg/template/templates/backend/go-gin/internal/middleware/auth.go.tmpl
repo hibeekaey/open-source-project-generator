@@ -13,7 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// AuthMiddleware creates a middleware for JWT authentication with enhanced security
+// AuthMiddleware creates a middleware for JWT authentication with comprehensive security
 func AuthMiddleware(cfg *config.Config, userService services.UserService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Generic error response to prevent information leakage
@@ -41,7 +41,7 @@ func AuthMiddleware(cfg *config.Config, userService services.UserService) gin.Ha
 			return
 		}
 
-		// Enhanced token length validation for security
+		// Comprehensive token length validation for security
 		// JWT tokens typically range from 100-2048 characters
 		if len(token) < 50 || len(token) > 2048 {
 			c.JSON(http.StatusUnauthorized, unauthorizedResponse)
@@ -57,7 +57,7 @@ func AuthMiddleware(cfg *config.Config, userService services.UserService) gin.Ha
 			return
 		}
 
-		// Validate the token with enhanced security
+		// Validate the token with comprehensive security
 		claims, err := utils.ValidateJWT(token, cfg.JWT.Secret)
 		if err != nil {
 			// Log security incident without exposing details
@@ -103,7 +103,7 @@ func AuthMiddleware(cfg *config.Config, userService services.UserService) gin.Ha
 			return
 		}
 
-		// Enhanced security checks
+		// Comprehensive security checks
 		if user.LockedAt != nil && time.Now().Before(*user.LockedAt) {
 			c.JSON(http.StatusUnauthorized, unauthorizedResponse)
 			c.Abort()
@@ -191,7 +191,7 @@ func RefreshTokenMiddleware(cfg *config.Config, userService services.UserService
 	}
 }
 
-// AdminMiddleware creates a middleware for admin-only routes with enhanced security
+// AdminMiddleware creates a middleware for admin-only routes with comprehensive security
 func AdminMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Generic error responses to prevent information leakage
@@ -212,7 +212,7 @@ func AdminMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Enhanced admin validation
+		// Comprehensive admin validation
 		if !userModel.IsAdmin {
 			c.JSON(http.StatusForbidden, forbiddenResponse)
 			c.Abort()
@@ -235,7 +235,7 @@ func AdminMiddleware() gin.HandlerFunc {
 	}
 }
 
-// PermissionMiddleware creates a middleware for permission-based access control with enhanced security
+// PermissionMiddleware creates a middleware for permission-based access control with comprehensive security
 func PermissionMiddleware(resource, action string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Generic error responses
@@ -263,7 +263,7 @@ func PermissionMiddleware(resource, action string) gin.HandlerFunc {
 			return
 		}
 
-		// Enhanced admin check with expiration validation
+		// Comprehensive admin check with expiration validation
 		if userModel.IsAdmin {
 			if userModel.AdminExpiresAt != nil && time.Now().After(*userModel.AdminExpiresAt) {
 				c.JSON(http.StatusForbidden, forbiddenResponse)
@@ -275,7 +275,7 @@ func PermissionMiddleware(resource, action string) gin.HandlerFunc {
 			return
 		}
 
-		// Check if user has the required permission with enhanced validation
+		// Check if user has the required permission with comprehensive validation
 		hasPermission := false
 		grantedRole := ""
 		

@@ -7,7 +7,7 @@ import (
 	"github.com/cuesoftinc/open-source-project-generator/pkg/interfaces"
 )
 
-// MockCacheManager is a simple mock implementation for testing
+// MockCacheManager is a basic mock implementation for testing
 type MockCacheManager struct {
 	data map[string]interface{}
 }
@@ -373,7 +373,7 @@ func TestManager_UpdateType(t *testing.T) {
 	}
 }
 
-// Additional enhanced tests
+// Additional comprehensive tests
 
 func TestManager_SetUpdateChannel(t *testing.T) {
 	manager := NewManager()

@@ -316,7 +316,7 @@ func (c *CLI) outputMachineReadable(data interface{}, format string) error {
 		return encoder.Encode(data)
 	case "yaml":
 		// For now, output as JSON since we don't have yaml package imported
-		// This can be enhanced later with proper YAML support
+		// This can be improved later with proper YAML support
 		encoder := json.NewEncoder(os.Stdout)
 		encoder.SetIndent("", "  ")
 		return encoder.Encode(data)
@@ -353,7 +353,7 @@ func getEnvWithDefault(key, defaultValue string) string {
 
 // isTerminal checks if stdin is a terminal (not piped)
 func isTerminal() bool {
-	// Simple check for terminal - this can be enhanced with proper terminal detection
+	// Basic check for terminal - this can be improved with proper terminal detection
 	stat, err := os.Stdin.Stat()
 	if err != nil {
 		return false

@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// User represents a user in the system with enhanced security fields
+// User represents a user in the system with comprehensive security fields
 type User struct {
 	ID                 uint           `json:"id" gorm:"primaryKey"`
 	Email              string         `json:"email" gorm:"uniqueIndex;not null" validate:"required,email,safe_string"`

@@ -8,22 +8,22 @@ import (
 	"github.com/cuesoftinc/open-source-project-generator/pkg/validation"
 )
 
-// Re-export common validation patterns from unified validation
+// Re-export common validation patterns from comprehensive validation
 var (
 	// ProjectNamePattern validates project names (alphanumeric, hyphens, underscores)
-	ProjectNamePattern = validation.NewUnifiedValidator().GetPattern("project_name")
+	ProjectNamePattern = validation.NewValidator().GetPattern("project_name")
 
 	// PackageNamePattern validates package names (lowercase, hyphens)
-	PackageNamePattern = validation.NewUnifiedValidator().GetPattern("package_name")
+	PackageNamePattern = validation.NewValidator().GetPattern("package_name")
 
 	// VersionPattern validates semantic version numbers
-	VersionPattern = validation.NewUnifiedValidator().GetPattern("version")
+	VersionPattern = validation.NewValidator().GetPattern("version")
 
 	// URLPattern validates HTTP/HTTPS URLs
-	URLPattern = validation.NewUnifiedValidator().GetPattern("url")
+	URLPattern = validation.NewValidator().GetPattern("url")
 
 	// GitHubRepoPattern validates GitHub repository names
-	GitHubRepoPattern = validation.NewUnifiedValidator().GetPattern("github_repo")
+	GitHubRepoPattern = validation.NewValidator().GetPattern("github_repo")
 )
 
 // ValidatorFunc defines a function type for input validation
@@ -81,15 +81,15 @@ func (vc *ValidationChain) Validate(input string) error {
 	return nil
 }
 
-// Common Validators that delegate to unified validation
+// Common Validators that delegate to comprehensive validation
 
 // RequiredValidator validates that input is not empty
 func RequiredValidator(fieldName string) ValidationRule {
 	return ValidationRule{
 		Name: fieldName,
 		Validator: func(input string) error {
-			unifiedValidator := validation.NewUnifiedValidator()
-			return unifiedValidator.ValidateNonEmptyString(input, fieldName)
+			validator := validation.NewValidator()
+			return validator.ValidateNonEmptyString(input, fieldName)
 		},
 		Message: fmt.Sprintf("%s is required", fieldName),
 		Suggestions: []string{
@@ -104,8 +104,8 @@ func LengthValidator(fieldName string, min, max int) ValidationRule {
 	return ValidationRule{
 		Name: fieldName,
 		Validator: func(input string) error {
-			unifiedValidator := validation.NewUnifiedValidator()
-			issues := unifiedValidator.ValidateString(fieldName, input, min, max)
+			validator := validation.NewValidator()
+			issues := validator.ValidateString(fieldName, input, min, max)
 			if len(issues) > 0 {
 				return fmt.Errorf("%s", issues[0].Message)
 			}
@@ -123,8 +123,8 @@ func EmailValidator(fieldName string) ValidationRule {
 	return ValidationRule{
 		Name: fieldName,
 		Validator: func(input string) error {
-			unifiedValidator := validation.NewUnifiedValidator()
-			return unifiedValidator.ValidateEmail(input)
+			validator := validation.NewValidator()
+			return validator.ValidateEmail(input)
 		},
 		Message: fmt.Sprintf("%s must be a valid email address", fieldName),
 		Suggestions: []string{
@@ -173,8 +173,8 @@ func ProjectNameValidator(fieldName ...string) ValidationRule {
 	return ValidationRule{
 		Name: name,
 		Validator: func(input string) error {
-			unifiedValidator := validation.NewUnifiedValidator()
-			issues := unifiedValidator.ValidateString(name, input, 1, 100, "required", "project_name")
+			validator := validation.NewValidator()
+			issues := validator.ValidateString(name, input, 1, 100, "required", "project_name")
 			if len(issues) > 0 {
 				return fmt.Errorf("%s", issues[0].Message)
 			}
@@ -194,8 +194,8 @@ func PackageNameValidator(fieldName string) ValidationRule {
 	return ValidationRule{
 		Name: fieldName,
 		Validator: func(input string) error {
-			unifiedValidator := validation.NewUnifiedValidator()
-			issues := unifiedValidator.ValidateString(fieldName, input, 1, 100, "required", "package_name")
+			validator := validation.NewValidator()
+			issues := validator.ValidateString(fieldName, input, 1, 100, "required", "package_name")
 			if len(issues) > 0 {
 				return fmt.Errorf("%s", issues[0].Message)
 			}
@@ -215,8 +215,8 @@ func VersionValidator(fieldName string) ValidationRule {
 	return ValidationRule{
 		Name: fieldName,
 		Validator: func(input string) error {
-			unifiedValidator := validation.NewUnifiedValidator()
-			return unifiedValidator.ValidateVersion(input)
+			validator := validation.NewValidator()
+			return validator.ValidateVersion(input)
 		},
 		Message: fmt.Sprintf("%s must follow semantic versioning", fieldName),
 		Suggestions: []string{
@@ -333,7 +333,7 @@ func NumericValidator(fieldName string, min, max int) ValidationRule {
 				if len(parts) != 2 {
 					return fmt.Errorf("%s must be numeric", fieldName)
 				}
-				// Simple parsing for decimal
+				// Basic parsing for decimal
 				value = 0
 				for _, char := range parts[0] {
 					value = value*10 + float64(char-'0')

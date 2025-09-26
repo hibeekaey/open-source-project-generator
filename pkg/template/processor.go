@@ -389,7 +389,7 @@ func (p *DirectoryProcessor) shouldProcessPath(relPath string, metadata *Templat
 
 // processPathTemplate processes template variables in path names
 func (p *DirectoryProcessor) processPathTemplate(path string, config *models.ProjectConfig) (string, error) {
-	// Simple path template processing - replace common variables
+	// Basic path template processing - replace common variables
 	result := path
 
 	// Replace common template variables in paths

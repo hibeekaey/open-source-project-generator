@@ -325,7 +325,7 @@ func TestCacheManager_GetKeysByPattern(t *testing.T) {
 	}
 }
 
-// Enhanced tests from manager_enhanced_test.go
+// Comprehensive tests from manager_comprehensive_test.go
 
 func TestNewManager(t *testing.T) {
 	tempDir := t.TempDir()

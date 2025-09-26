@@ -23,7 +23,7 @@ func isOriginAllowed(origin string, allowedOrigins []string) bool {
 	return false
 }
 
-// CORSMiddleware creates a middleware for handling CORS with enhanced security
+// CORSMiddleware creates a middleware for handling CORS with comprehensive security
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")

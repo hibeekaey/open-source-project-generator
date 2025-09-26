@@ -3,7 +3,7 @@
 //
 // This package implements the VersionManager interface and provides:
 //   - Basic version fetching from NPM, Go modules, and GitHub releases
-//   - Simple version parsing and validation
+//   - Basic version parsing and validation
 //   - Integration with template processing for automatic injection
 //
 // Supported Registries:
@@ -35,7 +35,7 @@ import (
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
 )
 
-// Manager implements the VersionManager interface with enhanced capabilities
+// Manager implements the VersionManager interface with comprehensive capabilities
 type Manager struct {
 	httpClient     *http.Client
 	npmClient      *NPMClient
@@ -200,7 +200,7 @@ func (m *Manager) GetVersionHistory(packageName string) ([]string, error) {
 	return []string{version}, nil
 }
 
-// Enhanced version management methods
+// Comprehensive version management methods
 
 // GetCurrentVersion gets the current version
 func (m *Manager) GetCurrentVersion() string {
@@ -343,7 +343,7 @@ func (m *Manager) GetDetailedVersionHistory() ([]interfaces.VersionInfo, error) 
 	return []interfaces.VersionInfo{*current}, nil
 }
 
-// CheckForUpdates checks for updates with enhanced information
+// CheckForUpdates checks for updates with comprehensive information
 func (m *Manager) CheckForUpdates() (*interfaces.UpdateInfo, error) {
 	currentVersion := m.GetCurrentVersion()
 	latestInfo, err := m.GetLatestVersion()
@@ -405,7 +405,7 @@ func (m *Manager) SetUpdateChannel(channel string) error {
 	return m.SetVersionConfig(config)
 }
 
-// CheckCompatibility performs enhanced compatibility checking
+// CheckCompatibility performs comprehensive compatibility checking
 func (m *Manager) CheckCompatibility(projectPath string) (*interfaces.CompatibilityResult, error) {
 	result := &interfaces.CompatibilityResult{
 		Compatible:       true,
@@ -444,7 +444,7 @@ func (m *Manager) GetSupportedVersions() (map[string][]string, error) {
 	return supported, nil
 }
 
-// ValidateVersionRequirements validates version requirements with enhanced logic
+// ValidateVersionRequirements validates version requirements with comprehensive logic
 func (m *Manager) ValidateVersionRequirements(requirements map[string]string) (*interfaces.VersionValidationResult, error) {
 	result := &interfaces.VersionValidationResult{
 		Valid:        true,
@@ -795,7 +795,7 @@ func DefaultVersionConfig() *interfaces.VersionConfig {
 	}
 }
 
-// Helper methods for enhanced functionality
+// Helper methods for comprehensive functionality
 
 // validateFilePath validates that a file path is safe to read
 func (m *Manager) validateFilePath(path string) error {
@@ -827,7 +827,7 @@ func (m *Manager) shouldUseCache() bool {
 // compareVersions compares two version strings and returns:
 // -1 if current < target, 0 if equal, 1 if current > target
 func (m *Manager) compareVersions(current, target string) int {
-	// Simple string comparison for now
+	// Basic string comparison for now
 	// In a real implementation, this would use semantic versioning
 	if current == target {
 		return 0
@@ -859,7 +859,7 @@ func (m *Manager) isBreakingUpdate(current, latest string) bool {
 
 // getUpdateType determines the type of update (major, minor, patch)
 func (m *Manager) getUpdateType(current, target string) string {
-	// Simple implementation - in reality would use semantic versioning
+	// Basic implementation - in reality would use semantic versioning
 	if m.compareVersions(current, target) == 0 {
 		return "none"
 	}

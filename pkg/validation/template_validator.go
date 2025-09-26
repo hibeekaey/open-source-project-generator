@@ -242,7 +242,7 @@ func (tv *TemplateValidator) validateTemplateSyntax(content, filePath string) er
 		lines := strings.Split(content, "\n")
 		for i, line := range lines {
 			if strings.Contains(line, "{{.") && strings.Contains(line, "}}") {
-				// Basic validation - could be enhanced with more sophisticated parsing
+				// Basic validation - could be improved with more sophisticated parsing
 				if strings.Contains(line, "{{. ") || strings.Contains(line, " .}}") {
 					return fmt.Errorf("line %d: suspicious template syntax with spaces around dot", i+1)
 				}

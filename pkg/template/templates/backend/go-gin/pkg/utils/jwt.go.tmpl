@@ -13,7 +13,7 @@ type JWTClaims struct {
 	jwt.RegisteredClaims
 }
 
-// GenerateJWT generates a JWT token for a user with enhanced security
+// GenerateJWT generates a JWT token for a user with comprehensive security
 func GenerateJWT(userID uint, secret string, expiration time.Duration) (string, error) {
 	if userID == 0 {
 		return "", errors.New("invalid user ID")
@@ -70,7 +70,7 @@ func GenerateRefreshJWT(userID uint, secret string, expiration time.Duration) (s
 	return token.SignedString([]byte(secret))
 }
 
-// ValidateJWT validates a JWT token and returns the claims with enhanced security
+// ValidateJWT validates a JWT token and returns the claims with comprehensive security
 func ValidateJWT(tokenString, secret string) (*JWTClaims, error) {
 	// Prevent empty or malformed tokens
 	if tokenString == "" {

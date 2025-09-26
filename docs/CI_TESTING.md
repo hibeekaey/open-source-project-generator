@@ -1,10 +1,10 @@
 # CI/CD Testing Guide
 
-This document explains the unified testing strategy for CI/CD pipelines and local development.
+This document explains the comprehensive testing strategy for CI/CD pipelines and local development.
 
 ## Quick Start
 
-For both CI/CD pipelines and local development, use the unified test command:
+For both CI/CD pipelines and local development, use the comprehensive test command:
 
 ```bash
 # Using Make
@@ -19,7 +19,7 @@ go test -v ./...
 
 ## Unified Test Approach
 
-The project now uses a **single, unified test suite** that works consistently across all environments:
+The project now uses a **single, comprehensive test suite** that works consistently across all environments:
 
 - ✅ **Fast execution** (completes in ~5-8 minutes)
 - ✅ **Reliable** (optimized for stability)
@@ -28,7 +28,7 @@ The project now uses a **single, unified test suite** that works consistently ac
 
 ## What's Included
 
-The unified test suite includes:
+The comprehensive test suite includes:
 
 - **Core business logic tests** - All business logic functionality
 - **Unit tests for all packages** - Complete package-level testing
@@ -81,7 +81,7 @@ jobs:
         with:
           go-version: '1.25'
       
-      # Run unified test suite
+      # Run comprehensive test suite
       - name: Run tests
         run: make test
       
@@ -206,7 +206,7 @@ If you encounter flaky behavior:
 
 ## Test Coverage
 
-The unified test suite maintains excellent coverage:
+The comprehensive test suite maintains excellent coverage:
 
 - **Business Logic**: 100% covered
 - **CLI Interface**: 100% covered
@@ -277,7 +277,7 @@ If you're migrating from the previous dual-mode test system:
 ### Update Documentation
 
 - Remove references to CI vs. full test modes
-- Update examples to use unified commands
+- Update examples to use comprehensive commands
 - Revise performance expectations
 - Update troubleshooting guides
 
@@ -285,7 +285,7 @@ If you're migrating from the previous dual-mode test system:
 
 - Use `make test` for all testing
 - Remove CI-specific test workflows
-- Update IDE configurations to use unified commands
+- Update IDE configurations to use comprehensive commands
 - Revise development documentation
 
 ## Support

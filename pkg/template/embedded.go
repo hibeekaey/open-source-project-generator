@@ -184,7 +184,7 @@ func (e *EmbeddedEngine) copyEmbeddedFile(src, dst string) error {
 
 // processPathTemplate processes template variables in path names
 func (e *EmbeddedEngine) processPathTemplate(path string, config *models.ProjectConfig) (string, error) {
-	// Simple path template processing - replace common variables
+	// Basic path template processing - replace common variables
 	result := path
 
 	// Replace common template variables in paths

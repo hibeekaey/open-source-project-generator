@@ -1,4 +1,4 @@
-// Package logger provides a unified logging system for the entire application.
+// Package logger provides a comprehensive logging system for the entire application.
 //
 // This package consolidates all logging logic from various packages into a single,
 // comprehensive logging system that can be used across the application.
@@ -94,8 +94,8 @@ func DefaultLogRotationConfig() *LogRotationConfig {
 	}
 }
 
-// UnifiedLogger provides comprehensive logging capabilities
-type UnifiedLogger struct {
+// Logger provides comprehensive logging capabilities
+type Logger struct {
 	level          LogLevel
 	component      string
 	enableJSON     bool
@@ -124,7 +124,7 @@ type UnifiedLogger struct {
 	operationMutex sync.RWMutex
 }
 
-// LoggerConfig holds configuration for the unified logger
+// LoggerConfig holds configuration for the comprehensive logger
 type LoggerConfig struct {
 	Level          LogLevel           `json:"level"`
 	Component      string             `json:"component"`
@@ -150,13 +150,13 @@ func DefaultLoggerConfig() *LoggerConfig {
 	}
 }
 
-// NewUnifiedLogger creates a new unified logger
-func NewUnifiedLogger(config *LoggerConfig) (*UnifiedLogger, error) {
+// NewLogger creates a new logger
+func NewLogger(config *LoggerConfig) (*Logger, error) {
 	if config == nil {
 		config = DefaultLoggerConfig()
 	}
 
-	logger := &UnifiedLogger{
+	logger := &Logger{
 		level:          config.Level,
 		component:      config.Component,
 		enableJSON:     config.EnableJSON,
@@ -175,7 +175,7 @@ func NewUnifiedLogger(config *LoggerConfig) (*UnifiedLogger, error) {
 }
 
 // setupOutputs sets up the output destinations
-func (l *UnifiedLogger) setupOutputs(logFile string) {
+func (l *Logger) setupOutputs(logFile string) {
 	// Default to stdout/stderr
 	l.infoLogger = log.New(os.Stdout, "", 0)
 	l.warnLogger = log.New(os.Stderr, "", 0)
@@ -193,7 +193,7 @@ func (l *UnifiedLogger) setupOutputs(logFile string) {
 }
 
 // setupFileLogging sets up file-based logging
-func (l *UnifiedLogger) setupFileLogging(logFile string) error {
+func (l *Logger) setupFileLogging(logFile string) error {
 	// Validate and sanitize path to prevent directory traversal
 	cleanPath := filepath.Clean(logFile)
 	if strings.Contains(cleanPath, "..") {
@@ -227,27 +227,27 @@ func (l *UnifiedLogger) setupFileLogging(logFile string) error {
 // Basic logging methods
 
 // Debug logs a debug message
-func (l *UnifiedLogger) Debug(msg string, args ...interface{}) {
+func (l *Logger) Debug(msg string, args ...interface{}) {
 	l.logWithLevel(LevelDebug, msg, nil, args...)
 }
 
 // Info logs an info message
-func (l *UnifiedLogger) Info(msg string, args ...interface{}) {
+func (l *Logger) Info(msg string, args ...interface{}) {
 	l.logWithLevel(LevelInfo, msg, nil, args...)
 }
 
 // Warn logs a warning message
-func (l *UnifiedLogger) Warn(msg string, args ...interface{}) {
+func (l *Logger) Warn(msg string, args ...interface{}) {
 	l.logWithLevel(LevelWarn, msg, nil, args...)
 }
 
 // Error logs an error message
-func (l *UnifiedLogger) Error(msg string, args ...interface{}) {
+func (l *Logger) Error(msg string, args ...interface{}) {
 	l.logWithLevel(LevelError, msg, nil, args...)
 }
 
 // Fatal logs a fatal message and exits
-func (l *UnifiedLogger) Fatal(msg string, args ...interface{}) {
+func (l *Logger) Fatal(msg string, args ...interface{}) {
 	l.logWithLevel(LevelFatal, msg, nil, args...)
 	os.Exit(1)
 }
@@ -255,27 +255,27 @@ func (l *UnifiedLogger) Fatal(msg string, args ...interface{}) {
 // Structured logging methods
 
 // DebugWithFields logs a debug message with fields
-func (l *UnifiedLogger) DebugWithFields(msg string, fields map[string]interface{}) {
+func (l *Logger) DebugWithFields(msg string, fields map[string]interface{}) {
 	l.logWithLevel(LevelDebug, msg, fields)
 }
 
 // InfoWithFields logs an info message with fields
-func (l *UnifiedLogger) InfoWithFields(msg string, fields map[string]interface{}) {
+func (l *Logger) InfoWithFields(msg string, fields map[string]interface{}) {
 	l.logWithLevel(LevelInfo, msg, fields)
 }
 
 // WarnWithFields logs a warning message with fields
-func (l *UnifiedLogger) WarnWithFields(msg string, fields map[string]interface{}) {
+func (l *Logger) WarnWithFields(msg string, fields map[string]interface{}) {
 	l.logWithLevel(LevelWarn, msg, fields)
 }
 
 // ErrorWithFields logs an error message with fields
-func (l *UnifiedLogger) ErrorWithFields(msg string, fields map[string]interface{}) {
+func (l *Logger) ErrorWithFields(msg string, fields map[string]interface{}) {
 	l.logWithLevel(LevelError, msg, fields)
 }
 
 // FatalWithFields logs a fatal message with fields and exits
-func (l *UnifiedLogger) FatalWithFields(msg string, fields map[string]interface{}) {
+func (l *Logger) FatalWithFields(msg string, fields map[string]interface{}) {
 	l.logWithLevel(LevelFatal, msg, fields)
 	os.Exit(1)
 }
@@ -283,7 +283,7 @@ func (l *UnifiedLogger) FatalWithFields(msg string, fields map[string]interface{
 // Error logging with error objects
 
 // ErrorWithError logs an error message with an error object
-func (l *UnifiedLogger) ErrorWithError(msg string, err error, fields map[string]interface{}) {
+func (l *Logger) ErrorWithError(msg string, err error, fields map[string]interface{}) {
 	if fields == nil {
 		fields = make(map[string]interface{})
 	}
@@ -294,7 +294,7 @@ func (l *UnifiedLogger) ErrorWithError(msg string, err error, fields map[string]
 // Operation tracking
 
 // StartOperation starts tracking an operation
-func (l *UnifiedLogger) StartOperation(operation string, fields map[string]interface{}) *interfaces.OperationContext {
+func (l *Logger) StartOperation(operation string, fields map[string]interface{}) *interfaces.OperationContext {
 	l.operationMutex.Lock()
 	defer l.operationMutex.Unlock()
 
@@ -312,12 +312,12 @@ func (l *UnifiedLogger) StartOperation(operation string, fields map[string]inter
 }
 
 // LogOperationStart logs the start of an operation
-func (l *UnifiedLogger) LogOperationStart(operation string, fields map[string]interface{}) {
+func (l *Logger) LogOperationStart(operation string, fields map[string]interface{}) {
 	l.StartOperation(operation, fields)
 }
 
 // LogOperationSuccess logs successful completion of an operation
-func (l *UnifiedLogger) LogOperationSuccess(operation string, duration time.Duration, fields map[string]interface{}) {
+func (l *Logger) LogOperationSuccess(operation string, duration time.Duration, fields map[string]interface{}) {
 	if fields == nil {
 		fields = make(map[string]interface{})
 	}
@@ -328,7 +328,7 @@ func (l *UnifiedLogger) LogOperationSuccess(operation string, duration time.Dura
 }
 
 // LogOperationError logs an error during an operation
-func (l *UnifiedLogger) LogOperationError(operation string, err error, fields map[string]interface{}) {
+func (l *Logger) LogOperationError(operation string, err error, fields map[string]interface{}) {
 	if fields == nil {
 		fields = make(map[string]interface{})
 	}
@@ -339,7 +339,7 @@ func (l *UnifiedLogger) LogOperationError(operation string, err error, fields ma
 }
 
 // FinishOperation finishes tracking an operation
-func (l *UnifiedLogger) FinishOperation(ctx *interfaces.OperationContext, additionalFields map[string]interface{}) {
+func (l *Logger) FinishOperation(ctx *interfaces.OperationContext, additionalFields map[string]interface{}) {
 	duration := time.Since(ctx.StartTime)
 
 	fields := ctx.Fields
@@ -356,7 +356,7 @@ func (l *UnifiedLogger) FinishOperation(ctx *interfaces.OperationContext, additi
 }
 
 // FinishOperationWithError finishes tracking an operation with an error
-func (l *UnifiedLogger) FinishOperationWithError(ctx *interfaces.OperationContext, err error, additionalFields map[string]interface{}) {
+func (l *Logger) FinishOperationWithError(ctx *interfaces.OperationContext, err error, additionalFields map[string]interface{}) {
 	fields := ctx.Fields
 	for k, v := range additionalFields {
 		fields[k] = v
@@ -373,7 +373,7 @@ func (l *UnifiedLogger) FinishOperationWithError(ctx *interfaces.OperationContex
 // Performance logging
 
 // LogPerformanceMetrics logs performance metrics
-func (l *UnifiedLogger) LogPerformanceMetrics(operation string, metrics map[string]interface{}) {
+func (l *Logger) LogPerformanceMetrics(operation string, metrics map[string]interface{}) {
 	fields := make(map[string]interface{})
 	fields["operation"] = operation
 	fields["metrics"] = metrics
@@ -391,7 +391,7 @@ type OperationContext struct {
 // Core logging method
 
 // logWithLevel provides consistent structured logging format
-func (l *UnifiedLogger) logWithLevel(level LogLevel, msg string, fields map[string]interface{}, args ...interface{}) {
+func (l *Logger) logWithLevel(level LogLevel, msg string, fields map[string]interface{}, args ...interface{}) {
 	if l.level > level {
 		return
 	}
@@ -460,7 +460,7 @@ func (l *UnifiedLogger) logWithLevel(level LogLevel, msg string, fields map[stri
 }
 
 // formatTextEntry formats a log entry as human-readable text
-func (l *UnifiedLogger) formatTextEntry(entry LogEntry) string {
+func (l *Logger) formatTextEntry(entry LogEntry) string {
 	var parts []string
 
 	// Add timestamp
@@ -497,7 +497,7 @@ func (l *UnifiedLogger) formatTextEntry(entry LogEntry) string {
 }
 
 // colorizeLevel adds color to log level
-func (l *UnifiedLogger) colorizeLevel(level string) string {
+func (l *Logger) colorizeLevel(level string) string {
 	if !l.enableColors {
 		return level
 	}
@@ -519,7 +519,7 @@ func (l *UnifiedLogger) colorizeLevel(level string) string {
 }
 
 // addEntry adds an entry to the in-memory store
-func (l *UnifiedLogger) addEntry(entry LogEntry) {
+func (l *Logger) addEntry(entry LogEntry) {
 	l.entriesMutex.Lock()
 	defer l.entriesMutex.Unlock()
 
@@ -532,7 +532,7 @@ func (l *UnifiedLogger) addEntry(entry LogEntry) {
 }
 
 // GetEntries returns all log entries
-func (l *UnifiedLogger) GetEntries() []LogEntry {
+func (l *Logger) GetEntries() []LogEntry {
 	l.entriesMutex.RLock()
 	defer l.entriesMutex.RUnlock()
 
@@ -543,7 +543,7 @@ func (l *UnifiedLogger) GetEntries() []LogEntry {
 }
 
 // GetEntriesByLevel returns log entries for a specific level
-func (l *UnifiedLogger) GetEntriesByLevel(level LogLevel) []LogEntry {
+func (l *Logger) GetEntriesByLevel(level LogLevel) []LogEntry {
 	l.entriesMutex.RLock()
 	defer l.entriesMutex.RUnlock()
 
@@ -557,34 +557,34 @@ func (l *UnifiedLogger) GetEntriesByLevel(level LogLevel) []LogEntry {
 }
 
 // ClearEntries clears all log entries
-func (l *UnifiedLogger) ClearEntries() {
+func (l *Logger) ClearEntries() {
 	l.entriesMutex.Lock()
 	defer l.entriesMutex.Unlock()
 	l.entries = make([]LogEntry, 0)
 }
 
 // SetLevel sets the logging level
-func (l *UnifiedLogger) SetLevel(level int) {
+func (l *Logger) SetLevel(level int) {
 	l.level = LogLevel(level)
 }
 
 // SetLevelInt sets the logging level (interface compatibility)
-func (l *UnifiedLogger) SetLevelInt(level int) {
+func (l *Logger) SetLevelInt(level int) {
 	l.level = LogLevel(level)
 }
 
 // GetLevel returns the current logging level
-func (l *UnifiedLogger) GetLevel() int {
+func (l *Logger) GetLevel() int {
 	return int(l.level)
 }
 
 // GetLevelInt returns the current logging level as int (interface compatibility)
-func (l *UnifiedLogger) GetLevelInt() int {
+func (l *Logger) GetLevelInt() int {
 	return int(l.level)
 }
 
 // Close closes the logger and any open files
-func (l *UnifiedLogger) Close() error {
+func (l *Logger) Close() error {
 	if l.logFile != nil {
 		return l.logFile.Close()
 	}
@@ -592,7 +592,7 @@ func (l *UnifiedLogger) Close() error {
 }
 
 // rotateIfNeeded checks if log rotation is needed and performs it
-func (l *UnifiedLogger) rotateIfNeeded() error {
+func (l *Logger) rotateIfNeeded() error {
 	if l.logFile == nil || l.rotationConfig == nil {
 		return nil
 	}
@@ -611,7 +611,7 @@ func (l *UnifiedLogger) rotateIfNeeded() error {
 }
 
 // rotateLog performs log rotation
-func (l *UnifiedLogger) rotateLog() error {
+func (l *Logger) rotateLog() error {
 	// Close current file
 	if err := l.logFile.Close(); err != nil {
 		return err
@@ -646,25 +646,25 @@ func (l *UnifiedLogger) rotateLog() error {
 
 // Global logger instance
 var (
-	globalLogger *UnifiedLogger
+	globalLogger *Logger
 	globalOnce   sync.Once
 )
 
 // SetGlobalLogger sets the global logger instance
-func SetGlobalLogger(logger *UnifiedLogger) {
+func SetGlobalLogger(logger *Logger) {
 	globalLogger = logger
 }
 
 // GetGlobalLogger returns the global logger instance
-func GetGlobalLogger() *UnifiedLogger {
+func GetGlobalLogger() *Logger {
 	if globalLogger == nil {
 		globalOnce.Do(func() {
 			config := DefaultLoggerConfig()
 			config.Component = "global"
-			logger, err := NewUnifiedLogger(config)
+			logger, err := NewLogger(config)
 			if err != nil {
 				// Fallback to basic logger
-				globalLogger = &UnifiedLogger{
+				globalLogger = &Logger{
 					level:       LevelInfo,
 					component:   "global",
 					infoLogger:  log.New(os.Stdout, "", 0),
@@ -711,7 +711,7 @@ func Fatal(msg string, args ...interface{}) {
 // Missing methods to implement interfaces.Logger interface
 
 // GetLogDir returns the log directory
-func (l *UnifiedLogger) GetLogDir() string {
+func (l *Logger) GetLogDir() string {
 	if l.logPath != "" {
 		return filepath.Dir(l.logPath)
 	}
@@ -719,7 +719,7 @@ func (l *UnifiedLogger) GetLogDir() string {
 }
 
 // GetRecentEntries returns recent log entries
-func (l *UnifiedLogger) GetRecentEntries(limit int) []interfaces.LogEntry {
+func (l *Logger) GetRecentEntries(limit int) []interfaces.LogEntry {
 	entries := l.GetEntries()
 	if limit <= 0 || limit >= len(entries) {
 		// Convert to interfaces.LogEntry
@@ -755,7 +755,7 @@ func (l *UnifiedLogger) GetRecentEntries(limit int) []interfaces.LogEntry {
 }
 
 // FilterEntries filters log entries based on criteria
-func (l *UnifiedLogger) FilterEntries(level string, component string, since time.Time, limit int) []interfaces.LogEntry {
+func (l *Logger) FilterEntries(level string, component string, since time.Time, limit int) []interfaces.LogEntry {
 	entries := l.GetEntries()
 	var filtered []LogEntry
 
@@ -801,7 +801,7 @@ func (l *UnifiedLogger) FilterEntries(level string, component string, since time
 }
 
 // GetLogFiles returns available log files
-func (l *UnifiedLogger) GetLogFiles() ([]string, error) {
+func (l *Logger) GetLogFiles() ([]string, error) {
 	if l.logPath == "" {
 		return []string{}, nil
 	}
@@ -816,7 +816,7 @@ func (l *UnifiedLogger) GetLogFiles() ([]string, error) {
 }
 
 // ReadLogFile reads a log file
-func (l *UnifiedLogger) ReadLogFile(filename string) ([]byte, error) {
+func (l *Logger) ReadLogFile(filename string) ([]byte, error) {
 	// Validate and sanitize path to prevent directory traversal
 	cleanPath := filepath.Clean(filename)
 	if strings.Contains(cleanPath, "..") || strings.HasPrefix(cleanPath, "/") {
@@ -826,7 +826,7 @@ func (l *UnifiedLogger) ReadLogFile(filename string) ([]byte, error) {
 }
 
 // LogMemoryUsage logs memory usage metrics
-func (l *UnifiedLogger) LogMemoryUsage(operation string) {
+func (l *Logger) LogMemoryUsage(operation string) {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 
@@ -841,28 +841,28 @@ func (l *UnifiedLogger) LogMemoryUsage(operation string) {
 }
 
 // SetJSONOutput enables/disables JSON output
-func (l *UnifiedLogger) SetJSONOutput(enable bool) {
+func (l *Logger) SetJSONOutput(enable bool) {
 	l.enableJSON = enable
 }
 
 // SetCallerInfo enables/disables caller information
-func (l *UnifiedLogger) SetCallerInfo(enable bool) {
+func (l *Logger) SetCallerInfo(enable bool) {
 	l.enableCaller = enable
 }
 
 // IsDebugEnabled checks if debug logging is enabled
-func (l *UnifiedLogger) IsDebugEnabled() bool {
+func (l *Logger) IsDebugEnabled() bool {
 	return l.level <= LevelDebug
 }
 
 // IsInfoEnabled checks if info logging is enabled
-func (l *UnifiedLogger) IsInfoEnabled() bool {
+func (l *Logger) IsInfoEnabled() bool {
 	return l.level <= LevelInfo
 }
 
 // WithComponent creates a logger with a specific component
-func (l *UnifiedLogger) WithComponent(component string) interfaces.Logger {
-	return &UnifiedLogger{
+func (l *Logger) WithComponent(component string) interfaces.Logger {
+	return &Logger{
 		level:          l.level,
 		component:      component,
 		enableJSON:     l.enableJSON,
@@ -883,7 +883,7 @@ func (l *UnifiedLogger) WithComponent(component string) interfaces.Logger {
 }
 
 // WithFields creates a logger context with additional fields
-func (l *UnifiedLogger) WithFields(fields map[string]interface{}) interfaces.LoggerContext {
+func (l *Logger) WithFields(fields map[string]interface{}) interfaces.LoggerContext {
 	return &LoggerContextImpl{
 		logger: l,
 		fields: fields,
@@ -892,7 +892,7 @@ func (l *UnifiedLogger) WithFields(fields map[string]interface{}) interfaces.Log
 
 // LoggerContextImpl implements LoggerContext
 type LoggerContextImpl struct {
-	logger *UnifiedLogger
+	logger *Logger
 	fields map[string]interface{}
 }
 

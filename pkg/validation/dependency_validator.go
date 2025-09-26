@@ -488,7 +488,7 @@ func (dv *DependencyValidator) checkVulnerabilities(result *interfaces.Dependenc
 // checkOutdatedDependencies checks for outdated dependencies
 func (dv *DependencyValidator) checkOutdatedDependencies(result *interfaces.DependencyValidationResult) error {
 	for _, dep := range result.Dependencies {
-		// Simple check - if we have a "latest" version in our registry
+		// Basic check - if we have a "latest" version in our registry
 		if latestVersion, exists := dv.packageRegistry[dep.Name]; exists {
 			if dep.Version != latestVersion && dv.isVersionOlder(dep.Version, latestVersion) {
 				outdated := interfaces.OutdatedDependency{
@@ -559,20 +559,20 @@ func (dv *DependencyValidator) validatePythonPackageName(name string) error {
 
 // versionAffectedByVulnerability checks if a version is affected by a vulnerability
 func (dv *DependencyValidator) versionAffectedByVulnerability(version string, vuln interfaces.DependencyVulnerability) bool {
-	// Simple check - if the vulnerability version matches exactly
+	// Basic check - if the vulnerability version matches exactly
 	return version == vuln.Version
 }
 
 // isVersionOlder checks if version1 is older than version2
 func (dv *DependencyValidator) isVersionOlder(version1, version2 string) bool {
-	// Simple string comparison for now
+	// Basic string comparison for now
 	// In a real implementation, this would use proper semantic version comparison
 	return version1 < version2
 }
 
 // getUpdateType determines the type of update (major, minor, patch)
 func (dv *DependencyValidator) getUpdateType(currentVersion, latestVersion string) string {
-	// Simple implementation - would need proper semver parsing in production
+	// Basic implementation - would need proper semver parsing in production
 	if strings.HasPrefix(latestVersion, strings.Split(currentVersion, ".")[0]) {
 		return "minor"
 	}

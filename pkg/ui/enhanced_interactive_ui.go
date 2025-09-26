@@ -1,6 +1,6 @@
-// Package ui provides enhanced interactive UI with comprehensive navigation and help systems.
+// Package ui provides interactive UI with comprehensive navigation and help systems.
 //
-// This file implements the EnhancedInteractiveUI which integrates the NavigationSystem
+// This file implements the InteractiveUI which integrates the NavigationSystem
 // and HelpSystem to provide a complete interactive experience with breadcrumbs,
 // context-sensitive help, and comprehensive error handling.
 package ui
@@ -13,16 +13,16 @@ import (
 	"github.com/cuesoftinc/open-source-project-generator/pkg/interfaces"
 )
 
-// EnhancedInteractiveUI extends the basic InteractiveUI with navigation and help systems
-type EnhancedInteractiveUI struct {
+// AdvancedInteractiveUI extends the basic InteractiveUI with navigation and help systems
+type AdvancedInteractiveUI struct {
 	*InteractiveUI
 	navigationSystem *NavigationSystem
 	helpSystem       *HelpSystem
-	config           *EnhancedUIConfig
+	config           *AdvancedUIConfig
 }
 
-// EnhancedUIConfig defines configuration for the enhanced interactive UI
-type EnhancedUIConfig struct {
+// AdvancedUIConfig defines configuration for the advanced interactive UI
+type AdvancedUIConfig struct {
 	*UIConfig
 	NavigationConfig  *NavigationConfig `json:"navigation_config"`
 	HelpConfig        *HelpConfig       `json:"help_config"`
@@ -31,10 +31,10 @@ type EnhancedUIConfig struct {
 	EnableContextHelp bool              `json:"enable_context_help"`
 }
 
-// NewEnhancedInteractiveUI creates a new enhanced interactive UI
-func NewEnhancedInteractiveUI(logger interfaces.Logger, config *EnhancedUIConfig) interfaces.InteractiveUIInterface {
+// NewAdvancedInteractiveUI creates a new advanced interactive UI
+func NewAdvancedInteractiveUI(logger interfaces.Logger, config *AdvancedUIConfig) interfaces.InteractiveUIInterface {
 	if config == nil {
-		config = &EnhancedUIConfig{
+		config = &AdvancedUIConfig{
 			UIConfig: &UIConfig{
 				EnableColors:    true,
 				EnableUnicode:   true,
@@ -51,48 +51,48 @@ func NewEnhancedInteractiveUI(logger interfaces.Logger, config *EnhancedUIConfig
 	// Create base interactive UI
 	baseUI := NewInteractiveUI(logger, config.UIConfig).(*InteractiveUI)
 
-	// Create enhanced UI
-	enhancedUI := &EnhancedInteractiveUI{
+	// Create advanced interactive UI
+	advancedUI := &AdvancedInteractiveUI{
 		InteractiveUI: baseUI,
 		config:        config,
 	}
 
 	// Initialize navigation and help systems
-	enhancedUI.navigationSystem = NewNavigationSystem(enhancedUI, logger, config.NavigationConfig)
-	enhancedUI.helpSystem = NewHelpSystem(enhancedUI, logger, config.HelpConfig)
+	advancedUI.navigationSystem = NewNavigationSystem(advancedUI, logger, config.NavigationConfig)
+	advancedUI.helpSystem = NewHelpSystem(advancedUI, logger, config.HelpConfig)
 
-	return enhancedUI
+	return advancedUI
 }
 
-// ShowMenu displays an enhanced menu with navigation and help
-func (eui *EnhancedInteractiveUI) ShowMenu(ctx context.Context, config interfaces.MenuConfig) (*interfaces.MenuResult, error) {
+// ShowMenu displays a menu with navigation and help
+func (ui *AdvancedInteractiveUI) ShowMenu(ctx context.Context, config interfaces.MenuConfig) (*interfaces.MenuResult, error) {
 	// Set up navigation context
-	eui.setupNavigationForMenu(config)
+	ui.setupNavigationForMenu(config)
 
 	// Show navigation header
-	if err := eui.showNavigationHeader(ctx, config.Title, config.Description); err != nil {
+	if err := ui.showNavigationHeader(ctx, config.Title, config.Description); err != nil {
 		return nil, fmt.Errorf("failed to show navigation header: %w", err)
 	}
 
 	// Call base menu implementation
-	result, err := eui.InteractiveUI.ShowMenu(ctx, config)
+	result, err := ui.InteractiveUI.ShowMenu(ctx, config)
 	if err != nil {
 		return nil, err
 	}
 
 	// Handle navigation actions
 	if result.Action == "help" {
-		if err := eui.helpSystem.ShowContextHelp(ctx, "menu", config.HelpText); err != nil {
-			eui.logger.WarnWithFields("Failed to show context help", map[string]interface{}{
+		if err := ui.helpSystem.ShowContextHelp(ctx, "menu", config.HelpText); err != nil {
+			ui.logger.WarnWithFields("Failed to show context help", map[string]interface{}{
 				"error": err.Error(),
 			})
 		}
 		// Recursively show menu again after help
-		return eui.ShowMenu(ctx, config)
+		return ui.ShowMenu(ctx, config)
 	}
 
 	// Add to navigation history
-	eui.navigationSystem.AddToHistory("menu_selection", map[string]interface{}{
+	ui.navigationSystem.AddToHistory("menu_selection", map[string]interface{}{
 		"selected_index": result.SelectedIndex,
 		"selected_value": result.SelectedValue,
 		"action":         result.Action,
@@ -101,35 +101,35 @@ func (eui *EnhancedInteractiveUI) ShowMenu(ctx context.Context, config interface
 	return result, nil
 }
 
-// ShowMultiSelect displays an enhanced multi-select with navigation and help
-func (eui *EnhancedInteractiveUI) ShowMultiSelect(ctx context.Context, config interfaces.MultiSelectConfig) (*interfaces.MultiSelectResult, error) {
+// ShowMultiSelect displays a multi-select with navigation and help
+func (ui *AdvancedInteractiveUI) ShowMultiSelect(ctx context.Context, config interfaces.MultiSelectConfig) (*interfaces.MultiSelectResult, error) {
 	// Set up navigation context
-	eui.setupNavigationForMultiSelect(config)
+	ui.setupNavigationForMultiSelect(config)
 
 	// Show navigation header
-	if err := eui.showNavigationHeader(ctx, config.Title, config.Description); err != nil {
+	if err := ui.showNavigationHeader(ctx, config.Title, config.Description); err != nil {
 		return nil, fmt.Errorf("failed to show navigation header: %w", err)
 	}
 
 	// Call base multi-select implementation
-	result, err := eui.InteractiveUI.ShowMultiSelect(ctx, config)
+	result, err := ui.InteractiveUI.ShowMultiSelect(ctx, config)
 	if err != nil {
 		return nil, err
 	}
 
 	// Handle navigation actions
 	if result.Action == "help" {
-		if err := eui.helpSystem.ShowContextHelp(ctx, "multiselect", config.HelpText); err != nil {
-			eui.logger.WarnWithFields("Failed to show context help", map[string]interface{}{
+		if err := ui.helpSystem.ShowContextHelp(ctx, "multiselect", config.HelpText); err != nil {
+			ui.logger.WarnWithFields("Failed to show context help", map[string]interface{}{
 				"error": err.Error(),
 			})
 		}
 		// Recursively show multi-select again after help
-		return eui.ShowMultiSelect(ctx, config)
+		return ui.ShowMultiSelect(ctx, config)
 	}
 
 	// Add to navigation history
-	eui.navigationSystem.AddToHistory("multiselect_selection", map[string]interface{}{
+	ui.navigationSystem.AddToHistory("multiselect_selection", map[string]interface{}{
 		"selected_indices": result.SelectedIndices,
 		"selected_count":   len(result.SelectedIndices),
 		"action":           result.Action,
@@ -139,24 +139,24 @@ func (eui *EnhancedInteractiveUI) ShowMultiSelect(ctx context.Context, config in
 	return result, nil
 }
 
-// PromptText displays an enhanced text prompt with navigation and help
-func (eui *EnhancedInteractiveUI) PromptText(ctx context.Context, config interfaces.TextPromptConfig) (*interfaces.TextResult, error) {
+// PromptText displays a text prompt with navigation and help
+func (ui *AdvancedInteractiveUI) PromptText(ctx context.Context, config interfaces.TextPromptConfig) (*interfaces.TextResult, error) {
 	// Set up navigation context
-	eui.setupNavigationForTextInput(config)
+	ui.setupNavigationForTextInput(config)
 
 	// Show navigation header
-	if err := eui.showNavigationHeader(ctx, config.Prompt, config.Description); err != nil {
+	if err := ui.showNavigationHeader(ctx, config.Prompt, config.Description); err != nil {
 		return nil, fmt.Errorf("failed to show navigation header: %w", err)
 	}
 
 	// Call base text prompt implementation
-	result, err := eui.InteractiveUI.PromptText(ctx, config)
+	result, err := ui.InteractiveUI.PromptText(ctx, config)
 	if err != nil {
 		// Handle error with help system
-		if errorResult, helpErr := eui.helpSystem.HandleError(ctx, err, "validation_error"); helpErr == nil && errorResult != nil {
+		if errorResult, helpErr := ui.helpSystem.HandleError(ctx, err, "validation_error"); helpErr == nil && errorResult != nil {
 			switch errorResult.Action {
 			case "retry":
-				return eui.PromptText(ctx, config)
+				return ui.PromptText(ctx, config)
 			case "back":
 				result = &interfaces.TextResult{Action: "back", Cancelled: true}
 				return result, nil
@@ -170,17 +170,17 @@ func (eui *EnhancedInteractiveUI) PromptText(ctx context.Context, config interfa
 
 	// Handle navigation actions
 	if result.Action == "help" {
-		if err := eui.helpSystem.ShowContextHelp(ctx, "text_input", config.HelpText); err != nil {
-			eui.logger.WarnWithFields("Failed to show context help", map[string]interface{}{
+		if err := ui.helpSystem.ShowContextHelp(ctx, "text_input", config.HelpText); err != nil {
+			ui.logger.WarnWithFields("Failed to show context help", map[string]interface{}{
 				"error": err.Error(),
 			})
 		}
 		// Recursively show text prompt again after help
-		return eui.PromptText(ctx, config)
+		return ui.PromptText(ctx, config)
 	}
 
 	// Add to navigation history
-	eui.navigationSystem.AddToHistory("text_input", map[string]interface{}{
+	ui.navigationSystem.AddToHistory("text_input", map[string]interface{}{
 		"prompt": config.Prompt,
 		"value":  result.Value,
 		"action": result.Action,
@@ -189,35 +189,35 @@ func (eui *EnhancedInteractiveUI) PromptText(ctx context.Context, config interfa
 	return result, nil
 }
 
-// PromptConfirm displays an enhanced confirmation prompt with navigation and help
-func (eui *EnhancedInteractiveUI) PromptConfirm(ctx context.Context, config interfaces.ConfirmConfig) (*interfaces.ConfirmResult, error) {
+// PromptConfirm displays a confirmation prompt with navigation and help
+func (ui *AdvancedInteractiveUI) PromptConfirm(ctx context.Context, config interfaces.ConfirmConfig) (*interfaces.ConfirmResult, error) {
 	// Set up navigation context
-	eui.setupNavigationForConfirm(config)
+	ui.setupNavigationForConfirm(config)
 
 	// Show navigation header
-	if err := eui.showNavigationHeader(ctx, config.Prompt, config.Description); err != nil {
+	if err := ui.showNavigationHeader(ctx, config.Prompt, config.Description); err != nil {
 		return nil, fmt.Errorf("failed to show navigation header: %w", err)
 	}
 
 	// Call base confirm implementation
-	result, err := eui.InteractiveUI.PromptConfirm(ctx, config)
+	result, err := ui.InteractiveUI.PromptConfirm(ctx, config)
 	if err != nil {
 		return nil, err
 	}
 
 	// Handle navigation actions
 	if result.Action == "help" {
-		if err := eui.helpSystem.ShowContextHelp(ctx, "confirm", config.HelpText); err != nil {
-			eui.logger.WarnWithFields("Failed to show context help", map[string]interface{}{
+		if err := ui.helpSystem.ShowContextHelp(ctx, "confirm", config.HelpText); err != nil {
+			ui.logger.WarnWithFields("Failed to show context help", map[string]interface{}{
 				"error": err.Error(),
 			})
 		}
 		// Recursively show confirm again after help
-		return eui.PromptConfirm(ctx, config)
+		return ui.PromptConfirm(ctx, config)
 	}
 
 	// Add to navigation history
-	eui.navigationSystem.AddToHistory("confirm", map[string]interface{}{
+	ui.navigationSystem.AddToHistory("confirm", map[string]interface{}{
 		"prompt":    config.Prompt,
 		"confirmed": result.Confirmed,
 		"action":    result.Action,
@@ -226,26 +226,26 @@ func (eui *EnhancedInteractiveUI) PromptConfirm(ctx context.Context, config inte
 	return result, nil
 }
 
-// ShowError displays an enhanced error with recovery options
-func (eui *EnhancedInteractiveUI) ShowError(ctx context.Context, config interfaces.ErrorConfig) (*interfaces.ErrorResult, error) {
+// ShowError displays an error with recovery options
+func (ui *AdvancedInteractiveUI) ShowError(ctx context.Context, config interfaces.ErrorConfig) (*interfaces.ErrorResult, error) {
 	// Set up navigation context for error handling
-	eui.setupNavigationForError(config)
+	ui.setupNavigationForError(config)
 
 	// Show navigation header
-	if err := eui.showNavigationHeader(ctx, config.Title, "An error occurred. Please choose how to proceed."); err != nil {
+	if err := ui.showNavigationHeader(ctx, config.Title, "An error occurred. Please choose how to proceed."); err != nil {
 		return nil, fmt.Errorf("failed to show navigation header: %w", err)
 	}
 
 	// Display error information
-	fmt.Printf("%s %s\n", eui.colorize("Error:", "red"), config.Message)
+	fmt.Printf("%s %s\n", ui.colorize("Error:", "red"), config.Message)
 	if config.Details != "" {
-		fmt.Printf("%s\n", eui.colorize(config.Details, "gray"))
+		fmt.Printf("%s\n", ui.colorize(config.Details, "gray"))
 	}
 	fmt.Println()
 
 	// Show suggestions if available
 	if len(config.Suggestions) > 0 {
-		fmt.Printf("%s\n", eui.colorize("Suggestions:", "yellow"))
+		fmt.Printf("%s\n", ui.colorize("Suggestions:", "yellow"))
 		for _, suggestion := range config.Suggestions {
 			fmt.Printf("  • %s\n", suggestion)
 		}
@@ -254,13 +254,13 @@ func (eui *EnhancedInteractiveUI) ShowError(ctx context.Context, config interfac
 
 	// Show recovery options if available
 	if len(config.RecoveryOptions) > 0 {
-		fmt.Printf("%s\n", eui.colorize("Recovery Options:", "cyan"))
+		fmt.Printf("%s\n", ui.colorize("Recovery Options:", "cyan"))
 		for i, option := range config.RecoveryOptions {
 			safetyIndicator := ""
 			if option.Safe {
-				safetyIndicator = eui.colorize(" (Safe)", "green")
+				safetyIndicator = ui.colorize(" (Safe)", "green")
 			} else {
-				safetyIndicator = eui.colorize(" (Caution)", "yellow")
+				safetyIndicator = ui.colorize(" (Caution)", "yellow")
 			}
 			fmt.Printf("  %d. %s%s\n", i+1, option.Label, safetyIndicator)
 			fmt.Printf("     %s\n", option.Description)
@@ -287,12 +287,12 @@ func (eui *EnhancedInteractiveUI) ShowError(ctx context.Context, config interfac
 	}
 
 	if len(actions) > 0 {
-		fmt.Printf("%s\n", eui.colorize(fmt.Sprintf("Actions: %s", fmt.Sprintf("%v", actions)), "gray"))
+		fmt.Printf("%s\n", ui.colorize(fmt.Sprintf("Actions: %s", fmt.Sprintf("%v", actions)), "gray"))
 	}
 
 	// Get user input
 	fmt.Print("Choose an action: ")
-	input, err := eui.readInput()
+	input, err := ui.readInput()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read input: %w", err)
 	}
@@ -321,7 +321,7 @@ func (eui *EnhancedInteractiveUI) ShowError(ctx context.Context, config interfac
 	default:
 		// Check for recovery option selection
 		if len(config.RecoveryOptions) > 0 {
-			if optionIndex := eui.parseRecoveryOptionIndex(input, len(config.RecoveryOptions)); optionIndex >= 0 {
+			if optionIndex := ui.parseRecoveryOptionIndex(input, len(config.RecoveryOptions)); optionIndex >= 0 {
 				result.Action = "recovery"
 				result.RecoverySelected = optionIndex
 			}
@@ -329,7 +329,7 @@ func (eui *EnhancedInteractiveUI) ShowError(ctx context.Context, config interfac
 	}
 
 	// Add to navigation history
-	eui.navigationSystem.AddToHistory("error_handling", map[string]interface{}{
+	ui.navigationSystem.AddToHistory("error_handling", map[string]interface{}{
 		"error_type": config.ErrorType,
 		"action":     result.Action,
 		"recovery":   result.RecoverySelected,
@@ -339,84 +339,84 @@ func (eui *EnhancedInteractiveUI) ShowError(ctx context.Context, config interfac
 }
 
 // ShowHelp displays context-sensitive help
-func (eui *EnhancedInteractiveUI) ShowHelp(ctx context.Context, helpContext string) error {
-	return eui.helpSystem.ShowContextHelp(ctx, helpContext)
+func (ui *AdvancedInteractiveUI) ShowHelp(ctx context.Context, helpContext string) error {
+	return ui.helpSystem.ShowContextHelp(ctx, helpContext)
 }
 
 // ShowBreadcrumb displays breadcrumb navigation
-func (eui *EnhancedInteractiveUI) ShowBreadcrumb(ctx context.Context, path []string) error {
-	if !eui.config.EnableBreadcrumbs || len(path) == 0 {
+func (ui *AdvancedInteractiveUI) ShowBreadcrumb(ctx context.Context, path []string) error {
+	if !ui.config.EnableBreadcrumbs || len(path) == 0 {
 		return nil
 	}
 
 	breadcrumbText := strings.Join(path, " > ")
-	fmt.Printf("%s %s\n", eui.colorize("📍", "blue"), eui.colorize(breadcrumbText, "blue"))
+	fmt.Printf("%s %s\n", ui.colorize("📍", "blue"), ui.colorize(breadcrumbText, "blue"))
 	return nil
 }
 
 // Helper methods for setting up navigation contexts
 
-func (eui *EnhancedInteractiveUI) setupNavigationForMenu(config interfaces.MenuConfig) {
+func (ui *AdvancedInteractiveUI) setupNavigationForMenu(config interfaces.MenuConfig) {
 	actions := []NavigationAction{
 		{Key: "h", Label: "Help", Description: "Show help", Available: config.ShowHelp, Global: true},
 		{Key: "b", Label: "Back", Description: "Go back", Available: config.AllowBack, Global: false},
 		{Key: "q", Label: "Quit", Description: "Quit", Available: config.AllowQuit, Global: false},
 	}
-	eui.navigationSystem.SetAvailableActions(actions)
+	ui.navigationSystem.SetAvailableActions(actions)
 }
 
-func (eui *EnhancedInteractiveUI) setupNavigationForMultiSelect(config interfaces.MultiSelectConfig) {
+func (ui *AdvancedInteractiveUI) setupNavigationForMultiSelect(config interfaces.MultiSelectConfig) {
 	actions := []NavigationAction{
 		{Key: "h", Label: "Help", Description: "Show help", Available: config.ShowHelp, Global: true},
 		{Key: "b", Label: "Back", Description: "Go back", Available: config.AllowBack, Global: false},
 		{Key: "q", Label: "Quit", Description: "Quit", Available: config.AllowQuit, Global: false},
 	}
-	eui.navigationSystem.SetAvailableActions(actions)
+	ui.navigationSystem.SetAvailableActions(actions)
 }
 
-func (eui *EnhancedInteractiveUI) setupNavigationForTextInput(config interfaces.TextPromptConfig) {
+func (ui *AdvancedInteractiveUI) setupNavigationForTextInput(config interfaces.TextPromptConfig) {
 	actions := []NavigationAction{
 		{Key: "h", Label: "Help", Description: "Show help", Available: config.ShowHelp, Global: true},
 		{Key: "b", Label: "Back", Description: "Go back", Available: config.AllowBack, Global: false},
 		{Key: "q", Label: "Quit", Description: "Quit", Available: config.AllowQuit, Global: false},
 	}
-	eui.navigationSystem.SetAvailableActions(actions)
+	ui.navigationSystem.SetAvailableActions(actions)
 }
 
-func (eui *EnhancedInteractiveUI) setupNavigationForConfirm(config interfaces.ConfirmConfig) {
+func (ui *AdvancedInteractiveUI) setupNavigationForConfirm(config interfaces.ConfirmConfig) {
 	actions := []NavigationAction{
 		{Key: "h", Label: "Help", Description: "Show help", Available: config.ShowHelp, Global: true},
 		{Key: "b", Label: "Back", Description: "Go back", Available: config.AllowBack, Global: false},
 		{Key: "q", Label: "Quit", Description: "Quit", Available: config.AllowQuit, Global: false},
 	}
-	eui.navigationSystem.SetAvailableActions(actions)
+	ui.navigationSystem.SetAvailableActions(actions)
 }
 
-func (eui *EnhancedInteractiveUI) setupNavigationForError(config interfaces.ErrorConfig) {
+func (ui *AdvancedInteractiveUI) setupNavigationForError(config interfaces.ErrorConfig) {
 	actions := []NavigationAction{
 		{Key: "r", Label: "Retry", Description: "Retry operation", Available: config.AllowRetry, Global: false},
 		{Key: "i", Label: "Ignore", Description: "Ignore error", Available: config.AllowIgnore, Global: false},
 		{Key: "b", Label: "Back", Description: "Go back", Available: config.AllowBack, Global: false},
 		{Key: "q", Label: "Quit", Description: "Quit", Available: config.AllowQuit, Global: false},
 	}
-	eui.navigationSystem.SetAvailableActions(actions)
+	ui.navigationSystem.SetAvailableActions(actions)
 }
 
-func (eui *EnhancedInteractiveUI) showNavigationHeader(ctx context.Context, title, description string) error {
+func (ui *AdvancedInteractiveUI) showNavigationHeader(ctx context.Context, title, description string) error {
 	// Show breadcrumbs
-	if err := eui.navigationSystem.ShowBreadcrumbs(ctx); err != nil {
+	if err := ui.navigationSystem.ShowBreadcrumbs(ctx); err != nil {
 		return err
 	}
 
 	// Show navigation header
-	if err := eui.navigationSystem.ShowNavigationHeader(ctx, title, description); err != nil {
+	if err := ui.navigationSystem.ShowNavigationHeader(ctx, title, description); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (eui *EnhancedInteractiveUI) parseRecoveryOptionIndex(input string, maxOptions int) int {
+func (ui *AdvancedInteractiveUI) parseRecoveryOptionIndex(input string, maxOptions int) int {
 	// Try to parse as number
 	if len(input) == 1 && input[0] >= '1' && input[0] <= '9' {
 		index := int(input[0] - '1')
@@ -430,21 +430,21 @@ func (eui *EnhancedInteractiveUI) parseRecoveryOptionIndex(input string, maxOpti
 // Navigation system access methods
 
 // SetNavigationStep sets the current navigation step
-func (eui *EnhancedInteractiveUI) SetNavigationStep(stepName string, stepIndex, totalSteps int) {
-	eui.navigationSystem.SetCurrentStep(stepName, stepIndex, totalSteps)
+func (ui *AdvancedInteractiveUI) SetNavigationStep(stepName string, stepIndex, totalSteps int) {
+	ui.navigationSystem.SetCurrentStep(stepName, stepIndex, totalSteps)
 }
 
 // GetNavigationSystem returns the navigation system
-func (eui *EnhancedInteractiveUI) GetNavigationSystem() *NavigationSystem {
-	return eui.navigationSystem
+func (ui *AdvancedInteractiveUI) GetNavigationSystem() *NavigationSystem {
+	return ui.navigationSystem
 }
 
 // GetHelpSystem returns the help system
-func (eui *EnhancedInteractiveUI) GetHelpSystem() *HelpSystem {
-	return eui.helpSystem
+func (ui *AdvancedInteractiveUI) GetHelpSystem() *HelpSystem {
+	return ui.helpSystem
 }
 
 // ShowCompletionSummary displays a completion summary
-func (eui *EnhancedInteractiveUI) ShowCompletionSummary(ctx context.Context, summary *CompletionSummary) error {
-	return eui.helpSystem.ShowCompletionSummary(ctx, summary)
+func (ui *AdvancedInteractiveUI) ShowCompletionSummary(ctx context.Context, summary *CompletionSummary) error {
+	return ui.helpSystem.ShowCompletionSummary(ctx, summary)
 }

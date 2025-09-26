@@ -58,7 +58,7 @@ Use interactive mode or provide a configuration file.`,
 	generateCmd.Flags().Bool("backup-existing", true, "Create backups of existing files before overwriting")
 	generateCmd.Flags().Bool("include-examples", true, "Include example code and documentation")
 
-	// Additional flags for enhanced functionality
+	// Additional flags for comprehensive functionality
 	generateCmd.Flags().StringSlice("exclude", []string{}, "Exclude specific files or directories from generation")
 	generateCmd.Flags().StringSlice("include-only", []string{}, "Include only specific files or directories in generation")
 	generateCmd.Flags().Bool("interactive", true, "Use interactive mode for project configuration")

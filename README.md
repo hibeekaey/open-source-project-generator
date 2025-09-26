@@ -1,6 +1,6 @@
 # Open Source Project Generator
 
-A simple CLI tool for generating production-ready project structures with modern technology stacks.
+A comprehensive CLI tool for generating production-ready project structures with modern technology stacks.
 
 ## Features
 
@@ -8,7 +8,7 @@ A simple CLI tool for generating production-ready project structures with modern
 - **Modern Technology Stack**: Uses current stable versions - Go 1.21+, Node.js 20+, Next.js 13+, React 18+
 - **Basic Infrastructure**: Includes Docker, Kubernetes, and Terraform configurations
 - **Essential Documentation**: Generates README, CONTRIBUTING, and basic documentation
-- **Interactive CLI**: Simple prompts for project configuration and component selection
+- **Interactive CLI**: Intuitive prompts for project configuration and component selection
 - **Basic Validation**: Ensures generated project structures are correct
 
 ## Quick Start
@@ -110,7 +110,7 @@ The generator includes embedded templates for:
 
 ## Configuration
 
-The generator uses a simple YAML configuration format:
+The generator uses a straightforward YAML configuration format:
 
 ```yaml
 name: "my-project"

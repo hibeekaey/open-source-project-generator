@@ -285,7 +285,7 @@ func (pcc *ProjectConfigCollector) collectLicense(ctx context.Context) (string, 
 		{Label: "Apache 2.0", Description: "Permissive license with patent protection", Value: "Apache-2.0"},
 		{Label: "GPL v3", Description: "Copyleft license requiring source disclosure", Value: "GPL-3.0"},
 		{Label: "BSD 3-Clause", Description: "Permissive license with attribution requirement", Value: "BSD-3-Clause"},
-		{Label: "ISC", Description: "Simple permissive license", Value: "ISC"},
+		{Label: "ISC", Description: "Basic permissive license", Value: "ISC"},
 		{Label: "Unlicense", Description: "Public domain dedication", Value: "Unlicense"},
 		{Label: "Custom", Description: "Specify a custom license", Value: "custom"},
 		{Label: "None", Description: "No license (all rights reserved)", Value: ""},
@@ -304,7 +304,7 @@ func (pcc *ProjectConfigCollector) collectLicense(ctx context.Context) (string, 
 • Apache 2.0: Similar to MIT but includes patent protection
 • GPL v3: Requires derivative works to be open source
 • BSD 3-Clause: Permissive with attribution requirement
-• ISC: Simple and permissive, similar to MIT
+• ISC: Basic and permissive, similar to MIT
 • Unlicense: Releases code to public domain
 • Custom: Specify your own license identifier
 • None: All rights reserved (not recommended for open source)`,
@@ -702,7 +702,7 @@ func (pcc *ProjectConfigCollector) GetDefaults() *ProjectConfigDefaults {
 // LoadDefaultsFromEnvironment loads default values from environment variables
 func (pcc *ProjectConfigCollector) LoadDefaultsFromEnvironment() {
 	// This could load from environment variables like GIT_AUTHOR_NAME, GIT_AUTHOR_EMAIL, etc.
-	// For now, we'll keep it simple and just provide a placeholder
+	// For now, we'll keep it basic and just provide a placeholder
 	if pcc.defaults == nil {
 		pcc.defaults = &ProjectConfigDefaults{}
 	}

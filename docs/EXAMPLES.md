@@ -159,7 +159,7 @@ enterprise-platform/
 
 ## Example 4: Open Source Library
 
-Generate a simple library project:
+Generate a basic library project:
 
 ```bash
 generator generate
@@ -343,9 +343,9 @@ tail -f ~/.cache/template-generator/logs/generator-$(date +%Y-%m-%d).log
 ### Minimal Configuration
 
 ```yaml
-name: "simple-project"
+name: "basic-project"
 organization: "developer"
-description: "Simple project"
+description: "Basic project"
 license: "MIT"
 components:
   frontend:

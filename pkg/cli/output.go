@@ -65,7 +65,7 @@ func (c *CLI) dim(text string) string {
 	return c.colorize(ColorDim, text)
 }
 
-// Verbose output methods for enhanced debugging and user feedback
+// Verbose output methods for comprehensive debugging and user feedback
 
 // VerboseOutput prints verbose information if verbose mode is enabled
 func (c *CLI) VerboseOutput(format string, args ...interface{}) {

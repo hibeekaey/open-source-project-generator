@@ -218,7 +218,7 @@ func (p *MetadataParser) evaluateCondition(condition TemplateCondition, config i
 		return p.evaluateComponentCondition(condition, config)
 	}
 
-	// Handle simple value comparisons
+	// Handle basic value comparisons
 	switch condition.Operator {
 	case "eq":
 		return fmt.Sprintf("%v", condition.Value) == fmt.Sprintf("%v", config), nil

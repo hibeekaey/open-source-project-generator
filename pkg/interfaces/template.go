@@ -78,7 +78,7 @@ type TemplateManager interface {
 	RefreshTemplateCache() error
 }
 
-// Enhanced template types and structures
+// Comprehensive template types and structures
 
 // TemplatePreview contains a preview of template processing results
 type TemplatePreview struct {

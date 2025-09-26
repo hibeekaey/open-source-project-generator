@@ -193,7 +193,7 @@ func main() {
 
 			// Verify that complex template expressions are replaced
 			if strings.Contains(processed, "{{") && strings.Contains(processed, "}}") {
-				// Some template expressions might remain, but they should be simple placeholders
+				// Some template expressions might remain, but they should be basic placeholders
 				if !strings.Contains(processed, "template_placeholder") {
 					t.Errorf("Complex template expressions not properly preprocessed in %s", tc.description)
 				}

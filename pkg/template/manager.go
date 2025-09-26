@@ -906,7 +906,7 @@ func (m *Manager) parseTemplateYAML(content []byte, templateName string) (*model
 		Variables:    make(map[string]models.TemplateVar),
 	}
 
-	// Convert variables from simple string map to TemplateVar map
+	// Convert variables from basic string map to TemplateVar map
 	for name, description := range yamlData.Metadata.Variables {
 		metadata.Variables[name] = models.TemplateVar{
 			Name:        name,

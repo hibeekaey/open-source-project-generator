@@ -421,7 +421,7 @@ func (drm *DryRunManager) generateJSONReport() (string, error) {
 	}
 
 	// Note: In a real implementation, you'd use json.Marshal here
-	// For this example, we'll return a simple JSON-like string
+	// For this example, we'll return a basic JSON-like string
 	return fmt.Sprintf(`{
   "summary": %v,
   "operations": %d,

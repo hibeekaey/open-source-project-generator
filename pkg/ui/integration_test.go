@@ -155,7 +155,7 @@ func TestEmailValidationIntegration(t *testing.T) {
 		{"invalid-email", false, "missing @ symbol"},
 		{"@domain.com", false, "missing username"},
 		{"user@", false, "missing domain"},
-		{"user@domain", true, "simple domain (valid)"},
+		{"user@domain", true, "basic domain (valid)"},
 	}
 
 	for _, tc := range testCases {

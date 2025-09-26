@@ -6,7 +6,7 @@ import (
 	"github.com/cuesoftinc/open-source-project-generator/pkg/logger"
 )
 
-// Re-export unified logging types and functions
+// Re-export comprehensive logging types and functions
 
 // LogLevel represents the logging level
 type LogLevel = logger.LogLevel
@@ -31,7 +31,7 @@ func DefaultLogRotationConfig() *LogRotationConfig {
 }
 
 // Logger provides structured logging for the application
-type Logger = logger.UnifiedLogger
+type Logger = logger.Logger
 
 // NewLogger creates a new logger instance
 func NewLogger(component string, level LogLevel, enableJSON, enableCaller, enableColors bool, logFile string) *Logger {
@@ -44,20 +44,20 @@ func NewLogger(component string, level LogLevel, enableJSON, enableCaller, enabl
 		LogFile:      logFile,
 	}
 
-	unifiedLogger, err := logger.NewUnifiedLogger(config)
+	loggerInstance, err := logger.NewLogger(config)
 	if err != nil {
 		// Fallback to basic logger
 		config := logger.DefaultLoggerConfig()
 		config.Component = component
-		unifiedLogger, _ = logger.NewUnifiedLogger(config)
+		loggerInstance, _ = logger.NewLogger(config)
 	}
 
-	return unifiedLogger
+	return loggerInstance
 }
 
 // NewLoggerWithConfig creates a new logger with configuration
 func NewLoggerWithConfig(config *LoggerConfig) (*Logger, error) {
-	unifiedConfig := &logger.LoggerConfig{
+	loggerConfig := &logger.LoggerConfig{
 		Level:        config.Level,
 		Component:    config.Component,
 		EnableJSON:   config.EnableJSON,
@@ -67,7 +67,7 @@ func NewLoggerWithConfig(config *LoggerConfig) (*Logger, error) {
 		MaxEntries:   config.MaxEntries,
 	}
 
-	return logger.NewUnifiedLogger(unifiedConfig)
+	return logger.NewLogger(loggerConfig)
 }
 
 // LoggerConfig holds configuration for the logger
@@ -85,7 +85,7 @@ type OperationContext struct {
 	Fields    map[string]interface{}
 }
 
-// Convenience functions that delegate to the unified logger
+// Convenience functions that delegate to the comprehensive logger
 
 // Debug logs a debug message
 func Debug(msg string, args ...interface{}) {

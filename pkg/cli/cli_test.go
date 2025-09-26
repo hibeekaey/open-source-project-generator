@@ -50,7 +50,7 @@ func (m *MockConfigManager) SaveConfig(config *models.ProjectConfig, path string
 	return m.err
 }
 
-// Additional methods required by the enhanced ConfigManager interface
+// Additional methods required by the comprehensive ConfigManager interface
 func (m *MockConfigManager) GetSetting(key string) (any, error) {
 	return nil, m.err
 }
@@ -164,7 +164,7 @@ func (m *MockValidationEngine) ValidateJSON(path string) error {
 	return m.err
 }
 
-// Additional methods required by the enhanced ValidationEngine interface
+// Additional methods required by the comprehensive ValidationEngine interface
 func (m *MockValidationEngine) ValidateProjectStructure(path string) (*interfaces.StructureValidationResult, error) {
 	return nil, m.err
 }

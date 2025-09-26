@@ -174,7 +174,7 @@ func TestProjectConfigValidator_ValidateEmail(t *testing.T) {
 }
 
 func TestProjectConfigCollector_generateMetadataPreview(t *testing.T) {
-	// Create a simple mock UI that implements the required interface
+	// Create a basic mock UI that implements the required interface
 	mockUI := &testUI{}
 	mockLogger := &MockLogger{}
 	collector := NewProjectConfigCollector(mockUI, mockLogger)

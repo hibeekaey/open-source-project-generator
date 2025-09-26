@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Open Source Project Generator now uses a unified generation workflow that ensures both config mode and non-interactive mode follow the same execution path. This provides consistency, maintainability, and a better user experience.
+The Open Source Project Generator now uses a comprehensive generation workflow that ensures both config mode and non-interactive mode follow the same execution path. This provides consistency, maintainability, and a better user experience.
 
 ## Architecture
 
@@ -30,7 +30,9 @@ After configuration loading, both modes use the identical `executeUnifiedGenerat
 ### Key Functions
 
 #### `executeUnifiedGenerationWorkflow(config, options)`
+
 The core workflow function that:
+
 - Validates configuration
 - Determines output path
 - Handles offline/online modes
@@ -40,9 +42,11 @@ The core workflow function that:
 - Displays results
 
 #### `loadConfigFromFile(configPath)`
+
 Loads and parses configuration from file for config mode.
 
 #### `loadConfigFromEnvironment()`
+
 Loads configuration from environment variables for non-interactive mode.
 
 ### Workflow Steps
@@ -55,16 +59,19 @@ Loads configuration from environment variables for non-interactive mode.
 ## Benefits
 
 ### Consistency
+
 - Both modes generate identical project structures
 - Same validation rules apply to both modes
 - Consistent error handling and messaging
 
 ### Maintainability
+
 - Single code path for core generation logic
 - Easier to add new features that work in both modes
 - Reduced code duplication
 
 ### User Experience
+
 - Predictable behavior across modes
 - Same output format and messaging
 - Consistent performance characteristics
@@ -72,6 +79,7 @@ Loads configuration from environment variables for non-interactive mode.
 ## Usage Examples
 
 ### Config Mode
+
 ```bash
 # Create config file
 cat > project-config.yaml << EOF
@@ -92,6 +100,7 @@ generator generate --config project-config.yaml
 ```
 
 ### Non-Interactive Mode
+
 ```bash
 # Set environment variables
 export GENERATOR_PROJECT_NAME="my-project"
@@ -110,6 +119,7 @@ Both commands will produce identical results using the same workflow.
 For non-interactive mode, the following environment variables are supported:
 
 ### Project Configuration
+
 - `GENERATOR_PROJECT_NAME` - Project name (required)
 - `GENERATOR_PROJECT_ORGANIZATION` - Organization name
 - `GENERATOR_PROJECT_DESCRIPTION` - Project description
@@ -117,18 +127,21 @@ For non-interactive mode, the following environment variables are supported:
 - `GENERATOR_OUTPUT_PATH` - Output directory
 
 ### Component Selection
+
 - `GENERATOR_FRONTEND` - Enable frontend components
 - `GENERATOR_BACKEND` - Enable backend components
 - `GENERATOR_MOBILE` - Enable mobile components
 - `GENERATOR_INFRASTRUCTURE` - Enable infrastructure components
 
 ### Technology Selection
+
 - `GENERATOR_FRONTEND_TECH` - Frontend technology (nextjs-app)
 - `GENERATOR_BACKEND_TECH` - Backend technology (go-gin)
 - `GENERATOR_MOBILE_TECH` - Mobile technology (android, ios)
 - `GENERATOR_INFRASTRUCTURE_TECH` - Infrastructure technology (kubernetes, terraform)
 
 ### Generation Options
+
 - `GENERATOR_FORCE` - Overwrite existing files
 - `GENERATOR_MINIMAL` - Generate minimal structure
 - `GENERATOR_OFFLINE` - Use offline mode
@@ -139,7 +152,7 @@ For non-interactive mode, the following environment variables are supported:
 
 ## CI/CD Integration
 
-The unified workflow automatically detects CI/CD environments and adjusts behavior accordingly:
+The comprehensive workflow automatically detects CI/CD environments and adjusts behavior accordingly:
 
 - Auto-enables non-interactive mode in CI environments
 - Provides structured logging for automation
@@ -147,6 +160,7 @@ The unified workflow automatically detects CI/CD environments and adjusts behavi
 - Handles exit codes appropriately for automation
 
 ### Supported CI/CD Platforms
+
 - GitHub Actions
 - GitLab CI
 - Jenkins
@@ -158,7 +172,7 @@ The unified workflow automatically detects CI/CD environments and adjusts behavi
 
 ## Error Handling
 
-The unified workflow provides consistent error handling:
+The comprehensive workflow provides consistent error handling:
 
 - Clear error messages with context
 - Appropriate exit codes for automation
@@ -167,14 +181,14 @@ The unified workflow provides consistent error handling:
 
 ## Future Enhancements
 
-The unified workflow enables future enhancements:
+The comprehensive workflow enables future enhancements:
 
 - Template caching and offline mode improvements
-- Enhanced validation and linting
+- Comprehensive validation and linting
 - Plugin system for custom components
 - Advanced configuration management
 - Performance optimizations
 
 ## Migration Notes
 
-Existing code using the old separate workflows will continue to work as the old methods now redirect to the unified workflow. However, new development should use the unified approach directly.
+Existing code using the old separate workflows will continue to work as the old methods now redirect to the comprehensive workflow. However, new development should use the comprehensive approach directly.

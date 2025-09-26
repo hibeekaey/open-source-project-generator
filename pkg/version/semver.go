@@ -299,7 +299,7 @@ func SortVersions(versions []string) ([]string, error) {
 		semvers = append(semvers, semver)
 	}
 
-	// Sort using bubble sort (simple implementation)
+	// Sort using bubble sort (basic implementation)
 	for i := 0; i < len(semvers); i++ {
 		for j := i + 1; j < len(semvers); j++ {
 			if semvers[i].Compare(semvers[j]) > 0 {

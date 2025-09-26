@@ -13,13 +13,13 @@ var validate *validator.Validate
 func init() {
 	validate = validator.New()
 	
-	// Register custom validators for enhanced security
+	// Register custom validators for comprehensive security
 	validate.RegisterValidation("secure_password", validateSecurePassword)
 	validate.RegisterValidation("safe_string", validateSafeString)
 	validate.RegisterValidation("no_sql_injection", validateNoSQLInjection)
 }
 
-// ValidateStruct validates a struct using the validator package with enhanced security checks
+// ValidateStruct validates a struct using the validator package with comprehensive security checks
 func ValidateStruct(s interface{}) error {
 	return validate.Struct(s)
 }

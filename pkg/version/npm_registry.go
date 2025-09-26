@@ -45,7 +45,7 @@ func (r *NPMRegistry) GetLatestVersion(packageName string) (*models.VersionInfo,
 // GetVersionHistory retrieves version history for an NPM package
 func (r *NPMRegistry) GetVersionHistory(packageName string, limit int) ([]*models.VersionInfo, error) {
 	// For now, just return the latest version
-	// This could be enhanced to fetch actual version history from NPM API
+	// This could be improved to fetch actual version history from NPM API
 	latest, err := r.GetLatestVersion(packageName)
 	if err != nil {
 		return nil, err

@@ -11,27 +11,27 @@ import (
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
 )
 
-// Manager implements the ConfigManager interface using unified config management
+// Manager implements the ConfigManager interface using config management
 type Manager struct {
-	unified *config.UnifiedConfigManager
+	configManager *config.ConfigManager
 }
 
 // NewManager creates a new configuration manager
 func NewManager(cacheDir, defaultsPath string) interfaces.ConfigManager {
-	unified := config.NewUnifiedConfigManager(cacheDir, defaultsPath)
+	configManager := config.NewConfigManager(cacheDir, defaultsPath)
 	return &Manager{
-		unified: unified,
+		configManager: configManager,
 	}
 }
 
 // LoadDefaults loads default configuration values
 func (m *Manager) LoadDefaults() (*models.ProjectConfig, error) {
-	return m.unified.LoadDefaults()
+	return m.configManager.LoadDefaults()
 }
 
 // ValidateConfig validates a configuration
 func (m *Manager) ValidateConfig(config *models.ProjectConfig) error {
-	result, err := m.unified.ValidateConfig(config)
+	result, err := m.configManager.ValidateConfig(config)
 	if err != nil {
 		return err
 	}
@@ -43,30 +43,30 @@ func (m *Manager) ValidateConfig(config *models.ProjectConfig) error {
 
 // SaveConfig saves a configuration to a file
 func (m *Manager) SaveConfig(config *models.ProjectConfig, path string) error {
-	return m.unified.SaveToFile(config, path)
+	return m.configManager.SaveToFile(config, path)
 }
 
 // LoadConfig loads a configuration from a file
 func (m *Manager) LoadConfig(path string) (*models.ProjectConfig, error) {
 	config := &models.ProjectConfig{}
-	err := m.unified.LoadFromFile(path, config)
+	err := m.configManager.LoadFromFile(path, config)
 	return config, err
 }
 
 // GetSetting gets a setting value
 func (m *Manager) GetSetting(key string) (interface{}, error) {
-	return m.unified.GetSetting(key)
+	return m.configManager.GetSetting(key)
 }
 
 // SetSetting sets a setting value
 func (m *Manager) SetSetting(key string, value interface{}) error {
-	return m.unified.SetSetting(key, value)
+	return m.configManager.SetSetting(key, value)
 }
 
 // ValidateSettings validates all settings
 func (m *Manager) ValidateSettings() error {
 	// This would validate all current settings
-	// For now, just return nil as the unified system handles validation
+	// For now, just return nil as the config system handles validation
 	return nil
 }
 
@@ -77,13 +77,13 @@ func (m *Manager) LoadFromFile(path string) (*models.ProjectConfig, error) {
 
 // LoadFromEnvironment loads configuration from environment variables
 func (m *Manager) LoadFromEnvironment() (*models.ProjectConfig, error) {
-	config := m.unified.LoadFromEnvironment()
+	config := m.configManager.LoadFromEnvironment()
 	return config, nil
 }
 
 // MergeConfigurations merges multiple configurations
 func (m *Manager) MergeConfigurations(configs ...*models.ProjectConfig) *models.ProjectConfig {
-	return m.unified.MergeConfigurations(configs...)
+	return m.configManager.MergeConfigurations(configs...)
 }
 
 // GetConfigSchema returns the configuration schema
@@ -104,7 +104,7 @@ func (m *Manager) ValidateConfigFromFile(path string) (*interfaces.ConfigValidat
 	if err != nil {
 		return nil, err
 	}
-	return m.unified.ValidateConfig(config)
+	return m.configManager.ValidateConfig(config)
 }
 
 // GetConfigSources returns available configuration sources
@@ -118,12 +118,12 @@ func (m *Manager) GetConfigSources() ([]interfaces.ConfigSource, error) {
 
 // GetConfigLocation returns the configuration directory
 func (m *Manager) GetConfigLocation() string {
-	return m.unified.GetConfigLocation()
+	return m.configManager.GetConfigLocation()
 }
 
 // CreateDefaultConfig creates a default configuration file
 func (m *Manager) CreateDefaultConfig(path string) error {
-	return m.unified.CreateDefaultConfig(path)
+	return m.configManager.CreateDefaultConfig(path)
 }
 
 // BackupConfig backs up the current configuration

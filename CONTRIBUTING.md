@@ -219,7 +219,7 @@ If you modified templates, describe how you tested them:
 
 - **Consistency**: Follow existing code patterns and conventions
 - **Readability**: Write code that is easy to read and understand
-- **Simplicity**: Prefer simple solutions over complex ones
+- **Simplicity**: Prefer straightforward solutions over complex ones
 - **Performance**: Consider performance implications of your changes
 - **Security**: Follow security best practices
 

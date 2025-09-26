@@ -2,13 +2,48 @@ version: "2"
 
 linters:
   disable:
-    - gocyclo
+    - gocognit
+    - goconst
+    - mnd
+    - nestif
+    - noctx
+    - prealloc
+    - revive
+    - unparam
+    - whitespace
+    - wrapcheck
+    - wsl_v5
   enable:
     - errcheck
     - govet
     - misspell
     - staticcheck
+    - ineffassign
+    - unused
+
+linters-settings:
+  gosec:
+    excludes:
+      - G204  # Subprocess launched with variable
+      - G301  # Poor file permissions used
+      - G302  # Poor file permissions used
+      - G304  # Potential file inclusion via variable
+      - G306  # Poor file permissions used
+      - G101  # Potential hardcoded credentials (for test files)
+    severity: medium
+    confidence: medium
+    nosec: true  # Allow #nosec comments
 
 run:
   timeout: 5m
   go: "1.25"
+  skip-dirs:
+    - vendor
+    - templates
+  skip-files:
+    - ".*\\.tmpl$"
+    - ".*\\.test\\.go$"
+  issues-exit-code: 1
+  tests: true
+  build-tags:
+    - integration

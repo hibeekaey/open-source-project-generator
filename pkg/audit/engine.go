@@ -1460,12 +1460,12 @@ func (e *Engine) scanDependencyFile(filePath string) ([]interfaces.Vulnerability
 		return nil, err
 	}
 
-	// Simple pattern matching for package names
+	// Basic pattern matching for package names
 	for pkg, vuln := range knownVulnerablePackages {
 		if filepath.Base(filePath) == "package.json" {
 			// Check if package is mentioned in package.json
 			if len(content) > 0 && filepath.Ext(filePath) == ".json" {
-				// Simple string search (in real implementation, parse JSON properly)
+				// Basic string search (in real implementation, parse JSON properly)
 				if fmt.Sprintf("\"%s\"", pkg) != "" {
 					vulnerabilities = append(vulnerabilities, vuln)
 				}
@@ -1529,7 +1529,7 @@ func (e *Engine) checkDependencyVulnerabilities(path string) ([]interfaces.Polic
 			Policy:      "SEC-002",
 			Severity:    vuln.Severity,
 			Description: fmt.Sprintf("Vulnerable dependency: %s (%s)", vuln.Package, vuln.Title),
-			File:        "", // Could be enhanced to show specific dependency file
+			File:        "", // Could be improved to show specific dependency file
 			Line:        0,
 		})
 	}
@@ -1916,7 +1916,7 @@ func (e *Engine) analyzeDuplications(path string) ([]interfaces.Duplication, err
 		return nil, err
 	}
 
-	// Simple duplication detection (looking for identical blocks of 5+ lines)
+	// Basic duplication detection (looking for identical blocks of 5+ lines)
 	const minDuplicationLines = 5
 
 	for file1, lines1 := range fileContents {
@@ -1936,7 +1936,7 @@ func (e *Engine) analyzeDuplications(path string) ([]interfaces.Duplication, err
 func (e *Engine) findDuplicationsInFiles(file1 string, lines1 []string, file2 string, lines2 []string, minLines int) []interfaces.Duplication {
 	var duplications []interfaces.Duplication
 
-	// Simple sliding window approach
+	// Basic sliding window approach
 	for i := 0; i <= len(lines1)-minLines; i++ {
 		for j := 0; j <= len(lines2)-minLines; j++ {
 			matchLength := 0
@@ -2001,7 +2001,7 @@ func (e *Engine) analyzeTestCoverage(path string) (float64, error) {
 		return 0, nil
 	}
 
-	// Simple heuristic: assume each test file covers multiple source files
+	// Basic heuristic: assume each test file covers multiple source files
 	estimatedCoverage := float64(testFiles) / float64(sourceFiles) * 100
 	if estimatedCoverage > 100 {
 		estimatedCoverage = 100
@@ -2245,7 +2245,7 @@ func (e *Engine) analyzeFileComplexity(filePath string) (*interfaces.FileComplex
 	// Calculate basic metrics
 	lineCount := len(lines)
 
-	// Simple cyclomatic complexity calculation
+	// Basic cyclomatic complexity calculation
 	cyclomaticComplexity := 1 // Base complexity
 
 	// Count decision points
@@ -2264,7 +2264,7 @@ func (e *Engine) analyzeFileComplexity(filePath string) (*interfaces.FileComplex
 		}
 	}
 
-	// Simple cognitive complexity (similar to cyclomatic for this implementation)
+	// Basic cognitive complexity (similar to cyclomatic for this implementation)
 	cognitiveComplexity := cyclomaticComplexity
 
 	// Calculate maintainability index (simplified)
@@ -2309,7 +2309,7 @@ func (e *Engine) extractFunctions(filePath string) []interfaces.FunctionComplexi
 
 	lines := strings.Split(string(content), "\n")
 
-	// Simple function detection patterns
+	// Basic function detection patterns
 	functionPatterns := []string{
 		`func\s+(\w+)\s*\(`,         // Go
 		`function\s+(\w+)\s*\(`,     // JavaScript
@@ -2328,7 +2328,7 @@ func (e *Engine) extractFunctions(filePath string) []interfaces.FunctionComplexi
 			if len(matches) > 1 {
 				functionName := matches[1]
 
-				// Simple complexity calculation for the function
+				// Basic complexity calculation for the function
 				complexity := 1
 				paramCount := strings.Count(line, ",") + 1
 				if strings.Contains(line, "()") {
@@ -2458,7 +2458,7 @@ func (e *Engine) checkPackageJsonDescription(filePath string) (bool, error) {
 		return false, err
 	}
 
-	// Simple check for description field
+	// Basic check for description field
 	return strings.Contains(string(content), "\"description\""), nil
 }
 
@@ -2543,7 +2543,7 @@ func (e *Engine) detectProjectLicense(path string) (string, error) {
 				continue
 			}
 
-			// Simple license detection based on content
+			// Basic license detection based on content
 			contentStr := string(content)
 			if strings.Contains(contentStr, "MIT License") {
 				return "MIT", nil
@@ -2601,7 +2601,7 @@ func (e *Engine) analyzeNpmLicenses(filePath string) ([]interfaces.DependencyLic
 		return nil, err
 	}
 
-	// Simple extraction of dependency names
+	// Basic extraction of dependency names
 	lines := strings.Split(string(content), "\n")
 	inDeps := false
 

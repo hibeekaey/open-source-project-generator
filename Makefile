@@ -14,7 +14,7 @@ BUILD_TIME ?= $(shell date -u '+%Y-%m-%d_%H:%M:%S')
 # Clean version for Docker tags (replace / with -)
 DOCKER_VERSION := $(shell echo $(VERSION) | sed 's/\//-/g')
 
-.PHONY: help build test test-coverage clean run install dev lint fmt vet
+.PHONY: help build test test-coverage clean run install dev lint fmt vet gosec check ci
 
 # Default target
 help: ## Show this help message
@@ -31,21 +31,34 @@ build: ## Build the generator binary
 	go build -ldflags "-X main.Version=$(VERSION) -X main.GitCommit=$(GIT_COMMIT) -X main.BuildTime=$(BUILD_TIME) -s -w" -trimpath -o bin/generator ./cmd/generator
 
 # Run tests
-test: ## Run all tests
-	@echo "Running tests..."
-	go test -v ./...
+test: ## Run all tests with race detection and coverage
+	@echo "Running tests with race detection and coverage..."
+	go test -v -race -coverprofile=coverage.out ./...
+	@echo "Test coverage report generated: coverage.out"
 
 # Run tests with coverage
-test-coverage: ## Run tests with coverage report
+test-coverage: ## Run tests with coverage report and HTML output
 	@echo "Running tests with coverage..."
 	go test -v -coverprofile=coverage.out ./...
 	go tool cover -html=coverage.out -o coverage.html
+	@echo "Coverage report generated: coverage.html"
+
+# Run tests without race detection (faster)
+test-fast: ## Run tests without race detection for faster execution
+	@echo "Running tests (fast mode)..."
+	go test -v ./...
+
+# Run tests with race detection only
+test-race: ## Run tests with race detection only
+	@echo "Running tests with race detection..."
+	go test -v -race ./...
 
 # Clean build artifacts
-clean: ## Clean build artifacts
+clean: ## Clean build artifacts and reports
 	@echo "Cleaning..."
 	rm -rf bin/
 	rm -f coverage.out coverage.html
+	rm -f gosec-report.json gosec-report.sarif
 
 # Run the application
 run: build ## Build and run the generator
@@ -73,13 +86,52 @@ install-lint: ## Install golangci-lint
 	fi
 
 # Lint the code
-lint: ## Run golangci-lint
+lint: ## Run golangci-lint with comprehensive checks
 	@echo "Running linter..."
 	@if ! command -v golangci-lint >/dev/null 2>&1; then \
 		echo "golangci-lint not found. Installing..."; \
 		$(MAKE) install-lint; \
 	fi
-	golangci-lint run
+	golangci-lint run --verbose
+
+# Lint with fix suggestions
+lint-fix: ## Run golangci-lint with auto-fix
+	@echo "Running linter with auto-fix..."
+	@if ! command -v golangci-lint >/dev/null 2>&1; then \
+		echo "golangci-lint not found. Installing..."; \
+		$(MAKE) install-lint; \
+	fi
+	golangci-lint run --fix
+
+# Install gosec
+install-gosec: ## Install gosec security scanner
+	@echo "Installing gosec..."
+	@if ! command -v gosec >/dev/null 2>&1; then \
+		echo "Installing gosec..."; \
+		go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest; \
+	else \
+		echo "gosec already installed"; \
+	fi
+
+# Security scan with gosec
+gosec: ## Run gosec security scanner
+	@echo "Running security scan with gosec..."
+	@if ! command -v gosec >/dev/null 2>&1; then \
+		echo "gosec not found. Installing..."; \
+		$(MAKE) install-gosec; \
+	fi
+	gosec -fmt json -out gosec-report.json ./...
+	@echo "Security scan completed. Report: gosec-report.json"
+
+# Security scan with detailed output
+gosec-verbose: ## Run gosec with verbose output
+	@echo "Running security scan with verbose output..."
+	@if ! command -v gosec >/dev/null 2>&1; then \
+		echo "gosec not found. Installing..."; \
+		$(MAKE) install-gosec; \
+	fi
+	gosec -fmt sarif -out gosec-report.sarif ./...
+	@echo "Security scan completed. SARIF report: gosec-report.sarif"
 
 # Format the code
 fmt: ## Format Go code
@@ -90,6 +142,18 @@ fmt: ## Format Go code
 vet: ## Run go vet
 	@echo "Running go vet..."
 	go vet ./...
+
+# Comprehensive check (test + lint + gosec)
+check: test lint gosec ## Run comprehensive checks (test + lint + security)
+	@echo "All checks completed successfully!"
+
+# CI pipeline command
+ci: install test lint gosec build ## Run complete CI pipeline
+	@echo "CI pipeline completed successfully!"
+
+# Quick check (fast test + lint only)
+check-fast: test-fast lint ## Run quick checks (fast test + lint)
+	@echo "Quick checks completed successfully!"
 
 # Setup development environment
 setup: ## Setup development environment

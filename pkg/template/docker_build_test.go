@@ -393,7 +393,7 @@ func extractNodeVersionFromDockerImage(dockerImage string) string {
 // validateNodeVersionCompatibility performs basic version compatibility checking
 // This is a simplified implementation for testing purposes
 func validateNodeVersionCompatibility(dockerVersion, runtimeRequirement string) bool {
-	// For this test, we'll do a simple major version comparison
+	// For this test, we'll do a basic major version comparison
 	// In a real implementation, you'd want more sophisticated semver parsing
 
 	// Extract major version from docker version (e.g., "20.17.0" -> "20")
@@ -408,7 +408,7 @@ func validateNodeVersionCompatibility(dockerVersion, runtimeRequirement string) 
 		return false
 	}
 
-	// Simple comparison: docker major version should be >= required major version
+	// Basic comparison: docker major version should be >= required major version
 	return dockerMajor >= reqMajor
 }
 

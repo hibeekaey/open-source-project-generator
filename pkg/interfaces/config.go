@@ -37,7 +37,7 @@ type ConfigManager interface {
 	GetEnvironmentPrefix() string
 }
 
-// Enhanced configuration types and structures
+// Comprehensive configuration types and structures
 
 // ConfigurationOptions defines options for configuration operations
 type ConfigurationOptions struct {

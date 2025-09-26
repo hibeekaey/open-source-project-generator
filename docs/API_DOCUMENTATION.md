@@ -222,7 +222,7 @@ type VersionManager interface {
     GetLatestGitHubRelease(owner, repo string) (string, error)
     GetVersionHistory(packageName string) ([]string, error)
 
-    // Enhanced version information
+    // Comprehensive version information
     GetCurrentVersion() string
     GetLatestVersion() (*VersionInfo, error)
     GetAllPackageVersions() (map[string]string, error)
@@ -333,7 +333,7 @@ type ValidationEngine interface {
     ValidateJSON(path string) error
     ValidateTemplate(path string) error
 
-    // Enhanced project validation
+    // Comprehensive project validation
     ValidateProjectStructure(path string) (*StructureValidationResult, error)
     ValidateProjectDependencies(path string) (*DependencyValidationResult, error)
     ValidateProjectSecurity(path string) (*SecurityValidationResult, error)
@@ -344,7 +344,7 @@ type ValidationEngine interface {
     ValidateConfigurationSchema(config any, schema *ConfigSchema) error
     ValidateConfigurationValues(config *models.ProjectConfig) (*ConfigValidationResult, error)
 
-    // Template validation (enhanced versions)
+    // Template validation (comprehensive versions)
     ValidateTemplateAdvanced(path string) (*TemplateValidationResult, error)
     ValidateTemplateMetadata(metadata *TemplateMetadata) error
     ValidateTemplateStructure(path string) (*StructureValidationResult, error)
