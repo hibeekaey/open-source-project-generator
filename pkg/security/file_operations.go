@@ -1,3 +1,6 @@
+//go:build !windows
+// +build !windows
+
 package security
 
 import (
@@ -406,7 +409,7 @@ func (sfo *SecureFileOperations) GetFilePermissions(path string) (map[string]int
 		}
 	}
 
-	// Get system-specific information if available
+	// Get system-specific information if available (Unix only)
 	if stat, ok := fileInfo.Sys().(*syscall.Stat_t); ok {
 		permissions["uid"] = stat.Uid
 		permissions["gid"] = stat.Gid

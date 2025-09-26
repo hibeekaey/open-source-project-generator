@@ -38,7 +38,10 @@ print_error() {
 # Clean previous builds
 clean_build() {
     print_status "Cleaning previous builds..."
-    rm -rf ${BUILD_DIR}
+    if [ -d "${BUILD_DIR}" ]; then
+        # Try to remove contents but not the directory itself (in case it's a volume mount)
+        rm -rf ${BUILD_DIR}/* 2>/dev/null || true
+    fi
     mkdir -p ${BUILD_DIR}
 }
 

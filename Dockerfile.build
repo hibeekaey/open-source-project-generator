@@ -26,18 +26,20 @@ RUN ARCH=$(dpkg --print-architecture) && \
 # Set up Go environment
 ENV PATH="/usr/local/go/bin:${PATH}"
 ENV GOROOT="/usr/local/go"
-ENV GOPATH="/go"
+ENV GOPATH="/home/builder/go"
 ENV PATH="${GOPATH}/bin:${PATH}"
+ENV GOCACHE="/home/builder/.cache/go-build"
+ENV GOMODCACHE="/home/builder/go/pkg/mod"
 
 # Create non-root user
-RUN useradd -m -s /bin/bash -u 1000 builder
+RUN useradd -m -s /bin/bash builder
 
 # Set working directory
 WORKDIR /app
 
 # Create necessary directories
-RUN mkdir -p /app/dist /app/packages && \
-    chown -R builder:builder /app
+RUN mkdir -p /app/dist /app/packages /home/builder/go/pkg/mod /home/builder/.cache/go-build && \
+    chown -R builder:builder /app /home/builder
 
 # Switch to non-root user
 USER builder

@@ -147,11 +147,6 @@ test-install: ## Test installation script
 	bash -n scripts/install.sh
 	@echo "Installation script syntax is valid"
 
-# Template validation
-validate-templates: ## Validate template files
-	@echo "Validating template files..."
-	cd scripts/validate-templates && go run . ../../templates
-
 # Docker targets
 docker-build: ## Build Docker image
 	@echo "Building Docker image: $(IMAGE_NAME):$(DOCKER_VERSION)"

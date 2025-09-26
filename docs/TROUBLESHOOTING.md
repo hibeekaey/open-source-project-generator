@@ -1,322 +1,197 @@
 # Troubleshooting Guide
 
-This guide provides solutions for common issues encountered when using the Open Source Project Generator.
+This guide helps you diagnose and resolve common issues with the Open Source Project Generator.
 
 ## Table of Contents
 
 - [Installation Issues](#installation-issues)
-- [Generation Problems](#generation-problems)
-- [Validation Errors](#validation-errors)
-- [Audit Failures](#audit-failures)
-- [Configuration Issues](#configuration-issues)
+- [Configuration Problems](#configuration-problems)
+- [Generation Errors](#generation-errors)
+- [Validation Issues](#validation-issues)
 - [Template Problems](#template-problems)
-- [Network and Connectivity](#network-and-connectivity)
 - [Performance Issues](#performance-issues)
-- [Cache Problems](#cache-problems)
-- [Update Issues](#update-issues)
-- [Logging and Debugging](#logging-and-debugging)
+- [Debugging](#debugging)
+- [Getting Help](#getting-help)
 
 ## Installation Issues
 
-### Generator Not Found After Installation
+### Permission Denied Errors
 
-**Problem**: Command `generator` not found after installation.
+**Problem**: Cannot install or run the generator due to permission errors.
 
 **Solutions**:
 
 ```bash
-# Check if binary is in PATH
+# Check current permissions
+ls -la /usr/local/bin/generator
+
+# Fix permissions
+sudo chmod +x /usr/local/bin/generator
+
+# Install to user directory instead
+mkdir -p ~/.local/bin
+cp generator ~/.local/bin/
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+### Binary Not Found
+
+**Problem**: `generator: command not found` after installation.
+
+**Solutions**:
+
+```bash
+# Check if binary exists
 which generator
+ls -la /usr/local/bin/generator
 
-# Add to PATH if installed in custom location
-export PATH=$PATH:/path/to/generator
+# Add to PATH
+echo 'export PATH="/usr/local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
 
-# Reinstall using Go
-go install github.com/cuesoftinc/open-source-project-generator/cmd/generator@latest
-
-# Verify installation
-generator version
+# Or use full path
+/usr/local/bin/generator --version
 ```
 
-### Permission Denied During Installation
+### Go Version Compatibility
 
-**Problem**: Permission errors when installing or running generator.
+**Problem**: Build fails due to Go version incompatibility.
 
 **Solutions**:
 
 ```bash
-# Install to user directory
-go install github.com/cuesoftinc/open-source-project-generator/cmd/generator@latest
+# Check Go version
+go version
 
-# Or use sudo for system-wide installation (not recommended)
-sudo make install
+# Update Go (if needed)
+# Using g (Go version manager)
+g install latest
+g use latest
 
-# Fix permissions for existing installation
-sudo chown -R $USER:$USER ~/.cache/template-generator
+# Or download from https://golang.org/dl/
 ```
 
-### Build Errors from Source
+### Docker Issues
 
-**Problem**: Compilation errors when building from source.
+**Problem**: Docker container fails to start or run.
 
 **Solutions**:
 
 ```bash
-# Ensure Go version compatibility
-go version  # Should be 1.21+
+# Check Docker is running
+docker --version
+docker ps
 
-# Clean and rebuild
-make clean
-make build
+# Pull latest image
+docker pull ghcr.io/cuesoftinc/open-source-project-generator:latest
 
-# Check dependencies
-go mod tidy
-go mod verify
-
-# Build with verbose output
-make build VERBOSE=1
+# Run with proper volume mounting
+docker run -it --rm -v $(pwd):/workspace ghcr.io/cuesoftinc/open-source-project-generator:latest generate
 ```
 
-## Generation Problems
+## Configuration Problems
 
-### Project Generation Fails
+### Configuration File Not Found
 
-**Problem**: Project generation stops with errors.
+**Problem**: `Error: configuration file not found`.
 
-**Diagnosis**:
+**Solutions**:
 
 ```bash
-# Run with verbose output
-generator generate --verbose --debug
+# Check file exists
+ls -la ./project-config.yaml
 
-# Check logs
-generator logs --level error --lines 50
+# Use absolute path
+generator generate --config /full/path/to/config.yaml
 
-# Validate configuration first
-generator config validate
+# Create default configuration
+generator config export default-config.yaml
 ```
 
-**Common Solutions**:
+### Invalid Configuration Format
+
+**Problem**: `Error: failed to parse configuration file`.
+
+**Solutions**:
 
 ```bash
-# Fix output directory permissions
+# Validate YAML syntax
+generator config validate ./config.yaml
+
+# Check for common YAML issues
+# - Proper indentation (spaces, not tabs)
+# - Correct quotes around strings
+# - Valid boolean values (true/false, not True/False)
+
+# Use online YAML validator
+# https://www.yamllint.com/
+```
+
+### Environment Variable Issues
+
+**Problem**: Environment variables not being recognized.
+
+**Solutions**:
+
+```bash
+# Check environment variables
+env | grep GENERATOR
+
+# Set required variables
+export GENERATOR_PROJECT_NAME="my-project"
+export GENERATOR_NON_INTERACTIVE=true
+
+# Use .env file
+echo "GENERATOR_PROJECT_NAME=my-project" > .env
+source .env
+```
+
+### Configuration Conflicts
+
+**Problem**: Configuration values conflict or override unexpectedly.
+
+**Solutions**:
+
+```bash
+# Show configuration sources
+generator config show --sources
+
+# Check precedence order
+# 1. Command-line arguments
+# 2. Environment variables
+# 3. Configuration files
+# 4. Default values
+
+# Override specific values
+generator generate --config base.yaml --force --minimal
+```
+
+## Generation Errors
+
+### Output Directory Issues
+
+**Problem**: Cannot create or write to output directory.
+
+**Solutions**:
+
+```bash
+# Check directory permissions
+ls -la ./output-directory
+
+# Create directory with proper permissions
 mkdir -p ./my-project
 chmod 755 ./my-project
 
 # Use different output directory
 generator generate --output ~/projects/my-project
 
-# Skip validation if blocking
-generator generate --skip-validation
-
-# Use minimal generation
-generator generate --minimal
+# Check disk space
+df -h
 ```
-
-### Template Processing Errors
-
-**Problem**: Template files fail to process correctly.
-
-**Solutions**:
-
-```bash
-# Check template information
-generator template info go-gin --detailed
-
-# Validate template
-generator template validate ./custom-template --fix
-
-# Use different template
-generator list-templates --category backend
-generator generate --template nextjs-app
-
-# Clear template cache
-generator cache clear
-generator update --templates
-```
-
-### Configuration File Errors
-
-**Problem**: Configuration file is rejected or causes errors.
-
-**Solutions**:
-
-```bash
-# Validate configuration syntax
-generator config validate ./my-config.yaml
-
-# Check configuration format
-file ./my-config.yaml
-
-# Use configuration template
-generator config export --template config-template.yaml
-
-# Show configuration schema
-generator config show --schema
-```
-
-## Validation Errors
-
-### Project Validation Fails
-
-**Problem**: Generated or existing project fails validation.
-
-**Diagnosis**:
-
-```bash
-# Run detailed validation
-generator validate --verbose --detailed
-
-# Check specific validation rules
-generator validate --rules structure,dependencies
-
-# Show available fixes
-generator validate --show-fixes
-```
-
-**Solutions**:
-
-```bash
-# Auto-fix common issues
-generator validate --fix --backup
-
-# Fix specific categories
-generator validate --fix --rules structure,formatting
-
-# Use less strict validation
-generator validate --ignore-warnings
-
-# Skip problematic rules
-generator validate --exclude-rules documentation,examples
-```
-
-### Dependency Validation Issues
-
-**Problem**: Dependency validation fails or reports conflicts.
-
-**Solutions**:
-
-```bash
-# Update to latest versions
-generator generate --update-versions
-
-# Check version compatibility
-generator version --packages --compatibility
-
-# Use offline mode with cached versions
-generator generate --offline
-
-# Override specific versions in configuration
-# Add to config.yaml:
-versions:
-  go: "1.21"
-  node: "20"
-  react: "19"
-```
-
-## Audit Failures
-
-### Security Audit Fails
-
-**Problem**: Security audit reports high-severity issues.
-
-**Solutions**:
-
-```bash
-# Run detailed security audit
-generator audit --security --detailed --verbose
-
-# Check specific security categories
-generator audit --security --fail-on-medium
-
-# Update dependencies for security fixes
-generator update --security-only
-
-# Review and fix security issues manually
-generator audit --security --output-format html --output-file security-report.html
-```
-
-### Quality Audit Issues
-
-**Problem**: Code quality audit reports poor scores.
-
-**Solutions**:
-
-```bash
-# Run quality-focused audit
-generator audit --quality --detailed
-
-# Fix validation issues first
-generator validate --fix
-
-# Use stricter generation options
-generator generate --include-examples --update-versions
-
-# Review quality recommendations
-generator audit --quality --recommendations
-```
-
-## Configuration Issues
-
-### Configuration Not Loading
-
-**Problem**: Configuration files are not being loaded or recognized.
-
-**Diagnosis**:
-
-```bash
-# Show configuration sources
-generator config show --sources
-
-# Check configuration hierarchy
-generator config show --verbose
-
-# Validate configuration file
-generator config validate ./config.yaml
-```
-
-**Solutions**:
-
-```bash
-# Use absolute path
-generator generate --config /full/path/to/config.yaml
-
-# Check file format
-file ./config.yaml
-
-# Convert between formats
-generator config export --format json config.json
-
-# Reset to defaults
-generator config reset
-```
-
-### Environment Variables Not Working
-
-**Problem**: Environment variables are not being recognized.
-
-**Solutions**:
-
-```bash
-# Check environment variable format
-env | grep GENERATOR_
-
-# Use correct variable names
-export GENERATOR_PROJECT_NAME="myapp"
-export GENERATOR_TEMPLATE="go-gin"
-
-# Verify non-interactive mode
-generator generate --non-interactive --verbose
-
-# Show effective configuration
-generator config show --sources
-```
-
-## Template Problems
 
 ### Template Not Found
 
-**Problem**: Specified template cannot be found or loaded.
+**Problem**: `Error: template not found`.
 
 **Solutions**:
 
@@ -324,343 +199,409 @@ generator config show --sources
 # List available templates
 generator list-templates
 
-# Search for templates
-generator list-templates --search api
+# Search for specific template
+generator list-templates --search "go"
 
-# Update template cache
-generator update --templates
+# Check template name spelling
+generator template info go-gin
 
-# Check template path for custom templates
+# Use full template path
+generator generate --template ./custom-templates/my-template
+```
+
+### Generation Timeout
+
+**Problem**: Generation process times out or hangs.
+
+**Solutions**:
+
+```bash
+# Use offline mode
+generator generate --offline
+
+# Increase timeout
+export GENERATOR_TIMEOUT="60m"
+generator generate
+
+# Use minimal generation
+generator generate --minimal
+
+# Check system resources
+top
+df -h
+```
+
+### Network Issues
+
+**Problem**: Cannot fetch package versions or templates.
+
+**Solutions**:
+
+```bash
+# Use offline mode
+generator generate --offline
+
+# Check network connectivity
+ping github.com
+curl -I https://registry.npmjs.org
+
+# Use proxy (if needed)
+export HTTP_PROXY=http://proxy.company.com:8080
+export HTTPS_PROXY=http://proxy.company.com:8080
+
+# Disable SSL verification (not recommended)
+export GENERATOR_INSECURE=true
+```
+
+## Validation Issues
+
+### Validation Failures
+
+**Problem**: Generated project fails validation.
+
+**Solutions**:
+
+```bash
+# Run validation with detailed output
+generator validate ./my-project --verbose
+
+# Auto-fix common issues
+generator validate ./my-project --fix
+
+# Check specific validation rules
+generator validate ./my-project --rules structure,dependencies
+
+# Show fix suggestions
+generator validate ./my-project --show-fixes
+```
+
+### Import Errors
+
+**Problem**: Generated Go code has import errors.
+
+**Solutions**:
+
+```bash
+# Check Go module initialization
+cd ./my-project
+go mod init my-project
+go mod tidy
+
+# Fix import paths
+goimports -w .
+
+# Check for missing dependencies
+go mod download
+go build ./...
+```
+
+### Dependency Issues
+
+**Problem**: Package dependencies are outdated or incompatible.
+
+**Solutions**:
+
+```bash
+# Update dependencies
+generator generate --update-versions
+
+# Check for security vulnerabilities
+generator audit --security
+
+# Use specific versions
+# In configuration file:
+versions:
+  react: "18.2.0"
+  typescript: "4.9.5"
+```
+
+## Template Problems
+
+### Template Syntax Errors
+
+**Problem**: Template compilation fails due to syntax errors.
+
+**Solutions**:
+
+```bash
+# Validate template syntax
 generator template validate ./my-template
+
+# Check for common syntax issues
+# - Missing {{end}} for {{if}} statements
+# - Incorrect variable references
+# - Invalid function calls
+
+# Test template with sample data
+generator template test ./my-template --data sample-data.yaml
+```
+
+### Template Variable Issues
+
+**Problem**: Template variables are undefined or incorrect.
+
+**Solutions**:
+
+```bash
+# Check template metadata
+generator template info my-template
+
+# Validate variable definitions
+generator template validate ./my-template --check-variables
+
+# Use template with explicit variables
+generator generate --template my-template --var project_name="MyProject"
 ```
 
 ### Custom Template Issues
 
-**Problem**: Custom template validation or processing fails.
+**Problem**: Custom template doesn't work as expected.
 
 **Solutions**:
 
 ```bash
-# Validate template structure
-generator template validate ./my-template --detailed
+# Validate custom template
+generator template validate ./custom-template --detailed
 
-# Fix template issues automatically
-generator template validate ./my-template --fix
+# Check template structure
+ls -la ./custom-template/
+cat ./custom-template/metadata.yaml
 
-# Check template metadata
-generator template info ./my-template --variables
-
-# Use template debugging
-generator generate --template ./my-template --debug --dry-run
-```
-
-## Network and Connectivity
-
-### Network Timeouts
-
-**Problem**: Network requests timeout or fail.
-
-**Solutions**:
-
-```bash
-# Use offline mode
-generator generate --offline
-
-# Increase timeout (if supported)
-export GENERATOR_TIMEOUT=300
-
-# Use cached data
-generator cache show
-generator generate --offline --template go-gin
-
-# Populate cache when network is available
-generator update --templates --packages
-```
-
-### Registry Access Issues
-
-**Problem**: Cannot access package registries (npm, Go modules, etc.).
-
-**Solutions**:
-
-```bash
-# Check network connectivity
-ping registry.npmjs.org
-ping proxy.golang.org
-
-# Use offline mode
-generator cache offline enable
-generator generate --offline
-
-# Configure proxy if needed
-export HTTP_PROXY=http://proxy.company.com:8080
-export HTTPS_PROXY=http://proxy.company.com:8080
-
-# Use cached versions
-generator version --packages --cached-only
+# Test with minimal configuration
+generator generate --template ./custom-template --minimal
 ```
 
 ## Performance Issues
 
 ### Slow Generation
 
-**Problem**: Project generation takes too long.
+**Problem**: Project generation is slow.
 
 **Solutions**:
 
 ```bash
+# Use offline mode
+generator generate --offline
+
+# Enable caching
+generator cache enable
+
 # Use minimal generation
 generator generate --minimal
 
-# Skip version updates
-generator generate --no-update-versions
-
-# Use cached data
-generator generate --offline
-
-# Skip validation
-generator generate --skip-validation
-
-# Check cache performance
-generator cache show
-generator cache clean
+# Check system resources
+top
+free -h
+df -h
 ```
 
-### High Memory Usage
+### Memory Issues
 
-**Problem**: Generator uses excessive memory.
+**Problem**: Out of memory errors during generation.
 
 **Solutions**:
 
 ```bash
+# Check available memory
+free -h
+
 # Use minimal generation
-generator generate --minimal --exclude examples,docs
+generator generate --minimal
 
 # Clear cache
 generator cache clear
 
-# Restart generator process
-# (if running as daemon or service)
-
-# Check system resources
-free -h
-df -h ~/.cache/template-generator
+# Increase swap space (if needed)
+sudo swapon --show
 ```
 
-## Cache Problems
+### Cache Issues
 
-### Cache Corruption
-
-**Problem**: Cache appears corrupted or invalid.
+**Problem**: Cache corruption or performance issues.
 
 **Solutions**:
 
 ```bash
-# Validate cache integrity
-generator cache validate
-
-# Repair cache
-generator cache repair
-
-# Clear and rebuild cache
-generator cache clear
-generator update --templates --packages
-
-# Check cache location and permissions
-generator cache show
-ls -la ~/.cache/template-generator
-```
-
-### Cache Size Issues
-
-**Problem**: Cache grows too large or fills disk.
-
-**Solutions**:
-
-```bash
-# Check cache size
+# Check cache status
 generator cache show
 
-# Clean expired entries
+# Clean expired cache
 generator cache clean
 
-# Clear specific cache types
-generator cache clear --templates-only
-generator cache clear --versions-only
+# Clear all cache
+generator cache clear --force
 
-# Configure cache limits (if supported)
-generator config set cache.max_size 1GB
-generator config set cache.ttl 7d
-```
-
-## Update Issues
-
-### Update Failures
-
-**Problem**: Generator or template updates fail.
-
-**Solutions**:
-
-```bash
-# Check for updates manually
-generator update --check --verbose
-
-# Force update
-generator update --install --force
-
-# Update specific components
+# Rebuild cache
 generator update --templates --packages
-
-# Check update channel
-generator update --channel stable --check
-
-# Rollback if needed
-generator update --rollback --list
 ```
 
-### Version Conflicts
+## Debugging
 
-**Problem**: Version conflicts after updates.
-
-**Solutions**:
+### Enable Debug Mode
 
 ```bash
-# Check compatibility
-generator version --compatibility
-
-# Use specific version
-generator update --version v2.1.0
-
-# Reset to stable channel
-generator update --channel stable
-
-# Clear cache after update
-generator cache clear
-generator update --templates
-```
-
-## Logging and Debugging
-
-### Enable Debug Logging
-
-```bash
-# Enable debug mode
+# Debug mode with detailed logging
 generator generate --debug --verbose
 
-# Show debug logs
-generator logs --level debug --lines 100
+# Set debug log level
+export GENERATOR_LOG_LEVEL=debug
+generator generate
 
-# Follow logs in real-time
-generator logs --follow --level debug
-
-# Save logs to file
-generator logs --format json > debug.log
+# Show debug information
+generator version --build-info
 ```
 
 ### Log Analysis
 
 ```bash
-# Show error logs only
-generator logs --level error --since "1h"
+# View recent logs
+generator logs --lines 100
 
-# Filter by component
-generator logs --component template --level warn
+# Filter by log level
+generator logs --level error
 
-# Show performance metrics
-generator logs --level debug --search "performance"
+# Follow logs in real-time
+generator logs --follow
 
-# Export logs for analysis
-generator logs --format csv --since "24h" > analysis.csv
+# Show log file locations
+generator logs --locations
 ```
 
-### Common Log Patterns
+### System Information
 
-**Template Processing Errors**:
+```bash
+# Show system information
+generator version --system-info
 
-```
-ERROR template: failed to process template file.tmpl: template syntax error
-```
+# Check dependencies
+generator version --dependencies
 
-Solution: Check template syntax and validate template files.
-
-**Network Timeout Errors**:
-
-```
-ERROR version: timeout fetching package version: context deadline exceeded
+# Verify installation
+generator version --verify
 ```
 
-Solution: Use offline mode or check network connectivity.
+### Performance Profiling
 
-**Permission Errors**:
+```bash
+# Enable performance metrics
+generator generate --debug --profile
 
-```
-ERROR filesystem: permission denied creating directory /path/to/output
-```
+# Check generation time
+time generator generate
 
-Solution: Check directory permissions or use different output path.
-
-**Configuration Errors**:
-
-```
-ERROR config: invalid configuration value for key 'license': must be one of [MIT, Apache-2.0, GPL-3.0]
+# Monitor resource usage
+generator generate --debug &
+top -p $!
 ```
 
-Solution: Use valid configuration values or check configuration schema.
-
-## Getting Additional Help
+## Getting Help
 
 ### Built-in Help
 
 ```bash
-# Command help
+# General help
 generator --help
-generator <command> --help
+
+# Command-specific help
+generator generate --help
+generator validate --help
+generator audit --help
 
 # Show examples
-generator generate --help | grep -A 10 "Examples:"
+generator <command> --help | grep -A 20 "Examples:"
 ```
 
 ### Diagnostic Information
 
 ```bash
-# System information
-generator version --build-info --compatibility
+# Generate diagnostic report
+generator version --diagnostic > diagnostic.txt
 
-# Configuration status
-generator config show --sources --verbose
+# Include system information
+generator version --system-info >> diagnostic.txt
 
-# Cache status
-generator cache show --detailed
-
-# Recent logs
-generator logs --level error --lines 20
+# Include configuration
+generator config show >> diagnostic.txt
 ```
 
 ### Community Support
 
-- **GitHub Issues**: Report bugs and get help
-- **Documentation**: Check online docs for updates
-- **Examples**: Review working examples and configurations
-- **Community Forums**: Ask questions and share solutions
+- **GitHub Issues**: [Report bugs and request features](https://github.com/cuesoftinc/open-source-project-generator/issues)
+- **Discussions**: [Community discussions](https://github.com/cuesoftinc/open-source-project-generator/discussions)
+- **Documentation**: [Online documentation](https://github.com/cuesoftinc/open-source-project-generator/wiki)
+- **Email Support**: [support@generator.dev](mailto:support@generator.dev)
 
-### Creating Bug Reports
+### Reporting Issues
 
 When reporting issues, include:
 
-1. **Generator version**: `generator version --build-info`
-2. **Command used**: Full command with flags
-3. **Configuration**: Sanitized configuration file
-4. **Error output**: Complete error messages
-5. **Logs**: Relevant log entries (`generator logs --level error`)
-6. **Environment**: OS, Go version, network setup
-7. **Steps to reproduce**: Minimal reproduction case
+1. **Generator version**: `generator version`
+2. **System information**: `generator version --system-info`
+3. **Configuration**: `generator config show`
+4. **Error logs**: `generator logs --level error --lines 50`
+5. **Steps to reproduce**: Detailed steps to reproduce the issue
+6. **Expected behavior**: What you expected to happen
+7. **Actual behavior**: What actually happened
+
+### Example Issue Report
 
 ```bash
-# Generate diagnostic bundle
-generator logs --level error --since "1h" > error.log
-generator config show --sources > config-info.txt
-generator version --build-info > version-info.txt
-generator cache show > cache-info.txt
+# Generate complete diagnostic information
+generator version --diagnostic > issue-report.txt
+generator config show >> issue-report.txt
+generator logs --level error --lines 100 >> issue-report.txt
 
-# Include these files in your bug report
+# Attach to GitHub issue
 ```
+
+## Common Solutions
+
+### Quick Fixes
+
+```bash
+# Reset to defaults
+generator config reset
+
+# Clear cache and rebuild
+generator cache clear
+generator update --templates --packages
+
+# Use offline mode
+generator generate --offline
+
+# Use minimal generation
+generator generate --minimal
+
+# Force regeneration
+generator generate --force
+```
+
+### Environment Reset
+
+```bash
+# Remove all configuration
+rm -rf ~/.generator
+rm -rf ~/.cache/generator
+
+# Reinstall
+curl -sSL https://raw.githubusercontent.com/cuesoftinc/open-source-project-generator/main/scripts/install.sh | bash
+
+# Verify installation
+generator --version
+```
+
+### Configuration Reset
+
+```bash
+# Reset configuration to defaults
+generator config reset
+
+# Remove custom configuration
+rm -f ~/.config/generator/config.yaml
+rm -f ./generator.yaml
+
+# Start fresh
+generator generate
+```
+
+This troubleshooting guide should help you resolve most common issues with the Open Source Project Generator. If you continue to experience problems, please refer to the community support channels listed above.

@@ -4,12 +4,13 @@ This document describes the distribution and release process for the Open Source
 
 ## Overview
 
-The generator supports multiple distribution methods:
+The Open Source Project Generator (v1.3.0+) supports multiple distribution methods:
 
 - **Binary releases**: Cross-platform binaries for direct download
 - **Package managers**: Native packages for Linux distributions
 - **Container images**: Docker images for containerized environments
 - **Source builds**: Build from source code
+- **Go install**: Direct installation via Go toolchain
 
 ## Build System
 
@@ -31,6 +32,11 @@ make dist
 - macOS: amd64 (Intel), arm64 (Apple Silicon)
 - Windows: amd64, 386
 - FreeBSD: amd64
+
+**Build Requirements**:
+
+- Go 1.25.0 or later
+- Cross-compilation support for all target platforms
 
 ### Package Building
 
@@ -94,7 +100,7 @@ Version information is embedded during build:
 
 ```bash
 # Set version during build
-VERSION=v1.2.0 ./scripts/build.sh
+VERSION=v1.3.0 ./scripts/build.sh
 
 # Version is embedded in binary
 ./bin/generator --version
@@ -171,7 +177,7 @@ The Docker images use dynamic organization names based on the repository owner.
 docker pull ghcr.io/cuesoftinc/open-source-project-generator:latest
 
 # Pull specific version
-docker pull ghcr.io/cuesoftinc/open-source-project-generator:v1.0.0
+docker pull ghcr.io/cuesoftinc/open-source-project-generator:v1.3.0
 ```
 
 **Fork Images (automatically adapts to your GitHub username):**
@@ -181,7 +187,7 @@ docker pull ghcr.io/cuesoftinc/open-source-project-generator:v1.0.0
 docker pull ghcr.io/your-username/open-source-project-generator:latest
 
 # Pull specific version from your fork
-docker pull ghcr.io/your-username/open-source-project-generator:v1.0.0
+docker pull ghcr.io/your-username/open-source-project-generator:v1.3.0
 ```
 
 **Dynamic Configuration:**
@@ -219,7 +225,17 @@ scoop install generator
 curl -sSL https://raw.githubusercontent.com/cuesoftinc/open-source-project-generator/main/scripts/install.sh | bash
 
 # With options
-curl -sSL https://raw.githubusercontent.com/cuesoftinc/open-source-project-generator/main/scripts/install.sh | bash -s -- --version v1.0.0
+curl -sSL https://raw.githubusercontent.com/cuesoftinc/open-source-project-generator/main/scripts/install.sh | bash -s -- --version v1.3.0
+```
+
+### Go Install Method
+
+```bash
+# Install latest version
+go install github.com/cuesoftinc/open-source-project-generator/cmd/generator@latest
+
+# Install specific version
+go install github.com/cuesoftinc/open-source-project-generator/cmd/generator@v1.3.0
 ```
 
 ### Manual Installation

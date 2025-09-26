@@ -1,6 +1,6 @@
 # Security
 
-This document outlines the security measures implemented in the Open Source Project Generator.
+This document outlines the security measures implemented in the Open Source Project Generator (v1.3.0+).
 
 ## Security Fixes Applied
 
@@ -51,6 +51,29 @@ func SafeOpenFile(path string, flag int, perm os.FileMode, allowedBasePaths ...s
 **Issue**: Some function calls that could return errors were not being handled.
 
 **Status**: Identified in generated code (not core generator code). These should be addressed in templates.
+
+### 4. Template Security Enhancements
+
+**Issue**: Generated projects needed enhanced security measures.
+
+**Fixes**:
+
+- **JWT Security**: Implemented secure JWT token validation with algorithm verification
+- **Database Security**: Added parameterized queries and input validation
+- **Authentication Security**: Enhanced authentication middleware with rate limiting
+- **File Permission Hardening**: Applied secure file permissions in generated projects
+- **Input Validation**: Comprehensive input sanitization and validation
+- **Error Handling**: Secure error responses that don't leak sensitive information
+
+**Security Features in Generated Projects**:
+
+- SQL injection prevention through parameterized queries
+- XSS protection through input sanitization
+- CSRF protection in web applications
+- Secure password hashing with bcrypt
+- Rate limiting on authentication endpoints
+- Secure session management
+- Comprehensive logging and monitoring
 
 ## Security Best Practices
 
@@ -112,11 +135,56 @@ go list -json -deps ./... | nancy sleuth
 
 # Run static analysis
 staticcheck ./...
+
+# Run govulncheck for Go vulnerabilities
+govulncheck ./...
+
+# Scan for secrets in templates
+trufflehog filesystem ./pkg/template/templates/
+
+# Validate generated projects
+generator audit ./output --security --fail-on-high
 ```
 
 ## Reporting Security Issues
 
 If you discover a security vulnerability, please report it privately to the maintainers rather than opening a public issue.
+
+## Security Features in Generated Projects
+
+The generator creates projects with built-in security features:
+
+### Backend Security (Go Gin)
+
+- **JWT Authentication**: Secure token validation with algorithm verification
+- **Database Security**: Parameterized queries preventing SQL injection
+- **Input Validation**: Comprehensive input sanitization and validation
+- **Rate Limiting**: Protection against brute force attacks
+- **Password Security**: bcrypt hashing with configurable cost factors
+- **CORS Protection**: Configurable cross-origin resource sharing policies
+- **Security Headers**: Automatic security header implementation
+
+### Frontend Security (React/Next.js)
+
+- **XSS Protection**: Input sanitization and CSP headers
+- **CSRF Protection**: Token-based CSRF protection
+- **Secure Authentication**: JWT token management with secure storage
+- **Content Security Policy**: Comprehensive CSP implementation
+- **Dependency Security**: Regular security updates and vulnerability scanning
+
+### Mobile Security (Android/iOS)
+
+- **Secure Storage**: Encrypted local storage for sensitive data
+- **Certificate Pinning**: SSL certificate validation
+- **Biometric Authentication**: Secure biometric authentication support
+- **Network Security**: HTTPS enforcement and secure communication
+
+### Infrastructure Security
+
+- **Container Security**: Multi-stage builds with minimal attack surface
+- **Kubernetes Security**: Security contexts and network policies
+- **Terraform Security**: Infrastructure as code with security best practices
+- **Monitoring**: Comprehensive security monitoring and alerting
 
 ## Security Checklist for Contributors
 
@@ -126,3 +194,5 @@ If you discover a security vulnerability, please report it privately to the main
 - [ ] Sanitize user inputs
 - [ ] Review templates for security issues
 - [ ] Run security scanners before submitting PRs
+- [ ] Test generated projects for security vulnerabilities
+- [ ] Update security documentation for new features
