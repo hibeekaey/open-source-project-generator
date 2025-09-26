@@ -30,6 +30,7 @@ func createTestProjectConfig() *models.ProjectConfig {
 			Mobile: models.MobileComponents{
 				Android: true,
 				IOS:     true,
+				Shared:  true,
 			},
 			Infrastructure: models.InfrastructureComponents{
 				Terraform:  true,

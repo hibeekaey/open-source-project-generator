@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "{{.Organization}}.{{.Name | lower}}.mobile"
+    namespace = "{{.AndroidPackageOrg}}.{{.AndroidPackageName}}.mobile"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "{{.Organization}}.{{.Name | lower}}.mobile"
+        applicationId = "{{.AndroidPackageOrg}}.{{.AndroidPackageName}}.mobile"
         minSdk = 24
         targetSdk = 34
         versionCode = 1

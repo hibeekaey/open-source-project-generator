@@ -316,8 +316,6 @@ jobs:
           fi
 
           cat > release_notes.md << EOF
-          # Release $VERSION
-
           ## What's New
 
           $CHANGELOG_SECTION

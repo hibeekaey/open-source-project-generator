@@ -1,0 +1,42 @@
+name: nextjs-admin
+display_name: Next.js Admin Dashboard
+description: A modern admin dashboard built with Next.js, React, TypeScript, and Tailwind CSS
+category: frontend
+technology: nextjs
+version: 1.0.0
+tags:
+  - nextjs
+  - react
+  - typescript
+  - tailwind
+  - admin
+  - dashboard
+  - frontend
+dependencies:
+  - next
+  - react
+  - react-dom
+  - typescript
+  - tailwindcss
+  - "@types/react"
+  - "@types/react-dom"
+metadata:
+  author: Open Source Project Generator
+  license: MIT
+  repository: https://github.com/cuesoftinc/open-source-project-generator
+  homepage: https://github.com/cuesoftinc/open-source-project-generator
+  keywords:
+    - nextjs
+    - react
+    - admin
+    - dashboard
+    - typescript
+    - tailwind
+  maintainers:
+    - Open Source Project Generator Team
+  created: 2024-01-01T00:00:00Z
+  updated: 2024-01-01T00:00:00Z
+  variables:
+    name: Project name
+    organization: Organization name
+    description: Project description

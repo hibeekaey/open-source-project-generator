@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -32,6 +33,7 @@ func TestEngine_ValidateProject(t *testing.T) {
 				// Create required files
 				files := map[string]string{
 					"README.md": "# Test Project",
+					"LICENSE":   "MIT License\n\nCopyright (c) 2024 Test Project",
 					"go.mod":    "module test\n\ngo 1.21",
 					"frontend/package.json": `{
 						"name": "test-frontend",
@@ -399,6 +401,19 @@ func TestValidateProjectStructure(t *testing.T) {
 						return err
 					}
 				}
+
+				// Create required files
+				files := map[string]string{
+					"README.md": "# Test Project",
+					"LICENSE":   "MIT License\n\nCopyright (c) 2024 Test Project",
+				}
+
+				for filePath, content := range files {
+					fullPath := filepath.Join(projectPath, filePath)
+					if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
+						return err
+					}
+				}
 				return nil
 			},
 			expectedValid:  true,
@@ -407,8 +422,24 @@ func TestValidateProjectStructure(t *testing.T) {
 		{
 			name: "minimal valid structure",
 			setupProject: func(projectPath string) error {
-				// Just create the directory
-				return os.MkdirAll(projectPath, 0755)
+				// Create the directory
+				if err := os.MkdirAll(projectPath, 0755); err != nil {
+					return err
+				}
+
+				// Create required files
+				files := map[string]string{
+					"README.md": "# Test Project",
+					"LICENSE":   "MIT License\n\nCopyright (c) 2024 Test Project",
+				}
+
+				for filePath, content := range files {
+					fullPath := filepath.Join(projectPath, filePath)
+					if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
+						return err
+					}
+				}
+				return nil
 			},
 			expectedValid:  true,
 			expectedIssues: 0,
@@ -429,6 +460,197 @@ func TestValidateProjectStructure(t *testing.T) {
 
 			assert.Equal(t, tt.expectedValid, result.Valid)
 			assert.Len(t, result.Issues, tt.expectedIssues)
+		})
+	}
+}
+
+// Enhanced tests from engine_enhanced_test.go
+
+func TestEngine_ValidateProjectStructure(t *testing.T) {
+	engine := NewEngine()
+
+	// Create temporary directory for testing
+	tempDir := t.TempDir()
+
+	// Test with valid directory
+	result, err := engine.ValidateProjectStructure(tempDir)
+	if err != nil {
+		t.Fatalf("ValidateProjectStructure failed: %v", err)
+	}
+
+	if result == nil {
+		t.Fatal("Expected validation result, got nil")
+	}
+
+	// Test with non-existent directory
+	_, err = engine.ValidateProjectStructure("/non/existent/path")
+	if err == nil {
+		t.Error("Expected error for non-existent path")
+	}
+}
+
+func TestEngine_ValidateProjectDependencies(t *testing.T) {
+	engine := NewEngine()
+
+	// Create temporary directory with package.json
+	tempDir := t.TempDir()
+	packageJSON := `{
+		"name": "test-project",
+		"version": "1.0.0",
+		"dependencies": {
+			"react": "^18.0.0",
+			"lodash": "^4.17.21"
+		}
+	}`
+
+	err := os.WriteFile(filepath.Join(tempDir, "package.json"), []byte(packageJSON), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create package.json: %v", err)
+	}
+
+	result, err := engine.ValidateProjectDependencies(tempDir)
+	if err != nil {
+		t.Fatalf("ValidateProjectDependencies failed: %v", err)
+	}
+
+	if result == nil {
+		t.Fatal("Expected validation result, got nil")
+	}
+
+	if !result.Valid {
+		t.Error("Expected valid result for basic package.json")
+	}
+}
+
+func TestEngine_ValidateProjectSecurity(t *testing.T) {
+	engine := NewEngine()
+
+	// Create temporary directory with test files
+	tempDir := t.TempDir()
+
+	// Create a file with potential secret
+	secretFile := `
+const config = {
+	apiKey: "sk-1234567890abcdef",
+	password: "secret123"
+};
+`
+	err := os.WriteFile(filepath.Join(tempDir, "config.js"), []byte(secretFile), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create config.js: %v", err)
+	}
+
+	result, err := engine.ValidateProjectSecurity(tempDir)
+	if err != nil {
+		t.Fatalf("ValidateProjectSecurity failed: %v", err)
+	}
+
+	if result == nil {
+		t.Fatal("Expected security validation result, got nil")
+	}
+
+	// Should detect secrets
+	if result.Summary.SecretsFound == 0 {
+		t.Error("Expected to find secrets in test file")
+	}
+}
+
+func TestEngine_ValidateProjectQuality(t *testing.T) {
+	engine := NewEngine()
+
+	// Create temporary directory with test files
+	tempDir := t.TempDir()
+
+	// Create a simple Go file
+	goFile := `package main
+
+import "fmt"
+
+func main() {
+	fmt.Println("Hello, World!")
+}
+
+func complexFunction() {
+	if true {
+		if true {
+			if true {
+				if true {
+					if true {
+						fmt.Println("Very nested")
+					}
+				}
+			}
+		}
+	}
+}
+`
+	err := os.WriteFile(filepath.Join(tempDir, "main.go"), []byte(goFile), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create main.go: %v", err)
+	}
+
+	result, err := engine.ValidateProjectQuality(tempDir)
+	if err != nil {
+		t.Fatalf("ValidateProjectQuality failed: %v", err)
+	}
+
+	if result == nil {
+		t.Fatal("Expected quality validation result, got nil")
+	}
+
+	if result.Summary.QualityScore < 0 || result.Summary.QualityScore > 100 {
+		t.Errorf("Expected quality score between 0-100, got %f", result.Summary.QualityScore)
+	}
+}
+
+func TestEngine_ValidateConfiguration(t *testing.T) {
+	engine := NewEngine()
+
+	tests := []struct {
+		name        string
+		config      *models.ProjectConfig
+		expectValid bool
+	}{
+		{
+			name: "valid config",
+			config: &models.ProjectConfig{
+				Name:         "test-project",
+				Organization: "test-org",
+				Description:  "Test description",
+				License:      "MIT",
+			},
+			expectValid: true,
+		},
+		{
+			name:        "nil config",
+			config:      nil,
+			expectValid: false,
+		},
+		{
+			name: "empty name",
+			config: &models.ProjectConfig{
+				Name:         "",
+				Organization: "test-org",
+				License:      "MIT",
+			},
+			expectValid: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := engine.ValidateConfiguration(tt.config)
+			if err != nil {
+				t.Fatalf("ValidateConfiguration failed: %v", err)
+			}
+
+			if result == nil {
+				t.Fatal("Expected validation result, got nil")
+			}
+
+			if result.Valid != tt.expectValid {
+				t.Errorf("Expected valid=%v, got valid=%v", tt.expectValid, result.Valid)
+			}
 		})
 	}
 }

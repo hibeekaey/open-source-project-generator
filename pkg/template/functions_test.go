@@ -287,9 +287,10 @@ func TestComponentCheckingFunctions(t *testing.T) {
 		Components: models.Components{
 			Frontend: models.FrontendComponents{
 				NextJS: models.NextJSComponents{
-					App:   true,
-					Home:  false,
-					Admin: true,
+					App:    true,
+					Home:   false,
+					Admin:  true,
+					Shared: false,
 				},
 			},
 			Backend: models.BackendComponents{
@@ -298,6 +299,7 @@ func TestComponentCheckingFunctions(t *testing.T) {
 			Mobile: models.MobileComponents{
 				Android: false,
 				IOS:     true,
+				Shared:  false,
 			},
 			Infrastructure: models.InfrastructureComponents{
 				Docker:     true,

@@ -16,6 +16,11 @@ import (
 //go:embed templates
 var embeddedTemplates embed.FS
 
+// GetEmbeddedFS returns the embedded filesystem for external use
+func GetEmbeddedFS() fs.FS {
+	return embeddedTemplates
+}
+
 // EmbeddedEngine implements the TemplateEngine interface using embedded templates
 type EmbeddedEngine struct {
 	funcMap template.FuncMap
@@ -192,6 +197,8 @@ func (e *EmbeddedEngine) processPathTemplate(path string, config *models.Project
 		"{{.Organization}}":         config.Organization,
 		"{{.Organization | lower}}": strings.ToLower(config.Organization),
 		"{{.Organization | upper}}": strings.ToUpper(config.Organization),
+		"{{.AndroidPackageOrg}}":    config.AndroidPackageOrg,
+		"{{.AndroidPackageName}}":   config.AndroidPackageName,
 	}
 
 	for placeholder, value := range replacements {

@@ -150,6 +150,7 @@ func buildFunctionPackageMap() map[string]string {
 		"http.StatusOK":                  "net/http",
 		"http.StatusNotFound":            "net/http",
 		"http.StatusInternalServerError": "net/http",
+		"http.StatusBadRequest":          "net/http",
 
 		// url package
 		"url.Parse":         "net/url",
@@ -198,6 +199,10 @@ func buildFunctionPackageMap() map[string]string {
 		"sha1.New":   "crypto/sha1",
 		"sha256.New": "crypto/sha256",
 		"rand.Read":  "crypto/rand",
+
+		// base64 package
+		"base64.StdEncoding": "encoding/base64",
+		"base64.URLEncoding": "encoding/base64",
 
 		// math package
 		"math.Abs":  "math",

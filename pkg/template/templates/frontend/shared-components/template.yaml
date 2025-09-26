@@ -1,0 +1,41 @@
+name: shared-components
+display_name: Shared React Components
+description: Reusable React components library with TypeScript and Tailwind CSS
+category: frontend
+technology: react
+version: 1.0.0
+tags:
+  - react
+  - typescript
+  - tailwind
+  - components
+  - library
+  - shared
+  - frontend
+dependencies:
+  - react
+  - react-dom
+  - typescript
+  - tailwindcss
+  - "@types/react"
+  - "@types/react-dom"
+metadata:
+  author: Open Source Project Generator
+  license: MIT
+  repository: https://github.com/cuesoftinc/open-source-project-generator
+  homepage: https://github.com/cuesoftinc/open-source-project-generator
+  keywords:
+    - react
+    - components
+    - library
+    - typescript
+    - tailwind
+    - shared
+  maintainers:
+    - Open Source Project Generator Team
+  created: 2024-01-01T00:00:00Z
+  updated: 2024-01-01T00:00:00Z
+  variables:
+    name: Project name
+    organization: Organization name
+    description: Project description

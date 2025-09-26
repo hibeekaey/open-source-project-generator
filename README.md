@@ -1,160 +1,364 @@
 # Open Source Project Generator
 
-A simple CLI tool for generating production-ready project structures with modern technology stacks.
+A comprehensive command-line tool that generates production-ready, enterprise-grade project structures following modern best practices and security standards.
 
-## Features
-
-- **Multi-Platform Support**: Generate projects for frontend (Next.js), backend (Go), mobile (Android/iOS), and infrastructure
-- **Modern Technology Stack**: Uses current stable versions - Go 1.21+, Node.js 20+, Next.js 13+, React 18+
-- **Basic Infrastructure**: Includes Docker, Kubernetes, and Terraform configurations
-- **Essential Documentation**: Generates README, CONTRIBUTING, and basic documentation
-- **Interactive CLI**: Simple prompts for project configuration and component selection
-- **Basic Validation**: Ensures generated project structures are correct
-
-## Quick Start
+## 🚀 Quick Start
 
 ### Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/cuesoftinc/open-source-project-generator
-cd open-source-project-generator
+# Quick install (Linux/macOS)
+curl -sSL https://raw.githubusercontent.com/cuesoftinc/open-source-project-generator/main/scripts/install.sh | bash
 
-# Install dependencies and build
-make setup
-make build
+# Using Go
+go install github.com/cuesoftinc/open-source-template-generator/cmd/generator@latest
+
+# Using Docker
+docker run -it --rm -v $(pwd):/workspace ghcr.io/cuesoftinc/open-source-project-generator:latest generate
 ```
 
-### Usage
+### Generate Your First Project
 
 ```bash
-# Generate a new project interactively
-./bin/generator generate
+# Interactive mode (recommended for beginners)
+generator generate
 
-# Show help
-./bin/generator --help
+# Using a configuration file
+generator generate --config project.yaml --output ./my-project
 
-# Show version information
-./bin/generator version
+# Non-interactive mode (CI/CD)
+GENERATOR_PROJECT_NAME=myapp generator generate --non-interactive
 ```
 
-## Project Structure
+## ✨ Features
+
+- **🎯 Interactive Project Configuration** - Guided setup with intelligent prompts
+- **🏗️ Multi-Stack Support** - Frontend (Next.js, React), Backend (Go, Node.js), Mobile (Android, iOS), Infrastructure (Docker, K8s)
+- **🔒 Security-First** - Built-in security best practices and vulnerability scanning
+- **⚡ Offline Mode** - Generate projects without internet connectivity
+- **🤖 CI/CD Ready** - Non-interactive mode for automation and pipelines
+- **📦 Template Management** - Custom templates and validation
+- **🔍 Project Validation** - Comprehensive validation and auditing
+- **📊 Quality Assurance** - Code quality analysis and compliance checking
+
+## 🏗️ Generated Project Structure
+
+The generator creates a standardized, modern project structure:
 
 ```text
-open-source-project-generator/
-├── cmd/generator/          # Main application entry point
-├── internal/               # Internal application components
-│   ├── app/               # Core application logic
-│   ├── config/            # Configuration management
-│   └── container/         # Dependency injection
-├── pkg/                   # Public packages
-│   ├── cli/               # CLI interface
-│   ├── filesystem/        # File system operations
-│   ├── template/          # Template processing
-│   ├── validation/        # Basic validation
-│   ├── version/           # Version management
-│   └── models/            # Data models
-├── pkg/template/templates/ # Embedded project templates
-│   ├── base/              # Base templates (embedded)
-│   ├── frontend/          # Frontend templates (embedded)
-│   ├── backend/           # Backend templates (embedded)
-│   ├── mobile/            # Mobile templates (embedded)
-│   └── infrastructure/    # Infrastructure templates (embedded)
-└── scripts/               # Build and utility scripts
+my-awesome-project/
+├── App/                    # Frontend applications (Next.js 15+, React 19+)
+│   ├── main/              # Main application with TypeScript and Tailwind CSS
+│   ├── home/              # Landing page optimized for performance
+│   ├── admin/             # Admin dashboard with comprehensive UI components
+│   └── shared-components/ # Reusable component library
+├── CommonServer/          # Backend API server (Go 1.25+)
+│   ├── cmd/               # Application entry points
+│   ├── internal/          # Private application code
+│   ├── pkg/               # Public interfaces and utilities
+│   ├── migrations/        # Database migrations
+│   └── docs/              # API documentation (Swagger/OpenAPI)
+├── Mobile/                # Mobile applications
+│   ├── android/           # Android Kotlin 2.0+ with Jetpack Compose
+│   ├── ios/               # iOS Swift 5.9+ with SwiftUI
+│   └── shared/            # Shared resources, API specs, design system
+├── Deploy/                # Infrastructure configurations (latest versions)
+│   ├── docker/            # Docker 24+ with multi-stage builds
+│   ├── k8s/               # Kubernetes 1.28+ with security policies
+│   ├── terraform/         # Terraform 1.6+ for infrastructure as code
+│   └── monitoring/        # Prometheus, Grafana configurations
+├── Docs/                  # Comprehensive documentation
+├── Scripts/               # Build and deployment automation
+├── .github/workflows/     # CI/CD pipelines
+├── Makefile              # Build system
+└── docker-compose.yml     # Development environment
 ```
 
-## Development
+## 📖 Usage Examples
+
+### Full-Stack Web Application
+
+```bash
+# Interactive generation
+generator generate
+# Select: Frontend (Next.js), Backend (Go), Infrastructure (Docker + K8s)
+
+# Or using configuration
+cat > fullstack-config.yaml << EOF
+name: "awesome-webapp"
+organization: "mycompany"
+description: "Full-stack web application"
+license: "MIT"
+components:
+  frontend:
+    main_app: true
+    admin: true
+  backend:
+    api: true
+    auth: true
+  infrastructure:
+    docker: true
+    kubernetes: true
+EOF
+
+generator generate --config fullstack-config.yaml --output ./awesome-webapp
+```
+
+### Mobile Application
+
+```bash
+# Mobile-first project
+cat > mobile-config.yaml << EOF
+name: "mobile-app"
+components:
+  mobile:
+    android: true
+    ios: true
+  backend:
+    api: true
+  infrastructure:
+    docker: true
+EOF
+
+generator generate --config mobile-config.yaml
+```
+
+### CI/CD Pipeline Integration
+
+```yaml
+# .github/workflows/generate-and-deploy.yml
+name: Generate and Deploy
+on: [push]
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Generate Project
+        env:
+          GENERATOR_PROJECT_NAME: ${{ github.event.repository.name }}
+          GENERATOR_BACKEND: true
+          GENERATOR_FRONTEND: true
+        run: |
+          generator generate --non-interactive
+          
+      - name: Validate Project
+        run: |
+          generator validate ./output --output-format json
+          
+      - name: Security Audit
+        run: |
+          generator audit ./output --security --fail-on-high
+```
+
+## 🛠️ Commands
+
+### Core Commands
+
+```bash
+# Generate projects
+generator generate                    # Interactive mode
+generator generate --config file.yaml # From configuration
+generator generate --non-interactive  # CI/CD mode
+
+# Validate projects
+generator validate ./my-project       # Basic validation
+generator validate --fix             # Auto-fix issues
+generator validate --report          # Generate detailed report
+
+# Audit projects
+generator audit ./my-project          # Security and quality audit
+generator audit --security           # Security-focused audit
+generator audit --quality            # Code quality analysis
+
+# Template management
+generator list-templates             # List available templates
+generator template info go-gin       # Template details
+generator template validate ./custom  # Validate custom templates
+
+# Configuration
+generator config show                # Show current configuration
+generator config set key value       # Set configuration values
+generator config export file.yaml    # Export configuration
+
+# Version management
+generator version                    # Show version info
+generator version --packages         # Show package versions
+generator update --check             # Check for updates
+```
+
+### Global Options
+
+```bash
+--verbose, -v          # Verbose output
+--quiet, -q            # Quiet mode
+--debug, -d            # Debug mode
+--non-interactive      # Non-interactive mode
+--output-format json   # JSON output for automation
+--log-level debug      # Set log level
+```
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+```bash
+# Project configuration
+export GENERATOR_PROJECT_NAME="my-project"
+export GENERATOR_ORGANIZATION="my-org"
+export GENERATOR_DESCRIPTION="My awesome project"
+export GENERATOR_LICENSE="MIT"
+
+# Generation options
+export GENERATOR_FORCE=true
+export GENERATOR_MINIMAL=false
+export GENERATOR_OFFLINE=false
+export GENERATOR_UPDATE_VERSIONS=true
+
+# Component selection
+export GENERATOR_FRONTEND=true
+export GENERATOR_BACKEND=true
+export GENERATOR_MOBILE=false
+export GENERATOR_INFRASTRUCTURE=true
+```
+
+### Configuration File
+
+```yaml
+# project-config.yaml
+name: "my-awesome-project"
+organization: "mycompany"
+description: "An awesome open source project"
+license: "MIT"
+author: "John Doe"
+email: "john@example.com"
+repository: "https://github.com/mycompany/my-awesome-project"
+
+components:
+  frontend:
+    main_app: true
+    home: true
+    admin: false
+  backend:
+    api: true
+    auth: true
+  mobile:
+    android: true
+    ios: true
+  infrastructure:
+    docker: true
+    kubernetes: true
+    terraform: false
+
+generate_options:
+  force: false
+  minimal: false
+  offline: false
+  update_versions: true
+  include_examples: true
+
+output_path: "./my-awesome-project"
+```
+
+## 🔧 Development
 
 ### Prerequisites
 
-- Go 1.21 or later
+- Go 1.25+
 - Git
+- Make (optional)
+- Docker (optional)
 
-### Building
+### Build from Source
 
 ```bash
-# Install dependencies
-make install
+# Clone repository
+git clone https://github.com/cuesoftinc/open-source-project-generator
+cd open-source-project-generator
 
-# Build the application
+# Install dependencies
+go mod download
+
+# Build binary
 make build
 
 # Run tests
 make test
 
-# Run in development mode
-make dev
+# Generate cross-platform binaries
+make build-all
 ```
 
-### Available Commands
+### Development Workflow
 
-- `make build` - Build the generator binary
-- `make test` - Run all tests
-- `make clean` - Clean build artifacts
-- `make run` - Build and run the generator
-- `make dev` - Run in development mode
-- `make lint` - Run code linter
-- `make fmt` - Format code
-- `make vet` - Run go vet
+```bash
+# Setup development environment
+make setup
 
-## Templates
+# Run tests
+make test
 
-The generator includes embedded templates for:
+# Build and test
+make build && ./bin/generator --version
 
-- **Frontend**: Next.js applications with React
-- **Backend**: Go applications with Gin framework
-- **Mobile**: Android (Kotlin) and iOS (Swift) applications
-- **Infrastructure**: Docker, Kubernetes, and Terraform configurations
-
-**Note**: All templates are embedded directly into the binary, making the generator completely self-contained and portable.
-
-## Configuration
-
-The generator uses a simple YAML configuration format:
-
-```yaml
-name: "my-project"
-organization: "my-org"
-description: "A sample project"
-license: "MIT"
-components:
-  frontend:
-    nextjs:
-      app: true
-      home: true
-      admin: false
-      shared: true
-  backend:
-    go_gin: true
-  mobile:
-    android: false
-    ios: false
-  infrastructure:
-    docker: true
-    kubernetes: false
-    terraform: false
-versions:
-  node: "20.0.0"
-  go: "1.21.0"
-  packages:
-    react: "18.2.0"
-    next: "13.4.0"
-    typescript: "5.0.0"
-output_path: "./output/generated"
+# Run with debug logging
+./bin/generator generate --debug --verbose
 ```
 
-## Contributing
+## 📚 Documentation
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Submit a pull request
+- **[Getting Started Guide](docs/GETTING_STARTED.md)** - Complete installation and usage guide
+- **[Configuration Guide](docs/CONFIGURATION.md)** - Configuration management and customization
+- **[Template Development](docs/TEMPLATE_DEVELOPMENT.md)** - Creating and maintaining templates
+- **[API Reference](docs/API_REFERENCE.md)** - Developer API documentation
+- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
 
-## License
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+### Development Setup
+
+```bash
+# Fork and clone the repository
+git clone https://github.com/your-username/open-source-project-generator
+cd open-source-project-generator
+
+# Create a feature branch
+git checkout -b feature/amazing-feature
+
+# Make your changes and test
+make test
+
+# Commit your changes
+git commit -m "Add amazing feature"
+
+# Push to your fork
+git push origin feature/amazing-feature
+
+# Create a Pull Request
+```
+
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Support
+## 🆘 Support
 
-For questions and support, please open an issue on GitHub.
+- 📖 [Documentation](https://github.com/cuesoftinc/open-source-project-generator/wiki)
+- 🐛 [Issue Tracker](https://github.com/cuesoftinc/open-source-project-generator/issues)
+- 💬 [Discussions](https://github.com/cuesoftinc/open-source-project-generator/discussions)
+- 📧 [Email Support](mailto:support@generator.dev)
+
+## 🙏 Acknowledgments
+
+- Built with [Go](https://golang.org/)
+- Uses [Cobra](https://github.com/spf13/cobra) for CLI
+- Inspired by modern development practices
+- Community feedback and contributions
+
+---
+
+**Ready to generate your next project?** Start with `generator generate` and follow the interactive prompts!

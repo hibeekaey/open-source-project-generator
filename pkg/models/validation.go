@@ -9,10 +9,15 @@ type ValidationResult struct {
 
 // ValidationIssue represents a single validation issue
 type ValidationIssue struct {
-	Type    string `json:"type"` // "error", "warning", "info"
-	Message string `json:"message"`
-	File    string `json:"file,omitempty"`
-	Line    int    `json:"line,omitempty"`
+	Type     string            `json:"type"`
+	Severity string            `json:"severity"`
+	Message  string            `json:"message"`
+	File     string            `json:"file,omitempty"`
+	Line     int               `json:"line,omitempty"`
+	Column   int               `json:"column,omitempty"`
+	Rule     string            `json:"rule"`
+	Fixable  bool              `json:"fixable"`
+	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
 // ConfigValidator handles basic configuration validation

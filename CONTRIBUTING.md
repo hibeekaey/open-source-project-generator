@@ -44,7 +44,7 @@ This project and everyone participating in it is governed by our Code of Conduct
 
 Ensure you have the required tools installed:
 
-- **Go**: 1.25 or later
+- **Go**: 1.25.0 or later
 - **Make**: Build automation tool
 - **Git**: Latest stable version
 - **Docker**: Latest stable version (optional, for testing)
@@ -258,8 +258,7 @@ func (e *TemplateEngine) ProcessTemplate(templatePath string, config *models.Pro
 
 ```text
 cmd/                    # Command-line applications
-├── generator/          # Main generator CLI
-└── standards/          # Standards validation CLI
+└── generator/          # Main generator CLI
 
 internal/               # Private application code
 ├── app/               # Application logic
@@ -273,9 +272,12 @@ pkg/                   # Public interfaces and libraries
 ├── models/           # Data models
 ├── template/         # Template processing
 ├── validation/       # Validation engine
-└── version/          # Version management
+├── version/          # Version management
+├── security/         # Security utilities
+├── ui/               # User interface components
+└── utils/            # Utility functions
 
-templates/             # Template files
+pkg/template/templates/ # Template files
 ├── base/             # Base project templates
 ├── frontend/         # Frontend templates
 ├── backend/          # Backend templates
@@ -303,16 +305,16 @@ templates/             # Template files
 
 For detailed guidelines on maintaining template files, see:
 
-- **[Template Maintenance Guidelines](docs/TEMPLATE_MAINTENANCE.md)** - Comprehensive guide for template development
-- **[Template Quick Reference](docs/TEMPLATE_QUICK_REFERENCE.md)** - Essential commands and patterns
-- **[Template Validation Checklist](docs/TEMPLATE_VALIDATION_CHECKLIST.md)** - Pre-commit validation checklist
+- **[Template Development Guide](docs/TEMPLATE_DEVELOPMENT.md)** - Comprehensive guide for template development
+- **[API Reference](docs/API_REFERENCE.md)** - Template functions and variables reference
+- **[Configuration Guide](docs/CONFIGURATION.md)** - Template configuration options
 
 Key requirements for template changes:
 
 - All used functions must have corresponding import statements
 - Follow Go import organization conventions (standard library, third-party, local)
-- Run validation tools before committing: `go run scripts/validate-templates/main.go --check-imports`
-- Test template compilation with sample data: `go run cmd/generator/main.go --config config/test-configs/test-config.yaml --output test-validation`
+- Run validation tools before committing: `go run cmd/generator/main.go template validate`
+- Test template compilation with sample data: `go run cmd/generator/main.go generate --config configs/test-config.yaml --output test-validation`
 
 ### Code Documentation Standards
 
@@ -432,10 +434,10 @@ go test ./pkg/template/...
 go test ./test/integration/...
 
 # Validate templates (recommended before committing template changes)
-go run scripts/validate-templates/main.go --check-imports
+go run cmd/generator/main.go template validate
 
 # Generate test project to verify templates
-go run cmd/generator/main.go --config config/test-configs/test-config.yaml --output test-validation
+go run cmd/generator/main.go generate --config configs/test-config.yaml --output test-validation
 ```
 
 ## Documentation
@@ -520,10 +522,11 @@ Understanding the project structure helps with contributions:
 - **`cmd/`**: Command-line applications
 - **`internal/`**: Private application code
 - **`pkg/`**: Public interfaces and libraries
-- **`templates/`**: Project templates
-- **`test/`**: Integration tests
+- **`pkg/template/templates/`**: Project templates
+- **`configs/`**: Configuration examples
 - **`scripts/`**: Build and utility scripts
 - **`docs/`**: Documentation files
+- **`output/`**: Generated project output
 
 ## FAQ
 

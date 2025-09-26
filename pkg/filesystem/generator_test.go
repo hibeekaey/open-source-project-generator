@@ -61,7 +61,7 @@ func TestCreateDirectory(t *testing.T) {
 			name:        "empty path",
 			path:        "",
 			expectError: true,
-			errorMsg:    "directory path cannot be empty",
+			errorMsg:    "Directory path is required",
 		},
 		{
 			name:        "path traversal attempt",
@@ -540,14 +540,14 @@ func TestCreateProject(t *testing.T) {
 			config:      nil,
 			outputPath:  tempDir,
 			expectError: true,
-			errorMsg:    "project config cannot be nil",
+			errorMsg:    "Project configuration is required",
 		},
 		{
 			name:        "empty output path",
 			config:      validConfig,
 			outputPath:  "",
 			expectError: true,
-			errorMsg:    "output path cannot be empty",
+			errorMsg:    "Output path is required",
 		},
 	}
 

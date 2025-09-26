@@ -27,7 +27,8 @@ build: ## Build the generator binary
 	@echo "Version: $(VERSION)"
 	@echo "Git Commit: $(GIT_COMMIT)"
 	@echo "Build Time: $(BUILD_TIME)"
-	go build -ldflags "-X main.Version=$(VERSION) -X main.GitCommit=$(GIT_COMMIT) -X main.BuildTime=$(BUILD_TIME)" -o bin/generator ./cmd/generator
+	@mkdir -p bin
+	go build -ldflags "-X main.Version=$(VERSION) -X main.GitCommit=$(GIT_COMMIT) -X main.BuildTime=$(BUILD_TIME) -s -w" -trimpath -o bin/generator ./cmd/generator
 
 # Run tests
 test: ## Run all tests
@@ -100,10 +101,13 @@ setup: ## Setup development environment
 # Build for multiple platforms
 build-all: ## Build for multiple platforms
 	@echo "Building for multiple platforms..."
-	GOOS=linux GOARCH=amd64 go build -o bin/generator-linux-amd64 ./cmd/generator
-	GOOS=darwin GOARCH=amd64 go build -o bin/generator-darwin-amd64 ./cmd/generator
-	GOOS=darwin GOARCH=arm64 go build -o bin/generator-darwin-arm64 ./cmd/generator
-	GOOS=windows GOARCH=amd64 go build -o bin/generator-windows-amd64.exe ./cmd/generator
+	@mkdir -p bin
+	@echo "Building Linux AMD64..." && GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Version=$(VERSION) -X main.GitCommit=$(GIT_COMMIT) -X main.BuildTime=$(BUILD_TIME) -s -w" -trimpath -o bin/generator-linux-amd64 ./cmd/generator &
+	@echo "Building Darwin AMD64..." && GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.Version=$(VERSION) -X main.GitCommit=$(GIT_COMMIT) -X main.BuildTime=$(BUILD_TIME) -s -w" -trimpath -o bin/generator-darwin-amd64 ./cmd/generator &
+	@echo "Building Darwin ARM64..." && GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.Version=$(VERSION) -X main.GitCommit=$(GIT_COMMIT) -X main.BuildTime=$(BUILD_TIME) -s -w" -trimpath -o bin/generator-darwin-arm64 ./cmd/generator &
+	@echo "Building Windows AMD64..." && GOOS=windows GOARCH=amd64 go build -ldflags "-X main.Version=$(VERSION) -X main.GitCommit=$(GIT_COMMIT) -X main.BuildTime=$(BUILD_TIME) -s -w" -trimpath -o bin/generator-windows-amd64.exe ./cmd/generator &
+	@wait
+	@echo "All builds completed"
 
 # Distribution targets
 dist: ## Build distribution packages
@@ -142,11 +146,6 @@ test-install: ## Test installation script
 	@echo "Testing installation script..."
 	bash -n scripts/install.sh
 	@echo "Installation script syntax is valid"
-
-# Template validation
-validate-templates: ## Validate template files
-	@echo "Validating template files..."
-	cd scripts/validate-templates && go run . ../../templates
 
 # Docker targets
 docker-build: ## Build Docker image

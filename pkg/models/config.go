@@ -24,6 +24,13 @@ type ProjectConfig struct {
 	// Output configuration
 	OutputPath string `yaml:"output_path" json:"output_path"`
 
+	// Features list for testing
+	Features []string `yaml:"features" json:"features"`
+
+	// Template-specific fields (populated during processing)
+	AndroidPackageOrg  string `yaml:"-" json:"-"` // Lowercase organization for Android packages
+	AndroidPackageName string `yaml:"-" json:"-"` // Lowercase name for Android packages
+
 	// Generation metadata
 	GeneratedAt      time.Time `yaml:"generated_at" json:"generated_at"`
 	GeneratorVersion string    `yaml:"generator_version" json:"generator_version"`
@@ -35,6 +42,10 @@ type Components struct {
 	Backend        BackendComponents        `yaml:"backend" json:"backend"`
 	Mobile         MobileComponents         `yaml:"mobile" json:"mobile"`
 	Infrastructure InfrastructureComponents `yaml:"infrastructure" json:"infrastructure"`
+	Database       DatabaseComponents       `yaml:"database" json:"database"`
+	Cache          CacheComponents          `yaml:"cache" json:"cache"`
+	DevOps         DevOpsComponents         `yaml:"devops" json:"devops"`
+	Monitoring     MonitoringComponents     `yaml:"monitoring" json:"monitoring"`
 }
 
 // FrontendComponents defines frontend application options
@@ -61,6 +72,7 @@ type BackendComponents struct {
 type MobileComponents struct {
 	Android bool `yaml:"android" json:"android"`
 	IOS     bool `yaml:"ios" json:"ios"`
+	Shared  bool `yaml:"shared" json:"shared"`
 }
 
 // InfrastructureComponents defines infrastructure options
@@ -68,4 +80,34 @@ type InfrastructureComponents struct {
 	Docker     bool `yaml:"docker" json:"docker"`
 	Kubernetes bool `yaml:"kubernetes" json:"kubernetes"`
 	Terraform  bool `yaml:"terraform" json:"terraform"`
+}
+
+// DatabaseComponents defines database options
+type DatabaseComponents struct {
+	PostgreSQL bool `yaml:"postgresql" json:"postgresql"`
+	MySQL      bool `yaml:"mysql" json:"mysql"`
+	MongoDB    bool `yaml:"mongodb" json:"mongodb"`
+	SQLite     bool `yaml:"sqlite" json:"sqlite"`
+}
+
+// CacheComponents defines caching options
+type CacheComponents struct {
+	Redis     bool `yaml:"redis" json:"redis"`
+	Memcached bool `yaml:"memcached" json:"memcached"`
+}
+
+// DevOpsComponents defines DevOps and automation options
+type DevOpsComponents struct {
+	CICD          bool `yaml:"cicd" json:"cicd"`
+	GitHubActions bool `yaml:"github_actions" json:"github_actions"`
+	GitLabCI      bool `yaml:"gitlab_ci" json:"gitlab_ci"`
+	Jenkins       bool `yaml:"jenkins" json:"jenkins"`
+}
+
+// MonitoringComponents defines monitoring and observability options
+type MonitoringComponents struct {
+	Prometheus bool `yaml:"prometheus" json:"prometheus"`
+	Grafana    bool `yaml:"grafana" json:"grafana"`
+	Jaeger     bool `yaml:"jaeger" json:"jaeger"`
+	ELK        bool `yaml:"elk" json:"elk"`
 }

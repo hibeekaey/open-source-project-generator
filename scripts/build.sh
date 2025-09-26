@@ -38,7 +38,10 @@ print_error() {
 # Clean previous builds
 clean_build() {
     print_status "Cleaning previous builds..."
-    rm -rf ${BUILD_DIR}
+    if [ -d "${BUILD_DIR}" ]; then
+        # Try to remove contents but not the directory itself (in case it's a volume mount)
+        rm -rf ${BUILD_DIR}/* 2>/dev/null || true
+    fi
     mkdir -p ${BUILD_DIR}
 }
 
@@ -74,8 +77,8 @@ build_platform() {
     export GOARCH=$arch
     export CGO_ENABLED=0
     
-    # Build the binary
-    if go build -ldflags "${LDFLAGS}" -o "${output_path}" ${MAIN_PACKAGE}; then
+    # Build the binary with optimizations
+    if go build -ldflags "${LDFLAGS} -s -w" -trimpath -o "${output_path}" ${MAIN_PACKAGE}; then
         print_success "Built ${output_path}"
         
         # Copy additional files

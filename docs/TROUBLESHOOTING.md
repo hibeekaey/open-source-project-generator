@@ -1,775 +1,607 @@
 # Troubleshooting Guide
 
-This guide helps you resolve common issues with the Open Source Project Generator installation and usage.
+This guide helps you diagnose and resolve common issues with the Open Source Project Generator.
+
+## Table of Contents
+
+- [Installation Issues](#installation-issues)
+- [Configuration Problems](#configuration-problems)
+- [Generation Errors](#generation-errors)
+- [Validation Issues](#validation-issues)
+- [Template Problems](#template-problems)
+- [Performance Issues](#performance-issues)
+- [Debugging](#debugging)
+- [Getting Help](#getting-help)
 
 ## Installation Issues
 
-### Binary Not Found After Installation
+### Permission Denied Errors
+
+**Problem**: Cannot install or run the generator due to permission errors.
+
+**Solutions**:
+
+```bash
+# Check current permissions
+ls -la /usr/local/bin/generator
+
+# Fix permissions
+sudo chmod +x /usr/local/bin/generator
+
+# Install to user directory instead
+mkdir -p ~/.local/bin
+cp generator ~/.local/bin/
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+### Binary Not Found
 
 **Problem**: `generator: command not found` after installation.
 
 **Solutions**:
 
-1. **Check PATH**:
+```bash
+# Check if binary exists
+which generator
+ls -la /usr/local/bin/generator
 
-   ```bash
-   echo $PATH
-   # Ensure /usr/local/bin or your installation directory is included
-   ```
+# Add to PATH
+echo 'export PATH="/usr/local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
 
-2. **Add to PATH manually**:
+# Or use full path
+/usr/local/bin/generator --version
+```
 
-   ```bash
-   # For bash
-   echo 'export PATH="/usr/local/bin:$PATH"' >> ~/.bashrc
-   source ~/.bashrc
-   
-   # For zsh
-   echo 'export PATH="/usr/local/bin:$PATH"' >> ~/.zshrc
-   source ~/.zshrc
-   ```
+### Go Version Compatibility
 
-3. **Use full path**:
-
-   ```bash
-   /usr/local/bin/generator --version
-   ```
-
-4. **Check installation location**:
-
-   ```bash
-   which generator
-   ls -la /usr/local/bin/generator
-   ```
-
-### Permission Denied Errors
-
-**Problem**: `Permission denied` when running the generator.
+**Problem**: Build fails due to Go version incompatibility.
 
 **Solutions**:
 
-1. **Make binary executable**:
+```bash
+# Check Go version
+go version
 
-   ```bash
-   chmod +x /usr/local/bin/generator
-   ```
+# Update Go (if needed)
+# Using g (Go version manager)
+g install latest
+g use latest
 
-2. **Check file permissions**:
+# Or download from https://golang.org/dl/
+```
 
-   ```bash
-   ls -la /usr/local/bin/generator
-   # Should show: -rwxr-xr-x
-   ```
+### Docker Issues
 
-3. **Reinstall with correct permissions**:
-
-   ```bash
-   sudo cp generator /usr/local/bin/
-   sudo chmod +x /usr/local/bin/generator
-   ```
-
-### Package Installation Failures
-
-**Problem**: Package installation fails with dependency errors.
+**Problem**: Docker container fails to start or run.
 
 **Solutions**:
 
-1. **Update package lists**:
+```bash
+# Check Docker is running
+docker --version
+docker ps
 
-   ```bash
-   # Debian/Ubuntu
-   sudo apt update
-   
-   # Red Hat/CentOS
-   sudo yum update
-   ```
+# Pull latest image
+docker pull ghcr.io/cuesoftinc/open-source-project-generator:latest
 
-2. **Fix broken dependencies**:
+# Run with proper volume mounting
+docker run -it --rm -v $(pwd):/workspace ghcr.io/cuesoftinc/open-source-project-generator:latest generate
+```
 
-   ```bash
-   # Debian/Ubuntu
-   sudo apt --fix-broken install
-   
-   # Red Hat/CentOS
-   sudo yum check
-   sudo yum update
-   ```
+## Configuration Problems
 
-3. **Install missing dependencies manually**:
+### Configuration File Not Found
 
-   ```bash
-   # Check what's missing
-   dpkg -I generator_VERSION_amd64.deb
-   
-   # Install dependencies
-   sudo apt install <missing-packages>
-   ```
-
-### Download Failures
-
-**Problem**: Cannot download releases or installation script fails.
+**Problem**: `Error: configuration file not found`.
 
 **Solutions**:
 
-1. **Check internet connection**:
+```bash
+# Check file exists
+ls -la ./project-config.yaml
 
-   ```bash
-   ping github.com
-   ```
+# Use absolute path
+generator generate --config /full/path/to/config.yaml
 
-2. **Use alternative download method**:
+# Create default configuration
+generator config export default-config.yaml
+```
 
-   ```bash
-   # If curl fails, try wget
-   wget https://github.com/cuesoftinc/open-source-project-generator/releases/latest/download/generator-linux-amd64.tar.gz
-   ```
+### Invalid Configuration Format
 
-3. **Manual download**:
-   - Visit the [releases page](https://github.com/cuesoftinc/open-source-project-generator/releases)
-   - Download manually through browser
-   - Extract and install manually
-
-4. **Corporate firewall/proxy**:
-
-   ```bash
-   # Set proxy for curl
-   export https_proxy=http://proxy.company.com:8080
-   
-   # Set proxy for wget
-   export https_proxy=http://proxy.company.com:8080
-   ```
-
-## Runtime Issues
-
-### Template Generation Failures
-
-**Problem**: Generator fails to create project templates.
+**Problem**: `Error: failed to parse configuration file`.
 
 **Solutions**:
 
-1. **Check output directory permissions**:
+```bash
+# Validate YAML syntax
+generator config validate ./config.yaml
 
-   ```bash
-   ls -la /path/to/output/generated/directory
-   mkdir -p /path/to/output/generated/directory
-   ```
+# Check for common YAML issues
+# - Proper indentation (spaces, not tabs)
+# - Correct quotes around strings
+# - Valid boolean values (true/false, not True/False)
 
-2. **Use different output directory**:
+# Use online YAML validator
+# https://www.yamllint.com/
+```
 
-   ```bash
-   generator generate --output ~/my-projects/new-project
-   ```
+### Environment Variable Issues
 
-3. **Run with verbose logging**:
-
-   ```bash
-   generator generate --log-level debug
-   ```
-
-4. **Check disk space**:
-
-   ```bash
-   df -h
-   ```
-
-### Network/API Errors
-
-**Problem**: Cannot fetch latest package versions or templates.
+**Problem**: Environment variables not being recognized.
 
 **Solutions**:
 
-1. **Check internet connectivity**:
+```bash
+# Check environment variables
+env | grep GENERATOR
 
-   ```bash
-   curl -I https://registry.npmjs.org/
-   curl -I https://api.github.com/
-   ```
+# Set required variables
+export GENERATOR_PROJECT_NAME="my-project"
+export GENERATOR_NON_INTERACTIVE=true
 
-2. **Use cached versions**:
+# Use .env file
+echo "GENERATOR_PROJECT_NAME=my-project" > .env
+source .env
+```
 
-   ```bash
-   generator generate --offline
-   ```
+### Configuration Conflicts
 
-3. **Configure proxy settings**:
-
-   ```bash
-   export HTTP_PROXY=http://proxy.company.com:8080
-   export HTTPS_PROXY=http://proxy.company.com:8080
-   generator generate
-   ```
-
-4. **Use custom configuration**:
-
-   ```yaml
-   # ~/.config/generator/config.yaml
-   network:
-     timeout: 30s
-     retries: 3
-     proxy: "http://proxy.company.com:8080"
-   ```
-
-### Configuration Issues
-
-**Problem**: Generator not using expected configuration.
+**Problem**: Configuration values conflict or override unexpectedly.
 
 **Solutions**:
 
-1. **Check configuration file location**:
+```bash
+# Show configuration sources
+generator config show --sources
 
-   ```bash
-   generator config show
-   generator config path
-   ```
+# Check precedence order
+# 1. Command-line arguments
+# 2. Environment variables
+# 3. Configuration files
+# 4. Default values
 
-2. **Validate configuration syntax**:
+# Override specific values
+generator generate --config base.yaml --force --minimal
+```
 
-   ```bash
-   generator config validate
-   ```
+## Generation Errors
 
-3. **Use explicit configuration**:
+### Output Directory Issues
 
-   ```bash
-   generator generate --config /path/to/config.yaml
-   ```
-
-4. **Reset to defaults**:
-
-   ```bash
-   generator config reset
-   ```
-
-### Memory/Performance Issues
-
-**Problem**: Generator runs slowly or uses too much memory.
+**Problem**: Cannot create or write to output directory.
 
 **Solutions**:
 
-1. **Check system resources**:
+```bash
+# Check directory permissions
+ls -la ./output-directory
 
-   ```bash
-   free -h
-   top
-   ```
+# Create directory with proper permissions
+mkdir -p ./my-project
+chmod 755 ./my-project
 
-2. **Reduce concurrent operations**:
+# Use different output directory
+generator generate --output ~/projects/my-project
 
-   ```yaml
-   # config.yaml
-   performance:
-     max_concurrent_downloads: 2
-     template_cache_size: 100MB
-   ```
+# Check disk space
+df -h
+```
 
-3. **Clear cache**:
+### Template Not Found
 
-   ```bash
-   generator cache clear
-   ```
-
-4. **Use minimal templates**:
-
-   ```bash
-   generator generate --minimal
-   ```
-
-## Platform-Specific Issues
-
-### macOS Issues
-
-**Problem**: "generator cannot be opened because the developer cannot be verified"
+**Problem**: `Error: template not found`.
 
 **Solutions**:
 
-1. **Allow in Security & Privacy**:
-   - Go to System Preferences → Security & Privacy
-   - Click "Allow Anyway" next to the generator message
+```bash
+# List available templates
+generator list-templates
 
-2. **Remove quarantine attribute**:
+# Search for specific template
+generator list-templates --search "go"
 
-   ```bash
-   xattr -d com.apple.quarantine /usr/local/bin/generator
-   ```
+# Check template name spelling
+generator template info go-gin
 
-3. **Build from source**:
+# Use full template path
+generator generate --template ./custom-templates/my-template
+```
 
-   ```bash
-   git clone https://github.com/cuesoftinc/open-source-project-generator.git
-   cd open-source-project-generator
-   make build
-   ```
+### Generation Timeout
 
-**Problem**: Homebrew installation fails
+**Problem**: Generation process times out or hangs.
 
 **Solutions**:
 
-1. **Update Homebrew**:
+```bash
+# Use offline mode
+generator generate --offline
 
-   ```bash
-   brew update
-   brew doctor
-   ```
+# Increase timeout
+export GENERATOR_TIMEOUT="60m"
+generator generate
 
-2. **Install manually**:
+# Use minimal generation
+generator generate --minimal
 
-   ```bash
-   curl -L https://github.com/cuesoftinc/open-source-project-generator/releases/latest/download/generator-darwin-amd64.tar.gz | tar -xz
-   mv generator-darwin-amd64/generator /usr/local/bin/
-   ```
+# Check system resources
+top
+df -h
+```
 
-### Windows Issues
+### Network Issues
 
-**Problem**: Windows Defender blocks the executable
-
-**Solutions**:
-
-1. **Add exception in Windows Defender**:
-   - Open Windows Security
-   - Go to Virus & threat protection
-   - Add exclusion for the generator executable
-
-2. **Download from trusted source**:
-   - Only download from official GitHub releases
-   - Verify checksums
-
-**Problem**: PowerShell execution policy prevents running scripts
+**Problem**: Cannot fetch package versions or templates.
 
 **Solutions**:
 
-1. **Change execution policy**:
+```bash
+# Use offline mode
+generator generate --offline
 
-   ```powershell
-   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-   ```
+# Check network connectivity
+ping github.com
+curl -I https://registry.npmjs.org
 
-2. **Bypass for single script**:
+# Use proxy (if needed)
+export HTTP_PROXY=http://proxy.company.com:8080
+export HTTPS_PROXY=http://proxy.company.com:8080
 
-   ```powershell
-   PowerShell -ExecutionPolicy Bypass -File install.ps1
-   ```
+# Disable SSL verification (not recommended)
+export GENERATOR_INSECURE=true
+```
 
-**Problem**: PATH not updated after installation
+## Validation Issues
 
-**Solutions**:
+### Validation Failures
 
-1. **Restart terminal/PowerShell**
-
-2. **Update PATH manually**:
-
-   ```powershell
-   $env:PATH += ";C:\Program Files\generator"
-   ```
-
-3. **Use system environment variables**:
-   - Open System Properties → Advanced → Environment Variables
-   - Edit PATH and add generator directory
-
-### Linux Issues
-
-**Problem**: `GLIBC` version errors
+**Problem**: Generated project fails validation.
 
 **Solutions**:
 
-1. **Check GLIBC version**:
+```bash
+# Run validation with detailed output
+generator validate ./my-project --verbose
 
-   ```bash
-   ldd --version
-   ```
+# Auto-fix common issues
+generator validate ./my-project --fix
 
-2. **Use static binary** (if available):
+# Check specific validation rules
+generator validate ./my-project --rules structure,dependencies
 
-   ```bash
-   # Download static build
-   wget https://github.com/cuesoftinc/open-source-project-generator/releases/latest/download/generator-linux-amd64.tar.gz
-   ```
+# Show fix suggestions
+generator validate ./my-project --show-fixes
+```
 
-3. **Build from source**:
+### Import Errors
 
-   ```bash
-   git clone https://github.com/cuesoftinc/open-source-project-generator.git
-   cd open-source-project-generator
-   CGO_ENABLED=0 go build -o generator ./cmd/generator
-   ```
-
-**Problem**: Missing dependencies for templates
+**Problem**: Generated Go code has import errors.
 
 **Solutions**:
 
-1. **Install Node.js** (for frontend templates):
+```bash
+# Check Go module initialization
+cd ./my-project
+go mod init my-project
+go mod tidy
 
-   ```bash
-   # Ubuntu/Debian
-   curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-   sudo apt-get install -y nodejs
-   
-   # CentOS/RHEL
-   curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
-   sudo yum install -y nodejs
-   ```
+# Fix import paths
+goimports -w .
 
-2. **Install Docker** (for containerized templates):
+# Check for missing dependencies
+go mod download
+go build ./...
+```
 
-   ```bash
-   # Ubuntu/Debian
-   sudo apt-get install docker.io
-   
-   # CentOS/RHEL
-   sudo yum install docker
-   ```
+### Dependency Issues
 
-3. **Install Go** (for backend templates):
-
-   ```bash
-   # Download and install Go
-   wget https://go.dev/dl/go1.23.0.linux-amd64.tar.gz
-   sudo tar -C /usr/local -xzf go1.23.0.linux-amd64.tar.gz
-   echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
-   ```
-
-## Docker Issues
-
-**Problem**: Docker container fails to run
+**Problem**: Package dependencies are outdated or incompatible.
 
 **Solutions**:
 
-1. **Check Docker installation**:
+```bash
+# Update dependencies
+generator generate --update-versions
 
-   ```bash
-   docker --version
-   docker run hello-world
-   ```
+# Check for security vulnerabilities
+generator audit --security
 
-2. **Use correct volume mounts**:
+# Use specific versions
+# In configuration file:
+versions:
+  react: "18.2.0"
+  typescript: "4.9.5"
+```
 
-   ```bash
-   docker run -v $(pwd):/workspace ghcr.io/cuesoftinc/open-source-project-generator:latest
-   ```
+## Template Problems
 
-3. **Check permissions**:
+### Template Syntax Errors
 
-   ```bash
-   # Ensure current user can access Docker
-   sudo usermod -aG docker $USER
-   # Logout and login again
-   ```
-
-## Template-Specific Issues
-
-### Frontend Template Issues
-
-**Problem**: Node.js version conflicts in generated projects
+**Problem**: Template compilation fails due to syntax errors.
 
 **Solutions**:
 
-1. **Check Node.js version**:
+```bash
+# Validate template syntax
+generator template validate ./my-template
 
-   ```bash
-   node --version
-   # Should be 20.x or later
-   ```
+# Check for common syntax issues
+# - Missing {{end}} for {{if}} statements
+# - Incorrect variable references
+# - Invalid function calls
 
-2. **Update Node.js**:
+# Test template with sample data
+generator template test ./my-template --data sample-data.yaml
+```
 
-   ```bash
-   # Using nvm
-   nvm install 20
-   nvm use 20
-   
-   # Or download from nodejs.org
-   ```
+### Template Variable Issues
 
-3. **Use .nvmrc in generated projects**:
-
-   ```bash
-   cd generated-project/App/main
-   nvm use
-   npm install
-   ```
-
-**Problem**: Next.js build failures
+**Problem**: Template variables are undefined or incorrect.
 
 **Solutions**:
 
-1. **Clear Next.js cache**:
+```bash
+# Check template metadata
+generator template info my-template
 
-   ```bash
-   rm -rf .next
-   npm run build
-   ```
+# Validate variable definitions
+generator template validate ./my-template --check-variables
 
-2. **Update dependencies**:
+# Use template with explicit variables
+generator generate --template my-template --var project_name="MyProject"
+```
 
-   ```bash
-   npm update
-   npm audit fix
-   ```
+### Custom Template Issues
 
-3. **Check TypeScript configuration**:
-
-   ```bash
-   npx tsc --noEmit
-   ```
-
-### Backend Template Issues
-
-**Problem**: Go module resolution errors
+**Problem**: Custom template doesn't work as expected.
 
 **Solutions**:
 
-1. **Initialize Go module**:
+```bash
+# Validate custom template
+generator template validate ./custom-template --detailed
 
-   ```bash
-   cd generated-project/CommonServer
-   go mod init your-module-name
-   go mod tidy
-   ```
+# Check template structure
+ls -la ./custom-template/
+cat ./custom-template/metadata.yaml
 
-2. **Update Go dependencies**:
+# Test with minimal configuration
+generator generate --template ./custom-template --minimal
+```
 
-   ```bash
-   go get -u ./...
-   go mod tidy
-   ```
+## Performance Issues
 
-3. **Check Go version compatibility**:
+### Slow Generation
 
-   ```bash
-   go version
-   # Ensure compatibility with go.mod requirements
-   ```
-
-**Problem**: Database connection issues
+**Problem**: Project generation is slow.
 
 **Solutions**:
 
-1. **Check environment variables**:
+```bash
+# Use offline mode
+generator generate --offline
 
-   ```bash
-   # Ensure database configuration is set
-   cat .env
-   ```
+# Enable caching
+generator cache enable
 
-2. **Start database services**:
+# Use minimal generation
+generator generate --minimal
 
-   ```bash
-   docker-compose up -d postgres redis
-   ```
+# Check system resources
+top
+free -h
+df -h
+```
 
-3. **Run database migrations**:
+### Memory Issues
 
-   ```bash
-   make migrate-up
-   ```
-
-### Mobile Template Issues
-
-**Problem**: Android build failures
+**Problem**: Out of memory errors during generation.
 
 **Solutions**:
 
-1. **Check Android SDK**:
+```bash
+# Check available memory
+free -h
 
-   ```bash
-   # Ensure Android SDK is installed and configured
-   echo $ANDROID_HOME
-   ```
+# Use minimal generation
+generator generate --minimal
 
-2. **Update Gradle wrapper**:
+# Clear cache
+generator cache clear
 
-   ```bash
-   cd Mobile/android
-   ./gradlew wrapper --gradle-version=8.5
-   ```
+# Increase swap space (if needed)
+sudo swapon --show
+```
 
-3. **Clean and rebuild**:
+### Cache Issues
 
-   ```bash
-   ./gradlew clean
-   ./gradlew build
-   ```
-
-**Problem**: iOS build failures
+**Problem**: Cache corruption or performance issues.
 
 **Solutions**:
 
-1. **Update Xcode**:
-   - Ensure Xcode is updated to latest version
-   - Install command line tools: `xcode-select --install`
+```bash
+# Check cache status
+generator cache show
 
-2. **Install CocoaPods dependencies**:
+# Clean expired cache
+generator cache clean
 
-   ```bash
-   cd Mobile/ios
-   pod install --repo-update
-   ```
+# Clear all cache
+generator cache clear --force
 
-3. **Clean build folder**:
+# Rebuild cache
+generator update --templates --packages
+```
 
-   ```bash
-   # In Xcode: Product → Clean Build Folder
-   # Or via command line:
-   xcodebuild clean -workspace YourApp.xcworkspace -scheme YourApp
-   ```
+## Debugging
 
-### Infrastructure Template Issues
+### Enable Debug Mode
 
-**Problem**: Docker build failures
+```bash
+# Debug mode with detailed logging
+generator generate --debug --verbose
 
-**Solutions**:
+# Set debug log level
+export GENERATOR_LOG_LEVEL=debug
+generator generate
 
-1. **Check Docker version**:
+# Show debug information
+generator version --build-info
+```
 
-   ```bash
-   docker --version
-   # Should be 24.x or later
-   ```
+### Log Analysis
 
-2. **Clear Docker cache**:
+```bash
+# View recent logs
+generator logs --lines 100
 
-   ```bash
-   docker system prune -a
-   ```
+# Filter by log level
+generator logs --level error
 
-3. **Build with no cache**:
+# Follow logs in real-time
+generator logs --follow
 
-   ```bash
-   docker build --no-cache -t your-app .
-   ```
+# Show log file locations
+generator logs --locations
+```
 
-**Problem**: Kubernetes deployment issues
+### System Information
 
-**Solutions**:
+```bash
+# Show system information
+generator version --system-info
 
-1. **Check cluster connectivity**:
+# Check dependencies
+generator version --dependencies
 
-   ```bash
-   kubectl cluster-info
-   kubectl get nodes
-   ```
+# Verify installation
+generator version --verify
+```
 
-2. **Validate manifests**:
+### Performance Profiling
 
-   ```bash
-   kubectl apply --dry-run=client -f Deploy/k8s/
-   ```
+```bash
+# Enable performance metrics
+generator generate --debug --profile
 
-3. **Check resource quotas**:
+# Check generation time
+time generator generate
 
-   ```bash
-   kubectl describe quota
-   kubectl top nodes
-   ```
-
-## Build Issues
-
-**Problem**: Build from source fails
-
-**Solutions**:
-
-1. **Check Go version**:
-
-   ```bash
-   go version
-   # Should be 1.23 or later
-   ```
-
-2. **Update dependencies**:
-
-   ```bash
-   go mod download
-   go mod tidy
-   ```
-
-3. **Clear module cache**:
-
-   ```bash
-   go clean -modcache
-   go mod download
-   ```
-
-4. **Build with verbose output**:
-
-   ```bash
-   go build -v -o generator ./cmd/generator
-   ```
+# Monitor resource usage
+generator generate --debug &
+top -p $!
+```
 
 ## Getting Help
 
+### Built-in Help
+
+```bash
+# General help
+generator --help
+
+# Command-specific help
+generator generate --help
+generator validate --help
+generator audit --help
+
+# Show examples
+generator <command> --help | grep -A 20 "Examples:"
+```
+
 ### Diagnostic Information
 
-When reporting issues, please include:
+```bash
+# Generate diagnostic report
+generator version --diagnostic > diagnostic.txt
+
+# Include system information
+generator version --system-info >> diagnostic.txt
+
+# Include configuration
+generator config show >> diagnostic.txt
+```
+
+### Community Support
+
+- **GitHub Issues**: [Report bugs and request features](https://github.com/cuesoftinc/open-source-project-generator/issues)
+- **Discussions**: [Community discussions](https://github.com/cuesoftinc/open-source-project-generator/discussions)
+- **Documentation**: [Online documentation](https://github.com/cuesoftinc/open-source-project-generator/wiki)
+- **Email Support**: [support@generator.dev](mailto:support@generator.dev)
+
+### Reporting Issues
+
+When reporting issues, include:
+
+1. **Generator version**: `generator version`
+2. **System information**: `generator version --system-info`
+3. **Configuration**: `generator config show`
+4. **Error logs**: `generator logs --level error --lines 50`
+5. **Steps to reproduce**: Detailed steps to reproduce the issue
+6. **Expected behavior**: What you expected to happen
+7. **Actual behavior**: What actually happened
+
+### Example Issue Report
 
 ```bash
-# System information
-uname -a
-go version 2>/dev/null || echo "Go not installed"
-docker --version 2>/dev/null || echo "Docker not installed"
+# Generate complete diagnostic information
+generator version --diagnostic > issue-report.txt
+generator config show >> issue-report.txt
+generator logs --level error --lines 100 >> issue-report.txt
 
-# Generator information
+# Attach to GitHub issue
+```
+
+## Common Solutions
+
+### Quick Fixes
+
+```bash
+# Reset to defaults
+generator config reset
+
+# Clear cache and rebuild
+generator cache clear
+generator update --templates --packages
+
+# Use offline mode
+generator generate --offline
+
+# Use minimal generation
+generator generate --minimal
+
+# Force regeneration
+generator generate --force
+```
+
+### Environment Reset
+
+```bash
+# Remove all configuration
+rm -rf ~/.generator
+rm -rf ~/.cache/generator
+
+# Reinstall
+curl -sSL https://raw.githubusercontent.com/cuesoftinc/open-source-project-generator/main/scripts/install.sh | bash
+
+# Verify installation
 generator --version
-generator config show
-
-# Environment
-echo "PATH: $PATH"
-echo "GOPATH: $GOPATH"
-echo "HOME: $HOME"
 ```
 
-### Log Files
-
-Enable debug logging for detailed troubleshooting:
+### Configuration Reset
 
 ```bash
-# Set log level
-export GENERATOR_LOG_LEVEL=debug
+# Reset configuration to defaults
+generator config reset
 
-# Run with verbose output
-generator generate --log-level debug --verbose
+# Remove custom configuration
+rm -f ~/.config/generator/config.yaml
+rm -f ./generator.yaml
 
-# Check log files
-ls -la ~/.cache/generator/logs/
+# Start fresh
+generator generate
 ```
 
-### Common Log Locations
-
-- Linux: `~/.cache/generator/logs/`
-- macOS: `~/Library/Caches/generator/logs/`
-- Windows: `%LOCALAPPDATA%\generator\logs\`
-
-### Support Channels
-
-1. **GitHub Issues**: [Report bugs and feature requests](https://github.com/cuesoftinc/open-source-project-generator/issues)
-2. **Discussions**: [Community support](https://github.com/cuesoftinc/open-source-project-generator/discussions)
-3. **Documentation**: [Wiki and guides](https://github.com/cuesoftinc/open-source-project-generator/wiki)
-4. **Email**: [Direct support](mailto:support@generator.dev)
-
-### Before Reporting Issues
-
-1. **Search existing issues**: Check if the problem has been reported
-2. **Try latest version**: Update to the latest release
-3. **Minimal reproduction**: Provide steps to reproduce the issue
-4. **Include logs**: Attach relevant log files and error messages
-5. **System details**: Include OS, architecture, and version information
-
-## FAQ
-
-### Q: Can I use the generator offline?
-
-A: Yes, use the `--offline` flag to use cached templates and versions.
-
-### Q: How do I update templates?
-
-A: Templates are updated with each release. Update the generator to get the latest templates.
-
-### Q: Can I create custom templates?
-
-A: Yes, see the [Template Development Guide](TEMPLATE_DEVELOPMENT.md) for details.
-
-### Q: Is the generator safe to use in corporate environments?
-
-A: Yes, the generator doesn't send data externally except for fetching package versions. Use `--offline` mode for complete isolation.
-
-### Q: How do I contribute to the project?
-
-A: See [CONTRIBUTING.md](../CONTRIBUTING.md) for contribution guidelines.
+This troubleshooting guide should help you resolve most common issues with the Open Source Project Generator. If you continue to experience problems, please refer to the community support channels listed above.
