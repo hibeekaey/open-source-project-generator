@@ -228,6 +228,8 @@ Features:
 /usr/share/man/man1/generator.1.gz
 %if 0%{?rhel} >= 7 || 0%{?fedora}
 %license /usr/share/doc/${APP_NAME}/LICENSE
+%else
+/usr/share/doc/${APP_NAME}/LICENSE
 %endif
 
 %post
@@ -444,7 +446,7 @@ main() {
         exit 1
     fi
     
-    print_status "Building packages for ${APP_NAME} v${VERSION}"
+    print_status "Building packages for ${APP_NAME} ${VERSION}"
     
     prepare_package_dir
     
