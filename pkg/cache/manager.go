@@ -354,6 +354,186 @@ func (m *Manager) OnCacheEviction(callback func(key string, reason string)) { m.
 func (m *Manager) GetHitRate() float64                                      { return m.metrics.GetHitRate() }
 func (m *Manager) GetMissRate() float64                                     { return m.metrics.GetMissRate() }
 
+// GetHealthReport performs a comprehensive health check and returns a detailed report
+func (m *Manager) GetHealthReport() (*interfaces.CacheHealth, error) {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+
+	// Get health report from validator
+	healthReport, err := m.validator.CheckHealth(m.entries, m.metrics.GetMetrics())
+	if err != nil {
+		return nil, fmt.Errorf("failed to check cache health: %w", err)
+	}
+
+	// Convert to CacheHealth format
+	cacheHealth := &interfaces.CacheHealth{
+		Status:          healthReport.OverallHealth,
+		LastCheck:       healthReport.Timestamp,
+		Issues:          make([]interfaces.CacheIssue, 0),
+		Warnings:        make([]interfaces.CacheWarning, 0),
+		Recommendations: healthReport.Recommendations,
+	}
+
+	// Convert issues to CacheIssue format
+	for _, issue := range healthReport.Issues {
+		severity := "medium"
+		if healthReport.OverallHealth == "unhealthy" {
+			severity = "high"
+		}
+
+		cacheIssue := interfaces.CacheIssue{
+			Type:        interfaces.CacheIssueTypeCorruption,
+			Severity:    severity,
+			Description: issue,
+			DetectedAt:  healthReport.Timestamp,
+			Resolution:  "Run cache repair or cleanup",
+			Fixable:     true,
+		}
+		cacheHealth.Issues = append(cacheHealth.Issues, cacheIssue)
+	}
+
+	// Add warnings for performance issues
+	metrics := m.metrics.GetMetrics()
+	if metrics.Gets > 0 {
+		hitRate := float64(metrics.Hits) / float64(metrics.Gets)
+		if hitRate < 0.7 {
+			warning := interfaces.CacheWarning{
+				Type:        interfaces.CacheWarningTypeHitRate,
+				Description: "Cache hit rate is below optimal threshold",
+				Threshold:   0.7,
+				Current:     hitRate,
+				Suggestion:  "Consider increasing cache size or reviewing cache strategy",
+			}
+			cacheHealth.Warnings = append(cacheHealth.Warnings, warning)
+		}
+	}
+
+	// Add size warnings
+	if m.config.MaxSize > 0 && metrics.CurrentSize > int64(float64(m.config.MaxSize)*0.9) {
+		warning := interfaces.CacheWarning{
+			Type:        interfaces.CacheWarningTypeSize,
+			Description: "Cache size is approaching maximum limit",
+			Threshold:   m.config.MaxSize,
+			Current:     metrics.CurrentSize,
+			Suggestion:  "Consider increasing MaxSize or running cleanup",
+		}
+		cacheHealth.Warnings = append(cacheHealth.Warnings, warning)
+	}
+
+	return cacheHealth, nil
+}
+
+// DetectCorruption detects corrupted cache entries and returns their keys
+func (m *Manager) DetectCorruption() ([]string, error) {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+
+	corruptedKeys := make([]string, 0)
+	now := time.Now()
+
+	for key, entry := range m.entries {
+		if entry == nil {
+			corruptedKeys = append(corruptedKeys, key)
+			continue
+		}
+
+		// Check for basic corruption indicators
+		if entry.Size < 0 || entry.AccessCount < 0 || entry.Key != key {
+			corruptedKeys = append(corruptedKeys, key)
+			continue
+		}
+
+		// Check for timestamp corruption
+		if entry.CreatedAt.After(now) || entry.UpdatedAt.After(now) || entry.AccessedAt.After(now) {
+			corruptedKeys = append(corruptedKeys, key)
+			continue
+		}
+
+		// Check for metadata corruption if compressed
+		if entry.Compressed && entry.Metadata != nil {
+			if _, exists := entry.Metadata["compression_type"]; !exists {
+				corruptedKeys = append(corruptedKeys, key)
+				continue
+			}
+		}
+	}
+
+	return corruptedKeys, nil
+}
+
+// AutoRepair automatically repairs corrupted cache entries
+func (m *Manager) AutoRepair() (*interfaces.CacheRepairResult, error) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	// Detect corrupted entries before repair
+	corruptedKeys, err := m.DetectCorruption()
+	if err != nil {
+		return nil, fmt.Errorf("failed to detect corruption: %w", err)
+	}
+
+	originalCount := len(m.entries)
+
+	// Repair entries using validator
+	repairedEntries := m.validator.RepairEntries(m.entries)
+
+	// Update entries with repaired versions
+	m.entries = repairedEntries
+
+	// Update metrics
+	m.updateMetricsAndSave()
+
+	// Create repair result
+	result := &interfaces.CacheRepairResult{
+		Timestamp:       time.Now(),
+		OriginalEntries: originalCount,
+		RepairedEntries: len(repairedEntries),
+		RemovedEntries:  originalCount - len(repairedEntries),
+		CorruptedKeys:   corruptedKeys,
+		Success:         true,
+	}
+
+	return result, nil
+}
+
+// MonitorHealth continuously monitors cache health (for background monitoring)
+func (m *Manager) MonitorHealth() <-chan *interfaces.CacheHealth {
+	healthChan := make(chan *interfaces.CacheHealth, 1)
+
+	go func() {
+		defer close(healthChan)
+
+		ticker := time.NewTicker(5 * time.Minute) // Check every 5 minutes
+		defer ticker.Stop()
+
+		for range ticker.C {
+			health, err := m.GetHealthReport()
+			if err != nil {
+				// Create error health report
+				health = &interfaces.CacheHealth{
+					Status:    interfaces.CacheStatusUnhealthy,
+					LastCheck: time.Now(),
+					Issues: []interfaces.CacheIssue{{
+						Type:        interfaces.CacheIssueTypeConfiguration,
+						Severity:    "high",
+						Description: fmt.Sprintf("Health check failed: %v", err),
+						DetectedAt:  time.Now(),
+						Fixable:     false,
+					}},
+				}
+			}
+
+			select {
+			case healthChan <- health:
+			default:
+				// Channel is full, skip this update
+			}
+		}
+	}()
+
+	return healthChan
+}
+
 // Internal callback handlers
 func (m *Manager) onCacheHit(key string) {
 	m.metrics.RecordHit(key)

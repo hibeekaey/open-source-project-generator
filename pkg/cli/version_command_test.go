@@ -27,6 +27,14 @@ func (m *MockCLIInterface) GetVersionManager() interfaces.VersionManager {
 	return args.Get(0).(interfaces.VersionManager)
 }
 
+func (m *MockCLIInterface) GetWorkflowManager() interfaces.WorkflowManager {
+	args := m.Called()
+	if args.Get(0) == nil {
+		return nil
+	}
+	return args.Get(0).(interfaces.WorkflowManager)
+}
+
 func (m *MockCLIInterface) GetBuildInfo() (version, gitCommit, buildTime string) {
 	args := m.Called()
 	return args.String(0), args.String(1), args.String(2)

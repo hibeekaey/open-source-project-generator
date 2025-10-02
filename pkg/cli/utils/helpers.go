@@ -31,8 +31,10 @@ func NewHelper() *Helper {
 // DetectNonInteractiveMode detects if the CLI is running in non-interactive mode
 func (h *Helper) DetectNonInteractiveMode(cmd *cobra.Command) bool {
 	// Check if explicitly set via flag
-	if nonInteractive, err := cmd.Flags().GetBool("non-interactive"); err == nil && nonInteractive {
-		return true
+	if cmd != nil {
+		if nonInteractive, err := cmd.Flags().GetBool("non-interactive"); err == nil && nonInteractive {
+			return true
+		}
 	}
 
 	// Check for CI environment variables

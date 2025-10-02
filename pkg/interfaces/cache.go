@@ -63,6 +63,12 @@ type CacheManager interface {
 	OnCacheEviction(callback func(key string, reason string))
 	GetHitRate() float64
 	GetMissRate() float64
+
+	// Health monitoring and repair
+	GetHealthReport() (*CacheHealth, error)
+	DetectCorruption() ([]string, error)
+	AutoRepair() (*CacheRepairResult, error)
+	MonitorHealth() <-chan *CacheHealth
 }
 
 // CacheStats contains cache statistics and information
@@ -230,6 +236,17 @@ const (
 	CacheWarningTypePerformance = "performance"
 	CacheWarningTypeExpiration  = "expiration"
 )
+
+// CacheRepairResult represents the result of a cache repair operation
+type CacheRepairResult struct {
+	Timestamp       time.Time `json:"timestamp"`
+	OriginalEntries int       `json:"original_entries"`
+	RepairedEntries int       `json:"repaired_entries"`
+	RemovedEntries  int       `json:"removed_entries"`
+	CorruptedKeys   []string  `json:"corrupted_keys"`
+	Success         bool      `json:"success"`
+	Errors          []string  `json:"errors,omitempty"`
+}
 
 // StorageBackend defines the interface for cache storage backends.
 type StorageBackend interface {

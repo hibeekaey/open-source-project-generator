@@ -5,6 +5,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -66,6 +67,22 @@ func NewGenerateHandler(
 func (gh *GenerateHandler) GenerateProjectFromComponents(config *models.ProjectConfig, outputPath string, options interfaces.GenerateOptions) error {
 	gh.cli.VerboseOutput("🏗️  Building your project structure...")
 
+	// Use performance optimization if available
+	if optimizedCLI, ok := gh.cli.(interface {
+		OptimizeCommand(string, func(ctx context.Context) (interface{}, error)) (interface{}, error)
+	}); ok {
+		_, err := optimizedCLI.OptimizeCommand("generate", func(ctx context.Context) (interface{}, error) {
+			return nil, gh.generateProjectInternal(config, outputPath, options)
+		})
+		return err
+	}
+
+	// Fallback to direct execution
+	return gh.generateProjectInternal(config, outputPath, options)
+}
+
+// generateProjectInternal performs the actual project generation
+func (gh *GenerateHandler) generateProjectInternal(config *models.ProjectConfig, outputPath string, options interfaces.GenerateOptions) error {
 	// Create the base project structure first
 	if err := gh.generateBaseStructure(config, outputPath); err != nil {
 		return fmt.Errorf("🚫 %s %s",

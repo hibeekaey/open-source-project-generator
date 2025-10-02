@@ -1,9 +1,8 @@
 package config
 
 import (
-	"fmt"
 	"os"
-	"strings"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -11,326 +10,115 @@ import (
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
 )
 
-// MockConfigManager implements interfaces.ConfigManager for testing
-type MockConfigManager struct {
-	configs  map[string]*models.ProjectConfig
-	settings map[string]any
-	schema   *interfaces.ConfigSchema
-}
+// MockLogger implements a simple logger for testing
+type MockLogger struct{}
 
-// NewMockConfigManager creates a new mock config manager
-func NewMockConfigManager() *MockConfigManager {
-	return &MockConfigManager{
-		configs:  make(map[string]*models.ProjectConfig),
-		settings: make(map[string]any),
-		schema: &interfaces.ConfigSchema{
-			Properties: map[string]interfaces.PropertySchema{
-				"name": {
-					Type:        "string",
-					Description: "Project name",
-					Required:    true,
-				},
-				"organization": {
-					Type:        "string",
-					Description: "Organization name",
-					Required:    false,
-				},
-			},
-			Required: []string{"name"},
-		},
-	}
-}
-
-// LoadDefaults loads default configuration
-func (m *MockConfigManager) LoadDefaults() (*models.ProjectConfig, error) {
-	return &models.ProjectConfig{
-		Name:         "default-project",
-		Organization: "default-org",
-		Description:  "Default project description",
-		License:      "MIT",
-	}, nil
-}
-
-// ValidateConfig validates project configuration
-func (m *MockConfigManager) ValidateConfig(config *models.ProjectConfig) error {
-	if config == nil {
-		return fmt.Errorf("config cannot be nil")
-	}
-	if config.Name == "" {
-		return fmt.Errorf("project name is required")
-	}
+func (m *MockLogger) Debug(msg string, args ...interface{})                               {}
+func (m *MockLogger) Info(msg string, args ...interface{})                                {}
+func (m *MockLogger) Warn(msg string, args ...interface{})                                {}
+func (m *MockLogger) Error(msg string, args ...interface{})                               {}
+func (m *MockLogger) Fatal(msg string, args ...interface{})                               {}
+func (m *MockLogger) DebugWithFields(msg string, fields map[string]interface{})           {}
+func (m *MockLogger) InfoWithFields(msg string, fields map[string]interface{})            {}
+func (m *MockLogger) WarnWithFields(msg string, fields map[string]interface{})            {}
+func (m *MockLogger) ErrorWithFields(msg string, fields map[string]interface{})           {}
+func (m *MockLogger) FatalWithFields(msg string, fields map[string]interface{})           {}
+func (m *MockLogger) ErrorWithError(msg string, err error, fields map[string]interface{}) {}
+func (m *MockLogger) StartOperation(operation string, fields map[string]interface{}) *interfaces.OperationContext {
 	return nil
 }
-
-// SaveConfig saves configuration to file
-func (m *MockConfigManager) SaveConfig(config *models.ProjectConfig, path string) error {
-	if config == nil {
-		return fmt.Errorf("config cannot be nil")
-	}
-	if path == "" {
-		return fmt.Errorf("path cannot be empty")
-	}
-	m.configs[path] = config
+func (m *MockLogger) LogOperationStart(operation string, fields map[string]interface{}) {}
+func (m *MockLogger) LogOperationSuccess(operation string, duration time.Duration, fields map[string]interface{}) {
+}
+func (m *MockLogger) LogOperationError(operation string, err error, fields map[string]interface{}) {}
+func (m *MockLogger) FinishOperation(ctx *interfaces.OperationContext, additionalFields map[string]interface{}) {
+}
+func (m *MockLogger) FinishOperationWithError(ctx *interfaces.OperationContext, err error, additionalFields map[string]interface{}) {
+}
+func (m *MockLogger) LogPerformanceMetrics(operation string, metrics map[string]interface{}) {}
+func (m *MockLogger) LogMemoryUsage(operation string)                                        {}
+func (m *MockLogger) SetLevel(level int)                                                     {}
+func (m *MockLogger) GetLevel() int                                                          { return 0 }
+func (m *MockLogger) SetJSONOutput(enable bool)                                              {}
+func (m *MockLogger) SetCallerInfo(enable bool)                                              {}
+func (m *MockLogger) IsDebugEnabled() bool                                                   { return false }
+func (m *MockLogger) IsInfoEnabled() bool                                                    { return true }
+func (m *MockLogger) WithComponent(component string) interfaces.Logger                       { return m }
+func (m *MockLogger) WithFields(fields map[string]interface{}) interfaces.LoggerContext {
+	return &MockLoggerContext{}
+}
+func (m *MockLogger) GetLogDir() string { return "" }
+func (m *MockLogger) GetRecentEntries(limit int) []interfaces.LogEntry {
 	return nil
 }
-
-// LoadConfig loads configuration from file
-func (m *MockConfigManager) LoadConfig(path string) (*models.ProjectConfig, error) {
-	if path == "" {
-		return nil, fmt.Errorf("path cannot be empty")
-	}
-	config, exists := m.configs[path]
-	if !exists {
-		return nil, fmt.Errorf("config file not found: %s", path)
-	}
-	return config, nil
-}
-
-// GetSetting gets a configuration setting
-func (m *MockConfigManager) GetSetting(key string) (any, error) {
-	if key == "" {
-		return nil, fmt.Errorf("key cannot be empty")
-	}
-	value, exists := m.settings[key]
-	if !exists {
-		return nil, fmt.Errorf("setting not found: %s", key)
-	}
-	return value, nil
-}
-
-// SetSetting sets a configuration setting
-func (m *MockConfigManager) SetSetting(key string, value any) error {
-	if key == "" {
-		return fmt.Errorf("key cannot be empty")
-	}
-	m.settings[key] = value
+func (m *MockLogger) FilterEntries(level string, component string, since time.Time, limit int) []interfaces.LogEntry {
 	return nil
 }
+func (m *MockLogger) GetLogFiles() ([]string, error)              { return nil, nil }
+func (m *MockLogger) ReadLogFile(filename string) ([]byte, error) { return nil, nil }
+func (m *MockLogger) Close() error                                { return nil }
 
-// ValidateSettings validates all settings
-func (m *MockConfigManager) ValidateSettings() error {
-	for key, value := range m.settings {
-		if key == "" {
-			return fmt.Errorf("empty key found in settings")
-		}
-		if value == nil {
-			return fmt.Errorf("nil value found for key: %s", key)
-		}
-	}
-	return nil
-}
+type MockLoggerContext struct{}
 
-// LoadFromFile loads configuration from file
-func (m *MockConfigManager) LoadFromFile(path string) (*models.ProjectConfig, error) {
-	return m.LoadConfig(path)
-}
+func (m *MockLoggerContext) Debug(msg string, args ...interface{}) {}
+func (m *MockLoggerContext) Info(msg string, args ...interface{})  {}
+func (m *MockLoggerContext) Warn(msg string, args ...interface{})  {}
+func (m *MockLoggerContext) Error(msg string, args ...interface{}) {}
+func (m *MockLoggerContext) ErrorWithError(msg string, err error)  {}
 
-// LoadFromEnvironment loads configuration from environment variables
-func (m *MockConfigManager) LoadFromEnvironment() (*models.ProjectConfig, error) {
-	config := &models.ProjectConfig{}
-
-	if name := os.Getenv("GENERATOR_PROJECT_NAME"); name != "" {
-		config.Name = name
-	}
-	if org := os.Getenv("GENERATOR_ORGANIZATION"); org != "" {
-		config.Organization = org
-	}
-	if desc := os.Getenv("GENERATOR_DESCRIPTION"); desc != "" {
-		config.Description = desc
-	}
-	if license := os.Getenv("GENERATOR_LICENSE"); license != "" {
-		config.License = license
-	}
-
-	return config, nil
-}
-
-// MergeConfigurations merges multiple configurations
-func (m *MockConfigManager) MergeConfigurations(configs ...*models.ProjectConfig) *models.ProjectConfig {
-	if len(configs) == 0 {
-		return &models.ProjectConfig{}
-	}
-
-	result := &models.ProjectConfig{}
-
-	for _, config := range configs {
-		if config == nil {
-			continue
-		}
-
-		if config.Name != "" {
-			result.Name = config.Name
-		}
-		if config.Organization != "" {
-			result.Organization = config.Organization
-		}
-		if config.Description != "" {
-			result.Description = config.Description
-		}
-		if config.License != "" {
-			result.License = config.License
-		}
-	}
-
-	return result
-}
-
-// GetConfigSchema returns the configuration schema
-func (m *MockConfigManager) GetConfigSchema() *interfaces.ConfigSchema {
-	return m.schema
-}
-
-// ValidateConfigFromFile validates configuration from file
-func (m *MockConfigManager) ValidateConfigFromFile(path string) (*interfaces.ConfigValidationResult, error) {
-	config, err := m.LoadConfig(path)
+func TestNewManager(t *testing.T) {
+	// Create temporary directory for testing
+	tempDir, err := os.MkdirTemp("", "config_test")
 	if err != nil {
-		return &interfaces.ConfigValidationResult{
-			Valid: false,
-			Errors: []interfaces.ConfigValidationError{
-				{
-					Field:   "file",
-					Message: err.Error(),
-					Type:    "file_error",
-				},
-			},
-		}, nil
+		t.Fatalf("Failed to create temp directory: %v", err)
 	}
+	defer os.RemoveAll(tempDir)
 
-	if err := m.ValidateConfig(config); err != nil {
-		return &interfaces.ConfigValidationResult{
-			Valid: false,
-			Errors: []interfaces.ConfigValidationError{
-				{
-					Field:   "config",
-					Message: err.Error(),
-					Type:    "validation_error",
-				},
-			},
-		}, nil
-	}
+	logger := &MockLogger{}
 
-	return &interfaces.ConfigValidationResult{
-		Valid:  true,
-		Errors: []interfaces.ConfigValidationError{},
-	}, nil
-}
-
-// GetConfigSources returns configuration sources
-func (m *MockConfigManager) GetConfigSources() ([]interfaces.ConfigSource, error) {
-	return []interfaces.ConfigSource{
-		{
-			Type:     "file",
-			Location: "/path/to/config.yaml",
-			Priority: 1,
-		},
-		{
-			Type:     "environment",
-			Location: "env",
-			Priority: 2,
-		},
-	}, nil
-}
-
-// GetConfigLocation returns configuration location
-func (m *MockConfigManager) GetConfigLocation() string {
-	return "/path/to/config.yaml"
-}
-
-// CreateDefaultConfig creates default configuration file
-func (m *MockConfigManager) CreateDefaultConfig(path string) error {
-	if path == "" {
-		return fmt.Errorf("path cannot be empty")
-	}
-
-	defaultConfig := &models.ProjectConfig{
-		Name:         "new-project",
-		Organization: "my-org",
-		Description:  "A new project",
-		License:      "MIT",
-	}
-
-	return m.SaveConfig(defaultConfig, path)
-}
-
-// BackupConfig creates a backup of configuration
-func (m *MockConfigManager) BackupConfig(path string) error {
-	if path == "" {
-		return fmt.Errorf("path cannot be empty")
-	}
-
-	config, exists := m.configs[path]
-	if !exists {
-		return fmt.Errorf("config not found at path: %s", path)
-	}
-
-	backupPath := path + ".backup." + time.Now().Format("20060102150405")
-	return m.SaveConfig(config, backupPath)
-}
-
-// RestoreConfig restores configuration from backup
-func (m *MockConfigManager) RestoreConfig(backupPath string) error {
-	if backupPath == "" {
-		return fmt.Errorf("backup path cannot be empty")
-	}
-
-	config, err := m.LoadConfig(backupPath)
+	// Create manager
+	manager, err := NewManager(tempDir, logger)
 	if err != nil {
-		return err
+		t.Fatalf("Failed to create manager: %v", err)
 	}
 
-	// For simplicity, restore to the original path (remove .backup.timestamp)
-	originalPath := strings.Split(backupPath, ".backup.")[0]
-	m.configs[originalPath] = config
-	return nil
+	if manager == nil {
+		t.Fatal("Manager is nil")
+	}
 }
 
-// LoadEnvironmentVariables loads environment variables
-func (m *MockConfigManager) LoadEnvironmentVariables() map[string]string {
-	envVars := make(map[string]string)
-
-	if name := os.Getenv("GENERATOR_PROJECT_NAME"); name != "" {
-		envVars["GENERATOR_PROJECT_NAME"] = name
+func TestManagerLoadDefaults(t *testing.T) {
+	// Create temporary directory for testing
+	tempDir, err := os.MkdirTemp("", "config_test")
+	if err != nil {
+		t.Fatalf("Failed to create temp directory: %v", err)
 	}
-	if org := os.Getenv("GENERATOR_ORGANIZATION"); org != "" {
-		envVars["GENERATOR_ORGANIZATION"] = org
-	}
+	defer os.RemoveAll(tempDir)
 
-	return envVars
-}
+	logger := &MockLogger{}
 
-// SetEnvironmentDefaults sets environment defaults
-func (m *MockConfigManager) SetEnvironmentDefaults() error {
-	defaults := map[string]string{
-		"GENERATOR_LICENSE": "MIT",
-		"GENERATOR_OUTPUT":  "./output",
+	// Create manager
+	manager, err := NewManager(tempDir, logger)
+	if err != nil {
+		t.Fatalf("Failed to create manager: %v", err)
 	}
 
-	for key, value := range defaults {
-		if os.Getenv(key) == "" {
-			_ = os.Setenv(key, value)
-		}
-	}
-
-	return nil
-}
-
-// GetEnvironmentPrefix returns environment prefix
-func (m *MockConfigManager) GetEnvironmentPrefix() string {
-	return "GENERATOR"
-}
-
-// Test functions
-
-func TestMockConfigManager_LoadDefaults(t *testing.T) {
-	manager := NewMockConfigManager()
-
+	// Load defaults
 	config, err := manager.LoadDefaults()
 	if err != nil {
-		t.Fatalf("LoadDefaults failed: %v", err)
+		t.Fatalf("Failed to load defaults: %v", err)
 	}
 
-	if config.Name != "default-project" {
-		t.Errorf("Expected name 'default-project', got '%s'", config.Name)
+	if config == nil {
+		t.Fatal("Config is nil")
+	}
+
+	if config.Name != "my-project" {
+		t.Errorf("Expected name 'my-project', got '%s'", config.Name)
+	}
+
+	if config.Organization != "my-org" {
+		t.Errorf("Expected organization 'my-org', got '%s'", config.Organization)
 	}
 
 	if config.License != "MIT" {
@@ -338,436 +126,207 @@ func TestMockConfigManager_LoadDefaults(t *testing.T) {
 	}
 }
 
-func TestMockConfigManager_ValidateConfig(t *testing.T) {
-	manager := NewMockConfigManager()
-
-	tests := []struct {
-		name        string
-		config      *models.ProjectConfig
-		expectError bool
-	}{
-		{
-			name: "valid config",
-			config: &models.ProjectConfig{
-				Name:         "test-project",
-				Organization: "test-org",
-				License:      "MIT",
-			},
-			expectError: false,
-		},
-		{
-			name:        "nil config",
-			config:      nil,
-			expectError: true,
-		},
-		{
-			name: "empty name",
-			config: &models.ProjectConfig{
-				Name:         "",
-				Organization: "test-org",
-				License:      "MIT",
-			},
-			expectError: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := manager.ValidateConfig(tt.config)
-			if tt.expectError && err == nil {
-				t.Error("Expected error but got none")
-			}
-			if !tt.expectError && err != nil {
-				t.Errorf("Expected no error but got: %v", err)
-			}
-		})
-	}
-}
-
-func TestMockConfigManager_SaveAndLoadConfig(t *testing.T) {
-	manager := NewMockConfigManager()
-
-	config := &models.ProjectConfig{
-		Name:         "save-test",
-		Organization: "save-org",
-		Description:  "Save test description",
-		License:      "Apache-2.0",
-	}
-
-	// Test save
-	err := manager.SaveConfig(config, "/test/path/config.yaml")
+func TestManagerValidateConfig(t *testing.T) {
+	// Create temporary directory for testing
+	tempDir, err := os.MkdirTemp("", "config_test")
 	if err != nil {
-		t.Fatalf("SaveConfig failed: %v", err)
+		t.Fatalf("Failed to create temp directory: %v", err)
 	}
+	defer os.RemoveAll(tempDir)
 
-	// Test load
-	loadedConfig, err := manager.LoadConfig("/test/path/config.yaml")
+	logger := &MockLogger{}
+
+	// Create manager
+	manager, err := NewManager(tempDir, logger)
 	if err != nil {
-		t.Fatalf("LoadConfig failed: %v", err)
+		t.Fatalf("Failed to create manager: %v", err)
 	}
 
-	if loadedConfig.Name != config.Name {
-		t.Errorf("Expected name '%s', got '%s'", config.Name, loadedConfig.Name)
+	// Test valid configuration
+	validConfig := &models.ProjectConfig{
+		Name:         "test-project",
+		Organization: "test-org",
+		License:      "MIT",
+		OutputPath:   "./output",
 	}
 
-	if loadedConfig.License != config.License {
-		t.Errorf("Expected license '%s', got '%s'", config.License, loadedConfig.License)
-	}
-}
-
-func TestMockConfigManager_Settings(t *testing.T) {
-	manager := NewMockConfigManager()
-
-	// Test set setting
-	err := manager.SetSetting("test_key", "test_value")
+	err = manager.ValidateConfig(validConfig)
 	if err != nil {
-		t.Fatalf("SetSetting failed: %v", err)
+		t.Errorf("Valid config should not have errors: %v", err)
 	}
 
-	// Test get setting
-	value, err := manager.GetSetting("test_key")
-	if err != nil {
-		t.Fatalf("GetSetting failed: %v", err)
+	// Test invalid configuration (missing required fields)
+	invalidConfig := &models.ProjectConfig{
+		License:    "MIT",
+		OutputPath: "./output",
 	}
 
-	if value != "test_value" {
-		t.Errorf("Expected 'test_value', got '%v'", value)
-	}
-
-	// Test get non-existent setting
-	_, err = manager.GetSetting("non_existent")
+	err = manager.ValidateConfig(invalidConfig)
 	if err == nil {
-		t.Error("Expected error for non-existent setting")
+		t.Error("Invalid config should have errors")
 	}
+}
 
-	// Test validate settings
-	err = manager.ValidateSettings()
+func TestManagerSaveAndLoadConfig(t *testing.T) {
+	// Create temporary directory for testing
+	tempDir, err := os.MkdirTemp("", "config_test")
 	if err != nil {
-		t.Fatalf("ValidateSettings failed: %v", err)
+		t.Fatalf("Failed to create temp directory: %v", err)
 	}
-}
+	defer os.RemoveAll(tempDir)
 
-func TestMockConfigManager_MergeConfigurations(t *testing.T) {
-	manager := NewMockConfigManager()
+	logger := &MockLogger{}
 
-	config1 := &models.ProjectConfig{
-		Name:         "project1",
-		Organization: "org1",
-	}
-
-	config2 := &models.ProjectConfig{
-		Description: "description2",
-		License:     "MIT",
-	}
-
-	config3 := &models.ProjectConfig{
-		Name:    "project3",   // Should override config1
-		License: "Apache-2.0", // Should override config2
-	}
-
-	merged := manager.MergeConfigurations(config1, config2, config3)
-
-	if merged.Name != "project3" {
-		t.Errorf("Expected name 'project3', got '%s'", merged.Name)
-	}
-
-	if merged.Organization != "org1" {
-		t.Errorf("Expected organization 'org1', got '%s'", merged.Organization)
-	}
-
-	if merged.Description != "description2" {
-		t.Errorf("Expected description 'description2', got '%s'", merged.Description)
-	}
-
-	if merged.License != "Apache-2.0" {
-		t.Errorf("Expected license 'Apache-2.0', got '%s'", merged.License)
-	}
-}
-
-func TestMockConfigManager_LoadFromEnvironment(t *testing.T) {
-	manager := NewMockConfigManager()
-
-	// Set environment variables
-	_ = os.Setenv("GENERATOR_PROJECT_NAME", "env-project")
-	_ = os.Setenv("GENERATOR_ORGANIZATION", "env-org")
-	defer func() {
-		_ = os.Unsetenv("GENERATOR_PROJECT_NAME")
-		_ = os.Unsetenv("GENERATOR_ORGANIZATION")
-	}()
-
-	config, err := manager.LoadFromEnvironment()
+	// Create manager
+	manager, err := NewManager(tempDir, logger)
 	if err != nil {
-		t.Fatalf("LoadFromEnvironment failed: %v", err)
+		t.Fatalf("Failed to create manager: %v", err)
 	}
 
-	if config.Name != "env-project" {
-		t.Errorf("Expected name 'env-project', got '%s'", config.Name)
+	// Create test configuration
+	testConfig := &models.ProjectConfig{
+		Name:         "test-project",
+		Organization: "test-org",
+		Description:  "A test project",
+		License:      "MIT",
+		Author:       "Test Author",
+		Email:        "test@example.com",
+		Repository:   "https://github.com/test/repo",
+		OutputPath:   "./output",
+		Features:     []string{"feature1", "feature2"},
+		Components: models.Components{
+			Frontend: models.FrontendComponents{
+				NextJS: models.NextJSComponents{
+					App:    true,
+					Shared: true,
+				},
+			},
+			Backend: models.BackendComponents{
+				GoGin: true,
+			},
+		},
+		Versions: &models.VersionConfig{
+			Node: "20.0.0",
+			Go:   "1.21.0",
+			Packages: map[string]string{
+				"react": "18.2.0",
+				"next":  "13.4.0",
+			},
+		},
 	}
 
-	if config.Organization != "env-org" {
-		t.Errorf("Expected organization 'env-org', got '%s'", config.Organization)
+	// Test YAML format
+	yamlPath := filepath.Join(tempDir, "test-config.yaml")
+	err = manager.SaveConfig(testConfig, yamlPath)
+	if err != nil {
+		t.Fatalf("Failed to save YAML config: %v", err)
+	}
+
+	// Load YAML config
+	loadedConfig, err := manager.LoadConfig(yamlPath)
+	if err != nil {
+		t.Fatalf("Failed to load YAML config: %v", err)
+	}
+
+	// Verify loaded config
+	if loadedConfig.Name != testConfig.Name {
+		t.Errorf("Expected name '%s', got '%s'", testConfig.Name, loadedConfig.Name)
+	}
+
+	if loadedConfig.Organization != testConfig.Organization {
+		t.Errorf("Expected organization '%s', got '%s'", testConfig.Organization, loadedConfig.Organization)
+	}
+
+	// Test JSON format
+	jsonPath := filepath.Join(tempDir, "test-config.json")
+	err = manager.SaveConfig(testConfig, jsonPath)
+	if err != nil {
+		t.Fatalf("Failed to save JSON config: %v", err)
+	}
+
+	// Load JSON config
+	loadedJSONConfig, err := manager.LoadConfig(jsonPath)
+	if err != nil {
+		t.Fatalf("Failed to load JSON config: %v", err)
+	}
+
+	// Verify loaded JSON config
+	if loadedJSONConfig.Name != testConfig.Name {
+		t.Errorf("Expected name '%s', got '%s'", testConfig.Name, loadedJSONConfig.Name)
 	}
 }
 
-func TestMockConfigManager_GetConfigSchema(t *testing.T) {
-	manager := NewMockConfigManager()
+func TestConfigValidator(t *testing.T) {
+	schema := createConfigSchema()
+	validator := &ConfigValidator{schema: schema}
 
-	schema := manager.GetConfigSchema()
-	if schema == nil {
-		t.Fatal("Expected schema, got nil")
-	}
-
-	if len(schema.Properties) == 0 {
-		t.Error("Expected properties in schema")
-	}
-
-	if len(schema.Required) == 0 {
-		t.Error("Expected required fields in schema")
-	}
-
-	nameProperty, exists := schema.Properties["name"]
-	if !exists {
-		t.Error("Expected 'name' property in schema")
-	}
-
-	if nameProperty.Type != "string" {
-		t.Errorf("Expected name type 'string', got '%s'", nameProperty.Type)
-	}
-}
-
-func TestMockConfigManager_ValidateConfigFromFile(t *testing.T) {
-	manager := NewMockConfigManager()
-
-	// Set up a valid config
+	// Test valid project config
 	validConfig := &models.ProjectConfig{
 		Name:         "valid-project",
 		Organization: "valid-org",
 		License:      "MIT",
+		Email:        "test@example.com",
+		OutputPath:   "./output",
 	}
-	_ = manager.SaveConfig(validConfig, "/valid/path")
 
-	// Test valid config
-	result, err := manager.ValidateConfigFromFile("/valid/path")
+	result, err := validator.ValidateProjectConfig(validConfig)
 	if err != nil {
-		t.Fatalf("ValidateConfigFromFile failed: %v", err)
+		t.Fatalf("Validation failed: %v", err)
 	}
 
 	if !result.Valid {
-		t.Error("Expected valid result")
+		t.Errorf("Valid config should pass validation. Errors: %v", result.Errors)
 	}
 
-	if len(result.Errors) > 0 {
-		t.Errorf("Expected no errors, got %d", len(result.Errors))
+	// Test invalid project config
+	invalidConfig := &models.ProjectConfig{
+		Name:         "", // Missing required field
+		Organization: "valid-org",
+		Email:        "invalid-email", // Invalid email format
 	}
 
-	// Test invalid path
-	result, err = manager.ValidateConfigFromFile("/invalid/path")
+	result, err = validator.ValidateProjectConfig(invalidConfig)
 	if err != nil {
-		t.Fatalf("ValidateConfigFromFile failed: %v", err)
+		t.Fatalf("Validation failed: %v", err)
 	}
 
 	if result.Valid {
-		t.Error("Expected invalid result for non-existent file")
+		t.Error("Invalid config should fail validation")
 	}
 
 	if len(result.Errors) == 0 {
-		t.Error("Expected errors for non-existent file")
+		t.Error("Invalid config should have errors")
 	}
 }
 
-func TestMockConfigManager_ConfigSources(t *testing.T) {
-	manager := NewMockConfigManager()
-
-	sources, err := manager.GetConfigSources()
-	if err != nil {
-		t.Fatalf("GetConfigSources failed: %v", err)
-	}
-
-	if len(sources) == 0 {
-		t.Error("Expected config sources")
-	}
-
-	location := manager.GetConfigLocation()
-	if location == "" {
-		t.Error("Expected config location")
-	}
-}
-
-func TestMockConfigManager_BackupAndRestore(t *testing.T) {
-	manager := NewMockConfigManager()
-
-	// Set up initial config
-	originalConfig := &models.ProjectConfig{
-		Name:         "original",
-		Organization: "original-org",
-		License:      "MIT",
-	}
-	_ = manager.SaveConfig(originalConfig, "/test/config")
-
-	// Create backup
-	err := manager.BackupConfig("/test/config")
-	if err != nil {
-		t.Fatalf("BackupConfig failed: %v", err)
-	}
-
-	// Modify config
-	modifiedConfig := &models.ProjectConfig{
-		Name:         "modified",
-		Organization: "modified-org",
-		License:      "Apache-2.0",
-	}
-	_ = manager.SaveConfig(modifiedConfig, "/test/config")
-
-	// Restore from backup
-	backupPath := "/test/config.backup.20240101120000" // Mock backup path
-	_ = manager.SaveConfig(originalConfig, backupPath) // Simulate backup file
-
-	err = manager.RestoreConfig(backupPath)
-	if err != nil {
-		t.Fatalf("RestoreConfig failed: %v", err)
-	}
-
-	// Verify restoration
-	restoredConfig, err := manager.LoadConfig("/test/config")
-	if err != nil {
-		t.Fatalf("LoadConfig after restore failed: %v", err)
-	}
-
-	if restoredConfig.Name != "original" {
-		t.Errorf("Expected restored name 'original', got '%s'", restoredConfig.Name)
-	}
-}
-
-func TestMockConfigManager_EnvironmentVariables(t *testing.T) {
-	manager := NewMockConfigManager()
-
-	// Set test environment variables
-	_ = os.Setenv("GENERATOR_PROJECT_NAME", "env-test")
-	_ = os.Setenv("GENERATOR_ORGANIZATION", "env-test-org")
-	defer func() {
-		_ = os.Unsetenv("GENERATOR_PROJECT_NAME")
-		_ = os.Unsetenv("GENERATOR_ORGANIZATION")
-	}()
-
-	envVars := manager.LoadEnvironmentVariables()
-
-	if envVars["GENERATOR_PROJECT_NAME"] != "env-test" {
-		t.Errorf("Expected GENERATOR_PROJECT_NAME 'env-test', got '%s'", envVars["GENERATOR_PROJECT_NAME"])
-	}
-
-	if envVars["GENERATOR_ORGANIZATION"] != "env-test-org" {
-		t.Errorf("Expected GENERATOR_ORGANIZATION 'env-test-org', got '%s'", envVars["GENERATOR_ORGANIZATION"])
-	}
-
-	// Test environment defaults
-	_ = os.Unsetenv("GENERATOR_LICENSE")
-	err := manager.SetEnvironmentDefaults()
-	if err != nil {
-		t.Fatalf("SetEnvironmentDefaults failed: %v", err)
-	}
-
-	if os.Getenv("GENERATOR_LICENSE") != "MIT" {
-		t.Errorf("Expected GENERATOR_LICENSE 'MIT', got '%s'", os.Getenv("GENERATOR_LICENSE"))
-	}
-
-	// Test environment prefix
-	prefix := manager.GetEnvironmentPrefix()
-	if prefix != "GENERATOR" {
-		t.Errorf("Expected prefix 'GENERATOR', got '%s'", prefix)
-	}
-}
-
-func TestMockConfigManager_ErrorHandling(t *testing.T) {
-	manager := NewMockConfigManager()
-
-	// Test empty key in SetSetting
-	err := manager.SetSetting("", "value")
-	if err == nil {
-		t.Error("Expected error for empty key in SetSetting")
-	}
-
-	// Test empty key in GetSetting
-	_, err = manager.GetSetting("")
-	if err == nil {
-		t.Error("Expected error for empty key in GetSetting")
-	}
-
-	// Test empty path in SaveConfig
-	err = manager.SaveConfig(&models.ProjectConfig{Name: "test"}, "")
-	if err == nil {
-		t.Error("Expected error for empty path in SaveConfig")
-	}
-
-	// Test nil config in SaveConfig
-	err = manager.SaveConfig(nil, "/test/path")
-	if err == nil {
-		t.Error("Expected error for nil config in SaveConfig")
-	}
-
-	// Test empty path in LoadConfig
-	_, err = manager.LoadConfig("")
-	if err == nil {
-		t.Error("Expected error for empty path in LoadConfig")
-	}
-
-	// Test empty path in CreateDefaultConfig
-	err = manager.CreateDefaultConfig("")
-	if err == nil {
-		t.Error("Expected error for empty path in CreateDefaultConfig")
-	}
-
-	// Test empty path in BackupConfig
-	err = manager.BackupConfig("")
-	if err == nil {
-		t.Error("Expected error for empty path in BackupConfig")
-	}
-
-	// Test empty path in RestoreConfig
-	err = manager.RestoreConfig("")
-	if err == nil {
-		t.Error("Expected error for empty path in RestoreConfig")
-	}
-}
-
-// Benchmark tests
-func BenchmarkMockConfigManager_LoadDefaults(b *testing.B) {
-	manager := NewMockConfigManager()
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_, err := manager.LoadDefaults()
-		if err != nil {
-			b.Fatalf("LoadDefaults failed: %v", err)
+func TestHelperFunctions(t *testing.T) {
+	// Test isValidProjectName
+	validNames := []string{"my-project", "test_app", "Project123", "a"}
+	for _, name := range validNames {
+		if !isValidProjectName(name) {
+			t.Errorf("'%s' should be a valid project name", name)
 		}
 	}
-}
 
-func BenchmarkMockConfigManager_ValidateConfig(b *testing.B) {
-	manager := NewMockConfigManager()
-	config := &models.ProjectConfig{
-		Name:         "benchmark-project",
-		Organization: "benchmark-org",
-		License:      "MIT",
-	}
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		err := manager.ValidateConfig(config)
-		if err != nil {
-			b.Fatalf("ValidateConfig failed: %v", err)
+	invalidNames := []string{"", "my project", "test@app", "very-long-project-name-that-exceeds-the-maximum-allowed-length-of-one-hundred-characters-and-should-be-rejected"}
+	for _, name := range invalidNames {
+		if isValidProjectName(name) {
+			t.Errorf("'%s' should be an invalid project name", name)
 		}
 	}
-}
 
-func BenchmarkMockConfigManager_MergeConfigurations(b *testing.B) {
-	manager := NewMockConfigManager()
+	// Test isValidEmail
+	validEmails := []string{"test@example.com", "user.name@domain.org", "a@b.co"}
+	for _, email := range validEmails {
+		if !isValidEmail(email) {
+			t.Errorf("'%s' should be a valid email", email)
+		}
+	}
 
-	config1 := &models.ProjectConfig{Name: "project1", Organization: "org1"}
-	config2 := &models.ProjectConfig{Description: "desc2", License: "MIT"}
-	config3 := &models.ProjectConfig{Name: "project3", License: "Apache-2.0"}
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_ = manager.MergeConfigurations(config1, config2, config3)
+	invalidEmails := []string{"", "invalid", "test@", "@domain.com", "test@domain", "test.domain.com"}
+	for _, email := range invalidEmails {
+		if isValidEmail(email) {
+			t.Errorf("'%s' should be an invalid email", email)
+		}
 	}
 }

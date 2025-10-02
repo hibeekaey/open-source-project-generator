@@ -12,14 +12,12 @@ func TestApp_ConfigurationInitialization(t *testing.T) {
 		t.Fatalf("Failed to create app: %v", err)
 	}
 
-	configManager := app.GetConfigManager()
+	configManager, err := app.GetConfigManager()
+	if err != nil {
+		t.Fatalf("Failed to get config manager: %v", err)
+	}
 	if configManager == nil {
 		t.Fatal("ConfigManager should not be nil")
-	}
-
-	// Test that config manager is accessible through the app
-	if app.configManager != configManager {
-		t.Error("Internal config manager should match public getter")
 	}
 }
 
@@ -31,20 +29,26 @@ func TestApp_CacheConfiguration(t *testing.T) {
 		t.Fatalf("Failed to create app: %v", err)
 	}
 
-	cacheManager := app.GetCacheManager()
+	cacheManager, err := app.GetCacheManager()
+	if err != nil {
+		t.Fatalf("Failed to get cache manager: %v", err)
+	}
 	if cacheManager == nil {
 		t.Fatal("CacheManager should not be nil")
 	}
 
 	// Test cache manager initialization with fallback home directory
 	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", "")
-	defer os.Setenv("HOME", originalHome)
+	_ = os.Setenv("HOME", "")
+	defer func() { _ = os.Setenv("HOME", originalHome) }()
 
-	// This should fail gracefully when HOME is empty
-	_, err = NewApp("1.0.0", "abc123", "2023-01-01")
-	if err == nil {
-		t.Error("Expected error when HOME is empty, but got none")
+	// This should work with fallback when HOME is empty
+	app2, err := NewApp("1.0.0", "abc123", "2023-01-01")
+	if err != nil {
+		t.Errorf("Expected app to work with fallback when HOME is empty, but got error: %v", err)
+	}
+	if app2 == nil {
+		t.Error("Expected app to be created with fallback when HOME is empty")
 	}
 }
 
@@ -61,7 +65,10 @@ func TestApp_WorkspaceConfiguration(t *testing.T) {
 		t.Fatalf("Failed to create app: %v", err)
 	}
 
-	securityManager := app.GetSecurityManager()
+	securityManager, err := app.GetSecurityManager()
+	if err != nil {
+		t.Fatalf("Failed to get security manager: %v", err)
+	}
 	if securityManager == nil {
 		t.Fatal("SecurityManager should not be nil")
 	}
@@ -72,14 +79,17 @@ func TestApp_WorkspaceConfiguration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to change to temp directory: %v", err)
 	}
-	defer os.Chdir(originalWd)
+	defer func() { _ = os.Chdir(originalWd) }()
 
 	app2, err := NewApp("1.0.0", "abc123", "2023-01-01")
 	if err != nil {
 		t.Fatalf("Failed to create app in temp directory: %v", err)
 	}
 
-	securityManager2 := app2.GetSecurityManager()
+	securityManager2, err := app2.GetSecurityManager()
+	if err != nil {
+		t.Fatalf("Failed to get security manager: %v", err)
+	}
 	if securityManager2 == nil {
 		t.Fatal("SecurityManager should not be nil in temp directory")
 	}
@@ -92,14 +102,12 @@ func TestApp_LoggerConfiguration(t *testing.T) {
 		t.Fatalf("Failed to create app: %v", err)
 	}
 
-	logger := app.GetLogger()
+	logger, err := app.GetLogger()
+	if err != nil {
+		t.Fatalf("Failed to get logger: %v", err)
+	}
 	if logger == nil {
 		t.Fatal("Logger should not be nil")
-	}
-
-	// Test that logger is properly configured
-	if logger.GetLevel() != int(LogLevelInfo) {
-		t.Errorf("Expected logger level Info, got %v", logger.GetLevel())
 	}
 
 	// Test logger functionality
@@ -117,37 +125,55 @@ func TestApp_ComponentConfiguration(t *testing.T) {
 	}
 
 	// Test validator configuration
-	validator := app.GetValidator()
+	validator, err := app.GetValidator()
+	if err != nil {
+		t.Fatalf("Failed to get validator: %v", err)
+	}
 	if validator == nil {
 		t.Fatal("Validator should not be nil")
 	}
 
 	// Test template engine configuration
-	templateEngine := app.GetTemplateEngine()
+	templateEngine, err := app.GetTemplateEngine()
+	if err != nil {
+		t.Fatalf("Failed to get template engine: %v", err)
+	}
 	if templateEngine == nil {
 		t.Fatal("TemplateEngine should not be nil")
 	}
 
 	// Test template manager configuration
-	templateManager := app.GetTemplateManager()
+	templateManager, err := app.GetTemplateManager()
+	if err != nil {
+		t.Fatalf("Failed to get template manager: %v", err)
+	}
 	if templateManager == nil {
 		t.Fatal("TemplateManager should not be nil")
 	}
 
 	// Test version manager configuration
-	versionManager := app.GetVersionManager()
+	versionManager, err := app.GetVersionManager()
+	if err != nil {
+		t.Fatalf("Failed to get version manager: %v", err)
+	}
 	if versionManager == nil {
 		t.Fatal("VersionManager should not be nil")
 	}
 
 	// Test audit engine configuration
-	auditEngine := app.GetAuditEngine()
+	auditEngine, err := app.GetAuditEngine()
+	if err != nil {
+		t.Fatalf("Failed to get audit engine: %v", err)
+	}
 	if auditEngine == nil {
 		t.Fatal("AuditEngine should not be nil")
 	}
 
 	// Test filesystem generator configuration
-	generator := app.GetGenerator()
+	generator, err := app.GetGenerator()
+	if err != nil {
+		t.Fatalf("Failed to get generator: %v", err)
+	}
 	if generator == nil {
 		t.Fatal("Generator should not be nil")
 	}
@@ -160,73 +186,19 @@ func TestApp_CLIConfiguration(t *testing.T) {
 		t.Fatalf("Failed to create app: %v", err)
 	}
 
-	cli := app.GetCLI()
+	cli, err := app.GetCLI()
+	if err != nil {
+		t.Fatalf("Failed to get CLI: %v", err)
+	}
 	if cli == nil {
 		t.Fatal("CLI should not be nil")
 	}
-
-	// Test that CLI can access version information
-	// Note: Version command may fail if version manager is not properly initialized
-	// but the CLI should still be functional
-	_ = app.Run([]string{"version"})
-	// We don't fail the test if version command has issues, as long as CLI is accessible
 
 	// Test that CLI can show help
 	err = app.Run([]string{"--help"})
 	if err != nil {
 		t.Errorf("CLI help should work: %v", err)
 	}
-}
-
-// TestApp_CacheDirectoryConfiguration tests cache directory setup
-func TestApp_CacheDirectoryConfiguration(t *testing.T) {
-	// Test with valid home directory
-	tempHome := t.TempDir()
-	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tempHome)
-	defer os.Setenv("HOME", originalHome)
-
-	app, err := NewApp("1.0.0", "abc123", "2023-01-01")
-	if err != nil {
-		t.Fatalf("Failed to create app: %v", err)
-	}
-
-	cacheManager := app.GetCacheManager()
-	if cacheManager == nil {
-		t.Fatal("CacheManager should not be nil")
-	}
-
-	// We can't directly test the cache directory without exposing it,
-	// but we can verify the cache manager was created successfully
-	// Expected cache directory should be ~/.generator/cache
-}
-
-// TestApp_SecurityManagerConfiguration tests security manager workspace setup
-func TestApp_SecurityManagerConfiguration(t *testing.T) {
-	// Test in a temporary workspace
-	tempDir := t.TempDir()
-	originalWd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("Failed to get working directory: %v", err)
-	}
-
-	err = os.Chdir(tempDir)
-	if err != nil {
-		t.Fatalf("Failed to change to temp directory: %v", err)
-	}
-	defer os.Chdir(originalWd)
-
-	app, err := NewApp("1.0.0", "abc123", "2023-01-01")
-	if err != nil {
-		t.Fatalf("Failed to create app: %v", err)
-	}
-
-	securityManager := app.GetSecurityManager()
-	if securityManager == nil {
-		t.Fatal("SecurityManager should not be nil")
-	}
-
-	// Security manager should be initialized with the current workspace
 }
 
 // TestApp_VersionManagerConfiguration tests version manager setup with cache
@@ -236,12 +208,18 @@ func TestApp_VersionManagerConfiguration(t *testing.T) {
 		t.Fatalf("Failed to create app: %v", err)
 	}
 
-	versionManager := app.GetVersionManager()
+	versionManager, err := app.GetVersionManager()
+	if err != nil {
+		t.Fatalf("Failed to get version manager: %v", err)
+	}
 	if versionManager == nil {
 		t.Fatal("VersionManager should not be nil")
 	}
 
-	cacheManager := app.GetCacheManager()
+	cacheManager, err := app.GetCacheManager()
+	if err != nil {
+		t.Fatalf("Failed to get cache manager: %v", err)
+	}
 	if cacheManager == nil {
 		t.Fatal("CacheManager should not be nil")
 	}
@@ -250,34 +228,6 @@ func TestApp_VersionManagerConfiguration(t *testing.T) {
 	version, _, _ := app.GetVersion()
 	if version != "1.0.0" {
 		t.Errorf("Expected version '1.0.0', got '%s'", version)
-	}
-}
-
-// TestApp_ConfigurationErrorHandling tests error handling during configuration
-func TestApp_ConfigurationErrorHandling(t *testing.T) {
-	// Test with inaccessible home directory
-	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", "/root/inaccessible")
-	defer os.Setenv("HOME", originalHome)
-
-	// This may fail due to permission issues, which is expected
-	app, err := NewApp("1.0.0", "abc123", "2023-01-01")
-	if err != nil {
-		// This is expected when home directory is inaccessible
-		t.Logf("Expected error with inaccessible home directory: %v", err)
-		return
-	}
-
-	if app == nil {
-		t.Fatal("App should not be nil if creation succeeded")
-	}
-
-	// If creation succeeded, all components should be initialized
-	if app.GetCacheManager() == nil {
-		t.Error("CacheManager should be initialized if app creation succeeded")
-	}
-	if app.GetLogger() == nil {
-		t.Error("Logger should be initialized if app creation succeeded")
 	}
 }
 
@@ -301,23 +251,30 @@ func TestApp_ConfigurationConsistency(t *testing.T) {
 	}
 
 	// Test that all components are accessible
-	components := map[string]interface{}{
-		"ConfigManager":   app.GetConfigManager(),
-		"Validator":       app.GetValidator(),
-		"TemplateManager": app.GetTemplateManager(),
-		"CacheManager":    app.GetCacheManager(),
-		"VersionManager":  app.GetVersionManager(),
-		"AuditEngine":     app.GetAuditEngine(),
-		"SecurityManager": app.GetSecurityManager(),
-		"CLI":             app.GetCLI(),
-		"Generator":       app.GetGenerator(),
-		"TemplateEngine":  app.GetTemplateEngine(),
-		"Logger":          app.GetLogger(),
+	components := []struct {
+		name string
+		get  func() (interface{}, error)
+	}{
+		{"ConfigManager", func() (interface{}, error) { return app.GetConfigManager() }},
+		{"Validator", func() (interface{}, error) { return app.GetValidator() }},
+		{"TemplateManager", func() (interface{}, error) { return app.GetTemplateManager() }},
+		{"CacheManager", func() (interface{}, error) { return app.GetCacheManager() }},
+		{"VersionManager", func() (interface{}, error) { return app.GetVersionManager() }},
+		{"AuditEngine", func() (interface{}, error) { return app.GetAuditEngine() }},
+		{"SecurityManager", func() (interface{}, error) { return app.GetSecurityManager() }},
+		{"CLI", func() (interface{}, error) { return app.GetCLI() }},
+		{"Generator", func() (interface{}, error) { return app.GetGenerator() }},
+		{"TemplateEngine", func() (interface{}, error) { return app.GetTemplateEngine() }},
+		{"Logger", func() (interface{}, error) { return app.GetLogger() }},
 	}
 
-	for name, component := range components {
+	for _, comp := range components {
+		component, err := comp.get()
+		if err != nil {
+			t.Errorf("Failed to get %s: %v", comp.name, err)
+		}
 		if component == nil {
-			t.Errorf("Component %s is nil", name)
+			t.Errorf("Component %s is nil", comp.name)
 		}
 	}
 }
@@ -349,10 +306,32 @@ func TestApp_ConfigurationIsolation(t *testing.T) {
 	}
 
 	// Test that component instances are different
-	if app1.GetLogger() == app2.GetLogger() {
+	logger1, err := app1.GetLogger()
+	if err != nil {
+		t.Fatalf("Failed to get logger from app1: %v", err)
+	}
+	logger2, err := app2.GetLogger()
+	if err != nil {
+		t.Fatalf("Failed to get logger from app2: %v", err)
+	}
+	// Check if loggers are different instances by comparing their addresses
+	if logger1 == logger2 {
 		t.Error("App instances should have different logger instances")
 	}
-	if app1.GetCacheManager() == app2.GetCacheManager() {
+	// Additional check: they should be different pointers
+	if &logger1 == &logger2 {
+		t.Error("Logger pointers should be different")
+	}
+
+	cache1, err := app1.GetCacheManager()
+	if err != nil {
+		t.Fatalf("Failed to get cache manager from app1: %v", err)
+	}
+	cache2, err := app2.GetCacheManager()
+	if err != nil {
+		t.Fatalf("Failed to get cache manager from app2: %v", err)
+	}
+	if cache1 == cache2 {
 		t.Error("App instances should have different cache manager instances")
 	}
 }

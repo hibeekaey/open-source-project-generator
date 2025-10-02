@@ -49,25 +49,35 @@ func (m *MockCacheManager) Clean() error {
 	return nil
 }
 
+func (m *MockCacheManager) AutoRepair() (*interfaces.CacheRepairResult, error) {
+	return &interfaces.CacheRepairResult{
+		Timestamp:       time.Now(),
+		OriginalEntries: len(m.data),
+		RepairedEntries: 0,
+		RemovedEntries:  0,
+		CorruptedKeys:   []string{},
+		Success:         true,
+		Errors:          []string{},
+	}, nil
+}
+
+// Additional methods to satisfy CacheManager interface
 func (m *MockCacheManager) GetStats() (*interfaces.CacheStats, error) {
 	return &interfaces.CacheStats{
 		TotalEntries: len(m.data),
-		TotalSize:    1024,
-		HitCount:     80,
-		MissCount:    20,
-		HitRate:      0.8,
-		LastAccessed: time.Now(),
-		LastModified: time.Now(),
-		CreatedAt:    time.Now(),
+		TotalSize:    int64(len(m.data) * 100), // Mock size
+		HitCount:     0,
+		MissCount:    0,
+		HitRate:      0.0,
 	}, nil
 }
 
 func (m *MockCacheManager) GetSize() (int64, error) {
-	return 1024, nil
+	return int64(len(m.data) * 100), nil
 }
 
 func (m *MockCacheManager) GetLocation() string {
-	return "/tmp/test-cache"
+	return "/tmp/mock-cache"
 }
 
 func (m *MockCacheManager) GetKeys() ([]string, error) {
@@ -160,11 +170,34 @@ func (m *MockCacheManager) OnCacheEviction(callback func(key string, reason stri
 }
 
 func (m *MockCacheManager) GetHitRate() float64 {
-	return 0.8
+	return 0.0
 }
 
 func (m *MockCacheManager) GetMissRate() float64 {
-	return 0.2
+	return 0.0
+}
+
+func (m *MockCacheManager) GetHealthReport() (*interfaces.CacheHealth, error) {
+	return &interfaces.CacheHealth{
+		Status:    "healthy",
+		LastCheck: time.Now(),
+		Issues:    []interfaces.CacheIssue{},
+		Warnings:  []interfaces.CacheWarning{},
+	}, nil
+}
+
+func (m *MockCacheManager) DetectCorruption() ([]string, error) {
+	return []string{}, nil
+}
+
+func (m *MockCacheManager) MonitorHealth() <-chan *interfaces.CacheHealth {
+	ch := make(chan *interfaces.CacheHealth, 1)
+	go func() {
+		defer close(ch)
+		health, _ := m.GetHealthReport()
+		ch <- health
+	}()
+	return ch
 }
 
 func TestManager_GetCurrentVersion(t *testing.T) {

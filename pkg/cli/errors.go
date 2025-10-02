@@ -6,9 +6,6 @@ import (
 	"fmt"
 	"os"
 	"time"
-
-	"github.com/cuesoftinc/open-source-project-generator/pkg/errors"
-	"github.com/spf13/pflag"
 )
 
 // StructuredError represents an error with structured information for automation
@@ -110,51 +107,6 @@ const (
 	ErrorTypeGeneration    = "generation"
 	ErrorTypeInternal      = "internal"
 )
-
-// handleError processes errors and outputs them in the appropriate format
-func (c *CLI) handleError(err error, cmd string, args []string) int {
-	if err == nil {
-		return ExitCodeSuccess
-	}
-
-	// Use the comprehensive error handler if available
-	if globalHandler := errors.GetGlobalErrorHandler(); globalHandler != nil {
-		context := map[string]interface{}{
-			"command":   cmd,
-			"arguments": args,
-		}
-
-		// Add flags context if available
-		if c.rootCmd != nil {
-			flags := make(map[string]string)
-			c.rootCmd.Flags().VisitAll(func(flag *pflag.Flag) {
-				if flag.Changed {
-					flags[flag.Name] = flag.Value.String()
-				}
-			})
-			context["flags"] = flags
-		}
-
-		result := globalHandler.HandleError(err, context)
-		return result.ExitCode
-	}
-
-	// Handle standard error types
-	// Check if it's already a structured error
-	if structErr, ok := err.(*StructuredError); ok {
-		return c.outputStructuredError(structErr, cmd, args)
-	}
-
-	// Check if it's a CLI error from automation.go
-	if cliErr, ok := err.(*CLIError); ok {
-		structErr := NewStructuredError(ErrorTypeInternal, cliErr.Message, cliErr.Code)
-		return c.outputStructuredError(structErr, cmd, args)
-	}
-
-	// Convert regular error to structured error
-	structErr := NewStructuredError(ErrorTypeInternal, err.Error(), ExitCodeGeneral)
-	return c.outputStructuredError(structErr, cmd, args)
-}
 
 // outputStructuredError outputs a structured error in the appropriate format
 func (c *CLI) outputStructuredError(err *StructuredError, cmd string, args []string) int {

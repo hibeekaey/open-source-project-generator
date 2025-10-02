@@ -110,6 +110,7 @@ type CLIInterface interface {
 
 	// Component access operations
 	GetVersionManager() VersionManager
+	GetWorkflowManager() WorkflowManager
 	GetBuildInfo() (version, gitCommit, buildTime string)
 }
 

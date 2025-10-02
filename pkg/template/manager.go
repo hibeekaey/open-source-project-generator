@@ -52,6 +52,9 @@ func NewManager(templateEngine interfaces.TemplateEngine) interfaces.TemplateMan
 		metadataValidator: metadataValidator,
 	}
 
+	// Update validator with manager reference for enhanced validation
+	manager.validator = NewTemplateValidatorWithManager(manager)
+
 	// Create template cache with discovery function
 	manager.cache = NewTemplateCache(nil, manager.discovery.DiscoverTemplates)
 
@@ -651,4 +654,90 @@ func (m *Manager) convertToInterfaceTemplateInfo(tmpl *models.TemplateInfo) inte
 			Updated:    tmpl.Metadata.UpdatedAt,
 		},
 	}
+}
+
+// ValidateTemplateStructureAdvanced validates template structure with advanced checks
+func (m *Manager) ValidateTemplateStructureAdvanced(templateInfo *interfaces.TemplateInfo) (*interfaces.TemplateValidationResult, error) {
+	return m.validator.ValidateTemplateStructureAdvanced(templateInfo)
+}
+
+// ValidateTemplateDependencies validates template dependencies
+func (m *Manager) ValidateTemplateDependencies(templateInfo *interfaces.TemplateInfo) (*interfaces.TemplateValidationResult, error) {
+	return m.validator.ValidateTemplateDependencies(templateInfo)
+}
+
+// ValidateTemplateCompatibility validates template compatibility
+func (m *Manager) ValidateTemplateCompatibility(templateInfo *interfaces.TemplateInfo) (*interfaces.TemplateValidationResult, error) {
+	return m.validator.ValidateTemplateCompatibility(templateInfo)
+}
+
+// ValidateTemplateMetadataAdvanced validates template metadata with advanced checks
+func (m *Manager) ValidateTemplateMetadataAdvanced(metadata *interfaces.TemplateMetadata) (*interfaces.TemplateValidationResult, error) {
+	return m.validator.ValidateTemplateMetadataAdvanced(metadata)
+}
+
+// ValidateTemplateComprehensive performs comprehensive template validation
+func (m *Manager) ValidateTemplateComprehensive(templateName string) (*interfaces.TemplateValidationResult, error) {
+	// Get template info
+	templateInfo, err := m.GetTemplateInfo(templateName)
+	if err != nil {
+		return &interfaces.TemplateValidationResult{
+			Valid: false,
+			Issues: []interfaces.ValidationIssue{
+				{
+					Type:     "error",
+					Severity: "error",
+					Message:  fmt.Sprintf("Template '%s' not found: %v", templateName, err),
+					Rule:     "template-not-found",
+					Fixable:  false,
+				},
+			},
+		}, nil
+	}
+
+	var allIssues []interfaces.ValidationIssue
+	var allWarnings []interfaces.ValidationIssue
+
+	// Validate structure
+	structureResult, err := m.ValidateTemplateStructureAdvanced(templateInfo)
+	if err != nil {
+		return nil, fmt.Errorf("structure validation failed: %w", err)
+	}
+	allIssues = append(allIssues, structureResult.Issues...)
+	allWarnings = append(allWarnings, structureResult.Warnings...)
+
+	// Validate dependencies
+	depResult, err := m.ValidateTemplateDependencies(templateInfo)
+	if err != nil {
+		return nil, fmt.Errorf("dependency validation failed: %w", err)
+	}
+	allIssues = append(allIssues, depResult.Issues...)
+	allWarnings = append(allWarnings, depResult.Warnings...)
+
+	// Validate compatibility
+	compatResult, err := m.ValidateTemplateCompatibility(templateInfo)
+	if err != nil {
+		return nil, fmt.Errorf("compatibility validation failed: %w", err)
+	}
+	allIssues = append(allIssues, compatResult.Issues...)
+	allWarnings = append(allWarnings, compatResult.Warnings...)
+
+	// Validate metadata
+	metadataResult, err := m.ValidateTemplateMetadataAdvanced(&templateInfo.Metadata)
+	if err != nil {
+		return nil, fmt.Errorf("metadata validation failed: %w", err)
+	}
+	allIssues = append(allIssues, metadataResult.Issues...)
+	allWarnings = append(allWarnings, metadataResult.Warnings...)
+
+	return &interfaces.TemplateValidationResult{
+		Valid:    len(allIssues) == 0,
+		Issues:   allIssues,
+		Warnings: allWarnings,
+		Summary: interfaces.ValidationSummary{
+			ErrorCount:   len(allIssues),
+			WarningCount: len(allWarnings),
+			FixableCount: 0,
+		},
+	}, nil
 }

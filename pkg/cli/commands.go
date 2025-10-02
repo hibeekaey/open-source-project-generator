@@ -5,6 +5,10 @@
 package cli
 
 import (
+	"time"
+
+	"github.com/cuesoftinc/open-source-project-generator/pkg/cli/commands"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/interfaces"
 	"github.com/spf13/cobra"
 )
 
@@ -41,6 +45,9 @@ func (cr *CommandRegistry) RegisterAllCommands() {
 	cr.setupUpdateCommand()
 	cr.setupCacheCommand()
 	cr.setupLogsCommand()
+
+	// Add workflow commands
+	cr.setupWorkflowCommands()
 }
 
 // setupGenerateCommand sets up the generate command with all documented flags
@@ -525,4 +532,223 @@ Provides access to detailed logs for debugging and monitoring purposes.`,
 	logsCmd.Flags().String("component", "", "Filter by component name")
 
 	cr.cli.rootCmd.AddCommand(logsCmd)
+}
+
+// setupWorkflowCommands sets up all workflow-related commands
+func (cr *CommandRegistry) setupWorkflowCommands() {
+	// Create workflow command adapter
+	workflowAdapter := &workflowAdapter{cli: cr.cli}
+	workflowCmd := commands.NewWorkflowCommand(workflowAdapter)
+
+	// Main workflow command
+	workflowRootCmd := &cobra.Command{
+		Use:   "workflow",
+		Short: "Manage end-to-end project workflows",
+		Long: `Execute and manage comprehensive workflows for project operations.
+
+Workflows provide integrated operations that combine multiple steps like
+generation, validation, auditing, and reporting into seamless processes.`,
+	}
+
+	// Project workflow command
+	projectWorkflowCmd := &cobra.Command{
+		Use:   "project [flags]",
+		Short: "Execute complete project generation workflow",
+		Long: `Execute a complete project generation workflow including validation and auditing.
+
+This workflow combines project generation with optional validation and audit steps
+to provide a comprehensive project creation experience.`,
+		RunE: workflowCmd.ExecuteProjectWorkflow,
+		Example: `  # Generate project with validation
+  generator workflow project --config project.yaml --validate-after
+  
+  # Generate and audit project
+  generator workflow project --audit-after --generate-report
+  
+  # Offline project generation
+  generator workflow project --offline --config project.yaml`,
+	}
+
+	projectWorkflowCmd.Flags().StringP("config", "c", "", "Path to configuration file")
+	projectWorkflowCmd.Flags().StringP("output", "o", ".", "Output directory for generated project")
+	projectWorkflowCmd.Flags().Bool("dry-run", false, "Preview workflow without creating files")
+	projectWorkflowCmd.Flags().Bool("offline", false, "Use cached resources only")
+	projectWorkflowCmd.Flags().Bool("force", false, "Overwrite existing files")
+	projectWorkflowCmd.Flags().Bool("backup-existing", false, "Backup existing files before overwriting")
+	projectWorkflowCmd.Flags().Bool("validate-after", true, "Validate project after generation")
+	projectWorkflowCmd.Flags().Bool("audit-after", false, "Audit project after generation")
+	projectWorkflowCmd.Flags().Bool("generate-report", false, "Generate comprehensive report")
+	projectWorkflowCmd.Flags().Duration("timeout", 30*time.Minute, "Workflow timeout")
+
+	// Validation workflow command
+	validationWorkflowCmd := &cobra.Command{
+		Use:   "validate [path] [flags]",
+		Short: "Execute validation workflow",
+		Long: `Execute a comprehensive validation workflow with optional issue fixing.
+
+This workflow provides enhanced validation with progress tracking and
+comprehensive reporting capabilities.`,
+		RunE: workflowCmd.ExecuteValidationWorkflow,
+		Example: `  # Validate with issue fixing
+  generator workflow validate ./project --fix-issues
+  
+  # Generate validation report
+  generator workflow validate --generate-report --output-format html`,
+	}
+
+	validationWorkflowCmd.Flags().String("project-path", ".", "Path to project to validate")
+	validationWorkflowCmd.Flags().Bool("fix-issues", false, "Automatically fix validation issues")
+	validationWorkflowCmd.Flags().Bool("generate-report", false, "Generate validation report")
+	validationWorkflowCmd.Flags().String("output-format", "text", "Output format (text, json, html)")
+	validationWorkflowCmd.Flags().String("output-file", "", "Save report to file")
+	validationWorkflowCmd.Flags().Duration("timeout", 15*time.Minute, "Workflow timeout")
+
+	// Audit workflow command
+	auditWorkflowCmd := &cobra.Command{
+		Use:   "audit [path] [flags]",
+		Short: "Execute audit workflow",
+		Long: `Execute a comprehensive audit workflow with detailed reporting.
+
+This workflow provides enhanced auditing with progress tracking and
+comprehensive reporting capabilities.`,
+		RunE: workflowCmd.ExecuteAuditWorkflow,
+		Example: `  # Comprehensive audit with report
+  generator workflow audit ./project --generate-report
+  
+  # Audit with specific output format
+  generator workflow audit --output-format json --output-file audit.json`,
+	}
+
+	auditWorkflowCmd.Flags().String("project-path", ".", "Path to project to audit")
+	auditWorkflowCmd.Flags().Bool("generate-report", false, "Generate audit report")
+	auditWorkflowCmd.Flags().String("output-format", "text", "Output format (text, json, html)")
+	auditWorkflowCmd.Flags().String("output-file", "", "Save report to file")
+	auditWorkflowCmd.Flags().Duration("timeout", 20*time.Minute, "Workflow timeout")
+
+	// Combined validation and audit workflow command
+	validateAuditCmd := &cobra.Command{
+		Use:   "validate-audit [path] [flags]",
+		Short: "Execute combined validation and audit workflow",
+		Long: `Execute a combined validation and audit workflow with comprehensive reporting.
+
+This workflow combines validation and auditing into a single operation with
+integrated reporting and issue fixing capabilities.`,
+		RunE: workflowCmd.ExecuteValidationAuditWorkflow,
+		Example: `  # Combined validation and audit
+  generator workflow validate-audit ./project
+  
+  # With issue fixing and reporting
+  generator workflow validate-audit --fix-issues --generate-report`,
+	}
+
+	validateAuditCmd.Flags().String("project-path", ".", "Path to project to validate and audit")
+	validateAuditCmd.Flags().Bool("validation", true, "Enable validation")
+	validateAuditCmd.Flags().Bool("audit", true, "Enable audit")
+	validateAuditCmd.Flags().Bool("fix-issues", false, "Automatically fix validation issues")
+	validateAuditCmd.Flags().Bool("generate-report", false, "Generate comprehensive report")
+	validateAuditCmd.Flags().String("output-format", "text", "Output format (text, json, html)")
+	validateAuditCmd.Flags().String("output-file", "", "Save report to file")
+	validateAuditCmd.Flags().Duration("timeout", 25*time.Minute, "Workflow timeout")
+
+	// Workflow status command
+	statusCmd := &cobra.Command{
+		Use:   "status [flags]",
+		Short: "View workflow status and history",
+		Long: `View the status of active workflows and workflow history.
+
+Provides information about running, completed, and failed workflows.`,
+		RunE: workflowCmd.ExecuteWorkflowStatus,
+		Example: `  # View active workflows
+  generator workflow status
+  
+  # View specific workflow status
+  generator workflow status --workflow-id abc123
+  
+  # View workflow history
+  generator workflow status --history`,
+	}
+
+	statusCmd.Flags().String("workflow-id", "", "Show status for specific workflow")
+	statusCmd.Flags().Bool("active", false, "Show active workflows")
+	statusCmd.Flags().Bool("history", false, "Show workflow history")
+	statusCmd.Flags().String("output-format", "text", "Output format (text, json)")
+
+	// Add subcommands to workflow root
+	workflowRootCmd.AddCommand(projectWorkflowCmd)
+	workflowRootCmd.AddCommand(validationWorkflowCmd)
+	workflowRootCmd.AddCommand(auditWorkflowCmd)
+	workflowRootCmd.AddCommand(validateAuditCmd)
+	workflowRootCmd.AddCommand(statusCmd)
+
+	// Add workflow root command to CLI
+	cr.cli.rootCmd.AddCommand(workflowRootCmd)
+}
+
+// workflowAdapter adapts the CLI struct to implement the WorkflowCLI interface.
+type workflowAdapter struct {
+	cli *CLI
+}
+
+func (wa *workflowAdapter) GetWorkflowManager() interfaces.WorkflowManager {
+	return wa.cli.GetWorkflowManager()
+}
+
+func (wa *workflowAdapter) VerboseOutput(format string, args ...interface{}) {
+	wa.cli.VerboseOutput(format, args...)
+}
+
+func (wa *workflowAdapter) DebugOutput(format string, args ...interface{}) {
+	wa.cli.DebugOutput(format, args...)
+}
+
+func (wa *workflowAdapter) QuietOutput(format string, args ...interface{}) {
+	wa.cli.QuietOutput(format, args...)
+}
+
+func (wa *workflowAdapter) ErrorOutput(format string, args ...interface{}) {
+	wa.cli.ErrorOutput(format, args...)
+}
+
+func (wa *workflowAdapter) WarningOutput(format string, args ...interface{}) {
+	wa.cli.WarningOutput(format, args...)
+}
+
+func (wa *workflowAdapter) SuccessOutput(format string, args ...interface{}) {
+	wa.cli.SuccessOutput(format, args...)
+}
+
+func (wa *workflowAdapter) Error(text string) string {
+	return wa.cli.Error(text)
+}
+
+func (wa *workflowAdapter) Warning(text string) string {
+	return wa.cli.Warning(text)
+}
+
+func (wa *workflowAdapter) Info(text string) string {
+	return wa.cli.Info(text)
+}
+
+func (wa *workflowAdapter) Success(text string) string {
+	return wa.cli.Success(text)
+}
+
+func (wa *workflowAdapter) Highlight(text string) string {
+	return wa.cli.Highlight(text)
+}
+
+func (wa *workflowAdapter) Dim(text string) string {
+	return wa.cli.Dim(text)
+}
+
+func (wa *workflowAdapter) IsQuietMode() bool {
+	return wa.cli.IsQuietMode()
+}
+
+func (wa *workflowAdapter) OutputMachineReadable(data interface{}, format string) error {
+	return wa.cli.OutputMachineReadable(data, format)
+}
+
+func (wa *workflowAdapter) CreateWorkflowError(message string, workflowType string) error {
+	return wa.cli.CreateWorkflowError(message, workflowType)
 }

@@ -219,13 +219,13 @@ func (v *Validator) RepairEntries(entries map[string]*interfaces.CacheEntry) map
 
 		// Fix future timestamps
 		if repairedEntry.CreatedAt.After(now) {
-			repairedEntry.CreatedAt = now
+			repairedEntry.CreatedAt = now.Add(-time.Hour) // Set to 1 hour ago
 		}
 		if repairedEntry.UpdatedAt.After(now) {
-			repairedEntry.UpdatedAt = now
+			repairedEntry.UpdatedAt = now.Add(-time.Hour)
 		}
 		if repairedEntry.AccessedAt.After(now) {
-			repairedEntry.AccessedAt = now
+			repairedEntry.AccessedAt = now.Add(-time.Minute)
 		}
 
 		// Fix negative access count
@@ -297,7 +297,7 @@ func (v *Validator) CheckHealth(entries map[string]*interfaces.CacheEntry, metri
 		expiredRatio := float64(expiredCount) / float64(totalEntries)
 		corruptedRatio := float64(corruptedCount) / float64(totalEntries)
 
-		if expiredRatio > 0.5 {
+		if expiredRatio > 0.3 { // Lower threshold for degraded state
 			report.Issues = append(report.Issues, fmt.Sprintf("High expired entry ratio: %.2f%%", expiredRatio*100))
 			report.Recommendations = append(report.Recommendations, "Consider running cache cleanup")
 			if report.OverallHealth == "healthy" {
@@ -305,10 +305,17 @@ func (v *Validator) CheckHealth(entries map[string]*interfaces.CacheEntry, metri
 			}
 		}
 
-		if corruptedRatio > 0.1 {
+		if corruptedRatio > 0.05 { // Lower threshold for unhealthy state
 			report.Issues = append(report.Issues, fmt.Sprintf("Corrupted entries detected: %.2f%%", corruptedRatio*100))
 			report.Recommendations = append(report.Recommendations, "Consider running cache repair")
 			report.OverallHealth = "unhealthy"
+		}
+
+		// Any expired entries should at least trigger degraded state
+		if expiredCount > 0 && report.OverallHealth == "healthy" {
+			report.Issues = append(report.Issues, fmt.Sprintf("Found %d expired entries", expiredCount))
+			report.Recommendations = append(report.Recommendations, "Run cache cleanup to remove expired entries")
+			report.OverallHealth = "degraded"
 		}
 	}
 

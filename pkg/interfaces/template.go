@@ -59,6 +59,13 @@ type TemplateManager interface {
 	ValidateTemplateMetadata(metadata *TemplateMetadata) error
 	ValidateCustomTemplate(path string) (*TemplateValidationResult, error)
 
+	// Enhanced template validation
+	ValidateTemplateStructureAdvanced(template *TemplateInfo) (*TemplateValidationResult, error)
+	ValidateTemplateDependencies(template *TemplateInfo) (*TemplateValidationResult, error)
+	ValidateTemplateCompatibility(template *TemplateInfo) (*TemplateValidationResult, error)
+	ValidateTemplateMetadataAdvanced(metadata *TemplateMetadata) (*TemplateValidationResult, error)
+	ValidateTemplateComprehensive(templateName string) (*TemplateValidationResult, error)
+
 	// Template metadata
 	GetTemplateMetadata(name string) (*TemplateMetadata, error)
 	GetTemplateDependencies(name string) ([]string, error)
