@@ -234,8 +234,8 @@ func (c *CLI) runConfigList(cmd *cobra.Command, args []string) error {
 	configs, err := persistence.ListConfigurations(options)
 	if err != nil {
 		return fmt.Errorf("🚫 %s %s",
-			c.error("Unable to access your saved configurations."),
-			c.info("Check if the configuration directory exists and is readable"))
+			c.Error("Unable to access your saved configurations."),
+			c.Info("Check if the configuration directory exists and is readable"))
 	}
 
 	// Output results
@@ -256,9 +256,9 @@ func (c *CLI) runConfigView(cmd *cobra.Command, args []string) error {
 	config, err := persistence.LoadConfiguration(configName)
 	if err != nil {
 		return fmt.Errorf("🚫 %s %s %s",
-			c.error("Unable to load configuration"),
-			c.highlight(fmt.Sprintf("'%s'.", configName)),
-			c.info("Check if it exists and is readable"))
+			c.Error("Unable to load configuration"),
+			c.Highlight(fmt.Sprintf("'%s'.", configName)),
+			c.Info("Check if it exists and is readable"))
 	}
 
 	// Output configuration details
@@ -276,9 +276,9 @@ func (c *CLI) runConfigDelete(cmd *cobra.Command, args []string) error {
 	// Check if configuration exists
 	if !persistence.ConfigurationExists(configName) {
 		return fmt.Errorf("🚫 %s %s %s",
-			c.error("Configuration"),
-			c.highlight(fmt.Sprintf("'%s'", configName)),
-			c.info("doesn't exist. Use 'generator config list' to see available configurations"))
+			c.Error("Configuration"),
+			c.Highlight(fmt.Sprintf("'%s'", configName)),
+			c.Info("doesn't exist. Use 'generator config list' to see available configurations"))
 	}
 
 	// Confirm deletion if not forced
@@ -288,8 +288,8 @@ func (c *CLI) runConfigDelete(cmd *cobra.Command, args []string) error {
 		_, _ = fmt.Scanln(&response)
 		if strings.ToLower(strings.TrimSpace(response)) != "y" {
 			c.QuietOutput("%s %s",
-				c.warning("❌ Deletion cancelled."),
-				c.info("Your configuration is safe"))
+				c.Warning("❌ Deletion cancelled."),
+				c.Info("Your configuration is safe"))
 			return nil
 		}
 	}
@@ -297,8 +297,8 @@ func (c *CLI) runConfigDelete(cmd *cobra.Command, args []string) error {
 	// Delete configuration
 	if err := persistence.DeleteConfiguration(configName); err != nil {
 		return fmt.Errorf("🚫 %s %s",
-			c.error("Unable to delete the configuration."),
-			c.info("Check file permissions and try again"))
+			c.Error("Unable to delete the configuration."),
+			c.Info("Check file permissions and try again"))
 	}
 
 	c.SuccessOutput("🗑️  Configuration '%s' deleted successfully", configName)

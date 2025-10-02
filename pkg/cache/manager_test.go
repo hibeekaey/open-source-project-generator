@@ -102,7 +102,7 @@ func TestCacheManager_TTL(t *testing.T) {
 }
 
 func TestCacheManager_Stats(t *testing.T) {
-	tempDir, manager, cleanup := setupTestCache(t)
+	_, manager, cleanup := setupTestCache(t)
 	defer cleanup()
 
 	// Add some entries
@@ -129,9 +129,7 @@ func TestCacheManager_Stats(t *testing.T) {
 		t.Error("Total size should be greater than 0")
 	}
 
-	if stats.CacheLocation != tempDir {
-		t.Errorf("Expected cache location %s, got %s", tempDir, stats.CacheLocation)
-	}
+	// CacheLocation is no longer part of CacheStats interface
 }
 
 func TestCacheManager_Clean(t *testing.T) {

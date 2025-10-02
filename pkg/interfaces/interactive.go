@@ -428,3 +428,99 @@ type ComponentSummary struct {
 	Files        []string `json:"files"`
 	Dependencies []string `json:"dependencies"`
 }
+
+// ProjectTree represents a project structure tree
+type ProjectTree struct {
+	Root     *TreeNode              `json:"root"`
+	Metadata map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// UIState represents the current state of the UI
+type UIState struct {
+	CurrentStep   string                 `json:"current_step"`
+	ProjectConfig interface{}            `json:"project_config,omitempty"`
+	Data          map[string]interface{} `json:"data,omitempty"`
+}
+
+// PreviewData represents preview data for UI components
+type PreviewData struct {
+	Content   string                 `json:"content"`
+	Type      string                 `json:"type"`
+	Metadata  map[string]interface{} `json:"metadata,omitempty"`
+	Timestamp time.Time              `json:"timestamp"`
+}
+
+// ProgressUpdate represents a progress update
+type ProgressUpdate struct {
+	Step      int                    `json:"step"`
+	Total     int                    `json:"total"`
+	Message   string                 `json:"message"`
+	Progress  float64                `json:"progress"`
+	Metadata  map[string]interface{} `json:"metadata,omitempty"`
+	Timestamp time.Time              `json:"timestamp"`
+}
+
+// GenerationSummary represents a summary of generation results
+type GenerationSummary struct {
+	FilesCreated  int                    `json:"files_created"`
+	FilesModified int                    `json:"files_modified"`
+	FilesSkipped  int                    `json:"files_skipped"`
+	TotalSize     int64                  `json:"total_size"`
+	Duration      time.Duration          `json:"duration"`
+	Components    []string               `json:"components"`
+	Warnings      []string               `json:"warnings,omitempty"`
+	Errors        []string               `json:"errors,omitempty"`
+	Metadata      map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// NavigationResult represents the result of navigation actions
+type NavigationResult struct {
+	Action    NavigationAction       `json:"action"`
+	Target    string                 `json:"target,omitempty"`
+	Data      map[string]interface{} `json:"data,omitempty"`
+	Cancelled bool                   `json:"cancelled"`
+}
+
+// GenerationError represents an error during generation
+type GenerationError struct {
+	Type        string                 `json:"type"`
+	Message     string                 `json:"message"`
+	File        string                 `json:"file,omitempty"`
+	Line        int                    `json:"line,omitempty"`
+	Component   string                 `json:"component,omitempty"`
+	Recoverable bool                   `json:"recoverable"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// NetworkError represents a network-related error
+type NetworkError struct {
+	Type       string                 `json:"type"`
+	Message    string                 `json:"message"`
+	URL        string                 `json:"url,omitempty"`
+	StatusCode int                    `json:"status_code,omitempty"`
+	Timeout    bool                   `json:"timeout"`
+	Retryable  bool                   `json:"retryable"`
+	Metadata   map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// UIError represents a UI-related error
+type UIError struct {
+	Type        string                 `json:"type"`
+	Message     string                 `json:"message"`
+	Component   string                 `json:"component,omitempty"`
+	Action      string                 `json:"action,omitempty"`
+	Recoverable bool                   `json:"recoverable"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// ErrorReport represents a comprehensive error report
+type ErrorReport struct {
+	ID          string                 `json:"id"`
+	Timestamp   time.Time              `json:"timestamp"`
+	Type        string                 `json:"type"`
+	Message     string                 `json:"message"`
+	Stack       string                 `json:"stack,omitempty"`
+	Context     map[string]interface{} `json:"context,omitempty"`
+	Suggestions []string               `json:"suggestions,omitempty"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+}

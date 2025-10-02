@@ -26,12 +26,8 @@ type TemplateCategory struct {
 	Templates   []interfaces.TemplateInfo
 }
 
-// TemplateSelection represents a selected template with options
-type TemplateSelection struct {
-	Template interfaces.TemplateInfo
-	Selected bool
-	Options  map[string]interface{}
-}
+// TemplateSelection is an alias for the interfaces version
+type TemplateSelection = interfaces.TemplateSelection
 
 // NewTemplateSelector creates a new template selector instance
 func NewTemplateSelector(ui interfaces.InteractiveUIInterface, templateManager interfaces.TemplateManager, logger interfaces.Logger) *TemplateSelector {

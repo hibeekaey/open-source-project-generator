@@ -16,8 +16,8 @@ func TestNewEngine(t *testing.T) {
 	}
 
 	// Verify default rules are loaded
-	auditEngine := engine.(*Engine)
-	if len(auditEngine.rules) == 0 {
+	rules := engine.GetAuditRules()
+	if len(rules) == 0 {
 		t.Error("Expected default audit rules to be loaded")
 	}
 }
@@ -667,6 +667,7 @@ func TestEngine_SetAndGetAuditRules(t *testing.T) {
 			Name:        "Custom Rule 1",
 			Description: "A custom audit rule",
 			Category:    interfaces.AuditCategorySecurity,
+			Type:        interfaces.AuditCategorySecurity,
 			Severity:    interfaces.AuditSeverityHigh,
 			Enabled:     true,
 		},
@@ -688,6 +689,7 @@ func TestEngine_SetAndGetAuditRules(t *testing.T) {
 		Name:        "Custom Rule 2",
 		Description: "Another custom rule",
 		Category:    interfaces.AuditCategoryQuality,
+		Type:        interfaces.AuditCategoryQuality,
 		Severity:    interfaces.AuditSeverityMedium,
 		Enabled:     true,
 	}
@@ -714,102 +716,7 @@ func TestEngine_SetAndGetAuditRules(t *testing.T) {
 	}
 }
 
-// Test helper methods
-
-func TestEngine_projectExists(t *testing.T) {
-	engine := NewEngine().(*Engine)
-
-	// Test with existing directory
-	tempDir := t.TempDir()
-	err := engine.projectExists(tempDir)
-	if err != nil {
-		t.Errorf("Expected no error for existing directory, got: %v", err)
-	}
-
-	// Test with non-existent directory
-	err = engine.projectExists("/non/existent/path")
-	if err == nil {
-		t.Error("Expected error for non-existent directory")
-	}
-}
-
-func TestEngine_shouldSkipFile(t *testing.T) {
-	engine := NewEngine().(*Engine)
-
-	tests := []struct {
-		filename   string
-		shouldSkip bool
-	}{
-		{"test.go", false},
-		{"test.js", false},
-		{"test.py", false},
-		{"binary", true},
-		{".git/config", true},
-		{"node_modules/package/index.js", true},
-		{"test.exe", true},
-		{"test.so", true},
-		{"image.png", true},
-		{"document.pdf", true},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.filename, func(t *testing.T) {
-			result := engine.shouldSkipFile(tt.filename)
-			if result != tt.shouldSkip {
-				t.Errorf("Expected shouldSkip=%v for %s, got %v", tt.shouldSkip, tt.filename, result)
-			}
-		})
-	}
-}
-
-func TestEngine_isSourceCodeFile(t *testing.T) {
-	engine := NewEngine().(*Engine)
-
-	tests := []struct {
-		filename     string
-		isSourceCode bool
-	}{
-		{"main.go", true},
-		{"app.js", true},
-		{"script.py", true},
-		{"Component.tsx", true},
-		{"styles.css", true},
-		{"config.json", false},
-		{"README.md", false},
-		{"image.png", false},
-		{"binary", false},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.filename, func(t *testing.T) {
-			result := engine.isSourceCodeFile(tt.filename)
-			if result != tt.isSourceCode {
-				t.Errorf("Expected isSourceCode=%v for %s, got %v", tt.isSourceCode, tt.filename, result)
-			}
-		})
-	}
-}
-
-func TestEngine_hasLicenseFile(t *testing.T) {
-	engine := NewEngine().(*Engine)
-
-	// Test directory without license
-	tempDir := t.TempDir()
-	if engine.hasLicenseFile(tempDir) {
-		t.Error("Expected no license file in empty directory")
-	}
-
-	// Test directory with LICENSE file
-	license := "MIT License\n\nCopyright..."
-	err := os.WriteFile(filepath.Join(tempDir, "LICENSE"), []byte(license), 0644)
-	if err != nil {
-		t.Fatalf("Failed to create LICENSE file: %v", err)
-	}
-
-	if !engine.hasLicenseFile(tempDir) {
-		t.Error("Expected to find LICENSE file")
-	}
-}
+// Helper method tests have been moved to their respective component test files
 
 // Benchmark tests
 func BenchmarkEngine_AuditSecurity(b *testing.B) {

@@ -7,8 +7,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-
-	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
 )
 
 // EnvironmentConfig holds configuration loaded from environment variables
@@ -66,159 +64,241 @@ type CIEnvironment struct {
 	Actor       string `json:"actor,omitempty"`
 }
 
-// loadEnvironmentConfig loads configuration from environment variables
-func (c *CLI) loadEnvironmentConfig() (*EnvironmentConfig, error) {
-	config := &EnvironmentConfig{}
-
-	// Project configuration
-	config.ProjectName = os.Getenv("GENERATOR_PROJECT_NAME")
-	config.ProjectOrganization = os.Getenv("GENERATOR_PROJECT_ORGANIZATION")
-	config.ProjectDescription = os.Getenv("GENERATOR_PROJECT_DESCRIPTION")
-	config.ProjectLicense = os.Getenv("GENERATOR_PROJECT_LICENSE")
-	config.OutputPath = os.Getenv("GENERATOR_OUTPUT_PATH")
-
-	// Generation options
-	config.Force = parseBoolEnv("GENERATOR_FORCE", false)
-	config.Minimal = parseBoolEnv("GENERATOR_MINIMAL", false)
-	config.Offline = parseBoolEnv("GENERATOR_OFFLINE", false)
-	config.UpdateVersions = parseBoolEnv("GENERATOR_UPDATE_VERSIONS", false)
-	config.SkipValidation = parseBoolEnv("GENERATOR_SKIP_VALIDATION", false)
-	config.BackupExisting = parseBoolEnv("GENERATOR_BACKUP_EXISTING", true)
-	config.IncludeExamples = parseBoolEnv("GENERATOR_INCLUDE_EXAMPLES", true)
-	config.Template = os.Getenv("GENERATOR_TEMPLATE")
-
-	// Component selection
-	config.Frontend = parseBoolEnv("GENERATOR_FRONTEND", false)
-	config.Backend = parseBoolEnv("GENERATOR_BACKEND", false)
-	config.Mobile = parseBoolEnv("GENERATOR_MOBILE", false)
-	config.Infrastructure = parseBoolEnv("GENERATOR_INFRASTRUCTURE", false)
-
-	// Technology selection
-	config.FrontendTech = os.Getenv("GENERATOR_FRONTEND_TECH")
-	config.BackendTech = os.Getenv("GENERATOR_BACKEND_TECH")
-	config.MobileTech = os.Getenv("GENERATOR_MOBILE_TECH")
-	config.InfrastructureTech = os.Getenv("GENERATOR_INFRASTRUCTURE_TECH")
-
-	// CLI behavior
-	config.NonInteractive = parseBoolEnv("GENERATOR_NON_INTERACTIVE", false)
-	config.OutputFormat = getEnvWithDefault("GENERATOR_OUTPUT_FORMAT", "text")
-	config.LogLevel = getEnvWithDefault("GENERATOR_LOG_LEVEL", "info")
-	config.Verbose = parseBoolEnv("GENERATOR_VERBOSE", false)
-	config.Quiet = parseBoolEnv("GENERATOR_QUIET", false)
-
-	return config, nil
+// CIDetector represents a CI environment detector with priority
+type CIDetector struct {
+	Name     string
+	Priority int
+	Detect   func() bool
+	Extract  func() *CIEnvironment
 }
 
 // detectCIEnvironment detects if running in a CI/CD environment and returns details
 func (c *CLI) detectCIEnvironment() *CIEnvironment {
 	ci := &CIEnvironment{}
 
-	// Check for common CI environment variables
-	if os.Getenv("CI") == "true" || os.Getenv("CONTINUOUS_INTEGRATION") == "true" {
-		ci.IsCI = true
+	// Define CI detectors with priority (higher priority = more specific)
+	detectors := []CIDetector{
+		{
+			Name:     "github-actions",
+			Priority: 100,
+			Detect:   func() bool { return os.Getenv("GITHUB_ACTIONS") == "true" },
+			Extract: func() *CIEnvironment {
+				return &CIEnvironment{
+					IsCI:        true,
+					Provider:    "github-actions",
+					BuildID:     os.Getenv("GITHUB_RUN_ID"),
+					BuildNumber: os.Getenv("GITHUB_RUN_NUMBER"),
+					Branch:      os.Getenv("GITHUB_REF_NAME"),
+					Commit:      os.Getenv("GITHUB_SHA"),
+					Repository:  os.Getenv("GITHUB_REPOSITORY"),
+					PullRequest: os.Getenv("GITHUB_EVENT_NUMBER"),
+					JobID:       os.Getenv("GITHUB_JOB"),
+					WorkflowID:  os.Getenv("GITHUB_WORKFLOW"),
+					Environment: os.Getenv("GITHUB_ENVIRONMENT"),
+					Actor:       os.Getenv("GITHUB_ACTOR"),
+				}
+			},
+		},
+		{
+			Name:     "gitlab-ci",
+			Priority: 100,
+			Detect:   func() bool { return os.Getenv("GITLAB_CI") == "true" },
+			Extract: func() *CIEnvironment {
+				return &CIEnvironment{
+					IsCI:        true,
+					Provider:    "gitlab-ci",
+					BuildID:     os.Getenv("CI_PIPELINE_ID"),
+					BuildNumber: os.Getenv("CI_PIPELINE_IID"),
+					Branch:      os.Getenv("CI_COMMIT_REF_NAME"),
+					Commit:      os.Getenv("CI_COMMIT_SHA"),
+					Repository:  os.Getenv("CI_PROJECT_PATH"),
+					PullRequest: os.Getenv("CI_MERGE_REQUEST_IID"),
+					JobID:       os.Getenv("CI_JOB_ID"),
+					Environment: os.Getenv("CI_ENVIRONMENT_NAME"),
+					Actor:       os.Getenv("GITLAB_USER_LOGIN"),
+				}
+			},
+		},
+		{
+			Name:     "jenkins",
+			Priority: 90,
+			Detect:   func() bool { return os.Getenv("JENKINS_URL") != "" },
+			Extract: func() *CIEnvironment {
+				return &CIEnvironment{
+					IsCI:        true,
+					Provider:    "jenkins",
+					BuildID:     os.Getenv("BUILD_ID"),
+					BuildNumber: os.Getenv("BUILD_NUMBER"),
+					Branch:      os.Getenv("GIT_BRANCH"),
+					Commit:      os.Getenv("GIT_COMMIT"),
+					Repository:  os.Getenv("GIT_URL"),
+					JobID:       os.Getenv("JOB_NAME"),
+				}
+			},
+		},
+		{
+			Name:     "travis-ci",
+			Priority: 90,
+			Detect:   func() bool { return os.Getenv("TRAVIS") == "true" },
+			Extract: func() *CIEnvironment {
+				return &CIEnvironment{
+					IsCI:        true,
+					Provider:    "travis-ci",
+					BuildID:     os.Getenv("TRAVIS_BUILD_ID"),
+					BuildNumber: os.Getenv("TRAVIS_BUILD_NUMBER"),
+					Branch:      os.Getenv("TRAVIS_BRANCH"),
+					Commit:      os.Getenv("TRAVIS_COMMIT"),
+					Repository:  os.Getenv("TRAVIS_REPO_SLUG"),
+					PullRequest: os.Getenv("TRAVIS_PULL_REQUEST"),
+					JobID:       os.Getenv("TRAVIS_JOB_ID"),
+				}
+			},
+		},
+		{
+			Name:     "circleci",
+			Priority: 90,
+			Detect:   func() bool { return os.Getenv("CIRCLECI") == "true" },
+			Extract: func() *CIEnvironment {
+				return &CIEnvironment{
+					IsCI:        true,
+					Provider:    "circleci",
+					BuildID:     os.Getenv("CIRCLE_BUILD_NUM"),
+					BuildNumber: os.Getenv("CIRCLE_BUILD_NUM"),
+					Branch:      os.Getenv("CIRCLE_BRANCH"),
+					Commit:      os.Getenv("CIRCLE_SHA1"),
+					Repository:  os.Getenv("CIRCLE_PROJECT_REPONAME"),
+					PullRequest: os.Getenv("CIRCLE_PR_NUMBER"),
+					JobID:       os.Getenv("CIRCLE_JOB"),
+					WorkflowID:  os.Getenv("CIRCLE_WORKFLOW_ID"),
+				}
+			},
+		},
+		{
+			Name:     "azure-devops",
+			Priority: 90,
+			Detect:   func() bool { return os.Getenv("TF_BUILD") == "True" },
+			Extract: func() *CIEnvironment {
+				return &CIEnvironment{
+					IsCI:        true,
+					Provider:    "azure-devops",
+					BuildID:     os.Getenv("BUILD_BUILDID"),
+					BuildNumber: os.Getenv("BUILD_BUILDNUMBER"),
+					Branch:      os.Getenv("BUILD_SOURCEBRANCH"),
+					Commit:      os.Getenv("BUILD_SOURCEVERSION"),
+					Repository:  os.Getenv("BUILD_REPOSITORY_NAME"),
+					PullRequest: os.Getenv("SYSTEM_PULLREQUEST_PULLREQUESTID"),
+					JobID:       os.Getenv("AGENT_JOBNAME"),
+				}
+			},
+		},
+		{
+			Name:     "bitbucket-pipelines",
+			Priority: 90,
+			Detect:   func() bool { return os.Getenv("BITBUCKET_BUILD_NUMBER") != "" },
+			Extract: func() *CIEnvironment {
+				return &CIEnvironment{
+					IsCI:        true,
+					Provider:    "bitbucket-pipelines",
+					BuildNumber: os.Getenv("BITBUCKET_BUILD_NUMBER"),
+					Branch:      os.Getenv("BITBUCKET_BRANCH"),
+					Commit:      os.Getenv("BITBUCKET_COMMIT"),
+					Repository:  os.Getenv("BITBUCKET_REPO_FULL_NAME"),
+					PullRequest: os.Getenv("BITBUCKET_PR_ID"),
+				}
+			},
+		},
+		{
+			Name:     "aws-codebuild",
+			Priority: 90,
+			Detect:   func() bool { return os.Getenv("CODEBUILD_BUILD_ID") != "" },
+			Extract: func() *CIEnvironment {
+				return &CIEnvironment{
+					IsCI:     true,
+					Provider: "aws-codebuild",
+					BuildID:  os.Getenv("CODEBUILD_BUILD_ID"),
+					Branch:   os.Getenv("CODEBUILD_WEBHOOK_HEAD_REF"),
+					Commit:   os.Getenv("CODEBUILD_RESOLVED_SOURCE_VERSION"),
+				}
+			},
+		},
+		{
+			Name:     "buildkite",
+			Priority: 90,
+			Detect:   func() bool { return os.Getenv("BUILDKITE") == "true" },
+			Extract: func() *CIEnvironment {
+				return &CIEnvironment{
+					IsCI:        true,
+					Provider:    "buildkite",
+					BuildID:     os.Getenv("BUILDKITE_BUILD_ID"),
+					BuildNumber: os.Getenv("BUILDKITE_BUILD_NUMBER"),
+					Branch:      os.Getenv("BUILDKITE_BRANCH"),
+					Commit:      os.Getenv("BUILDKITE_COMMIT"),
+					Repository:  os.Getenv("BUILDKITE_REPO"),
+					PullRequest: os.Getenv("BUILDKITE_PULL_REQUEST"),
+					JobID:       os.Getenv("BUILDKITE_JOB_ID"),
+				}
+			},
+		},
+		{
+			Name:     "drone",
+			Priority: 90,
+			Detect:   func() bool { return os.Getenv("DRONE") == "true" },
+			Extract: func() *CIEnvironment {
+				return &CIEnvironment{
+					IsCI:        true,
+					Provider:    "drone",
+					BuildID:     os.Getenv("DRONE_BUILD_NUMBER"),
+					BuildNumber: os.Getenv("DRONE_BUILD_NUMBER"),
+					Branch:      os.Getenv("DRONE_BRANCH"),
+					Commit:      os.Getenv("DRONE_COMMIT"),
+					Repository:  os.Getenv("DRONE_REPO"),
+					PullRequest: os.Getenv("DRONE_PULL_REQUEST"),
+				}
+			},
+		},
+		{
+			Name:     "teamcity",
+			Priority: 90,
+			Detect:   func() bool { return os.Getenv("TEAMCITY_VERSION") != "" },
+			Extract: func() *CIEnvironment {
+				return &CIEnvironment{
+					IsCI:        true,
+					Provider:    "teamcity",
+					BuildID:     os.Getenv("BUILD_NUMBER"),
+					BuildNumber: os.Getenv("BUILD_NUMBER"),
+					Branch:      os.Getenv("BUILD_VCS_BRANCH"),
+					Commit:      os.Getenv("BUILD_VCS_NUMBER"),
+				}
+			},
+		},
+		{
+			Name:     "generic",
+			Priority: 10, // Lowest priority - fallback for generic CI detection
+			Detect: func() bool {
+				return os.Getenv("CI") == "true" || os.Getenv("CONTINUOUS_INTEGRATION") == "true"
+			},
+			Extract: func() *CIEnvironment {
+				return &CIEnvironment{
+					IsCI:     true,
+					Provider: "generic",
+				}
+			},
+		},
 	}
 
-	// GitHub Actions
-	if os.Getenv("GITHUB_ACTIONS") == "true" {
-		ci.IsCI = true
-		ci.Provider = "github-actions"
-		ci.BuildID = os.Getenv("GITHUB_RUN_ID")
-		ci.BuildNumber = os.Getenv("GITHUB_RUN_NUMBER")
-		ci.Branch = os.Getenv("GITHUB_REF_NAME")
-		ci.Commit = os.Getenv("GITHUB_SHA")
-		ci.Repository = os.Getenv("GITHUB_REPOSITORY")
-		ci.PullRequest = os.Getenv("GITHUB_EVENT_NUMBER")
-		ci.JobID = os.Getenv("GITHUB_JOB")
-		ci.WorkflowID = os.Getenv("GITHUB_WORKFLOW")
-		ci.Environment = os.Getenv("GITHUB_ENVIRONMENT")
-		ci.Actor = os.Getenv("GITHUB_ACTOR")
+	// Find the highest priority detector that matches
+	var selectedDetector *CIDetector
+	for _, detector := range detectors {
+		if detector.Detect() {
+			if selectedDetector == nil || detector.Priority > selectedDetector.Priority {
+				selectedDetector = &detector
+			}
+		}
 	}
 
-	// GitLab CI
-	if os.Getenv("GITLAB_CI") == "true" {
-		ci.IsCI = true
-		ci.Provider = "gitlab-ci"
-		ci.BuildID = os.Getenv("CI_PIPELINE_ID")
-		ci.BuildNumber = os.Getenv("CI_PIPELINE_IID")
-		ci.Branch = os.Getenv("CI_COMMIT_REF_NAME")
-		ci.Commit = os.Getenv("CI_COMMIT_SHA")
-		ci.Repository = os.Getenv("CI_PROJECT_PATH")
-		ci.PullRequest = os.Getenv("CI_MERGE_REQUEST_IID")
-		ci.JobID = os.Getenv("CI_JOB_ID")
-		ci.Environment = os.Getenv("CI_ENVIRONMENT_NAME")
-		ci.Actor = os.Getenv("GITLAB_USER_LOGIN")
-	}
-
-	// Jenkins
-	if os.Getenv("JENKINS_URL") != "" {
-		ci.IsCI = true
-		ci.Provider = "jenkins"
-		ci.BuildID = os.Getenv("BUILD_ID")
-		ci.BuildNumber = os.Getenv("BUILD_NUMBER")
-		ci.Branch = os.Getenv("GIT_BRANCH")
-		ci.Commit = os.Getenv("GIT_COMMIT")
-		ci.Repository = os.Getenv("GIT_URL")
-		ci.JobID = os.Getenv("JOB_NAME")
-	}
-
-	// Travis CI
-	if os.Getenv("TRAVIS") == "true" {
-		ci.IsCI = true
-		ci.Provider = "travis-ci"
-		ci.BuildID = os.Getenv("TRAVIS_BUILD_ID")
-		ci.BuildNumber = os.Getenv("TRAVIS_BUILD_NUMBER")
-		ci.Branch = os.Getenv("TRAVIS_BRANCH")
-		ci.Commit = os.Getenv("TRAVIS_COMMIT")
-		ci.Repository = os.Getenv("TRAVIS_REPO_SLUG")
-		ci.PullRequest = os.Getenv("TRAVIS_PULL_REQUEST")
-		ci.JobID = os.Getenv("TRAVIS_JOB_ID")
-	}
-
-	// CircleCI
-	if os.Getenv("CIRCLECI") == "true" {
-		ci.IsCI = true
-		ci.Provider = "circleci"
-		ci.BuildID = os.Getenv("CIRCLE_BUILD_NUM")
-		ci.BuildNumber = os.Getenv("CIRCLE_BUILD_NUM")
-		ci.Branch = os.Getenv("CIRCLE_BRANCH")
-		ci.Commit = os.Getenv("CIRCLE_SHA1")
-		ci.Repository = os.Getenv("CIRCLE_PROJECT_REPONAME")
-		ci.PullRequest = os.Getenv("CIRCLE_PR_NUMBER")
-		ci.JobID = os.Getenv("CIRCLE_JOB")
-		ci.WorkflowID = os.Getenv("CIRCLE_WORKFLOW_ID")
-	}
-
-	// Azure DevOps
-	if os.Getenv("TF_BUILD") == "True" {
-		ci.IsCI = true
-		ci.Provider = "azure-devops"
-		ci.BuildID = os.Getenv("BUILD_BUILDID")
-		ci.BuildNumber = os.Getenv("BUILD_BUILDNUMBER")
-		ci.Branch = os.Getenv("BUILD_SOURCEBRANCH")
-		ci.Commit = os.Getenv("BUILD_SOURCEVERSION")
-		ci.Repository = os.Getenv("BUILD_REPOSITORY_NAME")
-		ci.PullRequest = os.Getenv("SYSTEM_PULLREQUEST_PULLREQUESTID")
-		ci.JobID = os.Getenv("AGENT_JOBNAME")
-	}
-
-	// Bitbucket Pipelines
-	if os.Getenv("BITBUCKET_BUILD_NUMBER") != "" {
-		ci.IsCI = true
-		ci.Provider = "bitbucket-pipelines"
-		ci.BuildNumber = os.Getenv("BITBUCKET_BUILD_NUMBER")
-		ci.Branch = os.Getenv("BITBUCKET_BRANCH")
-		ci.Commit = os.Getenv("BITBUCKET_COMMIT")
-		ci.Repository = os.Getenv("BITBUCKET_REPO_FULL_NAME")
-		ci.PullRequest = os.Getenv("BITBUCKET_PR_ID")
-	}
-
-	// AWS CodeBuild
-	if os.Getenv("CODEBUILD_BUILD_ID") != "" {
-		ci.IsCI = true
-		ci.Provider = "aws-codebuild"
-		ci.BuildID = os.Getenv("CODEBUILD_BUILD_ID")
-		ci.Branch = os.Getenv("CODEBUILD_WEBHOOK_HEAD_REF")
-		ci.Commit = os.Getenv("CODEBUILD_RESOLVED_SOURCE_VERSION")
+	// Extract CI information using the selected detector
+	if selectedDetector != nil {
+		ci = selectedDetector.Extract()
 	}
 
 	return ci
@@ -250,61 +330,6 @@ func (c *CLI) isNonInteractiveMode() bool {
 	}
 
 	return false
-}
-
-// convertEnvironmentConfigToProjectConfig converts environment config to project config
-func (c *CLI) convertEnvironmentConfigToProjectConfig(envConfig *EnvironmentConfig) (*models.ProjectConfig, error) {
-	config := &models.ProjectConfig{
-		Name:         envConfig.ProjectName,
-		Organization: envConfig.ProjectOrganization,
-		Description:  envConfig.ProjectDescription,
-		License:      envConfig.ProjectLicense,
-		OutputPath:   envConfig.OutputPath,
-	}
-
-	// Set components based on environment variables
-	components := models.Components{}
-
-	if envConfig.Frontend {
-		// Set frontend components based on technology
-		if envConfig.FrontendTech == "nextjs-app" || envConfig.FrontendTech == "" {
-			components.Frontend.NextJS.App = true
-			components.Frontend.NextJS.Home = true
-			components.Frontend.NextJS.Shared = true
-		}
-	}
-
-	if envConfig.Backend {
-		// Set backend components based on technology
-		if envConfig.BackendTech == "go-gin" || envConfig.BackendTech == "" {
-			components.Backend.GoGin = true
-		}
-	}
-
-	if envConfig.Mobile {
-		// Set mobile components based on technology
-		if envConfig.MobileTech == "android-kotlin" || envConfig.MobileTech == "android" {
-			components.Mobile.Android = true
-		}
-		if envConfig.MobileTech == "ios-swift" || envConfig.MobileTech == "ios" {
-			components.Mobile.IOS = true
-		}
-	}
-
-	if envConfig.Infrastructure {
-		// Set infrastructure components based on technology
-		components.Infrastructure.Docker = true
-		if envConfig.InfrastructureTech == "kubernetes" {
-			components.Infrastructure.Kubernetes = true
-		}
-		if envConfig.InfrastructureTech == "terraform" {
-			components.Infrastructure.Terraform = true
-		}
-	}
-
-	config.Components = components
-
-	return config, nil
 }
 
 // outputMachineReadable outputs data in machine-readable format
@@ -340,15 +365,6 @@ func parseBoolEnv(key string, defaultValue bool) bool {
 	}
 
 	return parsed
-}
-
-// getEnvWithDefault gets an environment variable with a default value
-func getEnvWithDefault(key, defaultValue string) string {
-	value := os.Getenv(key)
-	if value == "" {
-		return defaultValue
-	}
-	return value
 }
 
 // isTerminal checks if stdin is a terminal (not piped)

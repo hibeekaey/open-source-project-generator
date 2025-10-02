@@ -43,7 +43,7 @@ func TestContainerCLI(t *testing.T) {
 	container := NewContainer()
 
 	// Create a real CLI with all required dependencies
-	mockCLI := cli.NewCLI(nil, nil, nil, nil, nil, nil, nil, "test-version")
+	mockCLI := cli.NewCLI(nil, nil, nil, nil, nil, nil, nil, "test-version", "test-commit", "test-build-time")
 
 	// Test SetCLI and GetCLI
 	container.SetCLI(mockCLI)
@@ -298,6 +298,9 @@ func (m *mockCLI) GenerateReport(string, string, string) error  { return nil }
 func (m *mockCLI) GetExitCode() int                             { return 0 }
 func (m *mockCLI) SetExitCode(int)                              {}
 func (m *mockCLI) GetVersionManager() interfaces.VersionManager { return nil }
+func (m *mockCLI) GetBuildInfo() (version, gitCommit, buildTime string) {
+	return "test", "test", "test"
+}
 
 func TestContainerWithMockCLI(t *testing.T) {
 	container := NewContainer()

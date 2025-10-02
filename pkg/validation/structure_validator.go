@@ -11,6 +11,15 @@ import (
 	"github.com/cuesoftinc/open-source-project-generator/pkg/utils"
 )
 
+// Pre-compiled regular expressions for structure validation
+var (
+	camelCaseRegex        = regexp.MustCompile(`^[a-z]+([A-Z][a-z]*)+$`)
+	readmePatternRegex    = regexp.MustCompile(`^README\.(md|txt|rst)$`)
+	licensePatternRegex   = regexp.MustCompile(`^LICENSE(\.(txt|md))?$`)
+	gitignorePatternRegex = regexp.MustCompile(`^\.gitignore$`)
+	camelToKebabRegex     = regexp.MustCompile(`([a-z])([A-Z])`)
+)
+
 // StructureValidator provides specialized project structure validation
 type StructureValidator struct {
 	rules map[string]StructureRule
@@ -520,7 +529,6 @@ func (sv *StructureValidator) validateDirectoryNaming(path string, info os.FileI
 	}
 
 	// Check for camelCase in directory names (should be kebab-case or snake_case)
-	camelCaseRegex := regexp.MustCompile(`^[a-z]+([A-Z][a-z]*)+$`)
 	if camelCaseRegex.MatchString(name) {
 		issue := interfaces.NamingValidationIssue{
 			Path:       path,
@@ -552,7 +560,6 @@ func (sv *StructureValidator) validateFileNaming(path string, info os.FileInfo, 
 	baseName := strings.TrimSuffix(name, ext)
 
 	// Check for camelCase in file names (context-dependent)
-	camelCaseRegex := regexp.MustCompile(`^[a-z]+([A-Z][a-z]*)+$`)
 	if camelCaseRegex.MatchString(baseName) {
 		// Allow camelCase for certain file types (JavaScript, TypeScript)
 		allowedExts := []string{".js", ".ts", ".jsx", ".tsx"}
@@ -588,33 +595,31 @@ func (sv *StructureValidator) initializeDefaultRules() {
 		Name:        "README Required",
 		Description: "Project must have a README file",
 		Required:    true,
-		Pattern:     regexp.MustCompile(`^README\.(md|txt|rst)$`),
+		Pattern:     readmePatternRegex,
 	}
 
 	sv.rules["license_required"] = StructureRule{
 		Name:        "License Required",
 		Description: "Project must have a LICENSE file",
 		Required:    true,
-		Pattern:     regexp.MustCompile(`^LICENSE(\.(txt|md))?$`),
+		Pattern:     licensePatternRegex,
 	}
 
 	sv.rules["gitignore_recommended"] = StructureRule{
 		Name:        "Gitignore Recommended",
 		Description: "Project should have a .gitignore file",
 		Required:    false,
-		Pattern:     regexp.MustCompile(`^\.gitignore$`),
+		Pattern:     gitignorePatternRegex,
 	}
 }
 
 // Helper functions for naming convention conversion
 func toKebabCase(s string) string {
-	// Convert camelCase to kebab-case
-	re := regexp.MustCompile(`([a-z])([A-Z])`)
-	return strings.ToLower(re.ReplaceAllString(s, "${1}-${2}"))
+	// Convert camelCase to kebab-case using pre-compiled regex
+	return strings.ToLower(camelToKebabRegex.ReplaceAllString(s, "${1}-${2}"))
 }
 
 func toSnakeCase(s string) string {
-	// Convert camelCase to snake_case
-	re := regexp.MustCompile(`([a-z])([A-Z])`)
-	return strings.ToLower(re.ReplaceAllString(s, "${1}_${2}"))
+	// Convert camelCase to snake_case using pre-compiled regex
+	return strings.ToLower(camelToKebabRegex.ReplaceAllString(s, "${1}_${2}"))
 }

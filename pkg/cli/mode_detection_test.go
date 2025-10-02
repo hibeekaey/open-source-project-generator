@@ -7,6 +7,7 @@ import (
 func TestDetectGenerationMode(t *testing.T) {
 	// Create a minimal CLI instance for testing
 	cli := &CLI{}
+	cli.outputManager = NewOutputManager(false, false, false, nil)
 
 	// Check if we're running in CI environment
 	isCI := cli.detectCIEnvironment().IsCI
@@ -77,6 +78,8 @@ func TestDetectGenerationMode(t *testing.T) {
 
 func TestValidateModeFlags(t *testing.T) {
 	cli := &CLI{}
+	cli.outputManager = NewOutputManager(false, false, false, nil)
+	cli.flagHandler = NewFlagHandler(cli, cli.outputManager, nil)
 
 	tests := []struct {
 		name                string
@@ -134,7 +137,7 @@ func TestValidateModeFlags(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := cli.validateModeFlags(tt.nonInteractive, tt.interactive, tt.forceInteractive, tt.forceNonInteractive, tt.explicitMode)
+			err := cli.flagHandler.ValidateModeFlags(tt.nonInteractive, tt.interactive, tt.forceInteractive, tt.forceNonInteractive, tt.explicitMode)
 			if (err != nil) != tt.expectError {
 				t.Errorf("validateModeFlags() error = %v, expectError %v", err, tt.expectError)
 			}
@@ -144,6 +147,7 @@ func TestValidateModeFlags(t *testing.T) {
 
 func TestApplyModeOverrides(t *testing.T) {
 	cli := &CLI{}
+	cli.outputManager = NewOutputManager(false, false, false, nil)
 
 	tests := []struct {
 		name                string
@@ -199,6 +203,7 @@ func TestApplyModeOverrides(t *testing.T) {
 
 func TestValidateAndNormalizeMode(t *testing.T) {
 	cli := &CLI{}
+	cli.outputManager = NewOutputManager(false, false, false, nil)
 
 	tests := []struct {
 		name     string

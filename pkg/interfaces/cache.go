@@ -65,6 +65,18 @@ type CacheManager interface {
 	GetMissRate() float64
 }
 
+// CacheStats contains cache statistics and information
+type CacheStats struct {
+	TotalEntries int       `json:"total_entries"`
+	TotalSize    int64     `json:"total_size"`
+	HitCount     int64     `json:"hit_count"`
+	MissCount    int64     `json:"miss_count"`
+	HitRate      float64   `json:"hit_rate"`
+	LastAccessed time.Time `json:"last_accessed"`
+	LastModified time.Time `json:"last_modified"`
+	CreatedAt    time.Time `json:"created_at"`
+}
+
 // CacheConfig defines configuration options for the cache
 type CacheConfig struct {
 	// Storage configuration
@@ -218,6 +230,46 @@ const (
 	CacheWarningTypePerformance = "performance"
 	CacheWarningTypeExpiration  = "expiration"
 )
+
+// StorageBackend defines the interface for cache storage backends.
+type StorageBackend interface {
+	// Initialize sets up the storage backend
+	Initialize() error
+
+	// Basic operations
+	Get(key string) (interface{}, error)
+	Set(key string, value interface{}, ttl time.Duration) error
+	Delete(key string) error
+	Exists(key string) bool
+	Clear() error
+
+	// Batch operations
+	GetMultiple(keys []string) (map[string]interface{}, error)
+	SetMultiple(items map[string]interface{}, ttl time.Duration) error
+	DeleteMultiple(keys []string) error
+
+	// Metadata operations
+	GetKeys() ([]string, error)
+	GetSize() (int64, error)
+	GetStats() (*CacheStats, error)
+
+	// Maintenance operations
+	Cleanup() error
+	Compact() error
+	Backup(path string) error
+	Restore(path string) error
+
+	// Configuration
+	SetConfig(config *CacheConfig) error
+	GetConfig() (*CacheConfig, error)
+
+	// Health and monitoring
+	HealthCheck() error
+	GetMetrics() (*CacheMetrics, error)
+
+	// Lifecycle
+	Close() error
+}
 
 // DefaultCacheConfig returns default cache configuration
 func DefaultCacheConfig() *CacheConfig {

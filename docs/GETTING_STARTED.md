@@ -635,13 +635,13 @@ generator validate --rules structure,dependencies --show-fixes
 Enable debug output for troubleshooting:
 
 ```bash
-# Debug mode with performance metrics
-generator generate --debug --verbose
+# Debug mode (includes verbose output automatically)
+generator generate --debug
 
 # Check logs
 generator logs --level error --lines 50
 
-# Show configuration and sources
+# Show configuration and sources with verbose output
 generator config show --sources --verbose
 ```
 

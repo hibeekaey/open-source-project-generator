@@ -44,7 +44,7 @@ test-coverage: ## Run tests with coverage report
 # Clean build artifacts
 clean: ## Clean build artifacts
 	@echo "Cleaning..."
-	rm -rf bin/
+	rm -rf bin/ output/ dist/
 	rm -f coverage.out coverage.html
 
 # Run the application

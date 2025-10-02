@@ -49,6 +49,19 @@ Welcome to the Open Source Project Generator documentation. This index provides 
   - Local development testing
   - Troubleshooting test issues
 
+- **[Package Structure Guide](PACKAGE_STRUCTURE.md)** - Modular architecture documentation
+  - Refactored package organization with focused components
+  - Component responsibilities and interfaces
+  - Development guidelines for modular structure
+  - Benefits of the new architecture and best practices
+
+- **[Migration Guide](MIGRATION_GUIDE.md)** - Code splitting refactoring documentation
+  - Comprehensive migration mapping from old to new structure
+  - Function and component relocation guide
+  - Import changes and compatibility information
+  - Development workflow changes and best practices
+  - Troubleshooting and rollback procedures
+
 ## 🚀 Quick Navigation
 
 ### I'm New to the Project
@@ -69,7 +82,7 @@ Read the **[Template Development Guide](TEMPLATE_DEVELOPMENT.md)** to learn how 
 
 ### I'm Contributing to the Project
 
-Review the **[API Reference](API_REFERENCE.md)** and **[CI/CD Testing Guide](CI_TESTING.md)** for development information.
+Review the **[API Reference](API_REFERENCE.md)**, **[Package Structure Guide](PACKAGE_STRUCTURE.md)**, **[Migration Guide](MIGRATION_GUIDE.md)**, and **[CI/CD Testing Guide](CI_TESTING.md)** for development information.
 
 ## 📖 Documentation Structure
 
@@ -81,7 +94,9 @@ docs/
 ├── TROUBLESHOOTING.md          # Problem solving and debugging
 ├── API_REFERENCE.md            # Developer API documentation
 ├── TEMPLATE_DEVELOPMENT.md     # Template creation and maintenance
-└── CI_TESTING.md              # Testing strategy and implementation
+├── CI_TESTING.md              # Testing strategy and implementation
+├── PACKAGE_STRUCTURE.md        # Modular architecture documentation
+└── MIGRATION_GUIDE.md          # Code splitting refactoring guide
 ```
 
 ## 🎯 Documentation Goals

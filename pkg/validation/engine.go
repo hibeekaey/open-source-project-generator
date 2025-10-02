@@ -37,22 +37,27 @@ import (
 	"github.com/cuesoftinc/open-source-project-generator/pkg/interfaces"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/utils"
-	"gopkg.in/yaml.v3"
 )
 
 // Engine implements the comprehensive ValidationEngine interface
 type Engine struct {
-	rules           []interfaces.ValidationRule
-	rulesByID       map[string]interfaces.ValidationRule
-	rulesByCategory map[string][]interfaces.ValidationRule
+	rules              []interfaces.ValidationRule
+	rulesByID          map[string]interfaces.ValidationRule
+	rulesByCategory    map[string][]interfaces.ValidationRule
+	configValidator    *ConfigValidator
+	structureValidator *StructureValidator
+	templateValidator  *TemplateValidator
 }
 
 // NewEngine creates a new validation engine with default rules
 func NewEngine() interfaces.ValidationEngine {
 	engine := &Engine{
-		rules:           []interfaces.ValidationRule{},
-		rulesByID:       make(map[string]interfaces.ValidationRule),
-		rulesByCategory: make(map[string][]interfaces.ValidationRule),
+		rules:              []interfaces.ValidationRule{},
+		rulesByID:          make(map[string]interfaces.ValidationRule),
+		rulesByCategory:    make(map[string][]interfaces.ValidationRule),
+		configValidator:    NewConfigValidator(),
+		structureValidator: NewStructureValidator(),
+		templateValidator:  NewTemplateValidator(),
 	}
 
 	// Initialize with default validation rules
@@ -103,11 +108,31 @@ func (e *Engine) ValidateProject(projectPath string) (*models.ValidationResult, 
 			"Check your package.json, go.mod, or other dependency files")
 	}
 
-	// Perform configuration validation
-	if err := e.validateProjectConfigurationFiles(projectPath, result); err != nil {
+	// Perform configuration validation using ConfigValidator
+	configResults, err := e.configValidator.ValidateConfigurationFiles(projectPath)
+	if err != nil {
 		return nil, fmt.Errorf("🚫 %s %s",
 			"Configuration file validation failed.",
 			"Check your YAML, JSON, and other config files for syntax errors")
+	}
+
+	// Convert config validation results to validation issues
+	for _, configResult := range configResults {
+		for _, configError := range configResult.Errors {
+			result.Issues = append(result.Issues, models.ValidationIssue{
+				Type:    "error",
+				Message: configError.Message,
+				File:    configError.Field,
+			})
+			result.Valid = false
+		}
+		for _, configWarning := range configResult.Warnings {
+			result.Issues = append(result.Issues, models.ValidationIssue{
+				Type:    "warning",
+				Message: configWarning.Message,
+				File:    configWarning.Field,
+			})
+		}
 	}
 
 	return result, nil
@@ -115,45 +140,19 @@ func (e *Engine) ValidateProject(projectPath string) (*models.ValidationResult, 
 
 // ValidatePackageJSON validates a package.json file
 func (e *Engine) ValidatePackageJSON(path string) error {
-	// Validate path to prevent directory traversal
-	if err := utils.ValidatePath(path); err != nil {
-		return fmt.Errorf("invalid package.json path: %w", err)
-	}
-
-	content, err := utils.SafeReadFile(path)
+	// Use the JSON validator for package.json validation
+	result, err := e.configValidator.jsonValidator.ValidateJSONFile(path)
 	if err != nil {
 		return fmt.Errorf("🚫 %s %s",
-			"Unable to read package.json file.",
+			"Unable to validate package.json file.",
 			"Check if the file exists and has proper permissions")
 	}
 
-	var pkg map[string]interface{}
-	if err := json.Unmarshal(content, &pkg); err != nil {
-		return fmt.Errorf("invalid JSON syntax in package.json: %w", err)
-	}
-
-	// Check required fields
-	requiredFields := []string{"name", "version"}
-	for _, field := range requiredFields {
-		if _, exists := pkg[field]; !exists {
-			return fmt.Errorf("missing required field '%s' in package.json", field)
-		}
-	}
-
-	// Validate name format
-	if name, exists := pkg["name"]; exists {
-		if nameStr, ok := name.(string); ok {
-			if nameStr == "" || strings.Contains(nameStr, " ") {
-				return fmt.Errorf("package name must be non-empty and not contain spaces")
-			}
-		}
-	}
-
-	// Validate version format
-	if version, exists := pkg["version"]; exists {
-		if versionStr, ok := version.(string); ok {
-			if versionStr == "" {
-				return fmt.Errorf("version must be non-empty")
+	// Check for critical errors
+	if !result.Valid {
+		for _, configError := range result.Errors {
+			if configError.Severity == interfaces.ValidationSeverityError {
+				return fmt.Errorf("package.json validation error: %s", configError.Message)
 			}
 		}
 	}
@@ -203,33 +202,21 @@ func (e *Engine) ValidateGoMod(path string) error {
 
 // ValidateDockerfile validates a Dockerfile
 func (e *Engine) ValidateDockerfile(path string) error {
-	// Validate path to prevent directory traversal
-	if err := utils.ValidatePath(path); err != nil {
-		return fmt.Errorf("invalid Dockerfile path: %w", err)
-	}
-
-	content, err := utils.SafeReadFile(path)
+	// Use the Docker validator for Dockerfile validation
+	result, err := e.configValidator.dockerValidator.ValidateDockerfile(path)
 	if err != nil {
 		return fmt.Errorf("🚫 %s %s",
-			"Unable to read Dockerfile.",
+			"Unable to validate Dockerfile.",
 			"Check if the file exists and has proper permissions")
 	}
 
-	contentStr := string(content)
-
-	// Basic validation - check for FROM instruction
-	if !strings.Contains(contentStr, "FROM ") {
-		return fmt.Errorf("dockerfile must contain a FROM instruction")
-	}
-
-	// Check for WORKDIR instruction
-	if !strings.Contains(contentStr, "WORKDIR ") {
-		return fmt.Errorf("dockerfile must contain a WORKDIR instruction")
-	}
-
-	// Check for COPY instruction
-	if !strings.Contains(contentStr, "COPY ") {
-		return fmt.Errorf("dockerfile must contain a COPY instruction")
+	// Check for critical errors
+	if !result.Valid {
+		for _, configError := range result.Errors {
+			if configError.Severity == interfaces.ValidationSeverityError {
+				return fmt.Errorf("dockerfile validation error: %s", configError.Message)
+			}
+		}
 	}
 
 	return nil
@@ -237,21 +224,21 @@ func (e *Engine) ValidateDockerfile(path string) error {
 
 // ValidateYAML validates a YAML file
 func (e *Engine) ValidateYAML(path string) error {
-	// Validate path to prevent directory traversal
-	if err := utils.ValidatePath(path); err != nil {
-		return fmt.Errorf("invalid YAML file path: %w", err)
-	}
-
-	content, err := utils.SafeReadFile(path)
+	// Use the YAML validator for YAML file validation
+	result, err := e.configValidator.yamlValidator.ValidateYAMLFile(path)
 	if err != nil {
 		return fmt.Errorf("🚫 %s %s",
-			"Unable to read YAML file.",
+			"Unable to validate YAML file.",
 			"Check if the file exists and has proper permissions")
 	}
 
-	var data interface{}
-	if err := yaml.Unmarshal(content, &data); err != nil {
-		return fmt.Errorf("invalid YAML syntax: %w", err)
+	// Check for critical errors
+	if !result.Valid {
+		for _, configError := range result.Errors {
+			if configError.Severity == interfaces.ValidationSeverityError {
+				return fmt.Errorf("YAML validation error: %s", configError.Message)
+			}
+		}
 	}
 
 	return nil
@@ -259,21 +246,21 @@ func (e *Engine) ValidateYAML(path string) error {
 
 // ValidateJSON validates a JSON file
 func (e *Engine) ValidateJSON(path string) error {
-	// Validate path to prevent directory traversal
-	if err := utils.ValidatePath(path); err != nil {
-		return fmt.Errorf("invalid JSON file path: %w", err)
-	}
-
-	content, err := utils.SafeReadFile(path)
+	// Use the JSON validator for JSON file validation
+	result, err := e.configValidator.jsonValidator.ValidateJSONFile(path)
 	if err != nil {
 		return fmt.Errorf("🚫 %s %s",
-			"Unable to read JSON file.",
+			"Unable to validate JSON file.",
 			"Check if the file exists and has proper permissions")
 	}
 
-	var data interface{}
-	if err := json.Unmarshal(content, &data); err != nil {
-		return fmt.Errorf("invalid JSON syntax: %w", err)
+	// Check for critical errors
+	if !result.Valid {
+		for _, configError := range result.Errors {
+			if configError.Severity == interfaces.ValidationSeverityError {
+				return fmt.Errorf("JSON validation error: %s", configError.Message)
+			}
+		}
 	}
 
 	return nil
@@ -281,9 +268,6 @@ func (e *Engine) ValidateJSON(path string) error {
 
 // ValidateTemplate validates a template file using the enhanced TemplateValidator
 func (e *Engine) ValidateTemplate(path string) error {
-	// Use the new TemplateValidator for comprehensive validation
-	templateValidator := NewTemplateValidator()
-
 	// Create a validation result to capture issues
 	result := &models.ValidationResult{
 		Valid:   true,
@@ -291,20 +275,20 @@ func (e *Engine) ValidateTemplate(path string) error {
 		Summary: "Template validation",
 	}
 
-	// Validate template content using the enhanced validator
-	if templateValidator.useEmbedded {
+	// Validate template content using the component validator
+	if e.templateValidator.useEmbedded {
 		// Try embedded validation first
-		err := templateValidator.validateEmbeddedTemplateFile(path, result)
+		err := e.templateValidator.validateEmbeddedTemplateFile(path, result)
 		if err != nil {
 			// Fall back to filesystem validation
-			err = templateValidator.validateTemplateFile(path, result)
+			err = e.templateValidator.validateTemplateFile(path, result)
 			if err != nil {
 				return fmt.Errorf("template validation failed: %w", err)
 			}
 		}
 	} else {
 		// Use filesystem validation
-		err := templateValidator.validateTemplateFile(path, result)
+		err := e.templateValidator.validateTemplateFile(path, result)
 		if err != nil {
 			return fmt.Errorf("🚫 %s %s",
 				"Template validation failed.",
@@ -326,8 +310,7 @@ func (e *Engine) ValidateTemplate(path string) error {
 
 // ValidateProjectStructure validates project structure
 func (e *Engine) ValidateProjectStructure(path string) (*interfaces.StructureValidationResult, error) {
-	structureValidator := NewStructureValidator()
-	return structureValidator.ValidateProjectStructure(path)
+	return e.structureValidator.ValidateProjectStructure(path)
 }
 
 // ValidateConfiguration validates project configuration

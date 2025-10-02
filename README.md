@@ -40,6 +40,8 @@ GENERATOR_PROJECT_NAME=myapp generator generate --non-interactive
 - **📦 Template Management** - Custom templates and validation
 - **🔍 Project Validation** - Comprehensive validation and auditing
 - **📊 Quality Assurance** - Code quality analysis and compliance checking
+- **🧩 Modular Architecture** - Clean, maintainable codebase with focused components
+- **🚀 High Performance** - Optimized for speed with comprehensive test coverage
 
 ## 🏗️ Generated Project Structure
 
@@ -192,12 +194,55 @@ generator update --check             # Check for updates
 ### Global Options
 
 ```bash
---verbose, -v          # Verbose output
---quiet, -q            # Quiet mode
---debug, -d            # Debug mode
---non-interactive      # Non-interactive mode
+--verbose, -v          # Verbose output (conflicts with --quiet)
+--quiet, -q            # Quiet mode (conflicts with --verbose, --debug)
+--debug, -d            # Debug mode (conflicts with --quiet)
+--non-interactive      # Non-interactive mode (conflicts with --interactive)
+--interactive          # Interactive mode (conflicts with --non-interactive)
 --output-format json   # JSON output for automation
 --log-level debug      # Set log level
+```
+
+### Enhanced Flag Validation
+
+The CLI includes intelligent flag conflict detection:
+
+```bash
+# ✅ Valid combinations
+generator generate --verbose --interactive
+generator generate --quiet --non-interactive
+generator version --json --packages
+
+# ❌ Invalid combinations (will show helpful error messages)
+generator generate --verbose --quiet          # Output mode conflict
+generator generate --interactive --non-interactive  # Mode conflict
+generator generate --debug --quiet            # Debug conflicts with quiet
+
+# 💡 The CLI provides specific suggestions for resolving conflicts
+generator generate --verbose --quiet
+# Error: Verbose and quiet modes are mutually exclusive
+# Suggestion: Choose either verbose output for detailed information OR quiet mode for minimal output
+# Examples: --verbose, --quiet, --debug (implies verbose)
+```
+
+### Enhanced JSON Output
+
+The version command now provides structured JSON output with comprehensive information:
+
+```bash
+# Enhanced JSON output with build metadata
+generator version --json
+{
+  "version": "1.0.0",
+  "gitCommit": "abc123def",
+  "buildTime": "2024-01-01T00:00:00Z",
+  "goVersion": "go1.21.0",
+  "platform": "darwin",
+  "architecture": "arm64"
+}
+
+# Perfect for CI/CD automation and scripting
+generator version --json --packages | jq '.version'
 ```
 
 ## ⚙️ Configuration
@@ -307,6 +352,22 @@ make build && ./bin/generator --version
 ./bin/generator generate --debug --verbose
 ```
 
+### Architecture Highlights
+
+The codebase follows a **modular architecture** with clear separation of concerns:
+
+- **📦 Focused Packages**: Each package has a single, clear responsibility
+- **🔌 Interface-Based Design**: Components communicate through well-defined interfaces
+- **🧪 Comprehensive Testing**: 70%+ test coverage with focused unit and integration tests
+- **⚡ Performance Optimized**: Regex compilation, string operations, and memory usage optimized
+- **🛡️ Zero Linting Violations**: Clean code with comprehensive error handling
+
+**Key Architectural Benefits**:
+- **Maintainability**: No file exceeds 1,000 lines, making code easy to navigate and modify
+- **Testability**: Interface-based design enables easy mocking and isolated testing
+- **Extensibility**: New features can be added without modifying existing components
+- **Performance**: Smaller files compile faster and enable better IDE performance
+
 ## 📚 Documentation
 
 - **[Getting Started Guide](docs/GETTING_STARTED.md)** - Complete installation and usage guide
@@ -314,6 +375,8 @@ make build && ./bin/generator --version
 - **[Template Development](docs/TEMPLATE_DEVELOPMENT.md)** - Creating and maintaining templates
 - **[API Reference](docs/API_REFERENCE.md)** - Developer API documentation
 - **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
+- **[Package Structure](docs/PACKAGE_STRUCTURE.md)** - Modular architecture documentation
+- **[Migration Guide](docs/MIGRATION_GUIDE.md)** - Code splitting refactoring guide
 
 ## 🤝 Contributing
 

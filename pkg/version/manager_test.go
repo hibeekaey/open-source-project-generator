@@ -51,12 +51,14 @@ func (m *MockCacheManager) Clean() error {
 
 func (m *MockCacheManager) GetStats() (*interfaces.CacheStats, error) {
 	return &interfaces.CacheStats{
-		TotalEntries:  len(m.data),
-		TotalSize:     1024,
-		HitRate:       0.8,
-		CacheLocation: "/tmp/test-cache",
-		OfflineMode:   false,
-		CacheHealth:   "healthy",
+		TotalEntries: len(m.data),
+		TotalSize:    1024,
+		HitCount:     80,
+		MissCount:    20,
+		HitRate:      0.8,
+		LastAccessed: time.Now(),
+		LastModified: time.Now(),
+		CreatedAt:    time.Now(),
 	}, nil
 }
 

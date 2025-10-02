@@ -77,7 +77,7 @@ func (ifm *InteractiveFlowManager) runProjectConfiguration(ctx context.Context, 
 	}
 
 	// Use existing interactive project configuration method
-	return ifm.cli.runInteractiveProjectConfiguration(ctx)
+	return ifm.cli.commandHandlers.runInteractiveProjectConfiguration(ctx)
 }
 
 // runDirectorySelection handles interactive output directory selection

@@ -11,6 +11,11 @@ import (
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
 )
 
+// Pre-compiled regular expressions for engine helpers validation
+var (
+	projectNameRegex = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9\-_]*[a-zA-Z0-9]$`)
+)
+
 // validateProjectStructureBasic performs basic project structure validation
 func (e *Engine) validateProjectStructureBasic(path string, result *models.ValidationResult) error {
 	// Check for README file
@@ -95,69 +100,6 @@ func (e *Engine) validateProjectDependenciesBasic(path string, result *models.Va
 	return nil
 }
 
-// validateProjectConfigurationFiles validates configuration files
-func (e *Engine) validateProjectConfigurationFiles(path string, result *models.ValidationResult) error {
-	// Find and validate YAML files
-	yamlFiles := []string{}
-	jsonFiles := []string{}
-
-	err := filepath.Walk(path, func(filePath string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if info.IsDir() {
-			return nil
-		}
-
-		ext := strings.ToLower(filepath.Ext(info.Name()))
-		switch ext {
-		case ".yaml", ".yml":
-			yamlFiles = append(yamlFiles, filePath)
-		case ".json":
-			jsonFiles = append(jsonFiles, filePath)
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		return fmt.Errorf("failed to walk directory: %w", err)
-	}
-
-	// Validate YAML files
-	for _, yamlFile := range yamlFiles {
-		if err := e.ValidateYAML(yamlFile); err != nil {
-			result.Valid = false
-			result.Issues = append(result.Issues, models.ValidationIssue{
-				Type:     "error",
-				Severity: "error",
-				Message:  fmt.Sprintf("Invalid YAML file: %v", err),
-				File:     yamlFile,
-				Rule:     "configuration.yaml.syntax",
-				Fixable:  false,
-			})
-		}
-	}
-
-	// Validate JSON files
-	for _, jsonFile := range jsonFiles {
-		if err := e.ValidateJSON(jsonFile); err != nil {
-			result.Valid = false
-			result.Issues = append(result.Issues, models.ValidationIssue{
-				Type:     "error",
-				Severity: "error",
-				Message:  fmt.Sprintf("Invalid JSON file: %v", err),
-				File:     jsonFile,
-				Rule:     "configuration.json.syntax",
-				Fixable:  false,
-			})
-		}
-	}
-
-	return nil
-}
-
 // Helper functions for configuration validation
 func (e *Engine) validateRequiredConfigFields(config *models.ProjectConfig, result *interfaces.ConfigValidationResult) {
 	result.Summary.TotalProperties++
@@ -208,8 +150,7 @@ func (e *Engine) validateRequiredConfigFields(config *models.ProjectConfig, resu
 func (e *Engine) validateConfigFieldFormats(config *models.ProjectConfig, result *interfaces.ConfigValidationResult) {
 	// Validate project name format
 	if config.Name != "" {
-		nameRegex := regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9\-_]*[a-zA-Z0-9]$`)
-		if !nameRegex.MatchString(config.Name) {
+		if !projectNameRegex.MatchString(config.Name) {
 			result.Warnings = append(result.Warnings, interfaces.ConfigValidationError{
 				Field:      "name",
 				Value:      config.Name,

@@ -17,12 +17,20 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"text/template"
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/interfaces"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/utils"
 )
+
+// Buffer pool for efficient memory reuse in template rendering
+var bufferPool = sync.Pool{
+	New: func() interface{} {
+		return &bytes.Buffer{}
+	},
+}
 
 // Engine implements the TemplateEngine interface
 type Engine struct {
@@ -156,11 +164,19 @@ func (e *Engine) LoadTemplate(templatePath string) (*template.Template, error) {
 
 // RenderTemplate renders a template with the provided data
 func (e *Engine) RenderTemplate(tmpl *template.Template, data interface{}) ([]byte, error) {
-	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, data); err != nil {
+	// Get buffer from pool for efficient memory reuse
+	buf := bufferPool.Get().(*bytes.Buffer)
+	buf.Reset()               // Clear any existing content
+	defer bufferPool.Put(buf) // Return buffer to pool when done
+
+	if err := tmpl.Execute(buf, data); err != nil {
 		return nil, fmt.Errorf("failed to execute template: %w", err)
 	}
-	return buf.Bytes(), nil
+
+	// Make a copy of the buffer contents since we're returning the buffer to the pool
+	result := make([]byte, buf.Len())
+	copy(result, buf.Bytes())
+	return result, nil
 }
 
 // Helper function to copy a file

@@ -256,6 +256,8 @@ func (e *TemplateEngine) ProcessTemplate(templatePath string, config *models.Pro
 
 #### File Organization
 
+The project follows a modular architecture with clear separation of concerns:
+
 ```text
 cmd/                    # Command-line applications
 └── generator/          # Main generator CLI
@@ -265,24 +267,62 @@ internal/               # Private application code
 ├── config/            # Configuration management
 └── container/         # Dependency injection
 
-pkg/                   # Public interfaces and libraries
-├── cli/               # CLI interface
-├── filesystem/        # File system operations
-├── interfaces/        # Core interfaces
-├── models/           # Data models
-├── template/         # Template processing
-├── validation/       # Validation engine
+pkg/                   # Public interfaces and libraries (modularized)
+├── interfaces/        # Core interfaces and contracts
+├── models/           # Data structures and configuration models
+├── cli/              # CLI interface (modularized)
+│   ├── cli.go        # Main CLI coordination (~500 lines)
+│   ├── commands.go   # Command registration
+│   ├── handlers.go   # Command execution
+│   ├── output.go     # Output formatting and colors
+│   ├── flags.go      # Flag management
+│   ├── interactive.go # Interactive mode
+│   ├── validation.go # CLI validation
+│   └── commands/     # Command-specific implementations
+│       ├── generate.go
+│       ├── validate.go
+│       ├── audit.go
+│       └── template.go
+├── audit/            # Audit engine (modularized)
+│   ├── engine.go     # Main orchestration (~300 lines)
+│   ├── rules.go      # Rule management
+│   ├── result.go     # Result aggregation
+│   ├── security/     # Security audit modules
+│   ├── quality/      # Code quality modules
+│   ├── license/      # License compliance
+│   └── performance/  # Performance analysis
+├── template/         # Template system (modularized)
+│   ├── manager.go    # Template coordination (~400 lines)
+│   ├── discovery.go  # Template discovery
+│   ├── cache.go      # Template caching
+│   ├── validation.go # Template validation
+│   ├── processor/    # Template processing engine
+│   ├── metadata/     # Template metadata handling
+│   └── templates/    # Template files
+│       ├── base/     # Base project templates
+│       ├── frontend/ # Frontend templates
+│       ├── backend/  # Backend templates
+│       ├── mobile/   # Mobile templates
+│       └── infrastructure/ # Infrastructure templates
+├── validation/       # Validation engine (modularized)
+│   ├── engine.go     # Validation orchestration
+│   ├── schemas.go    # Schema management
+│   └── formats/      # Format-specific validators
+├── filesystem/       # File system operations (modularized)
+│   ├── operations.go # File operations
+│   ├── structure.go  # Project structure management
+│   └── components/   # Component-specific generators
+├── cache/            # Caching system (modularized)
+│   ├── manager.go    # Cache coordination
+│   ├── storage.go    # Cache storage
+│   ├── operations.go # Cache operations
+│   └── validation.go # Cache validation
 ├── version/          # Version management
 ├── security/         # Security utilities
 ├── ui/               # User interface components
-└── utils/            # Utility functions
-
-pkg/template/templates/ # Template files
-├── base/             # Base project templates
-├── frontend/         # Frontend templates
-├── backend/          # Backend templates
-├── mobile/           # Mobile templates
-└── infrastructure/   # Infrastructure templates
+├── errors/           # Error handling and categorization
+├── utils/            # Utility functions
+└── constants/        # Application constants
 ```
 
 ### Template Standards
@@ -505,6 +545,72 @@ Instead, please report them responsibly:
 - **Be Inclusive**: Welcome people of all backgrounds and experience levels
 - **Be Constructive**: Provide helpful feedback and suggestions
 - **Be Patient**: Remember that everyone is learning and growing
+
+## Modular Development Guidelines
+
+### Working with the Refactored Structure
+
+The codebase has been refactored into a modular architecture. Understanding this structure is crucial for effective contributions.
+
+#### Adding New Features
+
+1. **Identify the Package**: Determine which package the feature belongs to based on the modular structure
+2. **Check Interfaces**: Ensure the feature fits existing interfaces in `pkg/interfaces/` or create new ones
+3. **Follow Patterns**: Use existing patterns for similar functionality within the same package
+4. **Maintain Modularity**: Keep components focused and avoid cross-cutting concerns
+5. **Add Tests**: Include comprehensive tests for new components
+6. **Update Documentation**: Document new functionality and interfaces
+
+#### Modifying Existing Features
+
+1. **Locate Components**: Use the modular package structure to find relevant code quickly
+2. **Check Dependencies**: Understand component dependencies through interfaces in `pkg/interfaces/`
+3. **Respect Boundaries**: Ensure changes don't violate component boundaries
+4. **Test Changes**: Ensure changes don't break existing functionality
+5. **Update Tests**: Modify tests to reflect changes, including component-specific tests
+6. **Validate Integration**: Run integration tests to ensure system coherence
+
+#### Package-Specific Development
+
+**CLI Development** (`pkg/cli/`):
+- **Main Logic**: Core CLI coordination in `pkg/cli/cli.go` (~500 lines max)
+- **Commands**: Add new commands in `pkg/cli/commands/`
+- **Output**: Use `pkg/cli/output.go` for formatting and colors
+- **Flags**: Manage flags in `pkg/cli/flags.go`
+- **Interactive**: Handle user interaction in `pkg/cli/interactive.go`
+
+**Audit Development** (`pkg/audit/`):
+- **Core Engine**: Main orchestration in `pkg/audit/engine.go` (~300 lines max)
+- **Security**: Add security audits in `pkg/audit/security/`
+- **Quality**: Add quality checks in `pkg/audit/quality/`
+- **Performance**: Add performance audits in `pkg/audit/performance/`
+- **Rules**: Manage audit rules in `pkg/audit/rules.go`
+
+**Template Development** (`pkg/template/`):
+- **Manager**: Template coordination in `pkg/template/manager.go` (~400 lines max)
+- **Processing**: Template engine in `pkg/template/processor/`
+- **Discovery**: Template discovery in `pkg/template/discovery.go`
+- **Validation**: Template validation in `pkg/template/validation.go`
+- **Metadata**: Metadata handling in `pkg/template/metadata/`
+
+**Validation Development** (`pkg/validation/`):
+- **Engine**: Main validation in `pkg/validation/engine.go`
+- **Formats**: Add format validators in `pkg/validation/formats/`
+- **Schemas**: Manage schemas in `pkg/validation/schemas.go`
+
+#### Best Practices for Modular Development
+
+- **Keep Files Small**: Target maximum 1,000 lines per file (strictly enforced)
+- **Single Responsibility**: Each file should have one clear, focused purpose
+- **Interface First**: Design interfaces in `pkg/interfaces/` before implementations
+- **Component Isolation**: Ensure components can be tested and developed independently
+- **Clear Dependencies**: Use dependency injection through interfaces
+- **Test Coverage**: Maintain high test coverage for all components
+- **Documentation**: Keep documentation up-to-date with changes
+- **Package Cohesion**: Keep related functionality within the same package
+- **Minimal Coupling**: Minimize dependencies between packages
+
+For detailed information about the package structure, see the [Package Structure Documentation](docs/PACKAGE_STRUCTURE.md) and [Migration Guide](docs/MIGRATION_GUIDE.md).
 
 ## Development Resources
 

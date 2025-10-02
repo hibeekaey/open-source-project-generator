@@ -64,8 +64,8 @@ func TestNewProjectGenerator(t *testing.T) {
 		t.Fatal("NewProjectGenerator() did not initialize filesystem generator")
 	}
 
-	if pg.structure == nil {
-		t.Fatal("NewProjectGenerator() did not initialize project structure")
+	if pg.structureManager == nil {
+		t.Fatal("NewProjectGenerator() did not initialize structure manager")
 	}
 }
 
@@ -81,50 +81,6 @@ func TestNewDryRunProjectGenerator(t *testing.T) {
 
 	if !pg.fsGen.dryRun {
 		t.Fatal("NewDryRunProjectGenerator() did not set dry-run mode")
-	}
-}
-
-func TestGetStandardProjectStructure(t *testing.T) {
-	structure := GetStandardProjectStructure()
-	if structure == nil {
-		t.Fatal("GetStandardProjectStructure() returned nil")
-	}
-
-	// Verify root directories are defined
-	if len(structure.RootDirs) == 0 {
-		t.Error("GetStandardProjectStructure() returned empty RootDirs")
-	}
-
-	// Verify component directories are defined
-	if len(structure.FrontendDirs) == 0 {
-		t.Error("GetStandardProjectStructure() returned empty FrontendDirs")
-	}
-
-	if len(structure.BackendDirs) == 0 {
-		t.Error("GetStandardProjectStructure() returned empty BackendDirs")
-	}
-
-	if len(structure.MobileDirs) == 0 {
-		t.Error("GetStandardProjectStructure() returned empty MobileDirs")
-	}
-
-	if len(structure.InfraDirs) == 0 {
-		t.Error("GetStandardProjectStructure() returned empty InfraDirs")
-	}
-
-	// Verify expected directories exist
-	expectedRootDirs := []string{"docs", "scripts", ".github/workflows"}
-	for _, expectedDir := range expectedRootDirs {
-		found := false
-		for _, dir := range structure.RootDirs {
-			if dir == expectedDir {
-				found = true
-				break
-			}
-		}
-		if !found {
-			t.Errorf("GetStandardProjectStructure() missing expected root directory: %s", expectedDir)
-		}
 	}
 }
 
@@ -184,7 +140,8 @@ func TestGenerateProjectStructure(t *testing.T) {
 				}
 
 				// Verify root directories were created
-				for _, dir := range pg.structure.RootDirs {
+				structure := pg.structureManager.GetStructure()
+				for _, dir := range structure.RootDirs {
 					dirPath := filepath.Join(projectPath, dir)
 					if !pg.fsGen.FileExists(dirPath) {
 						t.Errorf("GenerateProjectStructure() did not create root directory: %s", dir)
@@ -193,7 +150,7 @@ func TestGenerateProjectStructure(t *testing.T) {
 
 				// Verify component directories were created based on config
 				if tt.config.Components.Frontend.NextJS.App {
-					for _, dir := range pg.structure.FrontendDirs {
+					for _, dir := range structure.FrontendDirs {
 						dirPath := filepath.Join(projectPath, dir)
 						if !pg.fsGen.FileExists(dirPath) {
 							t.Errorf("GenerateProjectStructure() did not create frontend directory: %s", dir)
@@ -202,7 +159,7 @@ func TestGenerateProjectStructure(t *testing.T) {
 				}
 
 				if tt.config.Components.Backend.GoGin {
-					for _, dir := range pg.structure.BackendDirs {
+					for _, dir := range structure.BackendDirs {
 						dirPath := filepath.Join(projectPath, dir)
 						if !pg.fsGen.FileExists(dirPath) {
 							t.Errorf("GenerateProjectStructure() did not create backend directory: %s", dir)

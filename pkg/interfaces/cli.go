@@ -110,6 +110,7 @@ type CLIInterface interface {
 
 	// Component access operations
 	GetVersionManager() VersionManager
+	GetBuildInfo() (version, gitCommit, buildTime string)
 }
 
 // GenerateOptions defines options for project generation
@@ -310,18 +311,6 @@ type VersionCheck struct {
 	Latest     string `json:"latest"`
 	Compatible bool   `json:"compatible"`
 	UpdateType string `json:"update_type"` // major, minor, patch
-}
-
-// CacheStats contains cache statistics and information
-type CacheStats struct {
-	TotalEntries   int       `json:"total_entries"`
-	TotalSize      int64     `json:"total_size"`
-	HitRate        float64   `json:"hit_rate"`
-	ExpiredEntries int       `json:"expired_entries"`
-	LastCleanup    time.Time `json:"last_cleanup"`
-	CacheLocation  string    `json:"cache_location"`
-	OfflineMode    bool      `json:"offline_mode"`
-	CacheHealth    string    `json:"cache_health"` // healthy, corrupted, missing
 }
 
 // CLIError represents a CLI error with detailed information

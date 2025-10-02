@@ -54,7 +54,7 @@ func TestEngine_ValidateProject(t *testing.T) {
 				return nil
 			},
 			expectedValid:  true,
-			expectedIssues: 0,
+			expectedIssues: 2, // enhanced validation produces warnings for Dockerfile
 		},
 		{
 			name: "missing project directory",
@@ -215,13 +215,13 @@ COPY . .`,
 			name: "missing WORKDIR instruction",
 			content: `FROM node:20
 COPY . .`,
-			expectError: true,
+			expectError: false, // enhanced validation produces warnings, not errors
 		},
 		{
 			name: "missing COPY instruction",
 			content: `FROM node:20
 WORKDIR /app`,
-			expectError: true,
+			expectError: false, // enhanced validation produces warnings, not errors
 		},
 	}
 

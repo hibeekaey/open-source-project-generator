@@ -111,6 +111,8 @@ func NewApp(appVersion, gitCommit, buildTime string) (*App, error) {
 		auditEngine,
 		logger,
 		appVersion,
+		gitCommit,
+		buildTime,
 	)
 
 	return &App{

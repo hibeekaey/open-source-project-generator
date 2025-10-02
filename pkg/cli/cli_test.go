@@ -260,7 +260,7 @@ func TestNewCLIWithMocks(t *testing.T) {
 	auditEngine := audit.NewEngine()
 	cacheManager := cache.NewManager("/tmp/test-cache")
 
-	cli := NewCLI(configManager, validator, templateManager, cacheManager, versionManager, auditEngine, nil, "test-version")
+	cli := NewCLI(configManager, validator, templateManager, cacheManager, versionManager, auditEngine, nil, "test-version", "test-commit", "test-build-time")
 
 	if cli == nil {
 		t.Fatal("NewCLI returned nil")
@@ -277,7 +277,7 @@ func TestNewCLIWithMocks(t *testing.T) {
 
 func TestCLIWithNilDependencies(t *testing.T) {
 	// Test CLI with nil dependencies
-	cli := NewCLI(nil, nil, nil, nil, nil, nil, nil, "test-version")
+	cli := NewCLI(nil, nil, nil, nil, nil, nil, nil, "test-version", "test-commit", "test-build-time")
 
 	if cli == nil {
 		t.Fatal("NewCLI with nil dependencies should not return nil")
@@ -307,7 +307,7 @@ func TestCLIErrorHandling(t *testing.T) {
 	auditEngine := audit.NewEngine()
 	cacheManager := cache.NewManager("/tmp/test-cache")
 
-	cli := NewCLI(configManager, validator, templateManager, cacheManager, versionManager, auditEngine, nil, "test-version")
+	cli := NewCLI(configManager, validator, templateManager, cacheManager, versionManager, auditEngine, nil, "test-version", "test-commit", "test-build-time")
 
 	if cli == nil {
 		t.Fatal("NewCLI returned nil")
@@ -336,6 +336,8 @@ func TestCLICreationWithAllDependencies(t *testing.T) {
 		auditEngine,
 		nil,
 		"test-version",
+		"test-commit",
+		"test-build-time",
 	)
 
 	if cli == nil {
@@ -363,6 +365,8 @@ func TestCLICommands(t *testing.T) {
 		auditEngine,
 		nil,
 		"test-version",
+		"test-commit",
+		"test-build-time",
 	).(*CLI)
 
 	// Test that root command is set up
@@ -409,6 +413,8 @@ func TestCLIHelp(t *testing.T) {
 		auditEngine,
 		nil,
 		"test-version",
+		"test-commit",
+		"test-build-time",
 	)
 
 	// Test help command (should not return error)

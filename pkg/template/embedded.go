@@ -1,6 +1,7 @@
 package template
 
 import (
+	"bytes"
 	"embed"
 	"fmt"
 	"io/fs"
@@ -157,11 +158,19 @@ func (e *EmbeddedEngine) LoadTemplate(templatePath string) (*template.Template, 
 
 // RenderTemplate renders a template with the provided data
 func (e *EmbeddedEngine) RenderTemplate(tmpl *template.Template, data interface{}) ([]byte, error) {
-	var buf strings.Builder
-	if err := tmpl.Execute(&buf, data); err != nil {
+	// Get buffer from pool for efficient memory reuse
+	buf := bufferPool.Get().(*bytes.Buffer)
+	buf.Reset()               // Clear any existing content
+	defer bufferPool.Put(buf) // Return buffer to pool when done
+
+	if err := tmpl.Execute(buf, data); err != nil {
 		return nil, fmt.Errorf("failed to execute template: %w", err)
 	}
-	return []byte(buf.String()), nil
+
+	// Make a copy of the buffer contents since we're returning the buffer to the pool
+	result := make([]byte, buf.Len())
+	copy(result, buf.Bytes())
+	return result, nil
 }
 
 // Helper function to copy a file from embedded filesystem

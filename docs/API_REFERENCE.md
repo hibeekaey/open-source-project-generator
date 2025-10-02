@@ -35,20 +35,135 @@ type CLIInterface interface {
     ShowVersion(options VersionOptions) error
     CheckUpdates() (*UpdateInfo, error)
     GetPackageVersions() (map[string]string, error)
+
+    // Output management (new modular interface)
+    VerboseOutput(format string, args ...interface{})
+    DebugOutput(format string, args ...interface{})
+    QuietOutput(format string, args ...interface{})
+    WarningOutput(format string, args ...interface{})
+    SuccessOutput(format string, args ...interface{})
+    Error(text string) string
+    Info(text string) string
+    Warning(text string) string
+    Success(text string) string
+    Highlight(text string) string
+    Dim(text string) string
+    GetVersionManager() interfaces.VersionManager
 }
 ```
 
-### Template Engine
+### Generate Handler Interface
 
-Handles template processing and rendering:
+Handles project generation workflows:
 
 ```go
-type TemplateEngine interface {
-    ProcessTemplate(templatePath string, config *models.ProjectConfig) ([]byte, error)
+type GenerateHandler interface {
+    // Project generation
+    GenerateProjectFromComponents(config *models.ProjectConfig, outputPath string, options GenerateOptions) error
+    UpdatePackageVersions(config *models.ProjectConfig) error
+    
+    // Component checks
+    HasFrontendComponents(config *models.ProjectConfig) bool
+    HasBackendComponents(config *models.ProjectConfig) bool
+    HasMobileComponents(config *models.ProjectConfig) bool
+    HasInfrastructureComponents(config *models.ProjectConfig) bool
+}
+```
+
+### Workflow Handler Interface
+
+Manages complete generation workflows:
+
+```go
+type WorkflowHandler interface {
+    // Workflow execution
+    ExecuteGenerationWorkflow(config *models.ProjectConfig, options GenerateOptions) error
+    
+    // Configuration loading
+    LoadConfigFromFile(configPath string) (*models.ProjectConfig, error)
+    LoadConfigFromEnvironment() (*models.ProjectConfig, error)
+    
+    // Workflow utilities
+    DetermineOutputPath(config *models.ProjectConfig, options GenerateOptions) string
+    DisplayProjectSummary(config *models.ProjectConfig)
+    DisplayGenerationSummary(config *models.ProjectConfig, outputPath string)
+}
+```
+
+### Template Manager Interface
+
+Handles template processing and management:
+
+```go
+type TemplateManager interface {
+    // Template processing
+    ProcessTemplate(templateName string, config *models.ProjectConfig, outputPath string) error
     ProcessDirectory(templateDir string, outputDir string, config *models.ProjectConfig) error
-    RegisterFunctions(funcMap template.FuncMap)
-    LoadTemplate(templatePath string) (*template.Template, error)
-    RenderTemplate(tmpl *template.Template, data interface{}) ([]byte, error)
+    
+    // Template discovery and validation
+    DiscoverTemplates() ([]TemplateInfo, error)
+    ValidateTemplate(templatePath string) error
+    GetTemplateMetadata(templateName string) (*TemplateMetadata, error)
+    
+    // Template caching
+    CacheTemplate(templateName string) error
+    InvalidateCache(templateName string) error
+    GetCachedTemplate(templateName string) (*CachedTemplate, error)
+}
+```
+
+### Cache Operations Interface
+
+Manages cache operations with callbacks and metrics:
+
+```go
+type CacheOperations interface {
+    // Core operations
+    Get(key string, entries map[string]*CacheEntry, metrics *CacheMetrics) (any, error)
+    Set(key string, value any, ttl time.Duration, entries map[string]*CacheEntry, metrics *CacheMetrics) error
+    Delete(key string, entries map[string]*CacheEntry, metrics *CacheMetrics) error
+    Clear(entries map[string]*CacheEntry, metrics *CacheMetrics)
+    
+    // Maintenance operations
+    Clean(entries map[string]*CacheEntry, metrics *CacheMetrics) []string
+    Compact(entries map[string]*CacheEntry, metrics *CacheMetrics) error
+    
+    // Query operations
+    Exists(key string, entries map[string]*CacheEntry) bool
+    GetKeys(entries map[string]*CacheEntry) []string
+    GetKeysByPattern(pattern string, entries map[string]*CacheEntry) ([]string, error)
+    GetExpiredKeys(entries map[string]*CacheEntry) []string
+    
+    // Configuration
+    SetCallbacks(onHit, onMiss func(string), onEviction func(string, string))
+    SetConfig(config *CacheConfig)
+}
+```
+
+### Storage Backend Interface
+
+Defines pluggable storage implementations:
+
+```go
+type StorageBackend interface {
+    // Basic operations
+    Store(key string, data []byte) error
+    Retrieve(key string) ([]byte, error)
+    Delete(key string) error
+    Exists(key string) bool
+    
+    // Batch operations
+    StoreBatch(entries map[string][]byte) error
+    DeleteBatch(keys []string) error
+    
+    // Maintenance
+    Size() (int64, error)
+    Keys() ([]string, error)
+    Clear() error
+    
+    // Configuration
+    Configure(config map[string]interface{}) error
+    Close() error
 }
 ```
 
@@ -107,6 +222,111 @@ type AuditEngine interface {
     AuditCodeQuality(path string) (*QualityAuditResult, error)
     AuditLicenses(path string) (*LicenseAuditResult, error)
     AuditPerformance(path string) (*PerformanceAuditResult, error)
+}
+```
+
+### Filesystem Interfaces
+
+#### Project Generator Interface
+
+Coordinates project generation:
+
+```go
+type ProjectGenerator interface {
+    // Project generation
+    GenerateProject(config *models.ProjectConfig, outputPath string) error
+    GenerateComponent(componentType string, config *models.ProjectConfig, outputPath string) error
+    
+    // Structure management
+    CreateProjectStructure(outputPath string, config *models.ProjectConfig) error
+    ValidateProjectStructure(outputPath string) error
+    
+    // Template processing
+    ProcessProjectTemplates(outputPath string, config *models.ProjectConfig) error
+    ProcessComponentTemplates(componentType string, outputPath string, config *models.ProjectConfig) error
+}
+```
+
+#### Component Generator Interface
+
+Generates specific component types:
+
+```go
+type ComponentGenerator interface {
+    // Component generation
+    GenerateFiles(projectPath string, config *models.ProjectConfig) error
+    ValidateConfiguration(config *models.ProjectConfig) error
+    GetRequiredTemplates() []string
+    
+    // Component-specific methods
+    SupportsComponent(componentType string) bool
+    GetComponentMetadata() *ComponentMetadata
+}
+```
+
+#### File Processor Interface
+
+Handles file processing operations:
+
+```go
+type FileProcessor interface {
+    // File operations
+    ProcessFile(inputPath string, outputPath string, config *models.ProjectConfig) error
+    ProcessDirectory(inputDir string, outputDir string, config *models.ProjectConfig) error
+    
+    // Template processing
+    ProcessTemplate(templatePath string, outputPath string, data interface{}) error
+    ProcessTemplateString(templateContent string, data interface{}) (string, error)
+    
+    // Validation
+    ValidateFile(filePath string) error
+    ValidateDirectory(dirPath string) error
+}
+```
+
+### UI Interfaces
+
+#### Interactive UI Interface
+
+Manages user interactions:
+
+```go
+type InteractiveUI interface {
+    // Project configuration
+    CollectProjectInfo(ctx context.Context) (*models.ProjectConfig, error)
+    SelectComponents(ctx context.Context, config *models.ProjectConfig) error
+    ConfigureAdvancedOptions(ctx context.Context, config *models.ProjectConfig) error
+    
+    // Display operations
+    DisplayResults(results interface{}) error
+    DisplayProjectPreview(config *models.ProjectConfig) error
+    DisplayProgress(message string, progress float64) error
+    
+    // User input
+    PromptConfirmation(message string) (bool, error)
+    PromptSelection(message string, options []string) (string, error)
+    PromptInput(message string, validator func(string) error) (string, error)
+}
+```
+
+#### Configuration Collector Interface
+
+Collects user configuration input:
+
+```go
+type ConfigurationCollector interface {
+    // Information collection
+    CollectProjectInformation() (*models.ProjectInfo, error)
+    CollectComponentSelection() (*models.ComponentSelection, error)
+    CollectAdvancedOptions() (*models.AdvancedOptions, error)
+    
+    // Validation
+    ValidateInput(input interface{}) error
+    ValidateConfiguration(config *models.ProjectConfig) error
+    
+    // Formatting
+    FormatConfiguration(config *models.ProjectConfig) (string, error)
+    ExportConfiguration(config *models.ProjectConfig, format string) ([]byte, error)
 }
 ```
 
@@ -230,15 +450,35 @@ import (
     "log"
     
     "github.com/cuesoftinc/open-source-project-generator/pkg/cli"
+    "github.com/cuesoftinc/open-source-project-generator/pkg/cli/handlers"
     "github.com/cuesoftinc/open-source-project-generator/pkg/config"
     "github.com/cuesoftinc/open-source-project-generator/pkg/validation"
+    "github.com/cuesoftinc/open-source-project-generator/pkg/template"
 )
 
 func main() {
     // Initialize components
     configManager := config.NewManager()
     validator := validation.NewEngine()
+    templateManager := template.NewManager()
     cliInterface := cli.NewCLI(configManager, validator)
+    
+    // Create handlers
+    generateHandler := handlers.NewGenerateHandler(
+        cliInterface,
+        templateManager,
+        configManager,
+        validator,
+        logger,
+    )
+    
+    workflowHandler := handlers.NewWorkflowHandler(
+        cliInterface,
+        generateHandler,
+        configManager,
+        validator,
+        logger,
+    )
     
     // Collect project configuration
     projectConfig, err := cliInterface.PromptProjectDetails()
@@ -246,16 +486,83 @@ func main() {
         log.Fatalf("Failed to collect project details: %v", err)
     }
     
-    // Validate configuration
-    if err := configManager.ValidateConfig(projectConfig); err != nil {
-        log.Fatalf("Invalid configuration: %v", err)
+    // Execute generation workflow
+    options := interfaces.GenerateOptions{
+        OutputPath:     "./output",
+        Force:          false,
+        UpdateVersions: true,
     }
     
-    // Confirm generation
-    if !cliInterface.ConfirmGeneration(projectConfig) {
-        fmt.Println("Generation canceled by user")
-        return
+    if err := workflowHandler.ExecuteGenerationWorkflow(projectConfig, options); err != nil {
+        log.Fatalf("Generation failed: %v", err)
     }
+    
+    fmt.Println("✅ Project generated successfully!")
+}
+```
+
+### Modular Component Usage
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+    
+    "github.com/cuesoftinc/open-source-project-generator/pkg/cache/operations"
+    "github.com/cuesoftinc/open-source-project-generator/pkg/filesystem/components"
+    "github.com/cuesoftinc/open-source-project-generator/pkg/interfaces"
+    "github.com/cuesoftinc/open-source-project-generator/pkg/models"
+)
+
+func main() {
+    // Cache operations example
+    cacheConfig := &interfaces.CacheConfig{
+        MaxSize:        1000,
+        EvictionPolicy: "lru",
+        TTL:            time.Hour,
+    }
+    
+    cacheOps := operations.NewCacheOperations(cacheConfig)
+    entries := make(map[string]*interfaces.CacheEntry)
+    metrics := &interfaces.CacheMetrics{}
+    
+    // Set cache value
+    err := cacheOps.Set("key1", "value1", time.Hour, entries, metrics)
+    if err != nil {
+        log.Fatalf("Failed to set cache value: %v", err)
+    }
+    
+    // Get cache value
+    value, err := cacheOps.Get("key1", entries, metrics)
+    if err != nil {
+        log.Fatalf("Failed to get cache value: %v", err)
+    }
+    
+    fmt.Printf("Cached value: %v\n", value)
+    
+    // Infrastructure generation example
+    config := &models.ProjectConfig{
+        Name: "my-project",
+        Components: models.Components{
+            Infrastructure: models.InfrastructureComponents{
+                Docker:     true,
+                Kubernetes: true,
+                Terraform:  true,
+            },
+        },
+    }
+    
+    fsOps := &FileSystemOperations{} // Implementation
+    infraGen := components.NewInfrastructureGenerator(fsOps)
+    
+    err = infraGen.GenerateFiles("./output/my-project", config)
+    if err != nil {
+        log.Fatalf("Failed to generate infrastructure: %v", err)
+    }
+    
+    fmt.Println("✅ Infrastructure files generated!")
 }
 ```
 

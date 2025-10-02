@@ -12,6 +12,15 @@ import (
 	"github.com/cuesoftinc/open-source-project-generator/pkg/utils"
 )
 
+// Pre-compiled regular expressions for dependency validation
+var (
+	goVersionRegex      = regexp.MustCompile(`^1\.\d+(\.\d+)?$`)
+	npmNameRegex        = regexp.MustCompile(`^(@[a-z0-9-~][a-z0-9-._~]*/)?[a-z0-9-~][a-z0-9-._~]*$`)
+	versionExtractRegex = regexp.MustCompile(`[0-9]+\.[0-9]+\.[0-9]+`)
+	semverRegex         = regexp.MustCompile(`^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$`)
+	pythonNameRegex     = regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$`)
+)
+
 // DependencyValidator provides specialized dependency validation
 type DependencyValidator struct {
 	vulnerabilityDB map[string][]interfaces.DependencyVulnerability
@@ -302,7 +311,6 @@ func (dv *DependencyValidator) validatePackageJSONStructure(pkg map[string]inter
 // validateGoVersion validates Go version format
 func (dv *DependencyValidator) validateGoVersion(version string, result *interfaces.DependencyValidationResult) error {
 	// Go version should be in format like "1.19", "1.20", etc.
-	goVersionRegex := regexp.MustCompile(`^1\.\d+(\.\d+)?$`)
 	if !goVersionRegex.MatchString(version) {
 		result.Valid = false
 		return fmt.Errorf("invalid Go version format: %s", version)
@@ -512,7 +520,6 @@ func (dv *DependencyValidator) checkOutdatedDependencies(result *interfaces.Depe
 // validateNpmPackageName validates NPM package name format
 func (dv *DependencyValidator) validateNpmPackageName(name string) error {
 	// NPM package names must be lowercase and can contain hyphens, dots, and underscores
-	npmNameRegex := regexp.MustCompile(`^(@[a-z0-9-~][a-z0-9-._~]*/)?[a-z0-9-~][a-z0-9-._~]*$`)
 	if !npmNameRegex.MatchString(name) {
 		return fmt.Errorf("invalid NPM package name: %s", name)
 	}
@@ -525,8 +532,8 @@ func (dv *DependencyValidator) validateNpmVersionFormat(version string) error {
 	if strings.HasPrefix(version, "^") || strings.HasPrefix(version, "~") ||
 		strings.HasPrefix(version, ">=") || strings.HasPrefix(version, "<=") ||
 		strings.HasPrefix(version, ">") || strings.HasPrefix(version, "<") {
-		// Extract the actual version part
-		versionPart := regexp.MustCompile(`[0-9]+\.[0-9]+\.[0-9]+`).FindString(version)
+		// Extract the actual version part using pre-compiled regex
+		versionPart := versionExtractRegex.FindString(version)
 		if versionPart != "" {
 			return dv.validateSemanticVersion(versionPart)
 		}
@@ -540,7 +547,6 @@ func (dv *DependencyValidator) validateSemanticVersion(version string) error {
 	// Remove 'v' prefix if present
 	version = strings.TrimPrefix(version, "v")
 
-	semverRegex := regexp.MustCompile(`^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$`)
 	if !semverRegex.MatchString(version) {
 		return fmt.Errorf("invalid semantic version: %s", version)
 	}
@@ -550,7 +556,6 @@ func (dv *DependencyValidator) validateSemanticVersion(version string) error {
 // validatePythonPackageName validates Python package name format
 func (dv *DependencyValidator) validatePythonPackageName(name string) error {
 	// Python package names can contain letters, numbers, hyphens, underscores, and dots
-	pythonNameRegex := regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$`)
 	if !pythonNameRegex.MatchString(name) {
 		return fmt.Errorf("invalid Python package name: %s", name)
 	}
