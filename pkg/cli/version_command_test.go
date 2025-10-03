@@ -538,7 +538,7 @@ func TestRunVersionCommand(t *testing.T) {
 		{
 			name: "short flag output",
 			setupFlags: func(cmd *cobra.Command) {
-				cmd.Flags().Set("short", "true")
+				_ = cmd.Flags().Set("short", "true")
 			},
 			setupMocks: func(mockCLI *MockCLIInterface, mockVM *MockVersionManager) {
 				mockCLI.On("GetVersionManager").Return(mockVM)
@@ -550,7 +550,7 @@ func TestRunVersionCommand(t *testing.T) {
 		{
 			name: "JSON output via json flag",
 			setupFlags: func(cmd *cobra.Command) {
-				cmd.Flags().Set("json", "true")
+				_ = cmd.Flags().Set("json", "true")
 			},
 			setupMocks: func(mockCLI *MockCLIInterface, mockVM *MockVersionManager) {
 				mockCLI.On("GetVersionManager").Return(mockVM)
@@ -563,7 +563,7 @@ func TestRunVersionCommand(t *testing.T) {
 		{
 			name: "JSON output via format flag",
 			setupFlags: func(cmd *cobra.Command) {
-				cmd.Flags().Set("format", "json")
+				_ = cmd.Flags().Set("format", "json")
 			},
 			setupMocks: func(mockCLI *MockCLIInterface, mockVM *MockVersionManager) {
 				mockCLI.On("GetVersionManager").Return(mockVM)
@@ -576,7 +576,7 @@ func TestRunVersionCommand(t *testing.T) {
 		{
 			name: "JSON output via output-format flag",
 			setupFlags: func(cmd *cobra.Command) {
-				cmd.Flags().Set("output-format", "json")
+				_ = cmd.Flags().Set("output-format", "json")
 			},
 			setupMocks: func(mockCLI *MockCLIInterface, mockVM *MockVersionManager) {
 				mockCLI.On("GetVersionManager").Return(mockVM)
@@ -600,7 +600,7 @@ func TestRunVersionCommand(t *testing.T) {
 		{
 			name: "JSON output with nil version manager",
 			setupFlags: func(cmd *cobra.Command) {
-				cmd.Flags().Set("json", "true")
+				_ = cmd.Flags().Set("json", "true")
 			},
 			setupMocks: func(mockCLI *MockCLIInterface, mockVM *MockVersionManager) {
 				mockCLI.On("GetVersionManager").Return(nil)
@@ -632,10 +632,10 @@ func TestRunVersionCommand(t *testing.T) {
 			err := RunVersionCommand(cmd, []string{}, mockCLI)
 
 			// Restore stdout and capture output
-			w.Close()
+			_ = w.Close()
 			os.Stdout = oldStdout
 			var buf bytes.Buffer
-			io.Copy(&buf, r)
+			_, _ = io.Copy(&buf, r)
 			output := buf.String()
 
 			if tt.expectedError {
@@ -813,7 +813,7 @@ func TestVersionCommandEnhancedErrorHandling(t *testing.T) {
 				mockCLI.On("GetBuildInfo").Return("", "", "")
 			},
 			setupFlags: func(cmd *cobra.Command) {
-				cmd.Flags().Set("json", "true")
+				_ = cmd.Flags().Set("json", "true")
 			},
 			expectedError: false, // Should handle gracefully with defaults
 		},
@@ -858,8 +858,8 @@ func TestVersionCommandFlagPrecedence(t *testing.T) {
 		{
 			name: "json flag takes precedence",
 			setupFlags: func(cmd *cobra.Command) {
-				cmd.Flags().Set("json", "true")
-				cmd.Flags().Set("format", "text")
+				_ = cmd.Flags().Set("json", "true")
+				_ = cmd.Flags().Set("format", "text")
 			},
 			expectJSON:  true,
 			description: "json flag should override format flag",
@@ -867,7 +867,7 @@ func TestVersionCommandFlagPrecedence(t *testing.T) {
 		{
 			name: "format flag works when json not set",
 			setupFlags: func(cmd *cobra.Command) {
-				cmd.Flags().Set("format", "json")
+				_ = cmd.Flags().Set("format", "json")
 			},
 			expectJSON:  true,
 			description: "format=json should enable JSON output",
@@ -875,7 +875,7 @@ func TestVersionCommandFlagPrecedence(t *testing.T) {
 		{
 			name: "output-format flag works when others not set",
 			setupFlags: func(cmd *cobra.Command) {
-				cmd.Flags().Set("output-format", "json")
+				_ = cmd.Flags().Set("output-format", "json")
 			},
 			expectJSON:  true,
 			description: "output-format=json should enable JSON output",
@@ -917,10 +917,10 @@ func TestVersionCommandFlagPrecedence(t *testing.T) {
 			err := RunVersionCommand(cmd, []string{}, mockCLI)
 			assert.NoError(t, err, tt.description)
 
-			w.Close()
+			_ = w.Close()
 			os.Stdout = oldStdout
 			var buf bytes.Buffer
-			io.Copy(&buf, r)
+			_, _ = io.Copy(&buf, r)
 			output := buf.String()
 
 			if tt.expectJSON {

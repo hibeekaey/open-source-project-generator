@@ -168,6 +168,61 @@ generator generate --config base.yaml --force --minimal
 
 ## Generation Errors
 
+### Test Failures (RESOLVED in v1.5.0)
+
+**Problem**: Tests failing in CI or non-interactive environments.
+
+**Status**: ✅ **FIXED** - All test failures have been resolved in version 1.5.0
+
+**Previous Issues**:
+- CLI interactive tests failing in non-interactive environments
+- Filesystem generator tests with nil configuration handling
+- Integration test concurrency and race conditions
+- Security test timing and environment issues
+
+**Solutions Implemented**:
+- Enhanced environment detection for interactive vs non-interactive modes
+- Comprehensive nil configuration validation and error handling
+- Proper synchronization mechanisms for concurrent operations
+- Improved test isolation and cleanup procedures
+
+### Linting Issues (RESOLVED in v1.5.0)
+
+**Problem**: Code quality issues reported by golangci-lint.
+
+**Status**: ✅ **FIXED** - All 88 linting issues have been resolved in version 1.5.0
+
+**Previous Issues**:
+- 45 errcheck issues (unhandled errors)
+- 19 staticcheck issues (code quality violations)
+- 20 unused code issues
+- 2 spelling issues
+- 2 go vet and ineffassign issues
+
+**Solutions Implemented**:
+- Comprehensive error handling for all critical code paths
+- Code quality improvements and optimization
+- Unused code removal and cleanup
+- Spelling corrections and documentation improvements
+
+### Security Vulnerabilities (RESOLVED in v1.5.0)
+
+**Problem**: Security issues identified by gosec scanner.
+
+**Status**: ✅ **FIXED** - All 55 security issues have been resolved in version 1.5.0
+
+**Previous Issues**:
+- Integer overflow vulnerabilities in memory calculations
+- File permission issues (overly permissive)
+- Path validation gaps and potential traversal vulnerabilities
+- Error handling security concerns
+
+**Solutions Implemented**:
+- Comprehensive bounds checking for all numeric operations
+- Restrictive file permissions (0600 for files, 0750 for directories)
+- Complete path validation and sanitization
+- Secure error handling preventing information leakage
+
 ### Output Directory Issues
 
 **Problem**: Cannot create or write to output directory.

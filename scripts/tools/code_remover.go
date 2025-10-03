@@ -61,7 +61,8 @@ func (cr *CodeRemover) RemoveUnusedImports(filename string) (*RemovalResult, err
 	result.BackupFile = backupFile
 
 	// Read and parse the file
-	src, err := os.ReadFile(filename)
+	// #nosec G304 - This is a development tool that processes known Go files
+		src, err := os.ReadFile(filename)
 	if err != nil {
 		result.Error = err
 		return result, err
@@ -183,7 +184,8 @@ func (cr *CodeRemover) RemoveUnusedFunction(filename, functionName string, lineN
 	result.BackupFile = backupFile
 
 	// Read and parse the file
-	src, err := os.ReadFile(filename)
+	// #nosec G304 - This is a development tool that processes known Go files
+		src, err := os.ReadFile(filename)
 	if err != nil {
 		result.Error = err
 		return result, err
@@ -230,7 +232,7 @@ func (cr *CodeRemover) createBackup(filename string) (string, error) {
 	}
 
 	// Ensure backup directory exists
-	err := os.MkdirAll(cr.backupDir, 0755)
+	err := os.MkdirAll(cr.backupDir, 0750)
 	if err != nil {
 		return "", fmt.Errorf("failed to create backup directory: %w", err)
 	}
@@ -241,12 +243,13 @@ func (cr *CodeRemover) createBackup(filename string) (string, error) {
 	backupPath := filepath.Join(cr.backupDir, backupName)
 
 	// Copy file to backup location
-	src, err := os.ReadFile(filename)
+	// #nosec G304 - This is a development tool that processes known Go files
+		src, err := os.ReadFile(filename)
 	if err != nil {
 		return "", fmt.Errorf("failed to read source file: %w", err)
 	}
 
-	err = os.WriteFile(backupPath, src, 0644)
+	err = os.WriteFile(backupPath, src, 0600)
 	if err != nil {
 		return "", fmt.Errorf("failed to write backup file: %w", err)
 	}
@@ -362,7 +365,7 @@ func (cr *CodeRemover) writeASTToFile(file *ast.File, filename string) error {
 	}
 
 	// Write to file
-	err = os.WriteFile(filename, []byte(buf.String()), 0644)
+	err = os.WriteFile(filename, []byte(buf.String()), 0600)
 	if err != nil {
 		return fmt.Errorf("failed to write file: %w", err)
 	}
@@ -372,6 +375,7 @@ func (cr *CodeRemover) writeASTToFile(file *ast.File, filename string) error {
 
 // readFileLines reads a file and returns its lines
 func (cr *CodeRemover) readFileLines(filename string) ([]string, error) {
+	// #nosec G304 - This is a development tool that processes known Go files
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -389,6 +393,7 @@ func (cr *CodeRemover) readFileLines(filename string) ([]string, error) {
 
 // writeFileLines writes lines to a file
 func (cr *CodeRemover) writeFileLines(filename string, lines []string) error {
+	// #nosec G304 - This is a development tool that processes known Go files
 	file, err := os.Create(filename)
 	if err != nil {
 		return err
@@ -434,8 +439,14 @@ func main() {
 			os.Exit(1)
 		}
 		var startLine, endLine int
-		fmt.Sscanf(os.Args[3], "%d", &startLine)
-		fmt.Sscanf(os.Args[4], "%d", &endLine)
+		if _, parseErr := fmt.Sscanf(os.Args[3], "%d", &startLine); parseErr != nil {
+			fmt.Printf("Error parsing start line: %v\n", parseErr)
+			os.Exit(1)
+		}
+		if _, parseErr := fmt.Sscanf(os.Args[4], "%d", &endLine); parseErr != nil {
+			fmt.Printf("Error parsing end line: %v\n", parseErr)
+			os.Exit(1)
+		}
 		result, err = remover.RemoveCommentedCodeBlock(filename, startLine, endLine)
 	case "function":
 		if len(os.Args) < 5 {
@@ -444,7 +455,10 @@ func main() {
 		}
 		functionName := os.Args[3]
 		var lineNumber int
-		fmt.Sscanf(os.Args[4], "%d", &lineNumber)
+		if _, parseErr := fmt.Sscanf(os.Args[4], "%d", &lineNumber); parseErr != nil {
+			fmt.Printf("Error parsing line number: %v\n", parseErr)
+			os.Exit(1)
+		}
 		result, err = remover.RemoveUnusedFunction(filename, functionName, lineNumber)
 	default:
 		fmt.Printf("Unknown operation: %s\n", operation)

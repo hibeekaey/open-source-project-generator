@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/utils"
 	yaml "gopkg.in/yaml.v3"
 )
 
@@ -42,6 +43,7 @@ func (p *MetadataParser) LoadTemplateMetadata(templatePath string) (*models.Temp
 		}
 
 		// Try regular filesystem
+		// #nosec G304 - metadataPath is constructed from validated templatePath and fixed filename
 		if content, err := os.ReadFile(metadataPath); err == nil {
 			return p.ParseTemplateYAML(content, filepath.Base(templatePath))
 		}
@@ -159,6 +161,12 @@ func (p *MetadataParser) formatDisplayName(name string) string {
 
 // LoadMetadataFromFile loads metadata from a specific file path.
 func (p *MetadataParser) LoadMetadataFromFile(filePath string) (*models.TemplateMetadata, error) {
+	// Validate file path for security
+	if err := utils.ValidatePath(filePath); err != nil {
+		return nil, fmt.Errorf("invalid file path: %w", err)
+	}
+
+	// #nosec G304 - filePath is validated above using ValidatePath
 	content, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read metadata file %s: %w", filePath, err)

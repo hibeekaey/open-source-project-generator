@@ -32,7 +32,7 @@ func TestLicenseChecker_AuditLicenses(t *testing.T) {
 	// Create temporary test directory
 	tempDir, err := os.MkdirTemp("", "license_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create a LICENSE file
 	licenseContent := "MIT License\n\nCopyright (c) 2023 Test Project"
@@ -66,7 +66,7 @@ func TestLicenseChecker_CheckLicenseCompatibility(t *testing.T) {
 	// Create temporary test directory
 	tempDir, err := os.MkdirTemp("", "license_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create a LICENSE file
 	licenseContent := "MIT License\n\nCopyright (c) 2023 Test Project"
@@ -100,7 +100,7 @@ func TestLicenseChecker_ScanLicenseViolations(t *testing.T) {
 	// Test with directory without LICENSE file
 	tempDir, err := os.MkdirTemp("", "license_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	result, err := checker.ScanLicenseViolations(tempDir)
 	require.NoError(t, err)
@@ -165,7 +165,7 @@ func TestLicenseChecker_detectProjectLicense(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tempDir, err := os.MkdirTemp("", "license_test")
 			require.NoError(t, err)
-			defer os.RemoveAll(tempDir)
+			defer func() { _ = os.RemoveAll(tempDir) }()
 
 			err = os.WriteFile(filepath.Join(tempDir, "LICENSE"), []byte(tt.licenseContent), 0644)
 			require.NoError(t, err)
@@ -185,7 +185,7 @@ func TestLicenseChecker_detectProjectLicense(t *testing.T) {
 	t.Run("No License File", func(t *testing.T) {
 		tempDir, err := os.MkdirTemp("", "license_test")
 		require.NoError(t, err)
-		defer os.RemoveAll(tempDir)
+		defer func() { _ = os.RemoveAll(tempDir) }()
 
 		license, err := checker.detectProjectLicense(tempDir)
 		assert.Error(t, err)
@@ -198,7 +198,7 @@ func TestLicenseChecker_analyzeDependencyLicenses(t *testing.T) {
 
 	tempDir, err := os.MkdirTemp("", "license_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Test with package.json
 	packageJSON := `{
@@ -231,7 +231,7 @@ func TestLicenseChecker_analyzeNpmLicenses(t *testing.T) {
 
 	tempDir, err := os.MkdirTemp("", "license_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	packageJSON := `{
 		"name": "test-project",
@@ -272,7 +272,7 @@ func TestLicenseChecker_analyzeGoLicenses(t *testing.T) {
 
 	tempDir, err := os.MkdirTemp("", "license_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	goMod := `module test-project
 
@@ -388,7 +388,7 @@ func TestLicenseChecker_HasLicenseFile(t *testing.T) {
 
 	tempDir, err := os.MkdirTemp("", "license_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Test without license file
 	assert.False(t, checker.HasLicenseFile(tempDir))
@@ -413,7 +413,7 @@ func TestLicenseChecker_projectExists(t *testing.T) {
 	// Test with existing directory
 	tempDir, err := os.MkdirTemp("", "license_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	err = checker.projectExists(tempDir)
 	assert.NoError(t, err)

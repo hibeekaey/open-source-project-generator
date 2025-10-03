@@ -16,7 +16,7 @@ func TestStructureManagerIntegrationWithProjectGenerator(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create a project generator (which uses StructureManager internally)
 	pg := NewProjectGenerator()
@@ -63,6 +63,12 @@ func TestStructureManagerIntegrationWithProjectGenerator(t *testing.T) {
 	}
 
 	projectPath := filepath.Join(tempDir, config.Name)
+
+	// Generate component files to create the actual files including Makefile
+	err = pg.GenerateComponentFiles(config, tempDir)
+	if err != nil {
+		t.Fatalf("GenerateComponentFiles failed: %v", err)
+	}
 
 	// Test project structure validation
 	err = pg.ValidateProjectStructure(projectPath, config)
@@ -124,7 +130,7 @@ func TestStructureManagerCustomizationIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create a project generator
 	pg := NewProjectGenerator()

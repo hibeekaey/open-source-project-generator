@@ -405,7 +405,7 @@ func (ei *ErrorIntegration) GenerateErrorReport() string {
 
 	// Performance statistics
 	if stats.PerformanceStats != nil {
-		report.WriteString(fmt.Sprintf("\nPerformance:\n"))
+		report.WriteString("\nPerformance:\n")
 		report.WriteString(fmt.Sprintf("  Total Operations: %d\n", stats.PerformanceStats.TotalOperations))
 		report.WriteString(fmt.Sprintf("  Slow Operations: %d\n", stats.PerformanceStats.SlowOperations))
 		report.WriteString(fmt.Sprintf("  Average Duration: %v\n", stats.PerformanceStats.AverageDuration))
@@ -413,7 +413,7 @@ func (ei *ErrorIntegration) GenerateErrorReport() string {
 
 	// User experience statistics
 	if stats.UserExperienceStats != nil {
-		report.WriteString(fmt.Sprintf("\nUser Experience:\n"))
+		report.WriteString("\nUser Experience:\n")
 		report.WriteString(fmt.Sprintf("  Quick Fixes Provided: %d\n", stats.UserExperienceStats.QuickFixesProvided))
 		report.WriteString(fmt.Sprintf("  Quick Fix Success Rate: %.1f%%\n", stats.UserExperienceStats.QuickFixSuccessRate))
 	}

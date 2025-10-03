@@ -167,6 +167,7 @@ func (dca *DeadCodeAnalyzer) discoverGoFiles() error {
 // parseGoFiles parses all discovered Go files
 func (dca *DeadCodeAnalyzer) parseGoFiles() error {
 	for _, file := range dca.allFiles {
+		// #nosec G304 - This is a development tool that processes known Go files
 		src, err := os.ReadFile(file)
 		if err != nil {
 			fmt.Printf("Warning: failed to read file %s: %v\n", file, err)
@@ -637,6 +638,7 @@ func (dca *DeadCodeAnalyzer) analyzeCommentedCode() {
 
 // findCommentedCodeInFile finds commented-out code in a specific file
 func (dca *DeadCodeAnalyzer) findCommentedCodeInFile(filename string) {
+	// #nosec G304 - This is a development tool that processes known Go files
 	file, err := os.Open(filename)
 	if err != nil {
 		return
@@ -886,7 +888,7 @@ func (dca *DeadCodeAnalyzer) GenerateReport() string {
 // SaveReport saves the analysis report to a file
 func (dca *DeadCodeAnalyzer) SaveReport(filename string) error {
 	report := dca.GenerateReport()
-	return os.WriteFile(filename, []byte(report), 0644)
+	return os.WriteFile(filename, []byte(report), 0600)
 }
 
 func main() {

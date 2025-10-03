@@ -73,7 +73,7 @@ func TestCacheStorage_LoadCache(t *testing.T) {
 
 	// Initialize storage
 	require.NoError(t, storage.Initialize())
-	defer os.RemoveAll(cacheDir)
+	defer func() { _ = os.RemoveAll(cacheDir) }()
 
 	t.Run("no existing cache file", func(t *testing.T) {
 		entries, metrics, err := storage.LoadCache()
@@ -165,7 +165,7 @@ func TestCacheStorage_SaveCache(t *testing.T) {
 
 	// Initialize storage
 	require.NoError(t, storage.Initialize())
-	defer os.RemoveAll(cacheDir)
+	defer func() { _ = os.RemoveAll(cacheDir) }()
 
 	t.Run("persistence enabled", func(t *testing.T) {
 		config.PersistToDisk = true
@@ -243,7 +243,7 @@ func TestCacheStorage_ClearCache(t *testing.T) {
 
 	// Initialize storage
 	require.NoError(t, storage.Initialize())
-	defer os.RemoveAll(cacheDir)
+	defer func() { _ = os.RemoveAll(cacheDir) }()
 
 	// Create a cache file
 	testEntries := map[string]*interfaces.CacheEntry{
@@ -276,7 +276,7 @@ func TestCacheStorage_BackupCache(t *testing.T) {
 
 	// Initialize storage
 	require.NoError(t, storage.Initialize())
-	defer os.RemoveAll(cacheDir)
+	defer func() { _ = os.RemoveAll(cacheDir) }()
 
 	now := time.Now()
 	testEntries := map[string]*interfaces.CacheEntry{
@@ -296,7 +296,7 @@ func TestCacheStorage_BackupCache(t *testing.T) {
 
 	t.Run("valid backup path", func(t *testing.T) {
 		backupPath := filepath.Join(os.TempDir(), "cache-backup.json")
-		defer os.Remove(backupPath)
+		defer func() { _ = os.Remove(backupPath) }()
 
 		err := storage.BackupCache(backupPath, testEntries, testMetrics)
 
@@ -336,12 +336,12 @@ func TestCacheStorage_RestoreCache(t *testing.T) {
 
 	// Initialize storage
 	require.NoError(t, storage.Initialize())
-	defer os.RemoveAll(cacheDir)
+	defer func() { _ = os.RemoveAll(cacheDir) }()
 
 	t.Run("valid restore", func(t *testing.T) {
 		// Create backup file
 		backupPath := filepath.Join(os.TempDir(), "restore-backup.json")
-		defer os.Remove(backupPath)
+		defer func() { _ = os.Remove(backupPath) }()
 
 		now := time.Now()
 		backup := CacheFile{
@@ -407,7 +407,7 @@ func TestCacheStorage_ValidateStorage(t *testing.T) {
 
 		// Initialize storage
 		require.NoError(t, storage.Initialize())
-		defer os.RemoveAll(cacheDir)
+		defer func() { _ = os.RemoveAll(cacheDir) }()
 
 		err := storage.ValidateStorage()
 

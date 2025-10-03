@@ -362,8 +362,8 @@ func TestTemplateCommands_ExecuteList_MachineReadable(t *testing.T) {
 	cmd.Flags().String("output-format", "json", "")
 
 	// Set the flags to trigger machine-readable mode
-	cmd.Flags().Set("non-interactive", "true")
-	cmd.Flags().Set("output-format", "json")
+	_ = cmd.Flags().Set("non-interactive", "true")
+	_ = cmd.Flags().Set("output-format", "json")
 
 	err := tc.ExecuteList(cmd, []string{})
 
@@ -445,8 +445,8 @@ func TestTemplateCommands_ExecuteInfo_MachineReadable(t *testing.T) {
 	cmd.Flags().String("output-format", "json", "")
 
 	// Set the flags to trigger machine-readable mode
-	cmd.Flags().Set("non-interactive", "true")
-	cmd.Flags().Set("output-format", "json")
+	_ = cmd.Flags().Set("non-interactive", "true")
+	_ = cmd.Flags().Set("output-format", "json")
 
 	err := tc.ExecuteInfo(cmd, []string{"test-template"})
 
@@ -550,8 +550,8 @@ func TestTemplateCommands_ExecuteValidate_MachineReadable(t *testing.T) {
 	cmd.Flags().Bool("non-interactive", true, "")
 
 	// Set the flags to trigger machine-readable mode
-	cmd.Flags().Set("non-interactive", "true")
-	cmd.Flags().Set("output-format", "json")
+	_ = cmd.Flags().Set("non-interactive", "true")
+	_ = cmd.Flags().Set("output-format", "json")
 
 	err := tc.ExecuteValidate(cmd, []string{"./test-template"})
 

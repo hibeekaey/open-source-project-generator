@@ -365,7 +365,7 @@ func TestVersionCommandErrorHandling(t *testing.T) {
 				mockCLI.On("GetBuildInfo").Return("", "", "") // Empty build info
 			},
 			setupFlags: func(cmd *cobra.Command) {
-				cmd.Flags().Set("json", "true")
+				_ = cmd.Flags().Set("json", "true")
 			},
 			expectedError: false, // Should handle gracefully with defaults
 			description:   "Should handle missing build info gracefully",
@@ -441,12 +441,12 @@ func TestCIDetectionErrorHandling(t *testing.T) {
 			setupEnv: func() {
 				clearAllCIEnvironment()
 				// Set some unusual values
-				os.Setenv("CI", "maybe")
-				os.Setenv("BUILD_NUMBER", "not-a-number")
+				_ = os.Setenv("CI", "maybe")
+				_ = os.Setenv("BUILD_NUMBER", "not-a-number")
 			},
 			cleanupEnv: func() {
-				os.Unsetenv("CI")
-				os.Unsetenv("BUILD_NUMBER")
+				_ = os.Unsetenv("CI")
+				_ = os.Unsetenv("BUILD_NUMBER")
 			},
 			operation: func(cli *CLI) interface{} {
 				return cli.detectCIEnvironment()

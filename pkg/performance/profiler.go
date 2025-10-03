@@ -7,13 +7,13 @@ import (
 	"path/filepath"
 	"runtime"
 	"runtime/pprof"
+	"strings"
 	"time"
 )
 
 // Profiler provides CPU and memory profiling capabilities
 type Profiler struct {
 	cpuFile    *os.File
-	memFile    *os.File
 	profiling  bool
 	startTime  time.Time
 	profileDir string
@@ -44,7 +44,7 @@ type MemoryStats struct {
 func NewProfiler() *Profiler {
 	// Create profiles directory
 	profileDir := filepath.Join(".", "profiles")
-	os.MkdirAll(profileDir, 0755)
+	_ = os.MkdirAll(profileDir, 0750)
 
 	return &Profiler{
 		profileDir: profileDir,
@@ -62,6 +62,7 @@ func (p *Profiler) Start() error {
 
 	// Start CPU profiling
 	cpuPath := filepath.Join(p.profileDir, fmt.Sprintf("cpu_profile_%s.prof", timestamp))
+	// #nosec G304 - cpuPath is constructed from validated profileDir and timestamp
 	cpuFile, err := os.Create(cpuPath)
 	if err != nil {
 		return fmt.Errorf("failed to create CPU profile file: %w", err)
@@ -69,7 +70,7 @@ func (p *Profiler) Start() error {
 	p.cpuFile = cpuFile
 
 	if err := pprof.StartCPUProfile(cpuFile); err != nil {
-		cpuFile.Close()
+		_ = cpuFile.Close()
 		return fmt.Errorf("failed to start CPU profiling: %w", err)
 	}
 
@@ -89,15 +90,16 @@ func (p *Profiler) Stop() (*ProfilingData, error) {
 	// Stop CPU profiling
 	pprof.StopCPUProfile()
 	cpuPath := p.cpuFile.Name()
-	p.cpuFile.Close()
+	_ = p.cpuFile.Close()
 
 	// Create memory profile
 	memPath := filepath.Join(p.profileDir, fmt.Sprintf("mem_profile_%s.prof", timestamp))
+	// #nosec G304 - memPath is constructed from validated profileDir and timestamp
 	memFile, err := os.Create(memPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create memory profile file: %w", err)
 	}
-	defer memFile.Close()
+	defer func() { _ = memFile.Close() }()
 
 	// Force garbage collection before memory profiling
 	runtime.GC()
@@ -146,7 +148,7 @@ func (p *Profiler) SetProfileDir(dir string) error {
 		return fmt.Errorf("cannot change profile directory while profiling is active")
 	}
 
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0750); err != nil {
 		return fmt.Errorf("failed to create profile directory: %w", err)
 	}
 
@@ -214,6 +216,11 @@ func (p *Profiler) GetProfileFiles() ([]string, error) {
 
 // AnalyzeProfile provides basic analysis of a profile file
 func (p *Profiler) AnalyzeProfile(profilePath string) (*ProfileAnalysis, error) {
+	// Validate profile path for security
+	if err := validateProfilePath(profilePath); err != nil {
+		return nil, fmt.Errorf("invalid profile path: %w", err)
+	}
+
 	info, err := os.Stat(profilePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to stat profile file: %w", err)
@@ -227,11 +234,12 @@ func (p *Profiler) AnalyzeProfile(profilePath string) (*ProfileAnalysis, error) 
 	}
 
 	// Basic file analysis
+	// #nosec G304 - profilePath is from internal profile directory
 	file, err := os.Open(profilePath)
 	if err != nil {
 		return analysis, nil // Return partial analysis
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// Read first few bytes to validate it's a valid profile
 	buffer := make([]byte, 1024)
@@ -286,4 +294,31 @@ func containsSubstring(s, substr string) bool {
 		}
 	}
 	return false
+}
+
+// validateProfilePath validates a profile file path for security
+func validateProfilePath(path string) error {
+	if path == "" {
+		return fmt.Errorf("profile path cannot be empty")
+	}
+
+	// Clean the path
+	cleanPath := filepath.Clean(path)
+
+	// Check for path traversal attempts
+	if strings.Contains(cleanPath, "..") {
+		return fmt.Errorf("profile path contains invalid path traversal: %s", path)
+	}
+
+	// Check for null bytes (security risk)
+	if strings.Contains(path, "\x00") {
+		return fmt.Errorf("profile path contains null bytes: %s", path)
+	}
+
+	// Ensure it's a .prof file
+	if !strings.HasSuffix(path, ".prof") {
+		return fmt.Errorf("profile path must end with .prof extension: %s", path)
+	}
+
+	return nil
 }

@@ -210,7 +210,7 @@ func TestCLIValidator_CheckWritePermissions(t *testing.T) {
 		// Create a temporary directory
 		tempDir, err := os.MkdirTemp("", "cli-validator-test")
 		require.NoError(t, err)
-		defer os.RemoveAll(tempDir)
+		defer func() { _ = os.RemoveAll(tempDir) }()
 
 		err = validator.CheckWritePermissions(tempDir)
 		assert.NoError(t, err)
@@ -229,8 +229,8 @@ func TestCLIValidator_CheckWritePermissions(t *testing.T) {
 		require.NoError(t, err)
 		defer func() {
 			// Restore write permissions before cleanup
-			os.Chmod(tempDir, 0755)
-			os.RemoveAll(tempDir)
+			_ = os.Chmod(tempDir, 0755)
+			_ = os.RemoveAll(tempDir)
 		}()
 
 		// Make directory read-only
@@ -254,7 +254,7 @@ func TestCLIValidator_PerformPreGenerationChecks(t *testing.T) {
 		// Create a temporary parent directory
 		parentDir, err := os.MkdirTemp("", "cli-validator-parent")
 		require.NoError(t, err)
-		defer os.RemoveAll(parentDir)
+		defer func() { _ = os.RemoveAll(parentDir) }()
 
 		// Test creating a new subdirectory
 		newDir := filepath.Join(parentDir, "new-project")
@@ -274,7 +274,7 @@ func TestCLIValidator_PerformPreGenerationChecks(t *testing.T) {
 		// Create a temporary directory with some content
 		tempDir, err := os.MkdirTemp("", "cli-validator-existing")
 		require.NoError(t, err)
-		defer os.RemoveAll(tempDir)
+		defer func() { _ = os.RemoveAll(tempDir) }()
 
 		// Create a file in the directory
 		testFile := filepath.Join(tempDir, "test.txt")

@@ -533,8 +533,8 @@ func TestParseBoolEnv(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Set environment variable
 			if tt.envValue != "" {
-				os.Setenv("TEST_VAR", tt.envValue)
-				defer os.Unsetenv("TEST_VAR")
+				_ = os.Setenv("TEST_VAR", tt.envValue)
+				defer func() { _ = os.Unsetenv("TEST_VAR") }()
 			}
 
 			result := flagHandler.parseBoolEnv("TEST_VAR", tt.defaultValue)
@@ -588,8 +588,8 @@ func TestHandleGlobalFlagsWithConflicts(t *testing.T) {
 	flagHandler.SetupGlobalFlags(cmd)
 
 	// Set conflicting flags
-	cmd.PersistentFlags().Set("verbose", "true")
-	cmd.PersistentFlags().Set("quiet", "true")
+	_ = cmd.PersistentFlags().Set("verbose", "true")
+	_ = cmd.PersistentFlags().Set("quiet", "true")
 
 	// Test should return error due to conflicting flags
 	err := flagHandler.HandleGlobalFlags(cmd)

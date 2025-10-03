@@ -174,7 +174,7 @@ func TestTemplateSecurityManager_ValidateTemplateFile(t *testing.T) {
 
 	// Test with non-existent file
 	nonExistentFile := filepath.Join(tempDir, "nonexistent.tmpl")
-	result, err = tsm.ValidateTemplateFile(nonExistentFile)
+	_, err = tsm.ValidateTemplateFile(nonExistentFile)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to stat template file")
 

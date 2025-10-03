@@ -177,8 +177,8 @@ func TestLogger_Close(t *testing.T) {
 
 	// Override home directory for test
 	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tempDir)
-	defer os.Setenv("HOME", originalHome)
+	_ = os.Setenv("HOME", tempDir)
+	defer func() { _ = os.Setenv("HOME", originalHome) }()
 
 	logger, err = NewLoggerWithConfig(config)
 	if err != nil {
@@ -514,8 +514,8 @@ func TestLogger_ReadLogFile(t *testing.T) {
 	// Test with file logger
 	tempDir := t.TempDir()
 	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tempDir)
-	defer os.Setenv("HOME", originalHome)
+	_ = os.Setenv("HOME", tempDir)
+	defer func() { _ = os.Setenv("HOME", originalHome) }()
 
 	config := &LoggerConfig{
 		Level:     LogLevelInfo,
@@ -527,7 +527,7 @@ func TestLogger_ReadLogFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewLoggerWithConfig failed: %v", err)
 	}
-	defer fileLogger.Close()
+	defer func() { _ = fileLogger.Close() }()
 
 	// Test reading invalid file name
 	_, err = fileLogger.ReadLogFile("../invalid.log")
@@ -668,7 +668,7 @@ func TestLogger_compressLogFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp file: %v", err)
 	}
-	file.Close()
+	_ = file.Close()
 
 	// Should not panic
 	logger.compressLogFile(tempFile)
@@ -700,7 +700,7 @@ func TestLogger_cleanupOldBackups(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to create backup file: %v", err)
 		}
-		file.Close()
+		_ = file.Close()
 	}
 
 	// Should not panic

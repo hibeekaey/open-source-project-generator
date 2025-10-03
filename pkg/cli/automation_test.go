@@ -19,16 +19,16 @@ func TestDetectCIEnvironment(t *testing.T) {
 	// Store and clean environment
 	for _, envVar := range ciEnvVars {
 		originalEnv[envVar] = os.Getenv(envVar)
-		os.Unsetenv(envVar)
+		_ = os.Unsetenv(envVar)
 	}
 
 	// Restore environment after test
 	defer func() {
 		for envVar, value := range originalEnv {
 			if value != "" {
-				os.Setenv(envVar, value)
+				_ = os.Setenv(envVar, value)
 			} else {
-				os.Unsetenv(envVar)
+				_ = os.Unsetenv(envVar)
 			}
 		}
 	}()
@@ -144,13 +144,13 @@ func TestDetectCIEnvironment(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Clean up environment for each test
 			for _, envVar := range ciEnvVars {
-				os.Unsetenv(envVar)
+				_ = os.Unsetenv(envVar)
 			}
 
 			// Set test environment variable
 			if tt.envVar != "" {
-				os.Setenv(tt.envVar, tt.envValue)
-				defer os.Unsetenv(tt.envVar)
+				_ = os.Setenv(tt.envVar, tt.envValue)
+				defer func() { _ = os.Unsetenv(tt.envVar) }()
 			}
 
 			// Create CLI instance and test detection
@@ -171,16 +171,16 @@ func TestDetectCIEnvironmentPriority(t *testing.T) {
 	// Store and clean environment
 	for _, envVar := range ciEnvVars {
 		originalEnv[envVar] = os.Getenv(envVar)
-		os.Unsetenv(envVar)
+		_ = os.Unsetenv(envVar)
 	}
 
 	// Restore environment after test
 	defer func() {
 		for envVar, value := range originalEnv {
 			if value != "" {
-				os.Setenv(envVar, value)
+				_ = os.Setenv(envVar, value)
 			} else {
-				os.Unsetenv(envVar)
+				_ = os.Unsetenv(envVar)
 			}
 		}
 	}()
@@ -224,13 +224,13 @@ func TestDetectCIEnvironmentPriority(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Clean up environment for each test
 			for _, envVar := range ciEnvVars {
-				os.Unsetenv(envVar)
+				_ = os.Unsetenv(envVar)
 			}
 
 			// Set test environment variables
 			for envVar, envValue := range tt.envVars {
-				os.Setenv(envVar, envValue)
-				defer os.Unsetenv(envVar)
+				_ = os.Setenv(envVar, envValue)
+				defer func(env string) { _ = os.Unsetenv(env) }(envVar)
 			}
 
 			// Create CLI instance and test detection
@@ -254,16 +254,16 @@ func TestDetectCIEnvironmentExtractedData(t *testing.T) {
 	// Store and clean environment
 	for _, envVar := range githubEnvVars {
 		originalEnv[envVar] = os.Getenv(envVar)
-		os.Unsetenv(envVar)
+		_ = os.Unsetenv(envVar)
 	}
 
 	// Restore environment after test
 	defer func() {
 		for envVar, value := range originalEnv {
 			if value != "" {
-				os.Setenv(envVar, value)
+				_ = os.Setenv(envVar, value)
 			} else {
-				os.Unsetenv(envVar)
+				_ = os.Unsetenv(envVar)
 			}
 		}
 	}()
@@ -282,8 +282,8 @@ func TestDetectCIEnvironmentExtractedData(t *testing.T) {
 		}
 
 		for envVar, envValue := range testData {
-			os.Setenv(envVar, envValue)
-			defer os.Unsetenv(envVar)
+			_ = os.Setenv(envVar, envValue)
+			defer func(env string) { _ = os.Unsetenv(env) }(envVar)
 		}
 
 		// Create CLI instance and test detection

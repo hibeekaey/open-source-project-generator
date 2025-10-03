@@ -14,7 +14,7 @@ func TestValidationEngineIntegration(t *testing.T) {
 	// Create a temporary directory for test files
 	tempDir, err := os.MkdirTemp("", "validation_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create test configuration files
 	createTestConfigFiles(t, tempDir)
@@ -35,7 +35,7 @@ func TestConfigValidatorIntegration(t *testing.T) {
 	// Create a temporary directory for test files
 	tempDir, err := os.MkdirTemp("", "config_validation_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create test configuration files
 	createTestConfigFiles(t, tempDir)
@@ -63,7 +63,7 @@ func TestFormatSpecificValidators(t *testing.T) {
 	// Create a temporary directory for test files
 	tempDir, err := os.MkdirTemp("", "format_validation_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Test JSON validation
 	t.Run("JSON Validation", func(t *testing.T) {
@@ -209,7 +209,7 @@ func TestValidationEngineComponentCoordination(t *testing.T) {
 	// Create a temporary directory for test files
 	tempDir, err := os.MkdirTemp("", "engine_coordination_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create comprehensive test project structure
 	createComprehensiveTestProject(t, tempDir)

@@ -322,13 +322,13 @@ func TestValidateCommand_parseFlags(t *testing.T) {
 	cobraCmd.Flags().Bool("verbose", true, "")
 
 	// Set flag values
-	cobraCmd.Flags().Set("fix", "true")
-	cobraCmd.Flags().Set("report", "true")
-	cobraCmd.Flags().Set("report-format", "json")
-	cobraCmd.Flags().Set("rules", "rule1,rule2")
-	cobraCmd.Flags().Set("ignore-warnings", "true")
-	cobraCmd.Flags().Set("output-file", "test.json")
-	cobraCmd.Flags().Set("verbose", "true")
+	_ = cobraCmd.Flags().Set("fix", "true")
+	_ = cobraCmd.Flags().Set("report", "true")
+	_ = cobraCmd.Flags().Set("report-format", "json")
+	_ = cobraCmd.Flags().Set("rules", "rule1,rule2")
+	_ = cobraCmd.Flags().Set("ignore-warnings", "true")
+	_ = cobraCmd.Flags().Set("output-file", "test.json")
+	_ = cobraCmd.Flags().Set("verbose", "true")
 
 	options, err := cmd.parseFlags(cobraCmd)
 
@@ -363,7 +363,7 @@ func TestValidateCommand_parseFlags_OutputAlias(t *testing.T) {
 	cobraCmd.Flags().Bool("verbose", false, "")
 
 	// Set flag values
-	cobraCmd.Flags().Set("output", "test-output.json")
+	_ = cobraCmd.Flags().Set("output", "test-output.json")
 
 	options, err := cmd.parseFlags(cobraCmd)
 
@@ -390,14 +390,14 @@ func TestValidateCommand_outputMachineReadable_JSON(t *testing.T) {
 
 	err := cmd.outputMachineReadable(result, "json")
 
-	w.Close()
+	_ = w.Close()
 	os.Stdout = oldStdout
 
 	assert.NoError(t, err)
 
 	// Read captured output
 	buf := new(bytes.Buffer)
-	buf.ReadFrom(r)
+	_, _ = buf.ReadFrom(r)
 	output := buf.String()
 
 	// Verify JSON output

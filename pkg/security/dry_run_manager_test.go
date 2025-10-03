@@ -428,9 +428,15 @@ func TestDryRunManager_GetSummary(t *testing.T) {
 	drm := NewDryRunManager()
 	drm.SetEnabled(true)
 
+	// Create a temporary file to test overwrite scenario
+	tempDir := t.TempDir()
+	existingFile := filepath.Join(tempDir, "file2.txt")
+	err := os.WriteFile(existingFile, []byte("existing content"), 0644)
+	require.NoError(t, err)
+
 	// Add various operations
 	drm.RecordFileWrite("/file1.txt", []byte("content1"), false)                // safe
-	drm.RecordFileWrite("/file2.txt", []byte("content2"), true)                 // destructive (overwrite)
+	drm.RecordFileWrite(existingFile, []byte("content2"), true)                 // destructive (overwrite)
 	drm.RecordDirectoryCreate("/newdir")                                        // safe
 	drm.RecordCustomOperation("warning_op", "Warning", "/path", nil, "warning") // warning
 
@@ -549,6 +555,24 @@ func TestDryRunManager_Integration(t *testing.T) {
 	tempDir := t.TempDir()
 	drm := NewDryRunManager()
 	drm.SetEnabled(true)
+
+	// Create necessary source files for the test
+	templatesDir := filepath.Join(tempDir, "templates")
+	staticDir := filepath.Join(tempDir, "static")
+	err := os.MkdirAll(templatesDir, 0755)
+	require.NoError(t, err)
+	err = os.MkdirAll(staticDir, 0755)
+	require.NoError(t, err)
+
+	// Create template files
+	err = os.WriteFile(filepath.Join(templatesDir, "main.go.tmpl"), []byte("package main"), 0644)
+	require.NoError(t, err)
+	err = os.WriteFile(filepath.Join(templatesDir, "README.md.tmpl"), []byte("# {{.project_name}}"), 0644)
+	require.NoError(t, err)
+
+	// Create static file
+	err = os.WriteFile(filepath.Join(staticDir, "Makefile"), []byte("all:\n\techo 'build'"), 0644)
+	require.NoError(t, err)
 
 	// Simulate a complete project generation workflow
 

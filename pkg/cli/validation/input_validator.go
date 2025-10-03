@@ -13,6 +13,7 @@ import (
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/interfaces"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/utils"
 )
 
 // Pre-compiled regular expressions for input validation
@@ -273,12 +274,13 @@ func (iv *InputValidator) CheckWritePermissions(path string) error {
 // checkWritePermissions checks if we have write permissions to a directory
 func (iv *InputValidator) checkWritePermissions(path string) error {
 	// Ensure the directory exists
-	if err := os.MkdirAll(path, 0755); err != nil {
+	if err := os.MkdirAll(path, 0750); err != nil {
 		return fmt.Errorf("cannot create directory: %w", err)
 	}
 
 	// Try to create a temporary file to test write permissions
 	tempFile := filepath.Join(path, ".generator_write_test")
+	// #nosec G304 - tempFile is constructed from validated path and fixed filename
 	file, err := os.Create(tempFile)
 	if err != nil {
 		return fmt.Errorf("no write permission: %w", err)
@@ -302,6 +304,7 @@ func (iv *InputValidator) checkDiskSpace(path string) error {
 
 	// For now, just check if we can create a small test file
 	testFile := filepath.Join(path, ".generator_space_test")
+	// #nosec G304 - testFile is constructed from validated path and fixed filename
 	file, err := os.Create(testFile)
 	if err != nil {
 		return fmt.Errorf("cannot create test file: %w", err)
@@ -352,7 +355,14 @@ func (iv *InputValidator) ValidateConfigurationFile(configPath string) error {
 			iv.output.Info(fmt.Sprintf("'%s'", configPath)))
 	}
 
-	// Check if file is readable
+	// Check if file is readable - validate path first
+	if err := utils.ValidatePath(configPath); err != nil {
+		return fmt.Errorf("🚫 %s %s: %w",
+			iv.output.Error("Invalid configuration file path."),
+			iv.output.Info("Path contains potentially dangerous elements"), err)
+	}
+
+	// #nosec G304 - configPath is validated above
 	file, err := os.Open(configPath)
 	if err != nil {
 		return fmt.Errorf("🚫 %s %s",

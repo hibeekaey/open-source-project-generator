@@ -2,6 +2,7 @@ package security
 
 import (
 	"bufio"
+	"io"
 	"strings"
 	"testing"
 	"time"
@@ -307,10 +308,14 @@ func TestConfirmationManager_Confirm_Interactive_InvalidInput(t *testing.T) {
 func TestConfirmationManager_Confirm_WithTimeout(t *testing.T) {
 	cm := NewConfirmationManager()
 	cm.SetNonInteractive(false)
-	cm.SetTimeout(1 * time.Millisecond) // Very short timeout
+	cm.SetTimeout(10 * time.Millisecond) // Short timeout
 
-	// Mock reader that won't provide input quickly enough
-	cm.reader = bufio.NewReader(strings.NewReader(""))
+	// Create a pipe that will block on read
+	r, w := io.Pipe()
+	cm.reader = bufio.NewReader(r)
+
+	// Close the writer after the test to clean up
+	defer func() { _ = w.Close() }()
 
 	request := &ConfirmationRequest{
 		Message:       "Timeout test",

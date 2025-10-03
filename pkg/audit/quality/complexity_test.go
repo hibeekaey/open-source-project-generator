@@ -21,7 +21,7 @@ func TestComplexityAnalyzer_MeasureComplexity(t *testing.T) {
 	// Create temporary test directory
 	tempDir, err := os.MkdirTemp("", "complexity_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create test files
 	testFiles := map[string]string{
@@ -271,7 +271,7 @@ func TestComplexityAnalyzer_ExtractFunctions(t *testing.T) {
 	// Create temporary test file
 	tempDir, err := os.MkdirTemp("", "extract_functions_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	content := `package main
 
@@ -385,7 +385,7 @@ func TestComplexityAnalyzer_ProjectExists(t *testing.T) {
 	// Test with existing directory
 	tempDir, err := os.MkdirTemp("", "project_exists_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	err = analyzer.projectExists(tempDir)
 	assert.NoError(t, err)

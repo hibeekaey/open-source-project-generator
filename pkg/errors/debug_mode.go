@@ -21,7 +21,6 @@ type DebugManager struct {
 	profiler      *PerformanceProfiler
 	memoryTracker *MemoryTracker
 	config        *DebugConfig
-	mutex         sync.RWMutex
 }
 
 // DebugConfig contains configuration for debug mode

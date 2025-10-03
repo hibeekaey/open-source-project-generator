@@ -62,7 +62,7 @@ func (tll *TemplateLazyLoader) Load(ctx context.Context) (interface{}, error) {
 
 	// Cache the result
 	if tll.cache != nil {
-		tll.cache.Set(tll.cacheKey, data, 30*time.Minute)
+		_ = tll.cache.Set(tll.cacheKey, data, 30*time.Minute)
 	}
 
 	return tll.data, nil
@@ -140,7 +140,7 @@ func (vll *VersionLazyLoader) Load(ctx context.Context) (interface{}, error) {
 
 	// Cache the result
 	if vll.cache != nil {
-		vll.cache.Set(vll.cacheKey, versionInfo, 1*time.Hour)
+		_ = vll.cache.Set(vll.cacheKey, versionInfo, 1*time.Hour)
 	}
 
 	return vll.data, nil
@@ -208,7 +208,7 @@ func (cll *ConfigLazyLoader) Load(ctx context.Context) (interface{}, error) {
 
 	// Cache the result
 	if cll.cache != nil {
-		cll.cache.Set(cll.cacheKey, config, 15*time.Minute)
+		_ = cll.cache.Set(cll.cacheKey, config, 15*time.Minute)
 	}
 
 	return cll.data, nil
@@ -293,7 +293,7 @@ func (all *AuditLazyLoader) Load(ctx context.Context) (interface{}, error) {
 
 	// Cache the result
 	if all.cache != nil {
-		all.cache.Set(all.cacheKey, result, 10*time.Minute)
+		_ = all.cache.Set(all.cacheKey, result, 10*time.Minute)
 	}
 
 	return all.data, nil

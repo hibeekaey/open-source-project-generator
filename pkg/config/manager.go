@@ -611,6 +611,7 @@ func getOrCreateEncryptionKey(configDir string) ([]byte, error) {
 	keyFile := filepath.Join(configDir, ".encryption_key")
 
 	// Try to read existing key
+	// #nosec G304 - keyFile is constructed from validated base directory and fixed filename
 	if data, err := os.ReadFile(keyFile); err == nil {
 		key, err := base64.StdEncoding.DecodeString(string(data))
 		if err == nil && len(key) == 32 {
@@ -682,8 +683,8 @@ func isValidProjectName(name string) bool {
 
 	// Allow letters, numbers, hyphens, and underscores
 	for _, r := range name {
-		if !((r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') ||
-			(r >= '0' && r <= '9') || r == '-' || r == '_') {
+		if (r < 'a' || r > 'z') && (r < 'A' || r > 'Z') &&
+			(r < '0' || r > '9') && r != '-' && r != '_' {
 			return false
 		}
 	}

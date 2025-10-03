@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"net/url"
+	"os"
 	"path/filepath"
 	"reflect"
 	"regexp"
@@ -221,6 +222,19 @@ func (v *Validator) ValidateDirectoryPath(path, field string) {
 		v.AddError(field, fmt.Sprintf("%s contains invalid path traversal", field), "path_traversal", path)
 	}
 
+	// Check for null bytes (security risk)
+	if strings.Contains(path, "\x00") {
+		v.AddError(field, fmt.Sprintf("%s contains null bytes", field), "null_bytes", path)
+	}
+
+	// Check for dangerous characters
+	dangerousChars := []string{"|", "&", ";", "$", "`", "(", ")", "{", "}", "[", "]", "<", ">", "\"", "'"}
+	for _, char := range dangerousChars {
+		if strings.Contains(path, char) {
+			v.AddError(field, fmt.Sprintf("%s contains dangerous character: %s", field, char), "dangerous_char", path)
+		}
+	}
+
 	// Only check for absolute paths if the field explicitly requires relative paths
 	if strings.Contains(field, "relative_") && filepath.IsAbs(cleanPath) {
 		v.AddError(field, fmt.Sprintf("%s should be a relative path", field), "absolute_path", path)
@@ -241,6 +255,52 @@ func (v *Validator) ValidateFilePath(path, field string) {
 			v.AddError(field, fmt.Sprintf("%s should have a file extension", field), "missing_extension", path)
 		}
 	}
+}
+
+// ValidatePath validates a file or directory path for security issues
+// This is a standalone function that can be used without a validator instance
+func ValidatePath(path string) error {
+	if path == "" {
+		return fmt.Errorf("path cannot be empty")
+	}
+
+	// Clean the path
+	cleanPath := filepath.Clean(path)
+
+	// Check for path traversal attempts
+	if strings.Contains(cleanPath, "..") {
+		return fmt.Errorf("path contains invalid path traversal: %s", path)
+	}
+
+	// Check for null bytes (security risk)
+	if strings.Contains(path, "\x00") {
+		return fmt.Errorf("path contains null bytes: %s", path)
+	}
+
+	// Check for dangerous characters that could be used for injection
+	dangerousChars := []string{"|", "&", ";", "$", "`", "(", ")", "{", "}", "[", "]", "<", ">"}
+	for _, char := range dangerousChars {
+		if strings.Contains(path, char) {
+			return fmt.Errorf("path contains dangerous character '%s': %s", char, path)
+		}
+	}
+
+	// Check path length (Windows MAX_PATH limit)
+	if len(path) > 260 {
+		return fmt.Errorf("path too long (max 260 characters): %s", path)
+	}
+
+	// Check for reserved names on Windows
+	baseName := filepath.Base(cleanPath)
+	reservedNames := []string{"CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"}
+	upperBaseName := strings.ToUpper(baseName)
+	for _, reserved := range reservedNames {
+		if upperBaseName == reserved || strings.HasPrefix(upperBaseName, reserved+".") {
+			return fmt.Errorf("path uses reserved name '%s': %s", reserved, path)
+		}
+	}
+
+	return nil
 }
 
 // Numeric validation methods
@@ -410,6 +470,66 @@ func (v *Validator) ValidateProjectConfig(config *models.ProjectConfig) {
 
 // Security validation methods
 
+// SecureErrorHandler provides secure error handling that prevents information leakage
+type SecureErrorHandler struct {
+	isProduction bool
+	logger       interface{} // Generic logger interface
+}
+
+// NewSecureErrorHandler creates a new secure error handler
+func NewSecureErrorHandler(isProduction bool, logger interface{}) *SecureErrorHandler {
+	return &SecureErrorHandler{
+		isProduction: isProduction,
+		logger:       logger,
+	}
+}
+
+// SanitizeError sanitizes an error message for safe display to users
+func (seh *SecureErrorHandler) SanitizeError(err error, operation string) string {
+	if err == nil {
+		return ""
+	}
+
+	if seh.isProduction {
+		// In production, return generic error messages to prevent information leakage
+		switch {
+		case strings.Contains(err.Error(), "permission denied") || strings.Contains(err.Error(), "access denied"):
+			return "Access denied. Please check your permissions."
+		case strings.Contains(err.Error(), "no such file") || strings.Contains(err.Error(), "not found"):
+			return "The requested resource was not found."
+		case strings.Contains(err.Error(), "connection refused") || strings.Contains(err.Error(), "network"):
+			return "Network connection error. Please try again later."
+		case strings.Contains(err.Error(), "timeout"):
+			return "Operation timed out. Please try again."
+		case strings.Contains(err.Error(), "invalid") || strings.Contains(err.Error(), "malformed"):
+			return "Invalid input provided."
+		default:
+			return fmt.Sprintf("An error occurred during %s. Please contact support if the problem persists.", operation)
+		}
+	}
+
+	// In development, return the actual error for debugging
+	return err.Error()
+}
+
+// LogSecureError logs an error securely, with full details in logs but sanitized message for users
+func (seh *SecureErrorHandler) LogSecureError(err error, operation, context string) string {
+	if err == nil {
+		return ""
+	}
+
+	// Log full error details for debugging (this would go to secure logs)
+	if seh.logger != nil {
+		// Note: In a real implementation, this would use a proper logger interface
+		// For now, we'll just prepare the log message
+		logMessage := fmt.Sprintf("Error in %s: %v (context: %s)", operation, err, context)
+		_ = logMessage // Placeholder for actual logging
+	}
+
+	// Return sanitized error for user display
+	return seh.SanitizeError(err, operation)
+}
+
 // ValidateSecureString validates string for security concerns
 func (v *Validator) ValidateSecureString(value, field string) {
 	if value == "" {
@@ -499,4 +619,107 @@ func GetValidationErrorsByField(errors []ValidationError) map[string][]Validatio
 	}
 
 	return result
+}
+
+// Secure file operation wrappers
+
+// SecureFileOperations provides secure file operations with proper error handling
+type SecureFileOperations struct {
+	errorHandler *SecureErrorHandler
+}
+
+// NewSecureFileOperations creates a new secure file operations handler
+func NewSecureFileOperations(isProduction bool, logger interface{}) *SecureFileOperations {
+	return &SecureFileOperations{
+		errorHandler: NewSecureErrorHandler(isProduction, logger),
+	}
+}
+
+// SafeReadFile reads a file with secure error handling and path validation
+func (sfo *SecureFileOperations) SafeReadFile(filePath string) ([]byte, error) {
+	// Validate path first
+	if err := ValidatePath(filePath); err != nil {
+		return nil, fmt.Errorf("invalid file path: %w", err)
+	}
+
+	// Attempt to read the file
+	// #nosec G304 - filePath is validated above using ValidatePath
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		// Log the actual error securely
+		sanitizedErr := sfo.errorHandler.LogSecureError(err, "file read", filePath)
+		return nil, fmt.Errorf("%s", sanitizedErr)
+	}
+
+	return data, nil
+}
+
+// SafeWriteFile writes a file with secure error handling and path validation
+func (sfo *SecureFileOperations) SafeWriteFile(filePath string, data []byte, perm os.FileMode) error {
+	// Validate path first
+	if err := ValidatePath(filePath); err != nil {
+		return fmt.Errorf("invalid file path: %w", err)
+	}
+
+	// Ensure permissions are secure (not more permissive than 0600)
+	if perm > 0600 {
+		perm = 0600
+	}
+
+	// Attempt to write the file
+	err := os.WriteFile(filePath, data, perm)
+	if err != nil {
+		// Log the actual error securely
+		sanitizedErr := sfo.errorHandler.LogSecureError(err, "file write", filePath)
+		return fmt.Errorf("%s", sanitizedErr)
+	}
+
+	return nil
+}
+
+// SafeCreateDir creates a directory with secure error handling and path validation
+func (sfo *SecureFileOperations) SafeCreateDir(dirPath string, perm os.FileMode) error {
+	// Validate path first
+	if err := ValidatePath(dirPath); err != nil {
+		return fmt.Errorf("invalid directory path: %w", err)
+	}
+
+	// Ensure permissions are secure (not more permissive than 0750)
+	if perm > 0750 {
+		perm = 0750
+	}
+
+	// Attempt to create the directory
+	err := os.MkdirAll(dirPath, perm)
+	if err != nil {
+		// Log the actual error securely
+		sanitizedErr := sfo.errorHandler.LogSecureError(err, "directory creation", dirPath)
+		return fmt.Errorf("%s", sanitizedErr)
+	}
+
+	return nil
+}
+
+// SafeOpenFile opens a file with secure error handling and path validation
+func (sfo *SecureFileOperations) SafeOpenFile(filePath string, flag int, perm os.FileMode) (*os.File, error) {
+	// Validate path first
+	if err := ValidatePath(filePath); err != nil {
+		return nil, fmt.Errorf("invalid file path: %w", err)
+	}
+
+	// Ensure permissions are secure for new files
+	if flag&os.O_CREATE != 0 && perm > 0600 {
+		perm = 0600
+	}
+
+	// Attempt to open the file
+	// #nosec G304 - filePath is validated above using ValidatePath
+	file, err := os.OpenFile(filePath, flag, perm)
+	if err != nil {
+		// Log the actual error securely
+		sanitizedErr := sfo.errorHandler.LogSecureError(err, "file open", filePath)
+		return nil, fmt.Errorf("%s", sanitizedErr)
+	}
+
+	return file, nil
 }

@@ -22,7 +22,7 @@ func TestMetadataValidator_ValidateTemplateMetadataFile(t *testing.T) {
 	// Create temporary directory for test
 	tempDir, err := os.MkdirTemp("", "validator_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	parser := NewMetadataParser(nil)
 	validator := NewMetadataValidator(parser)
@@ -93,7 +93,7 @@ func TestMetadataValidator_ValidateMetadataFileContent(t *testing.T) {
 	// Create temporary directory for test
 	tempDir, err := os.MkdirTemp("", "validator_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	parser := NewMetadataParser(nil)
 	validator := NewMetadataValidator(parser)

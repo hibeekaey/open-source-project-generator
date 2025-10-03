@@ -240,7 +240,7 @@ func TestStructureManager_CreateDirectories(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	sm := NewStructureManager()
 	projectPath := filepath.Join(tempDir, "test-project")
@@ -310,7 +310,7 @@ func TestStructureManager_ValidateProjectStructure(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	sm := NewStructureManager()
 	projectPath := filepath.Join(tempDir, "test-project")
@@ -456,7 +456,7 @@ func TestStructureManager_createComponentDirectories(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	sm := NewStructureManager()
 	projectPath := filepath.Join(tempDir, "test-project")
@@ -537,7 +537,7 @@ func TestStructureManager_validateComponentDirectories(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	sm := NewStructureManager()
 	projectPath := filepath.Join(tempDir, "test-project")
@@ -568,7 +568,7 @@ func TestStructureManager_validateComponentDirectories(t *testing.T) {
 	// Test validation with missing directories (remove one directory)
 	firstFrontendDir := sm.structure.FrontendDirs[0]
 	dirToRemove := filepath.Join(projectPath, firstFrontendDir)
-	os.RemoveAll(dirToRemove)
+	_ = os.RemoveAll(dirToRemove)
 
 	err = sm.validateComponentDirectories(projectPath, config)
 	if err == nil {

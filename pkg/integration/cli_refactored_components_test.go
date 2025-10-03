@@ -601,7 +601,6 @@ func (m *MockInteractiveInput) GetMultiSelectInput(prompt string, key string, op
 // Mock CLI
 type MockCLI struct {
 	initialized bool
-	ready       bool
 	handlers    map[string]interface{}
 	components  map[string]interface{}
 	validators  map[string]interface{}

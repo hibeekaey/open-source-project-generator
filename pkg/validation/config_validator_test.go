@@ -27,7 +27,7 @@ func TestConfigValidator_ValidateConfigurationFiles(t *testing.T) {
 	// Create a temporary directory with test files
 	tempDir, err := os.MkdirTemp("", "config_validator_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create a valid package.json
 	packageJSON := `{
@@ -60,7 +60,7 @@ func TestConfigValidator_ValidateJSONFile(t *testing.T) {
 	// Create a temporary directory
 	tempDir, err := os.MkdirTemp("", "config_validator_json_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Test valid JSON
 	validJSON := `{
@@ -99,7 +99,7 @@ func TestConfigValidator_ValidateEnvFile(t *testing.T) {
 	// Create a temporary directory
 	tempDir, err := os.MkdirTemp("", "config_validator_env_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Test valid .env file
 	validEnv := `NODE_ENV=production
@@ -135,7 +135,7 @@ func TestConfigValidator_ValidateDockerfile(t *testing.T) {
 	// Create a temporary directory
 	tempDir, err := os.MkdirTemp("", "config_validator_docker_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Test valid Dockerfile
 	validDockerfile := `FROM node:18-alpine

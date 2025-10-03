@@ -63,11 +63,11 @@ func TestCIEnvironmentErrorHandling(t *testing.T) {
 			setupEnv: func() {
 				clearAllCIEnvironment()
 				// Set only some GitHub Actions variables
-				os.Setenv("GITHUB_ACTIONS", "true")
+				_ = os.Setenv("GITHUB_ACTIONS", "true")
 				// Missing other expected variables
 			},
 			cleanupEnv: func() {
-				os.Unsetenv("GITHUB_ACTIONS")
+				_ = os.Unsetenv("GITHUB_ACTIONS")
 			},
 			operation: func(cli *CLI) interface{} {
 				return cli.detectCIEnvironment()
@@ -170,8 +170,8 @@ func TestCIEnvironmentEdgeCases(t *testing.T) {
 
 			// Set test environment variables
 			for key, value := range tt.envVars {
-				os.Setenv(key, value)
-				defer os.Unsetenv(key)
+				_ = os.Setenv(key, value)
+				defer func(k string) { _ = os.Unsetenv(k) }(key)
 			}
 
 			mockLogger := &MockLogger{}
@@ -259,8 +259,8 @@ func TestCIEnvironmentDataExtraction(t *testing.T) {
 
 			// Set test environment variables
 			for key, value := range tt.envVars {
-				os.Setenv(key, value)
-				defer os.Unsetenv(key)
+				_ = os.Setenv(key, value)
+				defer func(k string) { _ = os.Unsetenv(k) }(key)
 			}
 
 			mockLogger := &MockLogger{}
@@ -324,11 +324,11 @@ func TestCIEnvironmentNullSafety(t *testing.T) {
 // TestCIEnvironmentConcurrency tests CI detection under concurrent access
 func TestCIEnvironmentConcurrency(t *testing.T) {
 	// Set up a CI environment
-	os.Setenv("GITHUB_ACTIONS", "true")
-	os.Setenv("GITHUB_RUN_ID", "12345")
+	_ = os.Setenv("GITHUB_ACTIONS", "true")
+	_ = os.Setenv("GITHUB_RUN_ID", "12345")
 	defer func() {
-		os.Unsetenv("GITHUB_ACTIONS")
-		os.Unsetenv("GITHUB_RUN_ID")
+		_ = os.Unsetenv("GITHUB_ACTIONS")
+		_ = os.Unsetenv("GITHUB_RUN_ID")
 	}()
 
 	mockLogger := &MockLogger{}
@@ -360,8 +360,8 @@ func TestCIEnvironmentConcurrency(t *testing.T) {
 // TestCIEnvironmentPerformance tests CI detection performance
 func TestCIEnvironmentPerformance(t *testing.T) {
 	// Set up a CI environment
-	os.Setenv("GITHUB_ACTIONS", "true")
-	defer os.Unsetenv("GITHUB_ACTIONS")
+	_ = os.Setenv("GITHUB_ACTIONS", "true")
+	defer func() { _ = os.Unsetenv("GITHUB_ACTIONS") }()
 
 	mockLogger := &MockLogger{}
 	cli := &CLI{
@@ -416,6 +416,6 @@ func clearAllCIEnvironment() {
 	}
 
 	for _, variable := range ciVars {
-		os.Unsetenv(variable)
+		_ = os.Unsetenv(variable)
 	}
 }

@@ -25,7 +25,7 @@ func TestInteractiveManager_Integration_NonInteractiveMode(t *testing.T) {
 	// Create CLI with non-interactive mode enabled
 	cli := &CLI{rootCmd: &cobra.Command{}}
 	cli.rootCmd.PersistentFlags().Bool("non-interactive", true, "")
-	cli.rootCmd.ParseFlags([]string{"--non-interactive"})
+	_ = cli.rootCmd.ParseFlags([]string{"--non-interactive"})
 
 	outputManager := NewOutputManager(false, false, false, mockLogger)
 	flagHandler := NewFlagHandler(cli, outputManager, mockLogger)
@@ -40,7 +40,7 @@ func TestInteractiveManager_Integration_NonInteractiveMode(t *testing.T) {
 		config, err := cli.PromptProjectDetails()
 		assert.Nil(t, config)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "Interactive prompts not available in non-interactive mode")
+		assert.Contains(t, err.Error(), "interactive prompts not available in non-interactive mode")
 	})
 
 	t.Run("ConfirmGeneration should auto-confirm in non-interactive mode", func(t *testing.T) {
@@ -127,7 +127,7 @@ func TestInteractiveManager_Integration_MethodDelegation(t *testing.T) {
 	// Create CLI with non-interactive mode for predictable testing
 	cli := &CLI{rootCmd: &cobra.Command{}}
 	cli.rootCmd.PersistentFlags().Bool("non-interactive", true, "")
-	cli.rootCmd.ParseFlags([]string{"--non-interactive"})
+	_ = cli.rootCmd.ParseFlags([]string{"--non-interactive"})
 
 	outputManager := NewOutputManager(false, false, false, mockLogger)
 	flagHandler := NewFlagHandler(cli, outputManager, mockLogger)

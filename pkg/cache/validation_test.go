@@ -24,7 +24,7 @@ func TestCacheValidator_ValidateCache(t *testing.T) {
 	// Create temporary directory for testing
 	tempDir, err := os.MkdirTemp("", "cache-validator-test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	config := interfaces.DefaultCacheConfig()
 	validator := NewCacheValidator(tempDir, config)
@@ -130,7 +130,7 @@ func TestCacheValidator_RepairCache(t *testing.T) {
 	// Create temporary directory for testing
 	tempDir, err := os.MkdirTemp("", "cache-repair-test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	config := interfaces.DefaultCacheConfig()
 	validator := NewCacheValidator(tempDir, config)
@@ -251,7 +251,7 @@ func TestCacheValidator_CheckCacheHealth(t *testing.T) {
 	// Create temporary directory for testing
 	tempDir, err := os.MkdirTemp("", "cache-health-test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	config := interfaces.DefaultCacheConfig()
 	validator := NewCacheValidator(tempDir, config)
@@ -293,7 +293,7 @@ func TestCacheValidator_CheckCacheHealth(t *testing.T) {
 		// Create separate temp dir for degraded cache test
 		tempDir2, err := os.MkdirTemp("", "cache-degraded-test")
 		require.NoError(t, err)
-		defer os.RemoveAll(tempDir2)
+		defer func() { _ = os.RemoveAll(tempDir2) }()
 
 		validator2 := NewCacheValidator(tempDir2, config)
 
@@ -381,7 +381,7 @@ func TestCacheValidator_ValidateCacheDirectory(t *testing.T) {
 	t.Run("ValidDirectory", func(t *testing.T) {
 		tempDir, err := os.MkdirTemp("", "cache-dir-test")
 		require.NoError(t, err)
-		defer os.RemoveAll(tempDir)
+		defer func() { _ = os.RemoveAll(tempDir) }()
 
 		config := interfaces.DefaultCacheConfig()
 		validator := NewCacheValidator(tempDir, config)
@@ -402,7 +402,7 @@ func TestCacheValidator_ValidateCacheDirectory(t *testing.T) {
 	t.Run("FileInsteadOfDirectory", func(t *testing.T) {
 		tempDir, err := os.MkdirTemp("", "cache-file-test")
 		require.NoError(t, err)
-		defer os.RemoveAll(tempDir)
+		defer func() { _ = os.RemoveAll(tempDir) }()
 
 		// Create a file instead of directory
 		filePath := filepath.Join(tempDir, "cache-file")

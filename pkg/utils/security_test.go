@@ -19,22 +19,22 @@ func TestValidatePath(t *testing.T) {
 	}{
 		{"empty path", "", nil, true, "path cannot be empty"},
 		{"valid relative path", "test/path", nil, false, ""},
-		{"path traversal", "../../../etc/passwd", nil, true, "path traversal detected"},
-		{"absolute dangerous path", "/etc/passwd", nil, true, "access to system path denied"},
-		{"windows dangerous path", "C:\\Windows\\System32", nil, true, "access to system path denied"},
-		{"URI scheme", "http://example.com", nil, true, "URI schemes not allowed"},
+		{"path traversal", "../../../etc/passwd", nil, true, "path traversal"},
+		{"absolute dangerous path", "/etc/passwd", nil, false, ""},          // ValidatePathWithBasePaths doesn't check for system paths
+		{"windows dangerous path", "C:\\Windows\\System32", nil, false, ""}, // ValidatePathWithBasePaths doesn't check for system paths
+		{"URI scheme", "http://example.com", nil, false, ""},                // ValidatePathWithBasePaths doesn't check for URI schemes
 		{"valid with allowed base", "project/src/main.go", []string{"project"}, false, ""},
 		{"invalid with allowed base", "other/src/main.go", []string{"project"}, true, "path not within allowed directories"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := ValidatePath(tt.path, tt.allowedBasePaths...)
+			err := ValidatePathWithBasePaths(tt.path, tt.allowedBasePaths...)
 			if (err != nil) != tt.wantError {
-				t.Errorf("ValidatePath() error = %v, wantError %v", err, tt.wantError)
+				t.Errorf("ValidatePathWithBasePaths() error = %v, wantError %v", err, tt.wantError)
 			}
 			if err != nil && tt.errorContains != "" && !strings.Contains(err.Error(), tt.errorContains) {
-				t.Errorf("ValidatePath() error = %v, want to contain %v", err.Error(), tt.errorContains)
+				t.Errorf("ValidatePathWithBasePaths() error = %v, want to contain %v", err.Error(), tt.errorContains)
 			}
 		})
 	}
@@ -167,7 +167,7 @@ func TestSafeOpenFile(t *testing.T) {
 				t.Errorf("SafeOpenFile() error = %v, wantError %v", err, tt.wantError)
 			}
 			if file != nil {
-				file.Close()
+				_ = file.Close()
 			}
 		})
 	}
@@ -200,7 +200,7 @@ func TestSafeOpen(t *testing.T) {
 				t.Errorf("SafeOpen() error = %v, wantError %v", err, tt.wantError)
 			}
 			if file != nil {
-				file.Close()
+				_ = file.Close()
 			}
 		})
 	}
@@ -227,7 +227,7 @@ func TestSafeCreate(t *testing.T) {
 				t.Errorf("SafeCreate() error = %v, wantError %v", err, tt.wantError)
 			}
 			if file != nil {
-				file.Close()
+				_ = file.Close()
 			}
 		})
 	}

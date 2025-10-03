@@ -360,7 +360,7 @@ func (wh *WorkflowHandler) loadEnvironmentConfig() (*EnvironmentConfig, error) {
 		"GENERATOR_FRONTEND_NEXTJS_HOME",
 		"GENERATOR_FRONTEND_NEXTJS_ADMIN",
 		"GENERATOR_FRONTEND_NEXTJS_SHARED",
-		"GENERATOR_BACKEND_GOGIN",
+		"GENERATOR_BACKEND_GO_GIN",
 		"GENERATOR_MOBILE_ANDROID",
 		"GENERATOR_MOBILE_IOS",
 		"GENERATOR_INFRASTRUCTURE_DOCKER",
@@ -396,7 +396,7 @@ func (wh *WorkflowHandler) convertEnvironmentConfigToProjectConfig(envConfig *En
 	config.Components.Frontend.NextJS.Home = envConfig.Components["GENERATOR_FRONTEND_NEXTJS_HOME"]
 	config.Components.Frontend.NextJS.Admin = envConfig.Components["GENERATOR_FRONTEND_NEXTJS_ADMIN"]
 	config.Components.Frontend.NextJS.Shared = envConfig.Components["GENERATOR_FRONTEND_NEXTJS_SHARED"]
-	config.Components.Backend.GoGin = envConfig.Components["GENERATOR_BACKEND_GOGIN"]
+	config.Components.Backend.GoGin = envConfig.Components["GENERATOR_BACKEND_GO_GIN"]
 	config.Components.Mobile.Android = envConfig.Components["GENERATOR_MOBILE_ANDROID"]
 	config.Components.Mobile.IOS = envConfig.Components["GENERATOR_MOBILE_IOS"]
 	config.Components.Infrastructure.Docker = envConfig.Components["GENERATOR_INFRASTRUCTURE_DOCKER"]
@@ -426,7 +426,7 @@ func (wh *WorkflowHandler) performPreGenerationChecks(outputPath string, options
 
 	// Create parent directory if it doesn't exist
 	parentDir := filepath.Dir(outputPath)
-	if err := os.MkdirAll(parentDir, 0755); err != nil {
+	if err := os.MkdirAll(parentDir, 0750); err != nil {
 		return fmt.Errorf("failed to create parent directory: %w", err)
 	}
 

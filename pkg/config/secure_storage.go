@@ -52,7 +52,8 @@ func NewSecureStorage(baseDir string, encryptor *ConfigEncryptor, logger interfa
 	}
 
 	// Set secure permissions on the directory
-	if err := os.Chmod(baseDir, 0750); err != nil {
+	// #nosec G302 - 0700 is appropriate for directories (owner read/write/execute only)
+	if err := os.Chmod(baseDir, 0700); err != nil {
 		return nil, fmt.Errorf("failed to set directory permissions: %w", err)
 	}
 
@@ -66,7 +67,7 @@ func NewSecureStorage(baseDir string, encryptor *ConfigEncryptor, logger interfa
 		encryptor:   encryptor,
 		logger:      logger,
 		auditLogger: auditLogger,
-		permissions: 0640, // Default secure permissions for files
+		permissions: 0600, // Default secure permissions for files
 	}, nil
 }
 
@@ -363,7 +364,7 @@ func (s *SecureStorage) validateData(data []byte) error {
 func (s *SecureStorage) writeFileSecurely(filePath string, data []byte, permissions fs.FileMode) error {
 	// Create directory if it doesn't exist
 	dir := filepath.Dir(filePath)
-	if err := os.MkdirAll(dir, 0750); err != nil {
+	if err := os.MkdirAll(dir, 0700); err != nil {
 		return fmt.Errorf("failed to create directory: %w", err)
 	}
 
@@ -375,13 +376,13 @@ func (s *SecureStorage) writeFileSecurely(filePath string, data []byte, permissi
 
 	// Set secure permissions
 	if err := os.Chmod(tempFile, permissions); err != nil {
-		os.Remove(tempFile)
+		_ = os.Remove(tempFile)
 		return fmt.Errorf("failed to set file permissions: %w", err)
 	}
 
 	// Atomic move to final location
 	if err := os.Rename(tempFile, filePath); err != nil {
-		os.Remove(tempFile)
+		_ = os.Remove(tempFile)
 		return fmt.Errorf("failed to move file to final location: %w", err)
 	}
 
@@ -405,6 +406,7 @@ func (s *SecureStorage) readFileSecurely(filePath string) ([]byte, error) {
 	}
 
 	// Read file
+	// #nosec G304 - filePath is validated by the calling function and this is internal to SecureStorage
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file: %w", err)
@@ -428,12 +430,13 @@ func (s *SecureStorage) createBackup(filePath string) error {
 	timestamp := time.Now().Format("20060102_150405")
 	backupPath := fmt.Sprintf("%s.backup.%s", filePath, timestamp)
 
+	// #nosec G304 - filePath is validated by the calling function and this is internal to SecureStorage
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to read original file: %w", err)
 	}
 
-	if err := os.WriteFile(backupPath, data, 0640); err != nil {
+	if err := os.WriteFile(backupPath, data, 0600); err != nil {
 		return fmt.Errorf("failed to write backup file: %w", err)
 	}
 
@@ -449,11 +452,12 @@ func (s *SecureStorage) secureDelete(filePath string) error {
 	}
 
 	// Open file for writing
+	// #nosec G304 - filePath is validated by the calling function and this is internal to SecureStorage
 	file, err := os.OpenFile(filePath, os.O_WRONLY, 0)
 	if err != nil {
 		return fmt.Errorf("failed to open file for overwriting: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// Overwrite with random data (3 passes)
 	for pass := 0; pass < 3; pass++ {
@@ -471,7 +475,7 @@ func (s *SecureStorage) secureDelete(filePath string) error {
 		}
 	}
 
-	file.Close()
+	_ = file.Close()
 
 	// Finally delete the file
 	if err := os.Remove(filePath); err != nil {
@@ -495,6 +499,7 @@ func (s *SecureStorage) getFileMetadata(filePath string) (*FileMetadata, error) 
 	}
 
 	// Read file to calculate checksum
+	// #nosec G304 - filePath is validated by the calling function and this is internal to SecureStorage
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file for checksum: %w", err)
@@ -550,7 +555,8 @@ func (s *SecureStorage) validateFileIntegrity(filePath string) error {
 		return fmt.Errorf("file has overly permissive permissions: %s", info.Mode().Perm().String())
 	}
 
-	// Try to read the file
+	// Try to read the file safely
+	// #nosec G304 - filePath is validated by the calling function and this is internal to SecureStorage
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to read file: %w", err)

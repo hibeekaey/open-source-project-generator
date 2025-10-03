@@ -93,11 +93,11 @@ func main() {
 		fmt.Print(output)
 	} else {
 		// Ensure output directory exists
-		if err := os.MkdirAll(filepath.Dir(*outputFile), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(*outputFile), 0750); err != nil {
 			log.Fatalf("Failed to create output directory: %v", err)
 		}
 
-		if err := os.WriteFile(*outputFile, []byte(output), 0644); err != nil {
+		if err := os.WriteFile(*outputFile, []byte(output), 0600); err != nil {
 			log.Fatalf("Failed to write output file: %v", err)
 		}
 
@@ -170,10 +170,10 @@ func generateJSONReport(report *performance.PerformanceReport) string {
 }
 
 func generateTextReport(report *performance.PerformanceReport) string {
-	output := fmt.Sprintf("Performance Analysis Report\n")
+	output := "Performance Analysis Report\n"
 	output += fmt.Sprintf("Generated: %s\n\n", report.GeneratedAt.Format("2006-01-02 15:04:05"))
 
-	output += fmt.Sprintf("Summary:\n")
+	output += "Summary:\n"
 	output += fmt.Sprintf("  Total Benchmarks: %d\n", report.TotalBenchmarks)
 	output += fmt.Sprintf("  Critical Regressions: %d\n", report.Summary.CriticalRegressions)
 	output += fmt.Sprintf("  Minor Regressions: %d\n", report.Summary.MinorRegressions)
@@ -181,13 +181,13 @@ func generateTextReport(report *performance.PerformanceReport) string {
 	output += fmt.Sprintf("  New Benchmarks: %d\n", len(report.NewBenchmarks))
 	output += fmt.Sprintf("  Overall Status: %s\n\n", report.Summary.OverallStatus)
 
-	output += fmt.Sprintf("Average Changes:\n")
+	output += "Average Changes:\n"
 	output += fmt.Sprintf("  Time: %.2f%%\n", report.Summary.AverageTimeChange)
 	output += fmt.Sprintf("  Memory: %.2f%%\n", report.Summary.AverageMemoryChange)
 	output += fmt.Sprintf("  Allocations: %.2f%%\n\n", report.Summary.AverageAllocsChange)
 
 	if len(report.Regressions) > 0 {
-		output += fmt.Sprintf("Regressions:\n")
+		output += "Regressions:\n"
 		for _, regression := range report.Regressions {
 			output += fmt.Sprintf("  %s [%s]: Time %.2f%%, Memory %.2f%%, Allocs %.2f%%\n",
 				regression.BenchmarkName,
@@ -200,7 +200,7 @@ func generateTextReport(report *performance.PerformanceReport) string {
 	}
 
 	if len(report.Improvements) > 0 {
-		output += fmt.Sprintf("Improvements:\n")
+		output += "Improvements:\n"
 		for _, improvement := range report.Improvements {
 			output += fmt.Sprintf("  %s: Time %.2f%%, Memory %.2f%%, Allocs %.2f%%\n",
 				improvement.BenchmarkName,

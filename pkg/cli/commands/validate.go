@@ -196,10 +196,10 @@ func (vc *ValidateCommand) outputResults(cmd *cobra.Command, result *interfaces.
 	showFixes, _ := cmd.Flags().GetBool("show-fixes")
 
 	// Auto-detect non-interactive mode if not explicitly set
-	if !nonInteractive {
-		// This would need to be implemented in the CLI interface
-		// nonInteractive = vc.cli.IsNonInteractiveMode()
-	}
+	// TODO: Implement auto-detection of non-interactive mode
+	// if !nonInteractive {
+	//     nonInteractive = vc.cli.IsNonInteractiveMode()
+	// }
 
 	// Handle machine-readable output for automation
 	if nonInteractive && (outputFormat == "json" || outputFormat == "yaml") {

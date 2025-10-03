@@ -278,15 +278,55 @@ func (c *CLI) ExportConfig(path string) error {
 }
 
 func (c *CLI) PromptAdvancedOptions() (*interfaces.AdvancedOptions, error) {
-	return nil, fmt.Errorf("not implemented")
+	// Check for non-interactive mode first
+	if c.isNonInteractiveMode() {
+		// Return default advanced options in non-interactive mode
+		return &interfaces.AdvancedOptions{
+			EnableSecurityScanning:        true,
+			EnableQualityChecks:           true,
+			EnablePerformanceOptimization: false,
+			GenerateDocumentation:         true,
+			EnableCICD:                    true,
+			CICDProviders:                 []string{"github-actions"},
+			EnableMonitoring:              false,
+		}, nil
+	}
+
+	// Check if interactiveManager is initialized
+	if c.interactiveManager == nil {
+		return nil, fmt.Errorf("interactive manager not initialized")
+	}
+
+	return c.interactiveManager.PromptAdvancedOptions()
 }
 
 func (c *CLI) ConfirmAdvancedGeneration(config *models.ProjectConfig, options *interfaces.AdvancedOptions) bool {
-	return false
+	// Auto-confirm in non-interactive mode
+	if c.isNonInteractiveMode() {
+		return true
+	}
+
+	// Check if interactiveManager is initialized
+	if c.interactiveManager == nil {
+		c.logger.Error("Interactive manager not initialized", "error", "nil interactiveManager")
+		return false
+	}
+
+	return c.interactiveManager.ConfirmAdvancedGeneration(config, options)
 }
 
 func (c *CLI) SelectTemplateInteractively(filter interfaces.TemplateFilter) (*interfaces.TemplateInfo, error) {
-	return nil, fmt.Errorf("not implemented")
+	// Check for non-interactive mode first
+	if c.isNonInteractiveMode() {
+		return nil, fmt.Errorf("interactive template selection not available in non-interactive mode")
+	}
+
+	// Check if interactiveManager is initialized
+	if c.interactiveManager == nil {
+		return nil, fmt.Errorf("interactive manager not initialized")
+	}
+
+	return c.interactiveManager.SelectTemplateInteractively(filter)
 }
 
 func (c *CLI) ShowConfig() error {

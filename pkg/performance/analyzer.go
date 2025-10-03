@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -114,11 +115,17 @@ func (pa *PerformanceAnalyzer) LoadCurrentResults(filename string) error {
 
 // parseBenchmarkFile parses a benchmark results file
 func (pa *PerformanceAnalyzer) parseBenchmarkFile(filename string) (map[string]*BenchmarkResult, error) {
+	// Validate file path for security
+	if err := validateBenchmarkPath(filename); err != nil {
+		return nil, fmt.Errorf("invalid benchmark file path: %w", err)
+	}
+
+	// #nosec G304 - filename is validated by the calling function
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	results := make(map[string]*BenchmarkResult)
 	scanner := bufio.NewScanner(file)
@@ -449,4 +456,40 @@ func (pa *PerformanceAnalyzer) SetThresholds(thresholds *PerformanceThresholds) 
 // GetThresholds returns current performance thresholds
 func (pa *PerformanceAnalyzer) GetThresholds() *PerformanceThresholds {
 	return pa.thresholds
+}
+
+// validateBenchmarkPath validates a benchmark file path for security
+func validateBenchmarkPath(path string) error {
+	if path == "" {
+		return fmt.Errorf("benchmark file path cannot be empty")
+	}
+
+	// Clean the path
+	cleanPath := filepath.Clean(path)
+
+	// Check for path traversal attempts
+	if strings.Contains(cleanPath, "..") {
+		return fmt.Errorf("benchmark file path contains invalid path traversal: %s", path)
+	}
+
+	// Check for null bytes (security risk)
+	if strings.Contains(path, "\x00") {
+		return fmt.Errorf("benchmark file path contains null bytes: %s", path)
+	}
+
+	// Ensure it's a text file (common benchmark result extensions)
+	ext := filepath.Ext(path)
+	allowedExts := []string{".txt", ".log", ".out", ".bench", ""}
+	validExt := false
+	for _, allowed := range allowedExts {
+		if ext == allowed {
+			validExt = true
+			break
+		}
+	}
+	if !validExt {
+		return fmt.Errorf("benchmark file must have a valid extension (.txt, .log, .out, .bench, or no extension): %s", path)
+	}
+
+	return nil
 }

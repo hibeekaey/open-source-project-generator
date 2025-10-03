@@ -3,8 +3,6 @@ package cli
 
 import (
 	"encoding/json"
-	"fmt"
-	"os"
 	"time"
 )
 
@@ -107,102 +105,6 @@ const (
 	ErrorTypeGeneration    = "generation"
 	ErrorTypeInternal      = "internal"
 )
-
-// outputStructuredError outputs a structured error in the appropriate format
-func (c *CLI) outputStructuredError(err *StructuredError, cmd string, args []string) int {
-	// Add context if not already present
-	if err.Context == nil {
-		workingDir, _ := os.Getwd()
-		err.Context = &ErrorContext{
-			Command:    cmd,
-			Arguments:  args,
-			WorkingDir: workingDir,
-			CI:         c.detectCIEnvironment(),
-		}
-
-		// Add environment type
-		if err.Context.CI.IsCI {
-			err.Context.Environment = "ci"
-		} else {
-			err.Context.Environment = "local"
-		}
-	}
-
-	// Set exit code
-	c.SetExitCode(err.Code)
-
-	// Check if we should output in machine-readable format
-	nonInteractive := c.isNonInteractiveMode()
-	outputFormat := "text"
-	if c.rootCmd != nil {
-		if format, cmdErr := c.rootCmd.PersistentFlags().GetString("output-format"); cmdErr == nil {
-			outputFormat = format
-		}
-	}
-
-	// Output error in appropriate format
-	if nonInteractive && (outputFormat == "json" || outputFormat == "yaml") {
-		return c.outputMachineReadableError(err, outputFormat)
-	}
-
-	// Human-readable error output
-	c.ErrorOutput("%s", err.Message)
-
-	// Show details in verbose mode with friendly formatting
-	if c.verboseMode || c.debugMode {
-		if len(err.Details) > 0 {
-			fmt.Fprintf(os.Stderr, "\n📋 Details:\n")
-			for key, value := range err.Details {
-				fmt.Fprintf(os.Stderr, "  %s: %v\n", key, value)
-			}
-		}
-
-		if len(err.Suggestions) > 0 {
-			fmt.Fprintf(os.Stderr, "\n💡 Suggestions:\n")
-			for _, suggestion := range err.Suggestions {
-				fmt.Fprintf(os.Stderr, "  - %s\n", suggestion)
-			}
-		}
-
-		if err.Context != nil {
-			fmt.Fprintf(os.Stderr, "\n🔍 Context:\n")
-			fmt.Fprintf(os.Stderr, "  Command: %s\n", err.Context.Command)
-			if len(err.Context.Arguments) > 0 {
-				fmt.Fprintf(os.Stderr, "  Arguments: %v\n", err.Context.Arguments)
-			}
-			fmt.Fprintf(os.Stderr, "  Working Directory: %s\n", err.Context.WorkingDir)
-			if err.Context.CI.IsCI {
-				fmt.Fprintf(os.Stderr, "  CI Environment: %s\n", err.Context.CI.Provider)
-			}
-		}
-	}
-
-	return err.Code
-}
-
-// outputMachineReadableError outputs an error in machine-readable format
-func (c *CLI) outputMachineReadableError(err *StructuredError, format string) int {
-	switch format {
-	case "json":
-		if jsonData, jsonErr := err.ToJSON(); jsonErr == nil {
-			fmt.Fprintln(os.Stderr, string(jsonData))
-		} else {
-			// Fallback to simple JSON
-			fmt.Fprintf(os.Stderr, `{"type":"%s","code":%d,"message":"%s","timestamp":"%s"}%s`,
-				err.Type, err.Code, err.Message, err.Timestamp.Format(time.RFC3339), "\n")
-		}
-	case "yaml":
-		// For now, output as JSON since we don't have YAML library
-		// This can be enhanced later with proper YAML support
-		if jsonData, jsonErr := err.ToJSON(); jsonErr == nil {
-			fmt.Fprintln(os.Stderr, string(jsonData))
-		}
-	default:
-		fmt.Fprintf(os.Stderr, "Error: %s (Code: %d)\n", err.Message, err.Code)
-	}
-
-	return err.Code
-}
 
 // createValidationError creates a structured validation error
 func (c *CLI) createValidationError(message string, details map[string]interface{}) *StructuredError {

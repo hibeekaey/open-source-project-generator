@@ -307,10 +307,11 @@ func (ca *ComplexityAnalyzer) extractFunctionBody(lines []string, startLine int)
 
 		// Count braces to determine function boundaries
 		for _, char := range line {
-			if char == '{' {
+			switch char {
+			case '{':
 				braceCount++
 				inFunction = true
-			} else if char == '}' {
+			case '}':
 				braceCount--
 				if inFunction && braceCount == 0 {
 					return body.String()

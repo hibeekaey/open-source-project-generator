@@ -192,10 +192,10 @@ func (ac *AuditCommand) outputResults(cmd *cobra.Command, result *interfaces.Aud
 	summaryOnly, _ := cmd.Flags().GetBool("summary-only")
 
 	// Auto-detect non-interactive mode if not explicitly set
-	if !nonInteractive {
-		// This would need to be implemented in the CLI interface
-		// nonInteractive = ac.cli.IsNonInteractiveMode()
-	}
+	// TODO: Implement auto-detection of non-interactive mode
+	// if !nonInteractive {
+	//     nonInteractive = ac.cli.IsNonInteractiveMode()
+	// }
 
 	// Handle machine-readable output for automation
 	if nonInteractive && (options.OutputFormat == "json" || options.OutputFormat == "yaml") {

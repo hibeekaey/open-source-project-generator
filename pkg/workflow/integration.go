@@ -217,15 +217,6 @@ func (w *ValidationAuditWorkflow) runValidation(ctx context.Context) (*interface
 	}
 
 	// Use provided validation options or defaults
-	options := w.options.ValidationOptions
-	if options == nil {
-		options = &interfaces.ValidationOptions{
-			Verbose: true,
-			Fix:     false,
-			Report:  true,
-		}
-	}
-
 	result, err := w.pipeline.validator.ValidateProject(w.options.ProjectPath)
 	if err != nil {
 		return nil, err

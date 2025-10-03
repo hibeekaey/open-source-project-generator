@@ -188,7 +188,19 @@ func (m *Manager) ScanTemplateDirectory(dirPath string) (map[string]*interfaces.
 func (m *Manager) SecureReadFile(path string) (*interfaces.FileOperationResult, []byte, error) {
 	result, data, err := m.fileOperations.SecureReadFile(path)
 	if err != nil {
-		return nil, nil, err
+		// Return a result object even on error so caller can access error details
+		errorResult := &interfaces.FileOperationResult{
+			Success:   false,
+			FilePath:  path,
+			Operation: "read",
+			Error:     err.Error(),
+			Timestamp: time.Now(),
+		}
+		if result != nil {
+			errorResult.Error = result.Error
+			errorResult.Warnings = result.Warnings
+		}
+		return errorResult, nil, err
 	}
 
 	interfaceResult := &interfaces.FileOperationResult{
@@ -230,7 +242,19 @@ func (m *Manager) SecureWriteFile(path string, data []byte, perm os.FileMode) (*
 
 	result, err := m.fileOperations.SecureWriteFile(path, data, perm)
 	if err != nil {
-		return nil, err
+		// Return a result object even on error so caller can access error details
+		errorResult := &interfaces.FileOperationResult{
+			Success:   false,
+			FilePath:  path,
+			Operation: "write",
+			Error:     err.Error(),
+			Timestamp: time.Now(),
+		}
+		if result != nil {
+			errorResult.Error = result.Error
+			errorResult.Warnings = result.Warnings
+		}
+		return errorResult, err
 	}
 
 	return &interfaces.FileOperationResult{
@@ -270,7 +294,19 @@ func (m *Manager) SecureCopyFile(srcPath, dstPath string) (*interfaces.FileOpera
 
 	result, err := m.fileOperations.SecureCopyFile(srcPath, dstPath)
 	if err != nil {
-		return nil, err
+		// Return a result object even on error so caller can access error details
+		errorResult := &interfaces.FileOperationResult{
+			Success:   false,
+			FilePath:  fmt.Sprintf("%s -> %s", srcPath, dstPath),
+			Operation: "copy",
+			Error:     err.Error(),
+			Timestamp: time.Now(),
+		}
+		if result != nil {
+			errorResult.Error = result.Error
+			errorResult.Warnings = result.Warnings
+		}
+		return errorResult, err
 	}
 
 	return &interfaces.FileOperationResult{
@@ -331,7 +367,20 @@ func (m *Manager) GetFilePermissions(path string) (map[string]interface{}, error
 func (m *Manager) BackupFile(filePath string) (*interfaces.BackupResult, error) {
 	result, err := m.backupManager.BackupFile(filePath)
 	if err != nil {
-		return nil, err
+		// Return a result object even on error so caller can access error details
+		errorResult := &interfaces.BackupResult{
+			OriginalPath: filePath,
+			Success:      false,
+			Error:        err.Error(),
+			Timestamp:    time.Now(),
+		}
+		if result != nil {
+			errorResult.BackupPath = result.BackupPath
+			errorResult.Error = result.Error
+			errorResult.FileSize = result.FileSize
+			errorResult.Checksum = result.Checksum
+		}
+		return errorResult, err
 	}
 
 	return &interfaces.BackupResult{

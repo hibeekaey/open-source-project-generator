@@ -185,7 +185,7 @@ func TestErrorHandler_handleAppError(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			appError := NewAppError(tt.errorType, "test error", nil)
-			appError.WithContext("test_key", "test_value")
+			_ = appError.WithContext("test_key", "test_value")
 			handler.handleAppError(appError) // Should not panic
 		})
 	}
@@ -199,8 +199,8 @@ func TestErrorHandler_formatStructuredLogMessage(t *testing.T) {
 
 	handler := NewErrorHandler(logger)
 	appError := NewAppError(ErrorTypeValidation, "test message", nil)
-	appError.WithContext("key1", "value1")
-	appError.WithContext("key2", 42)
+	_ = appError.WithContext("key1", "value1")
+	_ = appError.WithContext("key2", 42)
 
 	message := handler.formatStructuredLogMessage(appError)
 

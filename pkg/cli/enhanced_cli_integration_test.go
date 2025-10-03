@@ -34,7 +34,7 @@ func testEnhancedFlagValidation(t *testing.T) {
 			name: "no_conflicts",
 			setupFlags: func(cmd *cobra.Command) {
 				cmd.Flags().Bool("verbose", false, "")
-				cmd.Flags().Set("verbose", "true")
+				_ = cmd.Flags().Set("verbose", "true")
 			},
 			expectError: false,
 		},
@@ -44,8 +44,8 @@ func testEnhancedFlagValidation(t *testing.T) {
 				cmd.Flags().Bool("verbose", false, "")
 				cmd.Flags().Bool("quiet", false, "")
 				// Actually set the flags to true to trigger conflict
-				cmd.Flags().Set("verbose", "true")
-				cmd.Flags().Set("quiet", "true")
+				_ = cmd.Flags().Set("verbose", "true")
+				_ = cmd.Flags().Set("quiet", "true")
 			},
 			expectError:   true,
 			errorContains: "Flag conflicts detected",
@@ -56,8 +56,8 @@ func testEnhancedFlagValidation(t *testing.T) {
 				cmd.Flags().Bool("debug", false, "")
 				cmd.Flags().Bool("quiet", false, "")
 				// Actually set the flags to true to trigger conflict
-				cmd.Flags().Set("debug", "true")
-				cmd.Flags().Set("quiet", "true")
+				_ = cmd.Flags().Set("debug", "true")
+				_ = cmd.Flags().Set("quiet", "true")
 			},
 			expectError:   true,
 			errorContains: "Flag conflicts detected",
@@ -68,8 +68,8 @@ func testEnhancedFlagValidation(t *testing.T) {
 				cmd.Flags().Bool("verbose", false, "")
 				cmd.Flags().Bool("debug", false, "")
 				// Set both flags - these should not conflict
-				cmd.Flags().Set("verbose", "true")
-				cmd.Flags().Set("debug", "true")
+				_ = cmd.Flags().Set("verbose", "true")
+				_ = cmd.Flags().Set("debug", "true")
 			},
 			expectError: false,
 		},

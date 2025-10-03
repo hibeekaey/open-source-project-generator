@@ -2,6 +2,7 @@
 package performance
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -54,7 +55,7 @@ func (d *Dashboard) GetDashboardData() *DashboardData {
 
 	// Get current system health
 	if d.monitor != nil {
-		data.SystemHealth = d.monitor.GetCurrentHealth(nil)
+		data.SystemHealth = d.monitor.GetCurrentHealth(context.TODO())
 		data.Diagnostics = d.monitor.GetDiagnostics()
 
 		// Collect alerts from recent health snapshots
@@ -416,7 +417,7 @@ func (d *Dashboard) GetHealthSummary() map[string]int {
 		return map[string]int{}
 	}
 
-	health := d.monitor.GetCurrentHealth(nil)
+	health := d.monitor.GetCurrentHealth(context.TODO())
 	if health == nil {
 		return map[string]int{}
 	}

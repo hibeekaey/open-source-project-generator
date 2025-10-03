@@ -20,6 +20,16 @@ func NewStructureGenerator(fsOps FileSystemOperationsInterface) *StructureGenera
 
 // GenerateProjectStructure creates the complete project directory structure
 func (sg *StructureGenerator) GenerateProjectStructure(config *models.ProjectConfig, outputPath string) error {
+	// Validate config is not nil
+	if config == nil {
+		return fmt.Errorf("project config cannot be nil")
+	}
+
+	// Validate output path is not empty
+	if outputPath == "" {
+		return fmt.Errorf("output path cannot be empty")
+	}
+
 	// Validate organization is provided
 	if config.Organization == "" {
 		return fmt.Errorf("organization cannot be empty")

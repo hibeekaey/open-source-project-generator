@@ -158,7 +158,7 @@ func (icm *InteractiveConfigurationManager) LoadConfigurationInteractively(
 	}
 
 	if len(configs) == 0 {
-		icm.displayFormatter.ShowNoConfigurationsMessage(ctx)
+		_ = icm.displayFormatter.ShowNoConfigurationsMessage(ctx)
 		return nil, nil
 	}
 

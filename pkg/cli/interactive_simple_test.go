@@ -42,7 +42,7 @@ func TestInteractiveManager_ConfirmGeneration_NonInteractiveMode_Simple(t *testi
 
 	cli := &CLI{rootCmd: &cobra.Command{}}
 	cli.rootCmd.PersistentFlags().Bool("non-interactive", true, "")
-	cli.rootCmd.ParseFlags([]string{"--non-interactive"})
+	_ = cli.rootCmd.ParseFlags([]string{"--non-interactive"})
 
 	outputManager := NewOutputManager(false, false, false, mockLogger)
 	flagHandler := NewFlagHandler(cli, outputManager, mockLogger)
@@ -63,7 +63,7 @@ func TestInteractiveManager_PromptAdvancedOptions_NonInteractiveMode_Simple(t *t
 
 	cli := &CLI{rootCmd: &cobra.Command{}}
 	cli.rootCmd.PersistentFlags().Bool("non-interactive", true, "")
-	cli.rootCmd.ParseFlags([]string{"--non-interactive"})
+	_ = cli.rootCmd.ParseFlags([]string{"--non-interactive"})
 
 	outputManager := NewOutputManager(false, false, false, mockLogger)
 	flagHandler := NewFlagHandler(cli, outputManager, mockLogger)
@@ -91,7 +91,7 @@ func TestInteractiveManager_ConfirmAdvancedGeneration_NonInteractiveMode_Simple(
 
 	cli := &CLI{rootCmd: &cobra.Command{}}
 	cli.rootCmd.PersistentFlags().Bool("non-interactive", true, "")
-	cli.rootCmd.ParseFlags([]string{"--non-interactive"})
+	_ = cli.rootCmd.ParseFlags([]string{"--non-interactive"})
 
 	outputManager := NewOutputManager(false, false, false, mockLogger)
 	flagHandler := NewFlagHandler(cli, outputManager, mockLogger)
@@ -116,7 +116,7 @@ func TestInteractiveManager_SelectTemplateInteractively_NonInteractiveMode_Simpl
 
 	cli := &CLI{rootCmd: &cobra.Command{}}
 	cli.rootCmd.PersistentFlags().Bool("non-interactive", true, "")
-	cli.rootCmd.ParseFlags([]string{"--non-interactive"})
+	_ = cli.rootCmd.ParseFlags([]string{"--non-interactive"})
 
 	outputManager := NewOutputManager(false, false, false, mockLogger)
 	flagHandler := NewFlagHandler(cli, outputManager, mockLogger)
@@ -141,7 +141,7 @@ func TestCLI_InteractiveMethodDelegation(t *testing.T) {
 
 	cli := &CLI{rootCmd: &cobra.Command{}}
 	cli.rootCmd.PersistentFlags().Bool("non-interactive", true, "")
-	cli.rootCmd.ParseFlags([]string{"--non-interactive"})
+	_ = cli.rootCmd.ParseFlags([]string{"--non-interactive"})
 
 	outputManager := NewOutputManager(false, false, false, mockLogger)
 	flagHandler := NewFlagHandler(cli, outputManager, mockLogger)
@@ -155,7 +155,7 @@ func TestCLI_InteractiveMethodDelegation(t *testing.T) {
 	// Test PromptProjectDetails delegation
 	_, err := cli.PromptProjectDetails()
 	assert.Error(t, err) // Should error in non-interactive mode
-	assert.Contains(t, err.Error(), "Interactive prompts not available in non-interactive mode")
+	assert.Contains(t, err.Error(), "interactive prompts not available in non-interactive mode")
 
 	// Test ConfirmGeneration delegation
 	config := &models.ProjectConfig{Name: "test"}

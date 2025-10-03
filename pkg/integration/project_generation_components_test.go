@@ -1349,6 +1349,11 @@ func NewMockTemplateGenerator() *MockTemplateGenerator {
 }
 
 func (m *MockTemplateGenerator) GenerateTemplates(config *models.ProjectConfig) error {
+	// Create output directory if it doesn't exist
+	if err := os.MkdirAll(config.OutputPath, 0755); err != nil {
+		return err
+	}
+
 	files := map[string]string{
 		"README.md":  "# " + config.Name,
 		"LICENSE":    config.License + " License",

@@ -1,3 +1,26 @@
+// Package container provides a comprehensive dependency injection system for the application.
+//
+// The container manages service registration, creation, and lifecycle. It supports:
+// - Service factory registration with automatic type checking
+// - Singleton service caching for performance
+// - Thread-safe service access with proper locking
+// - Version information management for service creation
+//
+// Example usage:
+//
+//	container := NewContainer()
+//	container.SetVersionInfo("1.0.0", "abc123", "2023-01-01")
+//
+//	// Register a service
+//	container.RegisterService("myService", func() (interface{}, error) {
+//		return &MyService{}, nil
+//	})
+//
+//	// Get the service (cached after first creation)
+//	service, err := container.GetService("myService")
+//	if err != nil {
+//		log.Fatal(err)
+//	}
 package container
 
 import (
@@ -20,85 +43,97 @@ import (
 	"github.com/cuesoftinc/open-source-project-generator/pkg/version"
 )
 
-// Container manages comprehensive dependency injection for the application
+// Container manages dependency injection for the application.
+// It provides thread-safe service registration, creation, and caching.
+// All services are treated as singletons and cached after first creation.
 type Container struct {
-	mu sync.RWMutex
+	mu sync.RWMutex // Protects all fields below
 
-	// CLI components
-	cli interfaces.CLIInterface
-
-	// Core services
-	templateEngine  interfaces.TemplateEngine
-	templateManager interfaces.TemplateManager
-	configManager   interfaces.ConfigManager
-	fsGenerator     interfaces.FileSystemGenerator
-	versionManager  interfaces.VersionManager
-	validator       interfaces.ValidationEngine
-	auditEngine     interfaces.AuditEngine
-	cacheManager    interfaces.CacheManager
-
-	// Infrastructure services
-	securityManager interfaces.SecurityManager
-	logger          interfaces.Logger
-	interactiveUI   interfaces.InteractiveUIInterface
-
-	// Service factories
+	// factories stores service factory functions keyed by service name
 	factories map[string]ServiceFactory
 
-	// Initialization state
+	// serviceCache stores created service instances for singleton behavior
+	serviceCache map[string]interface{}
+
+	// initialized tracks which services have been successfully initialized
 	initialized map[string]bool
 
-	// Health monitoring
-	componentHealth map[string]*ComponentHealth
-
-	// Version information
+	// versionInfo stores application version information used by services
 	versionInfo *VersionInfo
 }
 
-// ServiceFactory defines a factory function for creating services
+// ServiceFactory defines a factory function for creating services.
+// The factory should return a service instance or an error if creation fails.
+// Factories are called lazily when a service is first requested and the result
+// is cached for subsequent requests (singleton pattern).
 type ServiceFactory func() (interface{}, error)
 
-// ServiceConfig defines configuration for service registration
-type ServiceConfig struct {
-	Name         string
-	Factory      ServiceFactory
-	Singleton    bool
-	Dependencies []string
-}
-
-// NewContainer creates a new dependency injection container
+// NewContainer creates a new dependency injection container with empty state.
+// The container is ready to use immediately and is thread-safe.
+// Services must be registered before they can be retrieved.
 func NewContainer() *Container {
 	return &Container{
-		factories:       make(map[string]ServiceFactory),
-		initialized:     make(map[string]bool),
-		componentHealth: make(map[string]*ComponentHealth),
+		factories:    make(map[string]ServiceFactory),
+		serviceCache: make(map[string]interface{}),
+		initialized:  make(map[string]bool),
 	}
 }
 
-// RegisterService registers a service with the container
+// RegisterService registers a service factory with the container.
+// The factory will be called lazily when the service is first requested.
+// Service names must be unique and non-empty. The factory function cannot be nil.
+// This method is thread-safe and can be called concurrently.
 func (c *Container) RegisterService(name string, factory ServiceFactory) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	if name == "" {
+		return fmt.Errorf("container: service name cannot be empty")
+	}
+
 	if factory == nil {
-		return fmt.Errorf("factory cannot be nil for service %s", name)
+		return fmt.Errorf("container: factory cannot be nil for service '%s'", name)
 	}
 
 	c.factories[name] = factory
 	return nil
 }
 
-// GetService retrieves a service from the container
+// GetService retrieves a service from the container by name.
+// If the service has not been created yet, its factory function is called.
+// The created service is cached for future requests (singleton pattern).
+// This method is thread-safe and can be called concurrently.
+// Returns an error if the service is not registered or if creation fails.
 func (c *Container) GetService(name string) (interface{}, error) {
+	if name == "" {
+		return nil, fmt.Errorf("container: service name cannot be empty")
+	}
+
+	// Check cache first for singleton services
 	c.mu.RLock()
+	if cached, exists := c.serviceCache[name]; exists {
+		c.mu.RUnlock()
+		return cached, nil
+	}
+
 	factory, exists := c.factories[name]
 	c.mu.RUnlock()
 
 	if !exists {
-		return nil, fmt.Errorf("service %s not registered", name)
+		return nil, fmt.Errorf("container: service '%s' not registered", name)
 	}
 
-	return factory()
+	service, err := factory()
+	if err != nil {
+		return nil, fmt.Errorf("container: failed to create service '%s': %w", name, err)
+	}
+
+	// Cache the service for future use (all services are treated as singletons)
+	c.mu.Lock()
+	c.serviceCache[name] = service
+	c.mu.Unlock()
+
+	return service, nil
 }
 
 // RegisterAllServices registers all required services with their implementations
@@ -220,147 +255,156 @@ func (c *Container) registerInfrastructureServices() error {
 	return nil
 }
 
+// getTypedService is a generic helper to get a service with type checking
+func (c *Container) getTypedService(serviceName string, expectedType string) (interface{}, error) {
+	service, err := c.GetService(serviceName)
+	if err != nil {
+		return nil, fmt.Errorf("container: failed to get %s service: %w", serviceName, err)
+	}
+	return service, nil
+}
+
 // Service getter methods with proper error handling
 func (c *Container) GetCLI() (interfaces.CLIInterface, error) {
-	service, err := c.GetService("cli")
+	service, err := c.getTypedService("cli", "CLIInterface")
 	if err != nil {
 		return nil, err
 	}
 	cli, ok := service.(interfaces.CLIInterface)
 	if !ok {
-		return nil, fmt.Errorf("service cli is not of type CLIInterface")
+		return nil, fmt.Errorf("container: service 'cli' has incorrect type, expected CLIInterface but got %T", service)
 	}
 	return cli, nil
 }
 
 func (c *Container) GetTemplateEngine() (interfaces.TemplateEngine, error) {
-	service, err := c.GetService("templateEngine")
+	service, err := c.getTypedService("templateEngine", "TemplateEngine")
 	if err != nil {
 		return nil, err
 	}
 	engine, ok := service.(interfaces.TemplateEngine)
 	if !ok {
-		return nil, fmt.Errorf("service templateEngine is not of type TemplateEngine")
+		return nil, fmt.Errorf("container: service 'templateEngine' has incorrect type, expected TemplateEngine but got %T", service)
 	}
 	return engine, nil
 }
 
 func (c *Container) GetTemplateManager() (interfaces.TemplateManager, error) {
-	service, err := c.GetService("templateManager")
+	service, err := c.getTypedService("templateManager", "TemplateManager")
 	if err != nil {
 		return nil, err
 	}
 	manager, ok := service.(interfaces.TemplateManager)
 	if !ok {
-		return nil, fmt.Errorf("service templateManager is not of type TemplateManager")
+		return nil, fmt.Errorf("container: service 'templateManager' has incorrect type, expected TemplateManager but got %T", service)
 	}
 	return manager, nil
 }
 
 func (c *Container) GetConfigManager() (interfaces.ConfigManager, error) {
-	service, err := c.GetService("configManager")
+	service, err := c.getTypedService("configManager", "ConfigManager")
 	if err != nil {
 		return nil, err
 	}
 	manager, ok := service.(interfaces.ConfigManager)
 	if !ok {
-		return nil, fmt.Errorf("service configManager is not of type ConfigManager")
+		return nil, fmt.Errorf("container: service 'configManager' has incorrect type, expected ConfigManager but got %T", service)
 	}
 	return manager, nil
 }
 
 func (c *Container) GetFileSystemGenerator() (interfaces.FileSystemGenerator, error) {
-	service, err := c.GetService("fsGenerator")
+	service, err := c.getTypedService("fsGenerator", "FileSystemGenerator")
 	if err != nil {
 		return nil, err
 	}
 	generator, ok := service.(interfaces.FileSystemGenerator)
 	if !ok {
-		return nil, fmt.Errorf("service fsGenerator is not of type FileSystemGenerator")
+		return nil, fmt.Errorf("container: service 'fsGenerator' has incorrect type, expected FileSystemGenerator but got %T", service)
 	}
 	return generator, nil
 }
 
 func (c *Container) GetVersionManager() (interfaces.VersionManager, error) {
-	service, err := c.GetService("versionManager")
+	service, err := c.getTypedService("versionManager", "VersionManager")
 	if err != nil {
 		return nil, err
 	}
 	manager, ok := service.(interfaces.VersionManager)
 	if !ok {
-		return nil, fmt.Errorf("service versionManager is not of type VersionManager")
+		return nil, fmt.Errorf("container: service 'versionManager' has incorrect type, expected VersionManager but got %T", service)
 	}
 	return manager, nil
 }
 
 func (c *Container) GetValidator() (interfaces.ValidationEngine, error) {
-	service, err := c.GetService("validator")
+	service, err := c.getTypedService("validator", "ValidationEngine")
 	if err != nil {
 		return nil, err
 	}
 	validator, ok := service.(interfaces.ValidationEngine)
 	if !ok {
-		return nil, fmt.Errorf("service validator is not of type ValidationEngine")
+		return nil, fmt.Errorf("container: service 'validator' has incorrect type, expected ValidationEngine but got %T", service)
 	}
 	return validator, nil
 }
 
 func (c *Container) GetAuditEngine() (interfaces.AuditEngine, error) {
-	service, err := c.GetService("auditEngine")
+	service, err := c.getTypedService("auditEngine", "AuditEngine")
 	if err != nil {
 		return nil, err
 	}
 	engine, ok := service.(interfaces.AuditEngine)
 	if !ok {
-		return nil, fmt.Errorf("service auditEngine is not of type AuditEngine")
+		return nil, fmt.Errorf("container: service 'auditEngine' has incorrect type, expected AuditEngine but got %T", service)
 	}
 	return engine, nil
 }
 
 func (c *Container) GetCacheManager() (interfaces.CacheManager, error) {
-	service, err := c.GetService("cacheManager")
+	service, err := c.getTypedService("cacheManager", "CacheManager")
 	if err != nil {
 		return nil, err
 	}
 	manager, ok := service.(interfaces.CacheManager)
 	if !ok {
-		return nil, fmt.Errorf("service cacheManager is not of type CacheManager")
+		return nil, fmt.Errorf("container: service 'cacheManager' has incorrect type, expected CacheManager but got %T", service)
 	}
 	return manager, nil
 }
 
 func (c *Container) GetSecurityManager() (interfaces.SecurityManager, error) {
-	service, err := c.GetService("securityManager")
+	service, err := c.getTypedService("securityManager", "SecurityManager")
 	if err != nil {
 		return nil, err
 	}
 	manager, ok := service.(interfaces.SecurityManager)
 	if !ok {
-		return nil, fmt.Errorf("service securityManager is not of type SecurityManager")
+		return nil, fmt.Errorf("container: service 'securityManager' has incorrect type, expected SecurityManager but got %T", service)
 	}
 	return manager, nil
 }
 
 func (c *Container) GetLogger() (interfaces.Logger, error) {
-	service, err := c.GetService("logger")
+	service, err := c.getTypedService("logger", "Logger")
 	if err != nil {
 		return nil, err
 	}
 	logger, ok := service.(interfaces.Logger)
 	if !ok {
-		return nil, fmt.Errorf("service logger is not of type Logger")
+		return nil, fmt.Errorf("container: service 'logger' has incorrect type, expected Logger but got %T", service)
 	}
 	return logger, nil
 }
 
 func (c *Container) GetInteractiveUI() (interfaces.InteractiveUIInterface, error) {
-	service, err := c.GetService("interactiveUI")
+	service, err := c.getTypedService("interactiveUI", "InteractiveUIInterface")
 	if err != nil {
 		return nil, err
 	}
 	ui, ok := service.(interfaces.InteractiveUIInterface)
 	if !ok {
-		return nil, fmt.Errorf("service interactiveUI is not of type InteractiveUIInterface")
+		return nil, fmt.Errorf("container: service 'interactiveUI' has incorrect type, expected InteractiveUIInterface but got %T", service)
 	}
 	return ui, nil
 }
@@ -369,35 +413,45 @@ func (c *Container) GetInteractiveUI() (interfaces.InteractiveUIInterface, error
 // For now, these return nil implementations that need to be replaced with actual implementations
 
 func (c *Container) createCLI() (interfaces.CLIInterface, error) {
-	// For now, create a simple CLI without full dependency injection to avoid deadlock
-	// This will be improved in the next task when we fix the dependency injection system
-
-	// Create basic dependencies directly
-	configManager := config.NewManager("", "")
-	validator := validation.NewEngine()
-	auditEngine := audit.NewEngine()
-
-	// Create cache manager
-	homeDir, err := os.UserHomeDir()
+	// Reuse existing services from the container to avoid duplicate creation
+	configManager, err := c.createConfigManager()
 	if err != nil {
-		homeDir = "/tmp"
+		return nil, fmt.Errorf("container: failed to create config manager for CLI: %w", err)
 	}
-	cacheDir := filepath.Join(homeDir, ".generator", "cache")
-	cacheManager := cache.NewManager(cacheDir)
 
-	// Create template engine and manager
-	templateEngine := template.NewEmbeddedEngine()
-	templateManager := template.NewManager(templateEngine)
-
-	// Create version manager
-	versionInfo := c.GetVersionInfo()
-	if versionInfo == nil {
-		return nil, fmt.Errorf("version information not set")
+	validator, err := c.createValidator()
+	if err != nil {
+		return nil, fmt.Errorf("container: failed to create validator for CLI: %w", err)
 	}
-	versionManager := version.NewManagerWithVersionAndCache(versionInfo.Version, cacheManager)
+
+	auditEngine, err := c.createAuditEngine()
+	if err != nil {
+		return nil, fmt.Errorf("container: failed to create audit engine for CLI: %w", err)
+	}
+
+	cacheManager, err := c.createCacheManager()
+	if err != nil {
+		return nil, fmt.Errorf("container: failed to create cache manager for CLI: %w", err)
+	}
+
+	templateManager, err := c.createTemplateManager()
+	if err != nil {
+		return nil, fmt.Errorf("container: failed to create template manager for CLI: %w", err)
+	}
+
+	versionManager, err := c.createVersionManager()
+	if err != nil {
+		return nil, fmt.Errorf("container: failed to create version manager for CLI: %w", err)
+	}
 
 	// Create a simple logger (placeholder)
 	logger := &SimpleLogger{}
+
+	// Get version info
+	versionInfo := c.GetVersionInfo()
+	if versionInfo == nil {
+		return nil, fmt.Errorf("container: version information not set, cannot create CLI service")
+	}
 
 	// Create CLI with all dependencies
 	return cli.NewCLI(
@@ -469,7 +523,7 @@ func (c *Container) createVersionManager() (interfaces.VersionManager, error) {
 
 	versionInfo := c.GetVersionInfo()
 	if versionInfo == nil {
-		return nil, fmt.Errorf("version information not set")
+		return nil, fmt.Errorf("container: version information not set, cannot create version manager service")
 	}
 
 	return version.NewManagerWithVersionAndCache(versionInfo.Version, cacheManager), nil
@@ -478,12 +532,12 @@ func (c *Container) createVersionManager() (interfaces.VersionManager, error) {
 func (c *Container) createLogger() (interfaces.Logger, error) {
 	// Import the app package for logger - this creates a circular dependency
 	// For now, we'll return an error and handle this in the next task
-	return nil, fmt.Errorf("Logger implementation requires refactoring to avoid circular dependency")
+	return nil, fmt.Errorf("container: logger implementation requires refactoring to avoid circular dependency")
 }
 
 func (c *Container) createInteractiveUI() (interfaces.InteractiveUIInterface, error) {
 	// TODO: Replace with actual InteractiveUIInterface implementation
-	return nil, fmt.Errorf("InteractiveUIInterface implementation not yet available")
+	return nil, fmt.Errorf("container: InteractiveUIInterface implementation not yet available")
 }
 
 // Initialize initializes all registered services
@@ -513,9 +567,12 @@ func (c *Container) GetRegisteredServices() []string {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	services := make([]string, 0, len(c.factories))
+	// Pre-allocate slice with exact capacity to avoid reallocations
+	services := make([]string, len(c.factories))
+	i := 0
 	for name := range c.factories {
-		services = append(services, name)
+		services[i] = name
+		i++
 	}
 	return services
 }
@@ -523,306 +580,24 @@ func (c *Container) GetRegisteredServices() []string {
 // ServiceExists checks if a service is registered
 func (c *Container) ServiceExists(name string) bool {
 	c.mu.RLock()
-	defer c.mu.RUnlock()
 	_, exists := c.factories[name]
+	c.mu.RUnlock()
 	return exists
 }
 
-// ComponentHealth represents the health status of a component
-type ComponentHealth struct {
-	Name         string                 `json:"name"`
-	Status       string                 `json:"status"` // "healthy", "degraded", "failed", "initializing"
-	LastCheck    time.Time              `json:"last_check"`
-	Dependencies []string               `json:"dependencies"`
-	Errors       []string               `json:"errors,omitempty"`
-	Metadata     map[string]interface{} `json:"metadata,omitempty"`
-}
-
-// SystemHealth represents the overall system health
-type SystemHealth struct {
-	Overall    string                      `json:"overall"`
-	Components map[string]*ComponentHealth `json:"components"`
-	Timestamp  time.Time                   `json:"timestamp"`
-}
-
-// InitializationOrder defines the order in which services should be initialized
-var InitializationOrder = []string{
-	"logger",          // First - needed for logging initialization
-	"securityManager", // Second - needed for secure operations
-	"configManager",   // Third - needed for configuration
-	"cacheManager",    // Fourth - needed for caching
-	"versionManager",  // Fifth - needed for version checks
-	"templateEngine",  // Sixth - low-level template processing
-	"templateManager", // Seventh - high-level template management
-	"fsGenerator",     // Eighth - filesystem operations
-	"validator",       // Ninth - validation capabilities
-	"auditEngine",     // Tenth - auditing capabilities
-	"interactiveUI",   // Eleventh - UI components
-	"cli",             // Last - depends on most other services
-}
-
-// ServiceDependencies defines dependencies between services
-var ServiceDependencies = map[string][]string{
-	"logger":          {},
-	"securityManager": {"logger"},
-	"configManager":   {"logger", "securityManager"},
-	"cacheManager":    {"logger", "configManager"},
-	"versionManager":  {"logger", "configManager", "cacheManager"},
-	"templateEngine":  {"logger", "securityManager"},
-	"templateManager": {"logger", "templateEngine", "cacheManager"},
-	"fsGenerator":     {"logger", "securityManager", "templateEngine"},
-	"validator":       {"logger", "configManager"},
-	"auditEngine":     {"logger", "validator", "securityManager"},
-	"interactiveUI":   {"logger"},
-	"cli":             {"logger", "configManager", "templateManager", "fsGenerator", "versionManager", "validator", "auditEngine", "cacheManager", "securityManager", "interactiveUI"},
-}
-
-// InitializeWithOrder initializes services in the proper dependency order
-func (c *Container) InitializeWithOrder() error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	// Register all services first
-	if err := c.RegisterAllServices(); err != nil {
-		return fmt.Errorf("failed to register services: %w", err)
-	}
-
-	// Initialize services in dependency order
-	for _, serviceName := range InitializationOrder {
-		if err := c.initializeService(serviceName); err != nil {
-			return fmt.Errorf("failed to initialize service %s: %w", serviceName, err)
-		}
-	}
-
-	// Mark container as initialized
-	c.initialized["container"] = true
-	return nil
-}
-
-// initializeService initializes a single service with dependency validation
-func (c *Container) initializeService(serviceName string) error {
-	// Check if service is already initialized
-	if c.initialized[serviceName] {
-		return nil
-	}
-
-	// Validate dependencies are initialized first
-	dependencies := ServiceDependencies[serviceName]
-	for _, dep := range dependencies {
-		if !c.initialized[dep] {
-			return fmt.Errorf("service %s depends on %s which is not initialized", serviceName, dep)
-		}
-	}
-
-	// Mark as initializing
-	c.setComponentStatus(serviceName, "initializing", nil)
-
-	// Try to create the service to validate it can be initialized
-	_, err := c.GetService(serviceName)
-	if err != nil {
-		c.setComponentStatus(serviceName, "failed", []string{err.Error()})
-
-		// Check if graceful degradation is possible
-		if c.canDegrade(serviceName) {
-			c.setComponentStatus(serviceName, "degraded", []string{err.Error()})
-			c.initialized[serviceName] = true // Mark as initialized but degraded
-			return nil
-		}
-
-		return fmt.Errorf("failed to initialize service %s: %w", serviceName, err)
-	}
-
-	// Mark as successfully initialized
-	c.setComponentStatus(serviceName, "healthy", nil)
-	c.initialized[serviceName] = true
-	return nil
-}
-
-// setComponentStatus sets the status of a component
-func (c *Container) setComponentStatus(name, status string, errors []string) {
-	if c.componentHealth == nil {
-		c.componentHealth = make(map[string]*ComponentHealth)
-	}
-
-	health := &ComponentHealth{
-		Name:         name,
-		Status:       status,
-		LastCheck:    time.Now(),
-		Dependencies: ServiceDependencies[name],
-		Errors:       errors,
-		Metadata:     make(map[string]interface{}),
-	}
-
-	c.componentHealth[name] = health
-}
-
-// canDegrade checks if a service can operate in degraded mode
-func (c *Container) canDegrade(serviceName string) bool {
-	// Define which services can operate in degraded mode
-	degradableServices := map[string]bool{
-		"cacheManager":   true, // Can work without cache
-		"versionManager": true, // Can work with cached/default versions
-		"auditEngine":    true, // Can skip auditing
-		"interactiveUI":  true, // Can fall back to basic prompts
-	}
-
-	return degradableServices[serviceName]
-}
-
-// GetSystemHealth returns the current health status of all components
-func (c *Container) GetSystemHealth() *SystemHealth {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
-	if c.componentHealth == nil {
-		return &SystemHealth{
-			Overall:    "unknown",
-			Components: make(map[string]*ComponentHealth),
-			Timestamp:  time.Now(),
-		}
-	}
-
-	// Calculate overall health
-	overall := "healthy"
-	healthyCount := 0
-	degradedCount := 0
-	failedCount := 0
-
-	for _, health := range c.componentHealth {
-		switch health.Status {
-		case "healthy":
-			healthyCount++
-		case "degraded":
-			degradedCount++
-			if overall == "healthy" {
-				overall = "degraded"
-			}
-		case "failed":
-			failedCount++
-			overall = "unhealthy"
-		}
-	}
-
-	return &SystemHealth{
-		Overall:    overall,
-		Components: c.componentHealth,
-		Timestamp:  time.Now(),
-	}
-}
-
-// ValidateInitialization validates that all critical services are properly initialized
-func (c *Container) ValidateInitialization() error {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
-	criticalServices := []string{"logger", "configManager", "cli"}
-
-	for _, service := range criticalServices {
-		if !c.initialized[service] {
-			return fmt.Errorf("critical service %s is not initialized", service)
-		}
-
-		if c.componentHealth != nil {
-			if health, exists := c.componentHealth[service]; exists {
-				if health.Status == "failed" {
-					return fmt.Errorf("critical service %s has failed: %v", service, health.Errors)
-				}
-			}
-		}
-	}
-
-	return nil
-}
-
-// PerformHealthCheck performs a health check on all components
-func (c *Container) PerformHealthCheck() *SystemHealth {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	// Update health status for each service
-	for serviceName := range c.factories {
-		c.checkServiceHealth(serviceName)
-	}
-
-	return c.GetSystemHealth()
-}
-
-// checkServiceHealth checks the health of a specific service
-func (c *Container) checkServiceHealth(serviceName string) {
-	var errors []string
-	status := "healthy"
-
-	// Try to get the service
-	_, err := c.GetService(serviceName)
-	if err != nil {
-		errors = append(errors, err.Error())
-		if c.canDegrade(serviceName) {
-			status = "degraded"
-		} else {
-			status = "failed"
-		}
-	}
-
-	c.setComponentStatus(serviceName, status, errors)
-}
-
-// GetComponentHealth returns the health status of a specific component
-func (c *Container) GetComponentHealth(name string) (*ComponentHealth, error) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
-	if c.componentHealth == nil {
-		return nil, fmt.Errorf("health monitoring not initialized")
-	}
-
-	health, exists := c.componentHealth[name]
-	if !exists {
-		return nil, fmt.Errorf("component %s not found", name)
-	}
-
-	return health, nil
-}
-
-// RestartFailedComponents attempts to restart failed components
-func (c *Container) RestartFailedComponents() error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	if c.componentHealth == nil {
-		return fmt.Errorf("health monitoring not initialized")
-	}
-
-	var restartErrors []string
-
-	for name, health := range c.componentHealth {
-		if health.Status == "failed" {
-			// Mark as not initialized to force restart
-			c.initialized[name] = false
-
-			// Try to reinitialize
-			if err := c.initializeService(name); err != nil {
-				restartErrors = append(restartErrors, fmt.Sprintf("%s: %v", name, err))
-			}
-		}
-	}
-
-	if len(restartErrors) > 0 {
-		return fmt.Errorf("failed to restart components: %v", restartErrors)
-	}
-
-	return nil
-}
-
-// Add componentHealth field to Container struct
-// This needs to be added to the Container struct definition
-// Version information storage
+// VersionInfo stores application version information that can be used by services.
+// This information is typically set during application startup and used by
+// services that need to know the application version, git commit, or build time.
 type VersionInfo struct {
-	Version   string
-	GitCommit string
-	BuildTime string
+	Version   string // Semantic version (e.g., "1.0.0")
+	GitCommit string // Git commit hash (e.g., "abc123def")
+	BuildTime string // Build timestamp (e.g., "2023-01-01T12:00:00Z")
 }
 
-// SetVersionInfo stores version information for use in service factories
+// SetVersionInfo stores version information for use in service factories.
+// This information is typically set during application startup and can be
+// accessed by service factories that need version information.
+// This method is thread-safe and can be called concurrently.
 func (c *Container) SetVersionInfo(version, gitCommit, buildTime string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -843,49 +618,89 @@ func (c *Container) GetVersionInfo() *VersionInfo {
 	return c.versionInfo
 }
 
-// SimpleLogger is a basic logger implementation to avoid circular dependencies
+// ClearServiceCache clears the service cache to free memory.
+// This forces all services to be recreated on next access.
+// Use this method carefully as it may cause service state to be lost.
+// This method is thread-safe and can be called concurrently.
+func (c *Container) ClearServiceCache() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.serviceCache = make(map[string]interface{})
+}
+
+// GetCacheSize returns the number of cached services.
+// This can be useful for monitoring memory usage and debugging.
+// This method is thread-safe and can be called concurrently.
+func (c *Container) GetCacheSize() int {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return len(c.serviceCache)
+}
+
+// SimpleLogger is a basic logger implementation to avoid circular dependencies.
+// It provides a minimal logging interface that writes to the standard log package.
+// This logger is used as a fallback when the full logging system is not available
+// or would create circular dependencies during container initialization.
 type SimpleLogger struct{}
+
+// logWithLevel is a helper method to reduce duplication in logging methods
+func (l *SimpleLogger) logWithLevel(level string, msg string, args ...interface{}) {
+	if level == "FATAL" {
+		log.Fatalf("[%s] %s %v", level, msg, args)
+	} else {
+		log.Printf("[%s] %s %v", level, msg, args)
+	}
+}
+
+// logWithFields is a helper method for structured logging
+func (l *SimpleLogger) logWithFields(level string, msg string, fields map[string]interface{}) {
+	if level == "FATAL" {
+		log.Fatalf("[%s] %s %v", level, msg, fields)
+	} else {
+		log.Printf("[%s] %s %v", level, msg, fields)
+	}
+}
 
 // Basic logging methods
 func (l *SimpleLogger) Debug(msg string, args ...interface{}) {
-	log.Printf("[DEBUG] %s %v", msg, args)
+	l.logWithLevel("DEBUG", msg, args...)
 }
 
 func (l *SimpleLogger) Info(msg string, args ...interface{}) {
-	log.Printf("[INFO] %s %v", msg, args)
+	l.logWithLevel("INFO", msg, args...)
 }
 
 func (l *SimpleLogger) Warn(msg string, args ...interface{}) {
-	log.Printf("[WARN] %s %v", msg, args)
+	l.logWithLevel("WARN", msg, args...)
 }
 
 func (l *SimpleLogger) Error(msg string, args ...interface{}) {
-	log.Printf("[ERROR] %s %v", msg, args)
+	l.logWithLevel("ERROR", msg, args...)
 }
 
 func (l *SimpleLogger) Fatal(msg string, args ...interface{}) {
-	log.Fatalf("[FATAL] %s %v", msg, args)
+	l.logWithLevel("FATAL", msg, args...)
 }
 
 // Structured logging methods
 func (l *SimpleLogger) DebugWithFields(msg string, fields map[string]interface{}) {
-	log.Printf("[DEBUG] %s %v", msg, fields)
+	l.logWithFields("DEBUG", msg, fields)
 }
 
 func (l *SimpleLogger) InfoWithFields(msg string, fields map[string]interface{}) {
-	log.Printf("[INFO] %s %v", msg, fields)
+	l.logWithFields("INFO", msg, fields)
 }
 
 func (l *SimpleLogger) WarnWithFields(msg string, fields map[string]interface{}) {
-	log.Printf("[WARN] %s %v", msg, fields)
+	l.logWithFields("WARN", msg, fields)
 }
 
 func (l *SimpleLogger) ErrorWithFields(msg string, fields map[string]interface{}) {
-	log.Printf("[ERROR] %s %v", msg, fields)
+	l.logWithFields("ERROR", msg, fields)
 }
 
 func (l *SimpleLogger) FatalWithFields(msg string, fields map[string]interface{}) {
-	log.Fatalf("[FATAL] %s %v", msg, fields)
+	l.logWithFields("FATAL", msg, fields)
 }
 
 // Error logging with error objects
@@ -964,26 +779,34 @@ func (l *SimpleLogger) Close() error {
 	return nil // Nothing to close for simple logger
 }
 
-// SimpleLoggerContext implements LoggerContext
+// SimpleLoggerContext implements LoggerContext for the SimpleLogger.
+// It provides structured logging capabilities by maintaining a set of fields
+// that are included with each log message. This allows for contextual logging
+// without the complexity of a full logging framework.
 type SimpleLoggerContext struct {
-	logger *SimpleLogger
-	fields map[string]interface{}
+	logger *SimpleLogger          // The underlying logger instance
+	fields map[string]interface{} // Context fields to include with log messages
+}
+
+// logWithContext is a helper method to reduce duplication in context logging
+func (c *SimpleLoggerContext) logWithContext(level string, msg string, args ...interface{}) {
+	log.Printf("[%s] %s %v %v", level, msg, args, c.fields)
 }
 
 func (c *SimpleLoggerContext) Debug(msg string, args ...interface{}) {
-	log.Printf("[DEBUG] %s %v %v", msg, args, c.fields)
+	c.logWithContext("DEBUG", msg, args...)
 }
 
 func (c *SimpleLoggerContext) Info(msg string, args ...interface{}) {
-	log.Printf("[INFO] %s %v %v", msg, args, c.fields)
+	c.logWithContext("INFO", msg, args...)
 }
 
 func (c *SimpleLoggerContext) Warn(msg string, args ...interface{}) {
-	log.Printf("[WARN] %s %v %v", msg, args, c.fields)
+	c.logWithContext("WARN", msg, args...)
 }
 
 func (c *SimpleLoggerContext) Error(msg string, args ...interface{}) {
-	log.Printf("[ERROR] %s %v %v", msg, args, c.fields)
+	c.logWithContext("ERROR", msg, args...)
 }
 
 func (c *SimpleLoggerContext) ErrorWithError(msg string, err error) {

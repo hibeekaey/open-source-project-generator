@@ -12,57 +12,17 @@ import (
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
 )
 
-// ValidatePath validates that a file path is safe and within expected boundaries
-func ValidatePath(path string, allowedBasePaths ...string) error {
-	if path == "" {
-		return fmt.Errorf("path cannot be empty")
-	}
-
-	// Clean the path to resolve any .. or . components
-	cleanPath := filepath.Clean(path)
-
-	// Check for path traversal attempts
-	if strings.Contains(cleanPath, "..") {
-		return fmt.Errorf("path traversal detected: %s", path)
-	}
-
-	// Check for dangerous absolute paths and URI schemes
-	// Also check for Windows-style absolute paths (C:\, D:\, etc.)
-	isWindowsAbs := len(cleanPath) >= 3 && cleanPath[1] == ':' && (cleanPath[2] == '\\' || cleanPath[2] == '/')
-	if filepath.IsAbs(cleanPath) || isWindowsAbs || strings.Contains(path, "://") {
-		dangerousPaths := []string{
-			"/etc/",
-			"/root/",
-			"/usr/",
-			"/bin/",
-			"/sbin/",
-			"C:\\Windows\\",
-			"C:\\Program Files\\",
-		}
-
-		// Check for URI schemes
-		if strings.Contains(path, "://") {
-			return fmt.Errorf("URI schemes not allowed: %s", path)
-		}
-
-		// Check both original and normalized paths for Windows compatibility
-		lowerPath := strings.ToLower(cleanPath)
-		normalizedPath := strings.ReplaceAll(lowerPath, "/", "\\")
-
-		for _, dangerous := range dangerousPaths {
-			lowerDangerous := strings.ToLower(dangerous)
-			normalizedDangerous := strings.ReplaceAll(lowerDangerous, "/", "\\")
-
-			// Check both original and normalized forms
-			if strings.HasPrefix(lowerPath, lowerDangerous) ||
-				strings.HasPrefix(normalizedPath, normalizedDangerous) {
-				return fmt.Errorf("access to system path denied: %s", path)
-			}
-		}
+// ValidatePathWithBasePaths validates that a file path is safe and within expected boundaries
+// This is a wrapper around the main ValidatePath function with additional base path checking
+func ValidatePathWithBasePaths(path string, allowedBasePaths ...string) error {
+	// First use the main validation function
+	if err := ValidatePath(path); err != nil {
+		return err
 	}
 
 	// If allowed base paths are specified, ensure the path is within one of them
 	if len(allowedBasePaths) > 0 {
+		cleanPath := filepath.Clean(path)
 		allowed := false
 		for _, basePath := range allowedBasePaths {
 			cleanBasePath := filepath.Clean(basePath)
@@ -81,7 +41,7 @@ func ValidatePath(path string, allowedBasePaths ...string) error {
 
 // SafeReadFile reads a file with path validation
 func SafeReadFile(path string, allowedBasePaths ...string) ([]byte, error) {
-	if err := ValidatePath(path, allowedBasePaths...); err != nil {
+	if err := ValidatePathWithBasePaths(path, allowedBasePaths...); err != nil {
 		return nil, err
 	}
 	return os.ReadFile(path) // #nosec G304 - path is validated above
@@ -89,7 +49,7 @@ func SafeReadFile(path string, allowedBasePaths ...string) ([]byte, error) {
 
 // SafeWriteFile writes a file with secure permissions and path validation
 func SafeWriteFile(path string, data []byte, allowedBasePaths ...string) error {
-	if err := ValidatePath(path, allowedBasePaths...); err != nil {
+	if err := ValidatePathWithBasePaths(path, allowedBasePaths...); err != nil {
 		return err
 	}
 	return os.WriteFile(path, data, 0600) // More secure permissions
@@ -97,7 +57,7 @@ func SafeWriteFile(path string, data []byte, allowedBasePaths ...string) error {
 
 // SafeMkdirAll creates directories with secure permissions and path validation
 func SafeMkdirAll(path string, allowedBasePaths ...string) error {
-	if err := ValidatePath(path, allowedBasePaths...); err != nil {
+	if err := ValidatePathWithBasePaths(path, allowedBasePaths...); err != nil {
 		return err
 	}
 	return os.MkdirAll(path, 0750) // More secure permissions
@@ -105,7 +65,7 @@ func SafeMkdirAll(path string, allowedBasePaths ...string) error {
 
 // SafeOpenFile opens a file with path validation
 func SafeOpenFile(path string, flag int, perm os.FileMode, allowedBasePaths ...string) (*os.File, error) {
-	if err := ValidatePath(path, allowedBasePaths...); err != nil {
+	if err := ValidatePathWithBasePaths(path, allowedBasePaths...); err != nil {
 		return nil, err
 	}
 
@@ -119,7 +79,7 @@ func SafeOpenFile(path string, flag int, perm os.FileMode, allowedBasePaths ...s
 
 // SafeOpen opens a file for reading with path validation
 func SafeOpen(path string, allowedBasePaths ...string) (*os.File, error) {
-	if err := ValidatePath(path, allowedBasePaths...); err != nil {
+	if err := ValidatePathWithBasePaths(path, allowedBasePaths...); err != nil {
 		return nil, err
 	}
 	return os.Open(path) // #nosec G304 - path is validated above
@@ -127,7 +87,7 @@ func SafeOpen(path string, allowedBasePaths ...string) (*os.File, error) {
 
 // SafeCreate creates a file with secure permissions and path validation
 func SafeCreate(path string, allowedBasePaths ...string) (*os.File, error) {
-	if err := ValidatePath(path, allowedBasePaths...); err != nil {
+	if err := ValidatePathWithBasePaths(path, allowedBasePaths...); err != nil {
 		return nil, err
 	}
 	return os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600) // #nosec G304 - path is validated above

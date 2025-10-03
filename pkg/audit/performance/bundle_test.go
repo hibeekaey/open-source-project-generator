@@ -91,7 +91,7 @@ func TestBundleAnalyzer_AnalyzeBundleSize(t *testing.T) {
 			// Create temporary directory
 			tempDir, err := os.MkdirTemp("", "bundle-test-*")
 			require.NoError(t, err)
-			defer os.RemoveAll(tempDir)
+			defer func() { _ = os.RemoveAll(tempDir) }()
 
 			// Setup test files
 			err = tt.setupFiles(tempDir)
@@ -304,7 +304,7 @@ func TestBundleAnalyzer_AnalyzePerformanceIssues(t *testing.T) {
 	// Create temporary directory with test files
 	tempDir, err := os.MkdirTemp("", "perf-test-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create a large source file
 	largeContent := make([]byte, 150*1024) // 150KB

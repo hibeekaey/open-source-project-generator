@@ -234,10 +234,31 @@ func (c *CLI) Dim(text string) string       { return c.outputManager.GetColorMan
 
 // Interactive methods - delegate to extracted components
 func (c *CLI) PromptProjectDetails() (*models.ProjectConfig, error) {
+	// Check for non-interactive mode first
+	if c.isNonInteractiveMode() {
+		return nil, fmt.Errorf("interactive prompts not available in non-interactive mode")
+	}
+
+	// Check if projectSetup is initialized
+	if c.projectSetup == nil {
+		return nil, fmt.Errorf("project setup component not initialized")
+	}
+
 	return c.projectSetup.CollectProjectDetails()
 }
 
 func (c *CLI) ConfirmGeneration(config *models.ProjectConfig) bool {
+	// Auto-confirm in non-interactive mode
+	if c.isNonInteractiveMode() {
+		return true
+	}
+
+	// Check if projectSetup is initialized
+	if c.projectSetup == nil {
+		c.logger.Error("Project setup component not initialized", "error", "nil projectSetup")
+		return false
+	}
+
 	confirmed, err := c.projectSetup.ConfirmProjectDetails(config)
 	if err != nil {
 		c.logger.Error("Failed to get user confirmation", "error", err)

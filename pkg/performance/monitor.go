@@ -70,7 +70,6 @@ type HealthAlert struct {
 // DiagnosticsCollector collects diagnostic information
 type DiagnosticsCollector struct {
 	systemInfo     *SystemInfo
-	runtimeMetrics *RuntimeMetrics
 	errorHistory   []ErrorRecord
 	performanceLog []PerformanceRecord
 	mutex          sync.RWMutex
@@ -295,7 +294,7 @@ func (sm *SystemMonitor) collectSystemMetrics() *SystemMetrics {
 
 	return &SystemMetrics{
 		CPUUsage:       getCPUUsage(),
-		MemoryUsage:    int64(memStats.Alloc & 0x7FFFFFFFFFFFFFFF), // Ensure positive int64
+		MemoryUsage:    safeUint64ToInt64(memStats.Alloc),
 		DiskUsage:      getDiskUsage(),
 		NetworkLatency: getNetworkLatency(),
 		CacheHitRate:   sm.getCacheHitRate(),
@@ -323,7 +322,8 @@ func (sm *SystemMonitor) processAlerts(snapshot *SystemHealthSnapshot) {
 
 	// Check for component health issues
 	for componentName, health := range snapshot.Components {
-		if health.Status == "unhealthy" {
+		switch health.Status {
+		case "unhealthy":
 			alert := HealthAlert{
 				ID:        fmt.Sprintf("health_%s_%d", componentName, snapshot.Timestamp.Unix()),
 				Severity:  "error",
@@ -337,7 +337,7 @@ func (sm *SystemMonitor) processAlerts(snapshot *SystemHealthSnapshot) {
 				},
 			}
 			alerts = append(alerts, alert)
-		} else if health.Status == "degraded" {
+		case "degraded":
 			alert := HealthAlert{
 				ID:        fmt.Sprintf("degraded_%s_%d", componentName, snapshot.Timestamp.Unix()),
 				Severity:  "warning",
@@ -424,6 +424,14 @@ func (sm *SystemMonitor) SetMonitorInterval(interval time.Duration) {
 	sm.mutex.Lock()
 	defer sm.mutex.Unlock()
 	sm.monitorInterval = interval
+}
+
+// safeUint64ToInt64 safely converts uint64 to int64 with bounds checking
+func safeUint64ToInt64(value uint64) int64 {
+	if value > 0x7FFFFFFFFFFFFFFF { // Max int64 value
+		return 0x7FFFFFFFFFFFFFFF
+	}
+	return int64(value)
 }
 
 // Helper functions for system metrics collection

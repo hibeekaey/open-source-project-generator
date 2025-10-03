@@ -23,7 +23,7 @@ func TestSecurityScanner_ProjectExists(t *testing.T) {
 	// Test with existing directory
 	tempDir, err := os.MkdirTemp("", "test-project-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	err = scanner.projectExists(tempDir)
 	assert.NoError(t, err)
@@ -97,7 +97,7 @@ func TestSecurityScanner_DetectSecrets(t *testing.T) {
 	// Create temporary directory with test files
 	tempDir, err := os.MkdirTemp("", "test-secrets-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create test file with secrets
 	testFile := filepath.Join(tempDir, "config.js")
@@ -136,7 +136,7 @@ func TestSecurityScanner_ScanVulnerabilities(t *testing.T) {
 	// Create temporary directory with vulnerable package.json
 	tempDir, err := os.MkdirTemp("", "test-vulns-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create package.json with vulnerable dependency
 	packageJSON := filepath.Join(tempDir, "package.json")
@@ -167,7 +167,7 @@ func TestSecurityScanner_CheckSecurityPolicies(t *testing.T) {
 	// Create temporary directory
 	tempDir, err := os.MkdirTemp("", "test-policies-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create test file with potential secret
 	testFile := filepath.Join(tempDir, "config.go")
@@ -207,7 +207,7 @@ func TestSecurityScanner_AuditSecurity(t *testing.T) {
 	// Create temporary directory with test files
 	tempDir, err := os.MkdirTemp("", "test-audit-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create test files
 	testFile := filepath.Join(tempDir, "main.go")
@@ -253,7 +253,7 @@ func TestSecurityScanner_CheckHardcodedSecrets(t *testing.T) {
 	// Create temporary directory with test files
 	tempDir, err := os.MkdirTemp("", "test-hardcoded-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create test file with hardcoded secrets
 	testFile := filepath.Join(tempDir, "config.py")
@@ -286,7 +286,7 @@ func TestSecurityScanner_CheckSecureConfiguration(t *testing.T) {
 	// Create temporary directory with test files
 	tempDir, err := os.MkdirTemp("", "test-config-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create insecure docker-compose.yml
 	dockerCompose := filepath.Join(tempDir, "docker-compose.yml")
@@ -468,7 +468,7 @@ func TestSecurityScanner_ScanFileForSecrets(t *testing.T) {
 	// Create temporary file with secrets
 	tempDir, err := os.MkdirTemp("", "test-file-secrets-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	testFile := filepath.Join(tempDir, "secrets.txt")
 	testContent := `
@@ -507,7 +507,7 @@ func BenchmarkSecurityScanner_DetectSecrets(b *testing.B) {
 	// Create temporary directory with test files
 	tempDir, err := os.MkdirTemp("", "bench-secrets-*")
 	require.NoError(b, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create multiple test files
 	for i := 0; i < 10; i++ {
@@ -536,7 +536,7 @@ func BenchmarkSecurityScanner_ScanVulnerabilities(b *testing.B) {
 	// Create temporary directory with package.json
 	tempDir, err := os.MkdirTemp("", "bench-vulns-*")
 	require.NoError(b, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	packageJSON := filepath.Join(tempDir, "package.json")
 	packageContent := `{

@@ -53,7 +53,7 @@ func (chc *CacheHealthChecker) CheckHealth(ctx context.Context) *ComponentHealth
 	}
 
 	// Clean up test data
-	chc.cache.Delete(testKey)
+	_ = chc.cache.Delete(testKey)
 
 	// Get cache statistics
 	if stats, err := chc.cache.GetStats(); err == nil {
@@ -305,7 +305,7 @@ func (thc *TemplateHealthChecker) CheckHealth(ctx context.Context) *ComponentHea
 	}
 
 	// Test template validation for a few templates
-	if templates != nil && len(templates) > 0 {
+	if len(templates) > 0 {
 		validTemplates := 0
 		for i, template := range templates {
 			if i >= 3 { // Only check first 3 templates to avoid long health checks

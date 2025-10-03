@@ -26,7 +26,7 @@ func TestMetricsAnalyzer_CheckPerformanceMetrics(t *testing.T) {
 	// Create temporary directory with test files
 	tempDir, err := os.MkdirTemp("", "metrics-test-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create a build directory with some assets
 	buildDir := filepath.Join(tempDir, "dist")
@@ -369,7 +369,7 @@ func TestMetricsAnalyzer_Integration(t *testing.T) {
 	// Create a more comprehensive integration test
 	tempDir, err := os.MkdirTemp("", "metrics-integration-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create a realistic project structure
 	buildDir := filepath.Join(tempDir, "dist")

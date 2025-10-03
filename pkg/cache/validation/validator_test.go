@@ -14,7 +14,7 @@ func TestValidator_ValidateCache(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	config := interfaces.DefaultCacheConfig()
 	config.Location = tempDir
@@ -46,7 +46,7 @@ func TestValidator_RepairEntries(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	config := interfaces.DefaultCacheConfig()
 	validator := NewValidator(tempDir, config)
@@ -110,7 +110,7 @@ func TestValidator_CheckHealth(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	config := interfaces.DefaultCacheConfig()
 	validator := NewValidator(tempDir, config)
@@ -172,7 +172,7 @@ func TestValidator_ValidateConfiguration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	validator := NewValidator(tempDir, nil)
 

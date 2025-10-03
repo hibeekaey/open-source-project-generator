@@ -161,11 +161,12 @@ func (el *EnhancedLogger) initializeWriters() error {
 	el.writers = make([]io.Writer, 0, len(el.config.OutputPaths))
 
 	for _, path := range el.config.OutputPaths {
-		if path == "stdout" {
+		switch path {
+		case "stdout":
 			el.writers = append(el.writers, os.Stdout)
-		} else if path == "stderr" {
+		case "stderr":
 			el.writers = append(el.writers, os.Stderr)
-		} else {
+		default:
 			// Ensure directory exists
 			dir := filepath.Dir(path)
 			if err := secureMkdirAll(dir, 0750); err != nil {

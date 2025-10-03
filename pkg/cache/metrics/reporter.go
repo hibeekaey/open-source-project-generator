@@ -261,35 +261,3 @@ func (r *Reporter) generateRecommendations(entries map[string]*interfaces.CacheE
 
 	return recommendations
 }
-
-// determineHealth determines overall cache health status.
-func (r *Reporter) determineHealth(entries map[string]*interfaces.CacheEntry, metrics *interfaces.CacheMetrics, expiredCount int) string {
-	totalEntries := len(entries)
-
-	// Check for critical issues
-	if metrics.CurrentSize > metrics.MaxSize && metrics.MaxSize > 0 {
-		return "unhealthy"
-	}
-
-	if metrics.CurrentEntries > metrics.MaxEntries && metrics.MaxEntries > 0 {
-		return "unhealthy"
-	}
-
-	// Check expired ratio
-	if totalEntries > 0 {
-		expiredRatio := float64(expiredCount) / float64(totalEntries)
-		if expiredRatio > 0.5 {
-			return "degraded"
-		}
-	}
-
-	// Check hit rate for established caches
-	if metrics.Gets > 100 {
-		hitRate := r.collector.GetHitRate()
-		if hitRate < 0.2 {
-			return "degraded"
-		}
-	}
-
-	return "healthy"
-}

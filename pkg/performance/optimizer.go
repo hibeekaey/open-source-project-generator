@@ -20,7 +20,6 @@ type CommandOptimizer struct {
 	lazyLoaders   map[string]LazyLoader
 	optimizations map[string]OptimizationConfig
 	mutex         sync.RWMutex
-	initialized   bool
 }
 
 // OptimizationConfig defines optimization settings for specific operations
@@ -199,7 +198,13 @@ func (co *CommandOptimizer) OptimizeCommand(ctx context.Context, commandName str
 	// Record final memory usage
 	runtime.ReadMemStats(&memStats)
 	if memStats.Alloc >= initialMemory {
-		metrics.MemoryUsage = int64(memStats.Alloc - initialMemory)
+		// Safe conversion with bounds checking to prevent integer overflow
+		memoryDiff := memStats.Alloc - initialMemory
+		if memoryDiff <= 0x7FFFFFFFFFFFFFFF { // Max int64 value
+			metrics.MemoryUsage = int64(memoryDiff)
+		} else {
+			metrics.MemoryUsage = 0x7FFFFFFFFFFFFFFF // Cap at max int64
+		}
 	} else {
 		metrics.MemoryUsage = 0
 	}

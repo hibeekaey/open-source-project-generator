@@ -272,7 +272,11 @@ func TestValidateProjectStructure(t *testing.T) {
 		t.Fatalf("Failed to create project structure: %v", err)
 	}
 
+	// Generate component files to create the actual files including Makefile
 	projectPath := filepath.Join(tempDir, config.Name)
+	if err := pg.GenerateComponentFiles(config, tempDir); err != nil {
+		t.Fatalf("Failed to generate component files: %v", err)
+	}
 
 	tests := []struct {
 		name        string
@@ -306,7 +310,7 @@ func TestValidateProjectStructure(t *testing.T) {
 			projectPath: filepath.Join(tempDir, "non-existent"),
 			config:      config,
 			expectError: true,
-			errorMsg:    "required root directory missing",
+			errorMsg:    "project directory does not exist",
 		},
 	}
 

@@ -283,16 +283,16 @@ type AuditLogValidation struct {
 // writeLogEntry writes a single log entry to the audit log file
 func (a *ConfigAuditLogger) writeLogEntry(entry *AuditLogEntry) error {
 	// Ensure log directory exists
-	if err := os.MkdirAll(filepath.Dir(a.logFile), 0750); err != nil {
+	if err := os.MkdirAll(filepath.Dir(a.logFile), 0700); err != nil {
 		return fmt.Errorf("failed to create log directory: %w", err)
 	}
 
 	// Open log file for appending
-	file, err := os.OpenFile(a.logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0640)
+	file, err := os.OpenFile(a.logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 	if err != nil {
 		return fmt.Errorf("failed to open log file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// Marshal entry to JSON
 	data, err := json.Marshal(entry)
@@ -446,7 +446,7 @@ func (a *ConfigAuditLogger) backupLogFile() error {
 		return fmt.Errorf("failed to read log file: %w", err)
 	}
 
-	if err := os.WriteFile(backupFile, content, 0640); err != nil {
+	if err := os.WriteFile(backupFile, content, 0600); err != nil {
 		return fmt.Errorf("failed to write backup file: %w", err)
 	}
 

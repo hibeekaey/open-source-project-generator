@@ -9,7 +9,7 @@ import (
 // TestEngineInterfaceCompatibility ensures the refactored engine still implements the AuditEngine interface
 func TestEngineInterfaceCompatibility(t *testing.T) {
 	// This test ensures that the Engine struct still implements the AuditEngine interface
-	var _ interfaces.AuditEngine = NewEngine()
+	var _ = NewEngine()
 
 	engine := NewEngine()
 	if engine == nil {

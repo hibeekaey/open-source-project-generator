@@ -111,6 +111,14 @@ type DiagnosticStatistics struct {
 	CollectionErrors      []string       `json:"collection_errors"`
 }
 
+// safeUint64ToInt64 safely converts uint64 to int64 with bounds checking
+func safeUint64ToInt64(value uint64) int64 {
+	if value > 0x7FFFFFFFFFFFFFFF { // Max int64 value
+		return 0x7FFFFFFFFFFFFFFF
+	}
+	return int64(value)
+}
+
 // NewDiagnosticCollector creates a new diagnostic collector
 func NewDiagnosticCollector(config *EnhancedErrorConfig, logger interfaces.Logger) *DiagnosticCollector {
 	return &DiagnosticCollector{
@@ -308,7 +316,7 @@ func (dc *DiagnosticCollector) collectMetrics() (*DiagnosticMetrics, error) {
 	runtime.ReadMemStats(&m)
 
 	metrics := &DiagnosticMetrics{
-		MemoryUsage: int64(m.Alloc & 0x7FFFFFFFFFFFFFFF), // Ensure positive int64
+		MemoryUsage: safeUint64ToInt64(m.Alloc),
 		Goroutines:  runtime.NumGoroutine(),
 	}
 
@@ -414,7 +422,7 @@ func (sic *SystemInfoCollector) Collect() (*DiagnosticSystemInfo, error) {
 	// Get memory usage (simplified)
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
-	info.MemoryUsage = int64(m.Alloc & 0x7FFFFFFFFFFFFFFF) // Ensure positive int64
+	info.MemoryUsage = safeUint64ToInt64(m.Alloc)
 
 	return info, nil
 }

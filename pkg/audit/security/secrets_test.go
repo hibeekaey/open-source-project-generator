@@ -63,7 +63,7 @@ func TestDetectSecrets_EmptyDirectory(t *testing.T) {
 	// Create temporary directory
 	tempDir, err := os.MkdirTemp("", "secret_test_*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	detector := NewSecretDetector()
 	result, err := detector.DetectSecrets(tempDir)
@@ -79,7 +79,7 @@ func TestDetectSecrets_WithSecrets(t *testing.T) {
 	// Create temporary directory
 	tempDir, err := os.MkdirTemp("", "secret_test_*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create test files with secrets
 	testFiles := map[string]string{
@@ -136,7 +136,7 @@ func TestDetectSecrets_SkipBinaryFiles(t *testing.T) {
 	// Create temporary directory
 	tempDir, err := os.MkdirTemp("", "secret_test_*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create binary file (should be skipped)
 	binaryFile := filepath.Join(tempDir, "test.exe")
@@ -162,7 +162,7 @@ func TestDetectSecrets_SkipTestFiles(t *testing.T) {
 	// Create temporary directory
 	tempDir, err := os.MkdirTemp("", "secret_test_*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create test file with fake secret
 	testFile := filepath.Join(tempDir, "config_test.js")
@@ -205,7 +205,7 @@ func TestScanFileForSecrets(t *testing.T) {
 	// Create temporary file
 	tempFile, err := os.CreateTemp("", "secret_test_*.js")
 	require.NoError(t, err)
-	defer os.Remove(tempFile.Name())
+	defer func() { _ = os.Remove(tempFile.Name()) }()
 
 	content := `
 const config = {
@@ -218,7 +218,7 @@ const config = {
 
 	_, err = tempFile.WriteString(content)
 	require.NoError(t, err)
-	tempFile.Close()
+	_ = tempFile.Close()
 
 	detector := NewSecretDetector()
 	secrets, err := detector.scanFileForSecrets(tempFile.Name())
@@ -244,9 +244,10 @@ const config = {
 	// Check that comment secret has lower confidence
 	var commentSecret, codeSecret *interfaces.SecretDetection
 	for i, secret := range secrets {
-		if secret.Line == 3 { // Comment line
+		switch secret.Line {
+		case 3: // Comment line
 			commentSecret = &secrets[i]
-		} else if secret.Line == 4 { // Code line
+		case 4: // Code line
 			codeSecret = &secrets[i]
 		}
 	}
@@ -624,7 +625,7 @@ func BenchmarkDetectSecrets(b *testing.B) {
 	// Create temporary directory with test files
 	tempDir, err := os.MkdirTemp("", "secret_bench_*")
 	require.NoError(b, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create multiple files with various content
 	for i := 0; i < 10; i++ {
@@ -654,7 +655,7 @@ func BenchmarkScanFileForSecrets(b *testing.B) {
 	// Create temporary file
 	tempFile, err := os.CreateTemp("", "secret_bench_*.js")
 	require.NoError(b, err)
-	defer os.Remove(tempFile.Name())
+	defer func() { _ = os.Remove(tempFile.Name()) }()
 
 	content := `
 const config = {
@@ -667,7 +668,7 @@ const config = {
 
 	_, err = tempFile.WriteString(content)
 	require.NoError(b, err)
-	tempFile.Close()
+	_ = tempFile.Close()
 
 	detector := NewSecretDetector()
 

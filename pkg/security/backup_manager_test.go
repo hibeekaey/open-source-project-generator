@@ -192,7 +192,7 @@ func TestBackupManager_GetBackupStats(t *testing.T) {
 	for i := 0; i < 2; i++ {
 		_, err := bm.BackupFile(originalFile)
 		require.NoError(t, err)
-		time.Sleep(100 * time.Millisecond) // Increased delay
+		time.Sleep(1100 * time.Millisecond) // Ensure different second timestamps
 	}
 
 	// Get stats
@@ -348,7 +348,7 @@ func TestBackupManager_Integration(t *testing.T) {
 	assert.True(t, result1.Success)
 
 	// 2. Modify file and create another backup
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(1100 * time.Millisecond) // Ensure different second timestamps
 	modifiedContent := "modified content"
 	err = os.WriteFile(originalFile, []byte(modifiedContent), 0644)
 	require.NoError(t, err)

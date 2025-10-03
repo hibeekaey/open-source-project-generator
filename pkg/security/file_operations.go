@@ -209,7 +209,7 @@ func (sfo *SecureFileOperations) SecureWriteFile(path string, data []byte, perm 
 	hash := sha256.Sum256(data)
 	result.Checksum = fmt.Sprintf("%x", hash)
 	result.BytesWritten = int64(len(data))
-	result.Permissions = perm.String()
+	result.Permissions = fmt.Sprintf("%04o", perm)
 	result.Success = true
 
 	return result, nil
@@ -322,7 +322,7 @@ func (sfo *SecureFileOperations) SecureCreateDirectory(path string, perm os.File
 		return result, err
 	}
 
-	result.Permissions = perm.String()
+	result.Permissions = fmt.Sprintf("%04o", perm)
 	result.Success = true
 
 	return result, nil

@@ -185,7 +185,7 @@ func TestMetadataParser_LoadTemplateMetadata(t *testing.T) {
 	// Create temporary directory for test
 	tempDir, err := os.MkdirTemp("", "metadata_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create test template directory
 	templateDir := filepath.Join(tempDir, "test-template")
@@ -226,7 +226,7 @@ func TestMetadataParser_LoadTemplateMetadata_WithYmlExtension(t *testing.T) {
 	// Create temporary directory for test
 	tempDir, err := os.MkdirTemp("", "metadata_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create test template directory
 	templateDir := filepath.Join(tempDir, "test-template")
@@ -257,7 +257,7 @@ func TestMetadataParser_LoadMetadataFromFile(t *testing.T) {
 	// Create temporary file for test
 	tempDir, err := os.MkdirTemp("", "metadata_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	yamlContent := `
 name: file-template

@@ -31,7 +31,7 @@ func TestScanDependencyVulnerabilities(t *testing.T) {
 	// Create a temporary directory with test files
 	tempDir, err := os.MkdirTemp("", "dependency_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create a package.json with vulnerable dependencies
 	packageJSON := `{
@@ -71,7 +71,7 @@ func TestScanDependencyVulnerabilitiesGoMod(t *testing.T) {
 	// Create a temporary directory with test files
 	tempDir, err := os.MkdirTemp("", "dependency_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create a go.mod with vulnerable dependencies
 	goMod := `module test-project
@@ -110,7 +110,7 @@ func TestAnalyzeDependencies(t *testing.T) {
 	// Create a temporary directory with test files
 	tempDir, err := os.MkdirTemp("", "dependency_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create a package.json
 	packageJSON := `{
@@ -156,7 +156,7 @@ func TestCheckDependencyVulnerabilities(t *testing.T) {
 	// Create a temporary directory with test files
 	tempDir, err := os.MkdirTemp("", "dependency_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create a package.json with vulnerable dependencies
 	packageJSON := `{
@@ -608,7 +608,7 @@ func TestIntegrationWithMultipleEcosystems(t *testing.T) {
 	// Create a temporary directory with multiple ecosystem files
 	tempDir, err := os.MkdirTemp("", "multi_ecosystem_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create package.json
 	packageJSON := `{
@@ -652,7 +652,7 @@ func BenchmarkScanDependencyVulnerabilities(b *testing.B) {
 	// Create a temporary directory with test files
 	tempDir, err := os.MkdirTemp("", "benchmark_test")
 	require.NoError(b, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create a large package.json
 	packageJSON := `{
@@ -681,7 +681,7 @@ func BenchmarkAnalyzeDependencies(b *testing.B) {
 	// Create a temporary directory with test files
 	tempDir, err := os.MkdirTemp("", "benchmark_test")
 	require.NoError(b, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create a large package.json
 	packageJSON := `{

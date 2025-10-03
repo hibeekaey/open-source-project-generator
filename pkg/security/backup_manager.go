@@ -172,6 +172,10 @@ func (bm *BackupManager) ListBackups(originalPath string) ([]BackupInfo, error) 
 	// Read backup directory
 	entries, err := os.ReadDir(bm.backupDir)
 	if err != nil {
+		if os.IsNotExist(err) {
+			// Backup directory doesn't exist, return empty list
+			return backups, nil
+		}
 		return backups, fmt.Errorf("failed to read backup directory: %w", err)
 	}
 
