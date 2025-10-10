@@ -543,11 +543,12 @@ func (ch *CommandHandlers) runVersion(cmd *cobra.Command, args []string) error {
 
 	// Handle short version output
 	if short {
+		currentVersion := ch.cli.versionManager.GetCurrentVersion()
 		if nonInteractive && (format == "json" || format == "yaml") {
-			data := map[string]string{"version": ch.cli.generatorVersion}
+			data := map[string]string{"version": currentVersion}
 			return ch.cli.outputMachineReadable(data, format)
 		}
-		ch.cli.QuietOutput(ch.cli.generatorVersion)
+		ch.cli.QuietOutput(currentVersion)
 		return nil
 	}
 

@@ -50,6 +50,47 @@ body:
     validations:
       required: true
 
+  - type: dropdown
+    id: template-type
+    attributes:
+      label: Template Type
+      description: Which template were you using when the bug occurred?
+      options:
+        - Go/Gin Backend
+        - Next.js App
+        - Next.js Admin
+        - Next.js Landing Page
+        - Android (Kotlin)
+        - iOS (Swift)
+        - Docker/Kubernetes
+        - Terraform
+        - Custom Template
+        - Not applicable
+    validations:
+      required: true
+
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Mode
+      description: Which mode were you using?
+      options:
+        - Interactive
+        - Non-interactive (CLI flags)
+    validations:
+      required: true
+
+  - type: textarea
+    id: command
+    attributes:
+      label: Command Used
+      description: The exact CLI command you ran
+      placeholder: |
+        e.g., ospg generate --template go-gin --name myproject
+      render: shell
+    validations:
+      required: true
+
   - type: textarea
     id: environment
     attributes:
@@ -62,6 +103,16 @@ body:
         - Shell: [e.g. bash, zsh, PowerShell]
     validations:
       required: true
+
+  - type: checkboxes
+    id: validation
+    attributes:
+      label: Project Validation
+      description: Did you run validation on the generated project?
+      options:
+        - label: I ran validation and it passed
+        - label: I ran validation and it failed
+        - label: I did not run validation
 
   - type: textarea
     id: logs

@@ -1,0 +1,22 @@
+name: test-go
+display_name: Test Go Template
+description: A test Go template for unit testing
+category: backend
+technology: Go
+version: 1.0.0
+tags:
+  - go
+  - backend
+  - test
+dependencies: []
+metadata:
+  author: Test Author
+  license: MIT
+  repository: https://github.com/test/test-go
+  homepage: https://test.com
+  keywords:
+    - go
+    - backend
+  variables:
+    name: Project name
+    description: Project description

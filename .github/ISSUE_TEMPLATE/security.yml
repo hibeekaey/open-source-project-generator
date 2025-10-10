@@ -10,6 +10,40 @@ body:
       value: |
         **IMPORTANT**: Please do not report security vulnerabilities through public GitHub issues. Instead, please follow our responsible disclosure process.
 
+  - type: dropdown
+    id: vulnerability-type
+    attributes:
+      label: Vulnerability Type
+      description: What type of security vulnerability is this?
+      options:
+        - Code Injection
+        - Path Traversal
+        - Command Injection
+        - Cross-Site Scripting (XSS)
+        - Insecure Deserialization
+        - Authentication/Authorization
+        - Information Disclosure
+        - Denial of Service
+        - Dependency Vulnerability
+        - Other
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: affected-components
+    attributes:
+      label: Affected Components
+      description: Which components are affected by this vulnerability?
+      options:
+        - label: Template Processing Engine
+        - label: File System Operations
+        - label: CLI Input Handling
+        - label: Configuration Parser
+        - label: Validation System
+        - label: Cache System
+        - label: Security Module
+        - label: Dependencies
+
   - type: textarea
     id: vulnerability-description
     attributes:
@@ -66,6 +100,25 @@ body:
       required: true
 
   - type: textarea
+    id: proof-of-concept
+    attributes:
+      label: Proof of Concept
+      description: Provide a proof of concept or exploit code (if applicable)
+      placeholder: |
+        Provide minimal code or steps that demonstrate the vulnerability.
+        Please be responsible and avoid including actual exploits.
+      render: shell
+
+  - type: textarea
+    id: cve-cwe-reference
+    attributes:
+      label: CVE/CWE Reference (Optional)
+      description: If this matches a known vulnerability pattern, provide the CVE or CWE identifier
+      placeholder: |
+        - CVE: CVE-XXXX-XXXXX
+        - CWE: CWE-XXX
+
+  - type: textarea
     id: additional-context
     attributes:
       label: Additional Context
@@ -81,8 +134,8 @@ body:
 
         Instead, please:
 
-        1. **Email us directly** at [INSERT SECURITY EMAIL]
-        2. **Use GitHub Security Advisories** if you have access
+        1. **Use GitHub Security Advisories** at https://github.com/cuesoftinc/open-source-project-generator/security/advisories/new
+        2. **Email us directly** at support@cuesoft.io
         3. **Contact maintainers privately** through other secure channels
 
         We will:

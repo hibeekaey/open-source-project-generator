@@ -28,6 +28,24 @@ body:
     validations:
       required: true
 
+  - type: dropdown
+    id: feature-category
+    attributes:
+      label: Feature Category
+      description: Which area does this feature relate to?
+      options:
+        - Template System
+        - CLI/User Experience
+        - Validation & Security
+        - Infrastructure (Docker/K8s)
+        - Documentation
+        - Build System
+        - Version Management
+        - Cache/Offline Mode
+        - Other
+    validations:
+      required: true
+
   - type: textarea
     id: proposed-solution
     attributes:
@@ -43,6 +61,22 @@ body:
       label: Alternative Solutions
       description: Describe any alternative solutions or features you've considered
       placeholder: A clear and concise description of any alternative solutions or features you've considered.
+
+  - type: checkboxes
+    id: affected-components
+    attributes:
+      label: Affected Components
+      description: Which components would this feature affect?
+      options:
+        - label: Go/Gin Backend Template
+        - label: Next.js Templates
+        - label: Mobile Templates (Android/iOS)
+        - label: Infrastructure Templates (Docker/K8s/Terraform)
+        - label: Core CLI
+        - label: Template Engine
+        - label: Validation System
+        - label: Security Features
+        - label: Configuration System
 
   - type: textarea
     id: use-cases
@@ -77,6 +111,25 @@ body:
         - Medium (moderate development effort)
         - High (significant development effort)
         - Very High (major architectural change)
+
+  - type: checkboxes
+    id: breaking-change
+    attributes:
+      label: Breaking Change
+      description: Would this feature introduce breaking changes?
+      options:
+        - label: This would be a breaking change (requires major version bump)
+        - label: This is backward compatible
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      description: Are you willing to help implement this feature?
+      options:
+        - label: I'm willing to submit a PR for this feature
+        - label: I can help with testing
+        - label: I can help with documentation
 
   - type: textarea
     id: additional-context

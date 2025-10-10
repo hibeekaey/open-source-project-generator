@@ -10,6 +10,52 @@ body:
       value: |
         Thanks for your question! We're here to help. Please provide as much detail as possible.
 
+  - type: dropdown
+    id: question-category
+    attributes:
+      label: Question Category
+      description: What is your question about?
+      options:
+        - Installation & Setup
+        - Usage & Commands
+        - Templates & Customization
+        - Configuration
+        - Validation & Security
+        - CI/CD Integration
+        - Troubleshooting
+        - Best Practices
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: related-template
+    attributes:
+      label: Related Template (if applicable)
+      description: Is your question specific to a particular template?
+      options:
+        - Not template-specific
+        - Go/Gin Backend
+        - Next.js App
+        - Next.js Admin
+        - Next.js Landing Page
+        - Android (Kotlin)
+        - iOS (Swift)
+        - Docker/Kubernetes
+        - Terraform
+        - Custom Template
+
+  - type: checkboxes
+    id: documentation-check
+    attributes:
+      label: Documentation Check
+      description: Have you checked the following resources?
+      options:
+        - label: I've read the Getting Started guide
+        - label: I've checked the relevant documentation
+        - label: I've searched existing issues and discussions
+        - label: I've checked the Troubleshooting guide
+
   - type: textarea
     id: question
     attributes:
@@ -39,6 +85,18 @@ body:
         - Go Version: [e.g. 1.25.0]
         - Generator Version: [e.g. 1.4.0]
         - Shell: [e.g. bash, zsh, PowerShell]
+
+  - type: dropdown
+    id: urgency
+    attributes:
+      label: Urgency
+      description: How urgent is this question for you?
+      options:
+        - Low - Just curious
+        - Medium - Would like to know soon
+        - High - Blocking my work
+    validations:
+      required: true
 
   - type: textarea
     id: research

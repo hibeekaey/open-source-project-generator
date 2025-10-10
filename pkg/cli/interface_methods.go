@@ -163,7 +163,7 @@ func (c *CLI) ShowVersion(options interfaces.VersionOptions) error {
 	}
 
 	// Show basic version information
-	c.QuietOutput("🚀 %s %s", c.Highlight("Open Source Project Generator"), c.Success(fmt.Sprintf("v%s", currentVersion)))
+	c.QuietOutput("🚀 %s %s", c.Highlight("Open Source Project Generator"), c.Success(currentVersion))
 
 	// Show build information if requested
 	if options.ShowBuildInfo {
@@ -505,10 +505,11 @@ func (c *CLI) RestoreCache(path string) error             { return fmt.Errorf("n
 
 // showVersionJSON shows version information in JSON format
 func (c *CLI) showVersionJSON(options interfaces.VersionOptions) error {
-	version, gitCommit, buildTime := c.GetBuildInfo()
+	currentVersion := c.versionManager.GetCurrentVersion()
+	_, gitCommit, buildTime := c.GetBuildInfo()
 
 	versionData := map[string]interface{}{
-		"version":    version,
+		"version":    currentVersion,
 		"git_commit": gitCommit,
 		"build_time": buildTime,
 	}
