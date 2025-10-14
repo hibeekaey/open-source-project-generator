@@ -8,14 +8,16 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to fill out this bug report! Please provide as much detail as possible to help us reproduce and fix the issue.
+        Thanks for reporting this bug! Please provide details to help us reproduce and fix the issue.
 
   - type: textarea
-    id: bug-description
+    id: description
     attributes:
-      label: Bug Description
-      description: A clear and concise description of what the bug is.
-      placeholder: Describe the bug...
+      label: Description
+      description: What happened and what did you expect?
+      placeholder: |
+        What happened: ...
+        Expected: ...
     validations:
       required: true
 
@@ -23,30 +25,9 @@ body:
     id: steps-to-reproduce
     attributes:
       label: Steps to Reproduce
-      description: Steps to reproduce the behavior
       placeholder: |
-        1. Go to '...'
-        2. Click on '....'
-        3. Scroll down to '....'
-        4. See error
-    validations:
-      required: true
-
-  - type: textarea
-    id: expected-behavior
-    attributes:
-      label: Expected Behavior
-      description: A clear and concise description of what you expected to happen.
-      placeholder: What should have happened?
-    validations:
-      required: true
-
-  - type: textarea
-    id: actual-behavior
-    attributes:
-      label: Actual Behavior
-      description: A clear and concise description of what actually happened.
-      placeholder: What actually happened?
+        1. Run command: ...
+        2. See error: ...
     validations:
       required: true
 
@@ -83,57 +64,29 @@ body:
   - type: textarea
     id: command
     attributes:
-      label: Command Used
-      description: The exact CLI command you ran
+      label: Command & Environment
       placeholder: |
-        e.g., ospg generate --template go-gin --name myproject
+        Command: ospg generate --template go-gin --name myproject
+        OS: Ubuntu 20.04
+        Go: 1.25.0
+        Generator: 1.4.0
       render: shell
     validations:
       required: true
-
-  - type: textarea
-    id: environment
-    attributes:
-      label: Environment
-      description: Please provide your environment details
-      placeholder: |
-        - OS: [e.g. Ubuntu 20.04, macOS 12.0, Windows 10]
-        - Go Version: [e.g. 1.25.0]
-        - Generator Version: [e.g. 1.4.0]
-        - Shell: [e.g. bash, zsh, PowerShell]
-    validations:
-      required: true
-
-  - type: checkboxes
-    id: validation
-    attributes:
-      label: Project Validation
-      description: Did you run validation on the generated project?
-      options:
-        - label: I ran validation and it passed
-        - label: I ran validation and it failed
-        - label: I did not run validation
 
   - type: textarea
     id: logs
     attributes:
-      label: Logs/Error Messages
-      description: If applicable, add logs or error messages to help explain your problem.
-      placeholder: Paste any relevant logs or error messages here...
+      label: Logs/Output
+      placeholder: Paste error messages or relevant output...
       render: shell
-
-  - type: textarea
-    id: additional-context
-    attributes:
-      label: Additional Context
-      description: Add any other context about the problem here.
-      placeholder: Any additional information that might be helpful...
 
   - type: checkboxes
     id: terms
     attributes:
-      label: Code of Conduct
-      description: By submitting this issue, you agree to follow our [Code of Conduct](CODE_OF_CONDUCT.md)
+      label: Checklist
       options:
-        - label: I agree to follow this project's Code of Conduct
+        - label: I've searched existing issues
+          required: true
+        - label: I agree to follow the Code of Conduct
           required: true

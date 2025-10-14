@@ -8,7 +8,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for your question! We're here to help. Please provide as much detail as possible.
+        Thanks for your question! Please check the docs first, then provide details below.
 
   - type: dropdown
     id: question-category
@@ -28,40 +28,11 @@ body:
     validations:
       required: true
 
-  - type: dropdown
-    id: related-template
-    attributes:
-      label: Related Template (if applicable)
-      description: Is your question specific to a particular template?
-      options:
-        - Not template-specific
-        - Go/Gin Backend
-        - Next.js App
-        - Next.js Admin
-        - Next.js Landing Page
-        - Android (Kotlin)
-        - iOS (Swift)
-        - Docker/Kubernetes
-        - Terraform
-        - Custom Template
-
-  - type: checkboxes
-    id: documentation-check
-    attributes:
-      label: Documentation Check
-      description: Have you checked the following resources?
-      options:
-        - label: I've read the Getting Started guide
-        - label: I've checked the relevant documentation
-        - label: I've searched existing issues and discussions
-        - label: I've checked the Troubleshooting guide
-
   - type: textarea
     id: question
     attributes:
       label: Question
-      description: What would you like to know?
-      placeholder: Ask your question here...
+      placeholder: What would you like to know?
     validations:
       required: true
 
@@ -69,50 +40,19 @@ body:
     id: context
     attributes:
       label: Context
-      description: Provide any relevant context about your question
       placeholder: |
-        - What are you trying to accomplish?
-        - What have you tried so far?
-        - Any specific challenges you're facing?
-
-  - type: textarea
-    id: environment
-    attributes:
-      label: Environment (if applicable)
-      description: If your question is environment-specific, please provide details
-      placeholder: |
-        - OS: [e.g. Ubuntu 20.04, macOS 12.0, Windows 10]
-        - Go Version: [e.g. 1.25.0]
-        - Generator Version: [e.g. 1.4.0]
-        - Shell: [e.g. bash, zsh, PowerShell]
-
-  - type: dropdown
-    id: urgency
-    attributes:
-      label: Urgency
-      description: How urgent is this question for you?
-      options:
-        - Low - Just curious
-        - Medium - Would like to know soon
-        - High - Blocking my work
-    validations:
-      required: true
-
-  - type: textarea
-    id: research
-    attributes:
-      label: Research Done
-      description: What have you already looked into or tried?
-      placeholder: |
-        - I've checked the documentation at...
-        - I've tried...
-        - I've searched for...
+        What I'm trying to do: ...
+        What I've tried: ...
+        Environment (if relevant): OS, Go version, Generator version
 
   - type: checkboxes
     id: terms
     attributes:
-      label: Code of Conduct
-      description: By submitting this issue, you agree to follow our [Code of Conduct](CODE_OF_CONDUCT.md)
+      label: Checklist
       options:
-        - label: I agree to follow this project's Code of Conduct
+        - label: I've checked the documentation
+          required: true
+        - label: I've searched existing issues
+          required: true
+        - label: I agree to follow the Code of Conduct
           required: true
