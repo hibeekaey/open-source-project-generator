@@ -11,13 +11,20 @@ body:
         Thanks for reporting this bug! Please provide details to help us reproduce and fix the issue.
 
   - type: textarea
-    id: description
+    id: actual-behavior
     attributes:
-      label: Description
-      description: What happened and what did you expect?
-      placeholder: |
-        What happened: ...
-        Expected: ...
+      label: Actual Behavior
+      description: What actually happened?
+      placeholder: Describe what went wrong...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: Describe what should have happened...
     validations:
       required: true
 
@@ -61,15 +68,32 @@ body:
     validations:
       required: true
 
+  - type: input
+    id: version
+    attributes:
+      label: Generator Version
+      description: Run `generator version` to get this
+      placeholder: "1.4.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: |
+        OS: Ubuntu 20.04
+        Go: 1.25.0
+        Shell: bash
+      render: shell
+    validations:
+      required: true
+
   - type: textarea
     id: command
     attributes:
-      label: Command & Environment
-      placeholder: |
-        Command: ospg generate --template go-gin --name myproject
-        OS: Ubuntu 20.04
-        Go: 1.25.0
-        Generator: 1.4.0
+      label: Command Used
+      placeholder: "generator generate --template go-gin --name myproject"
       render: shell
     validations:
       required: true

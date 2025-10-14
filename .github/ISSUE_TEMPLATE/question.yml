@@ -50,7 +50,7 @@ body:
     attributes:
       label: Checklist
       options:
-        - label: I've checked the documentation
+        - label: I've checked the [documentation](https://github.com/cuesoftinc/open-source-project-generator/tree/main/docs)
           required: true
         - label: I've searched existing issues
           required: true
