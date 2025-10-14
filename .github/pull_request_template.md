@@ -21,6 +21,7 @@
 ## Related Issues
 
 <!-- Link to related issues using "Fixes #123" or "Closes #123" or "Related to #123" -->
+<!-- Remove unused lines below -->
 
 - Fixes #
 - Closes #
@@ -62,6 +63,13 @@
 - [ ] New tests added for new functionality
 - [ ] Existing tests updated if needed
 
+### Build Verification
+
+- [ ] `make build` succeeds
+- [ ] `make test` passes
+- [ ] `make lint` passes with no warnings
+- [ ] `make test-coverage` shows adequate coverage
+
 ## Screenshots/Demo
 
 <!-- If applicable, add screenshots or demo links -->
@@ -78,6 +86,13 @@
 - [ ] No hardcoded values or magic numbers
 - [ ] Error handling is appropriate
 - [ ] Logging is appropriate
+
+### Architecture
+
+- [ ] Dependencies flow inward (presentation → business → infrastructure)
+- [ ] Interfaces defined in `pkg/interfaces/` (if new component)
+- [ ] Error handling uses `pkg/errors` categorization
+- [ ] No global state or singletons introduced
 
 ### Documentation
 
@@ -106,6 +121,13 @@
 - [ ] Cross-platform compatibility verified
 - [ ] Browser compatibility verified (if applicable)
 
+### Template Changes (if applicable)
+
+- [ ] Template metadata (`template.yaml`) updated
+- [ ] Template tested with generation
+- [ ] Template security validation passes
+- [ ] Template documentation updated
+
 ## Breaking Changes
 
 <!-- If this PR contains breaking changes, describe them here -->
@@ -120,9 +142,7 @@
 
 ## Reviewers
 
-<!-- Tag specific reviewers if needed -->
-
-@
+<!-- Tag specific reviewers if needed: @username -->
 
 ## Deployment Notes
 

@@ -8,11 +8,37 @@ updates:
       day: "monday"
       time: "09:00"
     open-pull-requests-limit: 10
+    groups:
+      go-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
     labels:
       - "dependencies"
       - "go"
     commit-message:
       prefix: "deps"
+      include: "scope"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # Go modules - Security updates (daily)
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 5
+    allow:
+      - dependency-type: "direct"
+    labels:
+      - "dependencies"
+      - "go"
+      - "security"
+    commit-message:
+      prefix: "security"
       include: "scope"
 
   # GitHub Actions
@@ -43,4 +69,41 @@ updates:
       - "docker"
     commit-message:
       prefix: "docker"
+      include: "scope"
+
+  # npm (for generated templates)
+  - package-ecosystem: "npm"
+    directory: "/pkg/template/templates/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    groups:
+      npm-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    labels:
+      - "dependencies"
+      - "npm"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+
+  # Terraform (for infrastructure templates)
+  - package-ecosystem: "terraform"
+    directory: "/pkg/template/templates/infrastructure"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "terraform"
+    commit-message:
+      prefix: "infra"
       include: "scope"
