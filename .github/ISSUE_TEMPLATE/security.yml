@@ -8,14 +8,21 @@ body:
   - type: markdown
     attributes:
       value: |
-        **⚠️ IMPORTANT: For critical vulnerabilities, use private reporting!**
+        **⚠️ CRITICAL VULNERABILITIES: Use Private Reporting**
 
-        For critical security issues, report privately at:
-        https://github.com/cuesoftinc/open-source-project-generator/security/advisories/new
+        **For critical security vulnerabilities (High/Critical severity), DO NOT use this form.**
+
+        Report privately at: https://github.com/cuesoftinc/open-source-project-generator/security/advisories/new
 
         Or email: support@cuesoft.io
 
-        This public template is for security-related discussions, hardening suggestions, or low-severity issues only.
+        ---
+
+        **This public form is ONLY for:**
+        - Security hardening suggestions
+        - Low/Medium severity issues
+        - Security-related questions or discussions
+        - Non-exploitable security concerns
 
   - type: dropdown
     id: vulnerability-type

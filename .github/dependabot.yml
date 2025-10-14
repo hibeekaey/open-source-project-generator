@@ -25,22 +25,6 @@ updates:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
 
-  # Go modules - Security updates (daily)
-  - package-ecosystem: "gomod"
-    directory: "/"
-    schedule:
-      interval: "daily"
-    open-pull-requests-limit: 5
-    allow:
-      - dependency-type: "direct"
-    labels:
-      - "dependencies"
-      - "go"
-      - "security"
-    commit-message:
-      prefix: "security"
-      include: "scope"
-
   # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -70,5 +54,3 @@ updates:
     commit-message:
       prefix: "docker"
       include: "scope"
-
-
