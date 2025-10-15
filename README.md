@@ -11,7 +11,7 @@ A comprehensive command-line tool that generates production-ready, enterprise-gr
 curl -sSL https://raw.githubusercontent.com/cuesoftinc/open-source-project-generator/main/scripts/install.sh | bash
 
 # Using Go
-go install github.com/cuesoftinc/open-source-template-generator/cmd/generator@latest
+go install github.com/cuesoftinc/open-source-project-generator/cmd/generator@latest
 
 # Using Docker
 docker run -it --rm -v $(pwd):/workspace ghcr.io/cuesoftinc/open-source-project-generator:latest generate
@@ -34,7 +34,7 @@ GENERATOR_PROJECT_NAME=myapp generator generate --non-interactive
 
 - **🎯 Interactive Project Configuration** - Guided setup with intelligent prompts
 - **🏗️ Multi-Stack Support** - Frontend (Next.js, React), Backend (Go, Node.js), Mobile (Android, iOS), Infrastructure (Docker, K8s)
-- **🔒 Security-First** - Built-in security best practices and vulnerability scanning
+- **🔒 Security-First** - Path sanitization, categorized error handling, and security validation before template processing
 - **⚡ Offline Mode** - Generate projects without internet connectivity
 - **🤖 CI/CD Ready** - Non-interactive mode for automation and pipelines
 - **📦 Template Management** - Custom templates and validation
@@ -176,7 +176,7 @@ generator audit --security           # Security-focused audit
 generator audit --quality            # Code quality analysis
 
 # Template management
-generator list-templates             # List available templates
+generator list-templates             # List available templates from pkg/template/templates/
 generator template info go-gin       # Template details
 generator template validate ./custom  # Validate custom templates
 
@@ -244,6 +244,34 @@ generator version --json
 # Perfect for CI/CD automation and scripting
 generator version --json --packages | jq '.version'
 ```
+
+## 🔒 Security
+
+The generator implements comprehensive security measures:
+
+- **Path Sanitization**: All user-provided paths sanitized via `pkg/security/SanitizePath()` before file operations
+- **Categorized Error Handling**: Security errors use `pkg/errors/NewSecurityError()` for consistent handling
+- **Template Validation**: Templates in `pkg/template/templates/` validated before processing
+- **File Permissions**: Restrictive permissions (0600 for files, 0750 for directories)
+- **No Code Execution**: Templates processed safely without executing user-provided code
+- **Dependency Injection**: Security components injected via interfaces from `pkg/interfaces/`
+
+Example security usage:
+
+```go
+import (
+    "github.com/cuesoftinc/open-source-project-generator/pkg/security"
+    "github.com/cuesoftinc/open-source-project-generator/pkg/errors"
+)
+
+// Sanitize user input before file operations
+sanitized, err := security.SanitizePath(userPath)
+if err != nil {
+    return errors.NewSecurityError("invalid path", err)
+}
+```
+
+See [SECURITY.md](SECURITY.md) for complete security documentation.
 
 ## ⚙️ Configuration
 
@@ -332,6 +360,18 @@ make build
 # Run tests
 make test
 
+# Run tests with coverage
+make test-coverage
+
+# Run linter
+make lint
+
+# Format code
+make fmt
+
+# Clean build artifacts
+make clean
+
 # Generate cross-platform binaries
 make build-all
 ```
@@ -339,44 +379,68 @@ make build-all
 ### Development Workflow
 
 ```bash
-# Setup development environment
-make setup
+# Build for current platform
+make build
 
-# Run tests
+# Run all tests
 make test
+
+# Run tests with coverage report
+make test-coverage
+
+# Run golangci-lint
+make lint
+
+# Format code with gofmt
+make fmt
 
 # Build and test
 make build && ./bin/generator --version
 
 # Run with debug logging
 ./bin/generator generate --debug --verbose
+
+# Docker builds (optional)
+make docker-build
+make docker-test
 ```
 
 ### Architecture Highlights
 
-The codebase follows a **modular architecture** with clear separation of concerns:
+The codebase follows **Clean Architecture** with clear separation of concerns:
 
+**Architectural Layers**:
+
+- **Presentation Layer** (`pkg/cli/`, `pkg/ui/`) - User interaction and command handling
+- **Business Logic Layer** (`pkg/template/`, `pkg/validation/`, `pkg/audit/`) - Core functionality
+- **Infrastructure Layer** (`pkg/filesystem/`, `pkg/cache/`, `pkg/security/`) - External operations
+
+**Key Design Patterns**:
+
+- **🔌 Interface-First Design**: All major components implement interfaces from `pkg/interfaces/`
+- **💉 Dependency Injection**: Components receive dependencies via constructors, orchestrated by `internal/container/`
+- **🛡️ Categorized Error Handling**: All errors use typed categories from `pkg/errors/` (ValidationError, SecurityError, ConfigError)
+- **🔒 Security-First**: Path sanitization via `pkg/security/` before all file operations
 - **📦 Focused Packages**: Each package has a single, clear responsibility
-- **🔌 Interface-Based Design**: Components communicate through well-defined interfaces
-- **🧪 Comprehensive Testing**: 70%+ test coverage with focused unit and integration tests
-- **⚡ Performance Optimized**: Regex compilation, string operations, and memory usage optimized
-- **🛡️ Zero Linting Violations**: Clean code with comprehensive error handling
 
 **Key Architectural Benefits**:
+
 - **Maintainability**: No file exceeds 1,000 lines, making code easy to navigate and modify
 - **Testability**: Interface-based design enables easy mocking and isolated testing
 - **Extensibility**: New features can be added without modifying existing components
 - **Performance**: Smaller files compile faster and enable better IDE performance
+- **Security**: All user inputs sanitized, templates validated before processing
 
 ## 📚 Documentation
 
 - **[Getting Started Guide](docs/GETTING_STARTED.md)** - Complete installation and usage guide
 - **[Configuration Guide](docs/CONFIGURATION.md)** - Configuration management and customization
-- **[Template Development](docs/TEMPLATE_DEVELOPMENT.md)** - Creating and maintaining templates
+- **[Template Development](docs/TEMPLATE_DEVELOPMENT.md)** - Creating and maintaining templates in `pkg/template/templates/`
 - **[API Reference](docs/API_REFERENCE.md)** - Developer API documentation
 - **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
 - **[Package Structure](docs/PACKAGE_STRUCTURE.md)** - Modular architecture documentation
 - **[Migration Guide](docs/MIGRATION_GUIDE.md)** - Code splitting refactoring guide
+- **[Security Guide](SECURITY.md)** - Security best practices and implementation details
 
 ## 🤝 Contributing
 
@@ -392,8 +456,16 @@ cd open-source-project-generator
 # Create a feature branch
 git checkout -b feature/amazing-feature
 
-# Make your changes and test
+# Make your changes following architecture patterns:
+# - Define interfaces in pkg/interfaces/ for new components
+# - Use dependency injection via constructors
+# - Return categorized errors from pkg/errors/
+# - Sanitize paths via pkg/security/ before file operations
+
+# Run tests and linting
 make test
+make lint
+make fmt
 
 # Commit your changes
 git commit -m "Add amazing feature"
@@ -403,6 +475,27 @@ git push origin feature/amazing-feature
 
 # Create a Pull Request
 ```
+
+### Architecture Guidelines for Contributors
+
+When contributing, follow these patterns:
+
+**Package Organization**:
+
+- `internal/` - Private app code (not importable externally)
+- `pkg/` - Public packages (reusable by external projects)
+- `pkg/interfaces/` - All major component interfaces
+- `pkg/models/` - Data structures and config models
+- `pkg/errors/` - Error categorization and handling
+
+**Dependency Flow**: Presentation → Business Logic → Infrastructure (dependencies flow inward only)
+
+**Security Requirements**:
+
+- Always sanitize user input via `pkg/security` before file operations
+- Return categorized errors from `pkg/errors/` package
+- Use interfaces from `pkg/interfaces/` for dependencies
+- Never use direct `os` package calls; use `pkg/filesystem/` and `pkg/security/` abstractions
 
 ## 📄 License
 

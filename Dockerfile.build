@@ -1,27 +1,94 @@
 # Build Dockerfile for creating distribution packages
+#
+# This Dockerfile provides a complete build environment for creating:
+# - Cross-platform binaries (Linux, macOS, Windows)
+# - Distribution packages (DEB, RPM, Arch Linux)
+# - Signed releases with checksums
+#
+# Purpose:
+#   - Build production-ready binaries for multiple platforms
+#   - Create native packages for various Linux distributions
+#   - Generate release artifacts with proper versioning
+#
+# Usage:
+#   docker build -f Dockerfile.build \
+#     --build-arg VERSION=1.0.0 \
+#     --build-arg GIT_COMMIT=$(git rev-parse --short HEAD) \
+#     --build-arg BUILD_TIME=$(date -u '+%Y-%m-%d_%H:%M:%S') \
+#     -t generator-builder .
+#
+#   docker run -it --rm \
+#     -v $(pwd):/app \
+#     -v go-build-cache:/home/builder/.cache/go-build \
+#     -v go-mod-cache:/home/builder/go/pkg/mod \
+#     generator-builder
+#
+# Output artifacts:
+#   - /app/dist/       - Cross-platform binaries
+#   - /app/packages/   - Distribution packages (DEB, RPM, Arch)
+#
+# Note: This builds Linux packages only. For macOS/Windows binaries,
+#       cross-compilation is used but native packages are not created.
 
 FROM ubuntu:24.04
 
-# Install build dependencies
+# Build arguments for versioning and metadata
+ARG VERSION=dev
+ARG GIT_COMMIT=unknown
+ARG BUILD_TIME=unknown
+ARG GO_VERSION=1.25.0
+ARG TARGETARCH
+
+# Labels for image metadata
+LABEL org.opencontainers.image.title="Generator Build Environment"
+LABEL org.opencontainers.image.description="Build environment for Open Source Project Generator"
+LABEL org.opencontainers.image.version="${VERSION}"
+LABEL org.opencontainers.image.vendor="Cuesoft Inc."
+
+# Install build dependencies and package creation tools
 RUN apt-get update && apt-get install -y \
+    # Core build tools
     git \
     ca-certificates \
     curl \
     wget \
     tar \
     gzip \
+    bzip2 \
+    xz-utils \
     zip \
     unzip \
     build-essential \
+    # Package building tools
     rpm \
     dpkg-dev \
     fakeroot \
+    debhelper \
+    dh-make \
+    # Arch Linux package tools
+    binutils \
+    fakeroot \
+    # Security and signing tools
+    gnupg \
+    gpg \
+    # Checksum tools
+    coreutils \
+    # Additional utilities
+    file \
+    jq \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Go 1.25 manually
+# Install Go with architecture detection and verification
 RUN ARCH=$(dpkg --print-architecture) && \
-    if [ "$ARCH" = "amd64" ]; then GOARCH="amd64"; else GOARCH="arm64"; fi && \
-    curl -fsSL "https://go.dev/dl/go1.25.0.linux-${GOARCH}.tar.gz" | tar -xzC /usr/local
+    if [ "$ARCH" = "amd64" ]; then GOARCH="amd64"; \
+    elif [ "$ARCH" = "arm64" ]; then GOARCH="arm64"; \
+    else echo "Unsupported architecture: $ARCH" && exit 1; fi && \
+    echo "Installing Go ${GO_VERSION} for ${GOARCH}..." && \
+    curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-${GOARCH}.tar.gz" -o /tmp/go.tar.gz && \
+    tar -xzC /usr/local -f /tmp/go.tar.gz && \
+    rm /tmp/go.tar.gz && \
+    /usr/local/go/bin/go version && \
+    echo "Go installation verified successfully"
 
 # Set up Go environment
 ENV PATH="/usr/local/go/bin:${PATH}"
@@ -31,15 +98,27 @@ ENV PATH="${GOPATH}/bin:${PATH}"
 ENV GOCACHE="/home/builder/.cache/go-build"
 ENV GOMODCACHE="/home/builder/go/pkg/mod"
 
-# Create non-root user
-RUN useradd -m -s /bin/bash builder
+# Set build metadata environment variables
+ENV VERSION="${VERSION}"
+ENV GIT_COMMIT="${GIT_COMMIT}"
+ENV BUILD_TIME="${BUILD_TIME}"
+
+# Create non-root user and set up directories with proper permissions
+RUN useradd -m -s /bin/bash -u 1001 builder && \
+    mkdir -p \
+        /app/dist \
+        /app/packages/deb \
+        /app/packages/rpm \
+        /app/packages/arch \
+        /app/bin \
+        /home/builder/go/pkg/mod \
+        /home/builder/.cache/go-build \
+        /home/builder/.gnupg && \
+    chown -R builder:builder /app /home/builder && \
+    chmod 700 /home/builder/.gnupg
 
 # Set working directory
 WORKDIR /app
-
-# Create necessary directories
-RUN mkdir -p /app/dist /app/packages /home/builder/go/pkg/mod /home/builder/.cache/go-build && \
-    chown -R builder:builder /app /home/builder
 
 # Switch to non-root user
 USER builder
@@ -47,5 +126,23 @@ USER builder
 # Set environment variables for cross-compilation
 ENV CGO_ENABLED=0
 
-# Default command
-CMD ["./scripts/build.sh"]
+# Configure Git for the builder user
+RUN git config --global user.name "Builder" && \
+    git config --global user.email "builder@generator.dev" && \
+    git config --global --add safe.directory /app
+
+# Add helpful build aliases
+RUN echo 'alias build="make build"' >> /home/builder/.bashrc && \
+    echo 'alias build-all="make build-all"' >> /home/builder/.bashrc && \
+    echo 'alias package-all="make package-all"' >> /home/builder/.bashrc && \
+    echo 'echo "🏗️  Generator Build Environment Ready!"' >> /home/builder/.bashrc && \
+    echo 'echo "Version: ${VERSION} | Commit: ${GIT_COMMIT} | Build Time: ${BUILD_TIME}"' >> /home/builder/.bashrc && \
+    echo 'echo "Available commands: make build, make build-all, make package-all"' >> /home/builder/.bashrc && \
+    echo 'echo "Output: dist/ (binaries), packages/ (DEB/RPM/Arch packages)"' >> /home/builder/.bashrc
+
+# Health check to verify build environment
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+    CMD go version && make --version || exit 1
+
+# Default command runs the build script if it exists, otherwise opens shell
+CMD ["/bin/bash", "-c", "if [ -x './scripts/build.sh' ]; then echo 'Running build script...' && ./scripts/build.sh; else echo 'No build script found. Available commands:' && echo '  make build       - Build for current platform' && echo '  make build-all   - Build for all platforms' && echo '  make package-all - Create all distribution packages' && echo '' && echo 'Starting interactive shell...' && /bin/bash; fi"]

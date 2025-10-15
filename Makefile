@@ -14,7 +14,7 @@ BUILD_TIME ?= $(shell date -u '+%Y-%m-%d_%H:%M:%S')
 # Clean version for Docker tags (replace / with -)
 DOCKER_VERSION := $(shell echo $(VERSION) | sed 's/\//-/g')
 
-.PHONY: help build test test-coverage clean run install dev lint fmt vet
+.PHONY: help build test test-coverage test-integration clean run install dev lint fmt vet security-scan gosec govulncheck staticcheck install-security-tools validate audit
 
 # Default target
 help: ## Show this help message
@@ -40,12 +40,18 @@ test-coverage: ## Run tests with coverage report
 	@echo "Running tests with coverage..."
 	go test -v -coverprofile=coverage.out ./...
 	go tool cover -html=coverage.out -o coverage.html
+	@echo "Coverage report generated: coverage.html"
+
+# Run integration tests
+test-integration: ## Run integration tests
+	@echo "Running integration tests..."
+	go test -v -tags=integration ./pkg/integration/...
 
 # Clean build artifacts
 clean: ## Clean build artifacts
 	@echo "Cleaning..."
 	rm -rf bin/ output/ dist/
-	rm -f coverage.out coverage.html
+	rm -f coverage.out coverage.html gosec-report.txt
 
 # Run the application
 run: build ## Build and run the generator
@@ -91,15 +97,90 @@ vet: ## Run go vet
 	@echo "Running go vet..."
 	go vet ./...
 
+# Install security scanning tools
+install-security-tools: ## Install security scanning tools
+	@echo "Installing security scanning tools..."
+	@if ! command -v gosec >/dev/null 2>&1; then \
+		echo "Installing gosec..."; \
+		go install github.com/securego/gosec/v2/cmd/gosec@latest; \
+	else \
+		echo "gosec already installed"; \
+	fi
+	@if ! command -v govulncheck >/dev/null 2>&1; then \
+		echo "Installing govulncheck..."; \
+		go install golang.org/x/vuln/cmd/govulncheck@latest; \
+	else \
+		echo "govulncheck already installed"; \
+	fi
+	@if ! command -v staticcheck >/dev/null 2>&1; then \
+		echo "Installing staticcheck..."; \
+		go install honnef.co/go/tools/cmd/staticcheck@latest; \
+	else \
+		echo "staticcheck already installed"; \
+	fi
+	@echo "Security tools installed successfully"
+
+# Run gosec security scanner
+gosec: ## Run gosec security scanner
+	@echo "Running gosec security scanner..."
+	@if ! command -v gosec >/dev/null 2>&1; then \
+		echo "gosec not found. Installing..."; \
+		$(MAKE) install-security-tools; \
+	fi
+	gosec -fmt=text -out=gosec-report.txt ./...
+	@echo "Security scan report: gosec-report.txt"
+
+# Run govulncheck for Go vulnerabilities
+govulncheck: ## Run govulncheck for Go vulnerabilities
+	@echo "Running govulncheck..."
+	@if ! command -v govulncheck >/dev/null 2>&1; then \
+		echo "govulncheck not found. Installing..."; \
+		$(MAKE) install-security-tools; \
+	fi
+	govulncheck ./...
+
+# Run staticcheck static analysis
+staticcheck: ## Run staticcheck static analysis
+	@echo "Running staticcheck..."
+	@if ! command -v staticcheck >/dev/null 2>&1; then \
+		echo "staticcheck not found. Installing..."; \
+		$(MAKE) install-security-tools; \
+	fi
+	staticcheck ./...
+
+# Run all security scans
+security-scan: gosec govulncheck staticcheck ## Run all security scanners
+	@echo "All security scans completed"
+	@echo "Review gosec-report.txt for detailed security findings"
+
+# Validate generated projects
+validate: build ## Validate a generated project
+	@echo "Validating generated project..."
+	@if [ -z "$(PROJECT)" ]; then \
+		echo "Usage: make validate PROJECT=./path/to/project"; \
+		exit 1; \
+	fi
+	./bin/generator validate $(PROJECT)
+
+# Audit generated projects for security and quality
+audit: build ## Audit a generated project for security and quality
+	@echo "Auditing generated project..."
+	@if [ -z "$(PROJECT)" ]; then \
+		echo "Usage: make audit PROJECT=./path/to/project"; \
+		exit 1; \
+	fi
+	./bin/generator audit $(PROJECT) --security --quality
+
 # Setup development environment
-setup: ## Setup development environment
+setup: install-lint install-security-tools ## Setup development environment
 	@echo "Setting up development environment..."
 	go mod download
 	go mod tidy
 	@echo "Development environment ready!"
+	@echo "Available tools: golangci-lint, gosec, govulncheck, staticcheck"
 
 # Build for multiple platforms
-build-all: ## Build for multiple platforms
+build-all: ## Build for multiple platforms (Linux, macOS, Windows)
 	@echo "Building for multiple platforms..."
 	@mkdir -p bin
 	@echo "Building Linux AMD64..." && GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Version=$(VERSION) -X main.GitCommit=$(GIT_COMMIT) -X main.BuildTime=$(BUILD_TIME) -s -w" -trimpath -o bin/generator-linux-amd64 ./cmd/generator &
@@ -107,7 +188,8 @@ build-all: ## Build for multiple platforms
 	@echo "Building Darwin ARM64..." && GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.Version=$(VERSION) -X main.GitCommit=$(GIT_COMMIT) -X main.BuildTime=$(BUILD_TIME) -s -w" -trimpath -o bin/generator-darwin-arm64 ./cmd/generator &
 	@echo "Building Windows AMD64..." && GOOS=windows GOARCH=amd64 go build -ldflags "-X main.Version=$(VERSION) -X main.GitCommit=$(GIT_COMMIT) -X main.BuildTime=$(BUILD_TIME) -s -w" -trimpath -o bin/generator-windows-amd64.exe ./cmd/generator &
 	@wait
-	@echo "All builds completed"
+	@echo "All builds completed successfully"
+	@ls -lh bin/
 
 # Distribution targets
 dist: ## Build distribution packages
@@ -136,8 +218,11 @@ package-all: ## Build all packages
 	./scripts/build-packages.sh all
 
 # Release preparation
-release-prepare: dist package-all ## Prepare release artifacts
+release-prepare: test lint security-scan dist package-all ## Prepare release artifacts with full validation
 	@echo "Preparing release artifacts..."
+	@echo "✓ Tests passed"
+	@echo "✓ Linting passed"
+	@echo "✓ Security scans completed"
 	@echo "Distribution files created in dist/"
 	@echo "Package files created in packages/"
 
@@ -181,3 +266,16 @@ docker-info: ## Show Docker configuration
 	@echo "  Git Commit: $(GIT_COMMIT)"
 	@echo "  Build Time: $(BUILD_TIME)"
 	@echo "  GitHub Actor: $(GITHUB_ACTOR)"
+
+# CI/CD targets
+ci: lint test security-scan ## Run CI pipeline (lint, test, security scan)
+	@echo "CI pipeline completed successfully"
+
+# Pre-commit checks
+pre-commit: fmt vet lint test ## Run pre-commit checks
+	@echo "Pre-commit checks passed"
+
+# Full validation before release
+pre-release: clean build test test-coverage lint security-scan build-all ## Full validation before release
+	@echo "Pre-release validation completed successfully"
+	@echo "Ready for release!"
