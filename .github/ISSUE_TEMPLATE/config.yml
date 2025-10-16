@@ -20,4 +20,4 @@ contact_links:
     about: Learn how to configure the project generator for your needs.
   - name: Security Issues
     url: https://github.com/cuesoftinc/open-source-project-generator/security/advisories/new
-    about: Report security vulnerabilities privately.
+    about: Report security vulnerabilities privately. See SECURITY.md for details.

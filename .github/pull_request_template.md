@@ -67,7 +67,9 @@
 
 - [ ] `make build` succeeds
 - [ ] `make test` passes
-- [ ] `make lint` passes with no warnings
+- [ ] `make lint` passes
+- [ ] `make security-scan` passes
+- [ ] `make pre-commit` passes (optional but recommended)
 - [ ] `make test-coverage` shows adequate coverage
 
 ## Screenshots/Demo
@@ -91,8 +93,9 @@
 
 - [ ] Dependencies flow inward (presentation → business → infrastructure)
 - [ ] Interfaces defined in `pkg/interfaces/` (if new component)
-- [ ] Error handling uses `pkg/errors` categorization
+- [ ] Error handling uses `pkg/errors/` categorization (SecurityError, ValidationError, etc.)
 - [ ] No global state or singletons introduced
+- [ ] Docker containers use UID 1001 (if Docker changes)
 
 ### Documentation
 
@@ -105,8 +108,11 @@
 
 - [ ] No sensitive information exposed
 - [ ] Input validation implemented
-- [ ] Security best practices followed
+- [ ] User paths sanitized via `pkg/security/SanitizePath()`
+- [ ] Errors use categorized types from `pkg/errors/`
+- [ ] Security best practices followed (see SECURITY.md)
 - [ ] Dependencies are secure and up-to-date
+- [ ] `make security-scan` passes
 
 ### Performance
 
