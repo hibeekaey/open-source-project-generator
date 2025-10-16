@@ -37,13 +37,13 @@ The build system creates binaries for multiple platforms using the Makefile:
 make build
 
 # Build for all platforms (Linux, macOS, Windows)
-make build-all
+make dist
 
-# Output: bin/generator-{os}-{arch}
-# - bin/generator-linux-amd64
-# - bin/generator-darwin-amd64
-# - bin/generator-darwin-arm64
-# - bin/generator-windows-amd64.exe
+# Output: dist/generator-{os}-{arch}
+# - dist/generator-linux-amd64
+# - dist/generator-darwin-amd64
+# - dist/generator-darwin-arm64
+# - dist/generator-windows-amd64.exe
 ```
 
 **Supported Platforms**:
@@ -64,7 +64,7 @@ Create native packages for different distributions:
 
 ```bash
 # Build all package types
-make package-all
+make package
 
 # Individual package types (via scripts/build-packages.sh)
 ./scripts/build-packages.sh deb    # Debian/Ubuntu
@@ -171,15 +171,10 @@ Releases are automated through GitHub Actions workflows:
 For manual releases or testing:
 
 ```bash
-# 1. Run full validation and build
-make pre-release
+# Prepare release artifacts (includes packages)
+make release
 
-# This runs: clean, build, test, test-coverage, lint, security-scan, build-all
-
-# 2. Prepare release artifacts (includes packages)
-make release-prepare
-
-# This runs: test, lint, security-scan, dist, package-all
+# This runs: test, lint, security-scan, dist, package
 
 # 3. Create checksums
 cd dist && sha256sum * > checksums.txt
@@ -215,7 +210,7 @@ docker build \
 Before creating a release:
 
 - [ ] Update version in relevant files
-- [ ] Run `make pre-release` to validate everything
+- [ ] Run `make check` and `make release` to validate everything
 - [ ] Update CHANGELOG.md with release notes
 - [ ] Test on all target platforms
 - [ ] Verify Docker images build successfully
@@ -491,7 +486,7 @@ The Makefile handles cross-compilation automatically:
 
 ```bash
 # Build for all platforms at once
-make build-all
+make dist
 
 # Manual cross-compilation examples
 GOOS=linux GOARCH=amd64 go build -o bin/generator-linux-amd64 ./cmd/generator
@@ -524,17 +519,11 @@ GOOS=linux GOARCH=amd64 go build \
 ### Testing
 
 ```bash
-# Run all tests
+# Run all tests with coverage
 make test
 
-# Run tests with coverage report
-make test-coverage
-
-# Run integration tests
-make test-integration
-
-# Test installation script syntax
-make test-install
+# Run tests with specific flags
+make test TEST_FLAGS="-v -race"
 
 # Using Docker Compose
 docker compose --profile testing up generator-test
@@ -563,13 +552,8 @@ docker run --rm --entrypoint sh generator:latest -c "id"  # Check user is 1001
 ### Security Scanning
 
 ```bash
-# Run all security scans
+# Run all security scans (gosec, govulncheck, staticcheck)
 make security-scan
-
-# Individual security tools
-make gosec           # Run gosec security scanner
-make govulncheck     # Check for Go vulnerabilities
-make staticcheck     # Run static analysis
 
 # Using Docker Compose
 docker compose --profile security up generator-security
@@ -657,17 +641,8 @@ Test the full CI/CD pipeline locally:
 # Run full CI pipeline
 make ci
 
-# This runs: lint, test, security-scan
-
-# Run pre-commit checks
-make pre-commit
-
-# This runs: fmt, vet, lint, test
-
-# Run full pre-release validation
-make pre-release
-
-# This runs: clean, build, test, test-coverage, lint, security-scan, build-all
+# Run pre-commit checks (fmt, vet, lint, test)
+make check
 ```
 
 ## Maintenance
@@ -686,13 +661,12 @@ make pre-release
 
    ```bash
    make security-scan
-   make govulncheck
    ```
 
 3. **Platform Testing**: Test on all supported platforms
 
    ```bash
-   make build-all
+   make dist
    # Test each binary
    ```
 
@@ -721,7 +695,7 @@ make pre-release
 ### Build Issues
 
 ```bash
-# Clean all build artifacts
+# Clean all build artifacts (binaries, packages, reports, archives)
 make clean
 
 # Clean Go caches
@@ -846,17 +820,18 @@ docker run --rm --user $(id -u):$(id -g) generator:latest version
 ```bash
 # Build
 make build              # Build for current platform
-make build-all          # Build for all platforms
+make dist               # Build for all platforms
 make clean              # Clean build artifacts
 
 # Test
-make test               # Run tests
-make test-coverage      # Run tests with coverage
+make test               # Run tests with coverage
 make lint               # Run linter
 make security-scan      # Run security scans
+make check              # Run all checks (fmt, vet, lint, test)
 
 # Package
-make package-all        # Build all packages
+make package            # Build all packages (DEB, RPM, Arch)
+make release            # Full release (test, lint, security-scan, dist, package)
 
 # Docker
 make docker-build       # Build production image
@@ -864,8 +839,7 @@ make docker-test        # Test Docker image
 
 # CI/CD
 make ci                 # Run CI pipeline
-make pre-commit         # Run pre-commit checks
-make pre-release        # Full pre-release validation
+make check              # Run all checks (fmt, vet, lint, test)
 
 # Docker Compose
 docker compose --profile production run --rm generator

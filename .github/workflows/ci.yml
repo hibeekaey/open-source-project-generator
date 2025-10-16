@@ -1,7 +1,4 @@
 name: CI
-permissions:
-  contents: read
-  security-events: write
 
 on:
   push:
@@ -12,6 +9,10 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/develop' }}
+
+permissions:
+  contents: read
+  security-events: write
 
 env:
   GO_VERSION: "1.25"
@@ -37,13 +38,13 @@ jobs:
       - name: Verify dependencies
         run: go mod verify
 
-      - name: Run tests
-        run: make test-coverage
+      - name: Run CI pipeline
+        run: make ci
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
-          files: ./coverage.out
+          files: ./test-reports/coverage.out
           flags: unittests
           name: codecov-umbrella
           fail_ci_if_error: false
@@ -56,8 +57,8 @@ jobs:
           echo "Go version: ${{ env.GO_VERSION }}" >> $GITHUB_STEP_SUMMARY
           echo "Coverage report uploaded to Codecov" >> $GITHUB_STEP_SUMMARY
 
-  lint:
-    name: Lint
+  check:
+    name: Code Quality Checks
     runs-on: ubuntu-latest
 
     steps:
@@ -70,11 +71,8 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v8
-        with:
-          version: v1.64.2
-          args: --timeout=5m
+      - name: Run all checks (fmt, vet, lint)
+        run: make check
 
   build:
     name: Build
@@ -93,8 +91,10 @@ jobs:
       - name: Build binary
         run: make build
 
-      - name: Test binary
-        run: ./bin/generator version
+      - name: Verify binary version
+        run: |
+          ./bin/generator version
+          make version
 
       - name: Upload binary artifact
         uses: actions/upload-artifact@v4
@@ -129,22 +129,10 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
-      - name: Run Gosec Security Scanner
-        uses: securego/gosec@v2.22.9
-        with:
-          args: "-no-fail -fmt sarif -out results.sarif ./..."
+      - name: Run security scans
+        run: make security-scan
 
-      - name: Run govulncheck
-        run: |
-          go install golang.org/x/vuln/cmd/govulncheck@latest
-          govulncheck ./...
-
-      - name: Run staticcheck
-        run: |
-          go install honnef.co/go/tools/cmd/staticcheck@latest
-          staticcheck ./...
-
-      - name: Upload SARIF file
+      - name: Upload SARIF to GitHub Security
         if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         uses: github/codeql-action/upload-sarif@v3
         with:

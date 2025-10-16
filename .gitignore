@@ -57,6 +57,7 @@ packages/arch/
 checksums.txt
 
 # Security scan reports
+results.sarif
 gosec-report.txt
 
 # Template testing output
@@ -208,6 +209,12 @@ yarn-error.log*
 # Local CI test results
 .github/workflows/artifacts/
 ci-artifacts/
+
+# Test reports from ci-test.sh
+test-reports/
+
+# Benchmark results from run_performance_benchmarks.sh
+benchmark_results/
 
 # =============================================================================
 # Kiro IDE

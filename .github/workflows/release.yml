@@ -87,12 +87,15 @@ jobs:
           GOOS: ${{ matrix.os }}
           GOARCH: ${{ matrix.arch }}
           CGO_ENABLED: 0
+          VERSION: ${{ steps.vars.outputs.version }}
+          GIT_COMMIT: ${{ steps.vars.outputs.git_commit }}
+          BUILD_TIME: ${{ steps.vars.outputs.build_time }}
         run: |
-          LDFLAGS="-X main.Version=${{ steps.vars.outputs.version }} -X main.GitCommit=${{ steps.vars.outputs.git_commit }} -X main.BuildTime=${{ steps.vars.outputs.build_time }}"
+          LDFLAGS="-X main.Version=${VERSION} -X main.GitCommit=${GIT_COMMIT} -X main.BuildTime=${BUILD_TIME} -s -w"
 
           mkdir -p dist/generator-${{ matrix.os }}-${{ matrix.arch }}
 
-          go build -ldflags "${LDFLAGS}" -o "dist/generator-${{ matrix.os }}-${{ matrix.arch }}/generator${{ steps.vars.outputs.binary_ext }}" ./cmd/generator
+          go build -ldflags "${LDFLAGS}" -trimpath -o "dist/generator-${{ matrix.os }}-${{ matrix.arch }}/generator${{ steps.vars.outputs.binary_ext }}" ./cmd/generator
 
           # Copy additional files
           cp README.md "dist/generator-${{ matrix.os }}-${{ matrix.arch }}/"
@@ -230,13 +233,7 @@ jobs:
       - name: Build packages
         env:
           VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          # Make sure the build script is executable
-          chmod +x scripts/build-packages.sh
-
-          # Build packages
-          ./scripts/build-packages.sh deb
-          ./scripts/build-packages.sh rpm
+        run: make package
 
       - name: Upload package artifacts
         uses: actions/upload-artifact@v4

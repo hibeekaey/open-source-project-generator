@@ -257,7 +257,7 @@ The generator creates projects with built-in security features:
 - [ ] Validate user inputs through `pkg/validation/` interfaces
 - [ ] Use dependency injection with interfaces from `pkg/interfaces/`
 - [ ] Review templates in `pkg/template/templates/` for security issues
-- [ ] Run security scanners before submitting PRs (`make lint`, `gosec`)
+- [ ] Run security scanners before submitting PRs (`make security-scan`)
 - [ ] Test generated projects for security vulnerabilities
 - [ ] Update security documentation for new features
 - [ ] Follow clean architecture patterns (presentation → business logic → infrastructure)

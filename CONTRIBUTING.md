@@ -65,8 +65,8 @@ Ensure you have the required tools installed:
 2. **Environment Setup**
 
    ```bash
-   # Set up development environment
-   make setup
+   # Install dependencies
+   go mod download
    
    # Build the generator
    make build
@@ -96,8 +96,8 @@ git checkout -b feature/your-feature-name
 # Make your changes
 # ... edit files ...
 
-# Run pre-commit checks (recommended before committing)
-make pre-commit
+# Run all checks (recommended before committing)
+make check
 
 # This runs: fmt, vet, lint, test
 
@@ -130,7 +130,7 @@ docker compose --profile development run --rm generator-dev bash
 # Inside the container, you can:
 make build
 make test
-make lint
+make check
 
 # Run tests in containers
 docker compose --profile testing up generator-test
@@ -197,10 +197,9 @@ See [docker-compose.yml](docker-compose.yml) for all available profiles and serv
 
 ### Before Submitting
 
+- [ ] **All Checks Pass**: Run all checks (`make check`)
 - [ ] **Tests Pass**: Ensure all tests pass locally (`make test`)
-- [ ] **Linting**: Code passes all linting checks (`make lint`)
-- [ ] **Security Scans**: Run security scans (`make security-scan`)
-- [ ] **Pre-commit Checks**: Run pre-commit checks (`make pre-commit`)
+- [ ] **Security Scans**: Run security scans if needed (`make security-scan`)
 - [ ] **Documentation**: Update relevant documentation
 - [ ] **Templates**: Test template generation if templates were modified
 - [ ] **Rebase**: Rebase your branch on the latest main branch
@@ -504,25 +503,18 @@ func TestProjectGeneration_FullWorkflow(t *testing.T) {
 ### Running Tests
 
 ```bash
-# Run all tests
+# Run all tests with coverage
 make test
 
-# Run tests with coverage
-make test-coverage
+# Run tests with specific flags
+make test TEST_FLAGS="-v -race"
 
-# Run integration tests
-make test-integration
-
-# Run specific test packages
+# Run tests with integration tags
+make test TEST_FLAGS="-tags=integration"
 go test ./pkg/template/...
 
-# Run all security scans
+# Run all security scans (gosec, govulncheck, staticcheck)
 make security-scan
-
-# Run individual security tools
-make gosec           # Security scanner
-make govulncheck     # Vulnerability checker
-make staticcheck     # Static analysis
 
 # Run linting
 make lint
@@ -763,7 +755,7 @@ Understanding the project structure helps with contributions:
 A: Create the template files in the appropriate `pkg/template/templates/` subdirectory, following existing patterns. Include proper variable substitution, test the template generation, and update template metadata.
 
 **Q: How do I test template changes?**
-A: Use `make test` to run unit tests, then test template generation manually with `./bin/generator generate` or use Docker Compose: `docker compose --profile testing up generator-test`.
+A: Run `make test` for unit tests, then test template generation manually with `./bin/generator generate` or use Docker Compose: `docker compose --profile testing up generator-test`.
 
 **Q: What should I work on as a first contribution?**
 A: Look for issues labeled `good first issue` or `help wanted`. Template improvements, documentation updates, and test additions are often good starting points.
@@ -781,7 +773,7 @@ A: Use `docker compose --profile development run --rm generator-dev bash` to get
 A: Always use `pkg/security/SanitizePath()` for user paths, return categorized errors from `pkg/errors/`, and run `make security-scan` before submitting PRs. See [SECURITY.md](SECURITY.md) for details.
 
 **Q: How do I run CI checks locally?**
-A: Run `make ci` (runs lint, test, security-scan) or `make pre-commit` (runs fmt, vet, lint, test) before pushing. For full validation, run `make pre-release`.
+A: Run `make check` for quick checks (fmt, vet, lint, test) or `make ci` for the full CI pipeline. For release validation, run `make release`.
 
 **Q: What's the difference between the three Dockerfiles?**
 A: `Dockerfile` is for production (39 MB), `Dockerfile.dev` is for development with all tools (500 MB), and `Dockerfile.build` is for creating packages (1.5 GB). All use UID 1001.
@@ -797,20 +789,16 @@ Thank you for contributing to the Open Source Project Generator! Your contributi
 ```bash
 # Development
 make build              # Build for current platform
-make test               # Run all tests
-make lint               # Run linter
+make test               # Run tests with coverage
+make check              # Run all checks (fmt, vet, lint, test)
 make fmt                # Format code
+make dev                # Run in development mode
 
 # Quality Assurance
-make pre-commit         # Run pre-commit checks (fmt, vet, lint, test)
-make ci                 # Run CI pipeline (lint, test, security-scan)
-make pre-release        # Full validation before release
-
-# Security
-make security-scan      # Run all security scans
-make gosec              # Run gosec scanner
-make govulncheck        # Check vulnerabilities
-make staticcheck        # Run static analysis
+make lint               # Run linter (auto-installs if needed)
+make security-scan      # Run all security scans (auto-installs tools)
+make ci                 # Run full CI pipeline
+make release            # Full release validation
 
 # Docker Compose
 docker compose --profile development run --rm generator-dev bash
@@ -819,14 +807,21 @@ docker compose --profile lint up generator-lint
 docker compose --profile security up generator-security
 
 # Testing
-make test               # Unit tests
-make test-coverage      # Tests with coverage
-make test-integration   # Integration tests
+make test                                    # Tests with coverage
+make test TEST_FLAGS="-v -race"              # With race detector
+make test TEST_FLAGS="-tags=integration"     # Integration tests
 
 # Building
-make build-all          # Build for all platforms
+make dist               # Build cross-platform binaries
+make package            # Build distribution packages (DEB, RPM, Arch)
+make release            # Full release (test, lint, security-scan, dist, package)
 make docker-build       # Build production Docker image
 make docker-test        # Test Docker image
+
+# Utilities
+make version            # Show version information
+make validate-setup     # Validate project setup
+make clean              # Clean all build artifacts (binaries, packages, reports, archives)
 ```
 
 ---

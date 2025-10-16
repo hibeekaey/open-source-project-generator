@@ -10,7 +10,9 @@ REPO_OWNER="cuesoftinc"
 REPO_NAME="open-source-project-generator"
 BINARY_NAME="generator"
 INSTALL_DIR="/usr/local/bin"
-USER_INSTALL_DIR="$HOME/bin"
+USER_INSTALL_DIR="${HOME}/.local/bin"
+MAX_RETRIES=3
+RETRY_DELAY=2
 
 # Colors for output
 RED='\033[0;31m'
@@ -35,6 +37,18 @@ print_warning() {
 print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
+
+# Cleanup trap
+cleanup() {
+    local exit_code=$?
+    if [ -n "$TEMP_DIR" ] && [ -d "$TEMP_DIR" ]; then
+        rm -rf "$TEMP_DIR"
+    fi
+    if [ $exit_code -ne 0 ]; then
+        print_error "Installation failed"
+    fi
+}
+trap cleanup EXIT
 
 # Detect platform
 detect_platform() {
@@ -64,11 +78,15 @@ detect_platform() {
         arm64|aarch64)
             ARCH="arm64"
             ;;
+        armv7l|armv7)
+            ARCH="arm"
+            ;;
         i386|i686)
             ARCH="386"
             ;;
         *)
             print_error "Unsupported architecture: $arch"
+            print_status "Supported architectures: x86_64, arm64, armv7, i386"
             exit 1
             ;;
     esac
@@ -80,10 +98,32 @@ detect_platform() {
 get_latest_version() {
     print_status "Fetching latest release information..."
     
+    local api_url="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/releases/latest"
+    local response
+    
     if command -v curl >/dev/null 2>&1; then
-        VERSION=$(curl -s "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+        response=$(curl -s -w "\n%{http_code}" "$api_url")
+        local http_code=$(echo "$response" | tail -n1)
+        local body=$(echo "$response" | sed '$d')
+        
+        if [ "$http_code" = "403" ]; then
+            print_error "GitHub API rate limit exceeded"
+            print_status "Please try again later or specify a version with --version"
+            exit 1
+        elif [ "$http_code" != "200" ]; then
+            print_error "Failed to fetch release information (HTTP $http_code)"
+            exit 1
+        fi
+        
+        VERSION=$(echo "$body" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
     elif command -v wget >/dev/null 2>&1; then
-        VERSION=$(wget -qO- "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+        response=$(wget -qO- "$api_url" 2>&1)
+        if echo "$response" | grep -q "403"; then
+            print_error "GitHub API rate limit exceeded"
+            print_status "Please try again later or specify a version with --version"
+            exit 1
+        fi
+        VERSION=$(echo "$response" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
     else
         print_error "Neither curl nor wget is available. Please install one of them."
         exit 1
@@ -91,6 +131,7 @@ get_latest_version() {
     
     if [ -z "$VERSION" ]; then
         print_error "Failed to fetch latest version"
+        print_status "Please specify a version manually with --version"
         exit 1
     fi
     
@@ -101,14 +142,15 @@ get_latest_version() {
 check_package_manager() {
     case $OS in
         linux)
-            if command -v apt-get >/dev/null 2>&1; then
+            # Prefer newer package managers
+            if command -v dnf >/dev/null 2>&1; then
+                PACKAGE_MANAGER="dnf"
+                return 0
+            elif command -v apt-get >/dev/null 2>&1; then
                 PACKAGE_MANAGER="apt"
                 return 0
             elif command -v yum >/dev/null 2>&1; then
                 PACKAGE_MANAGER="yum"
-                return 0
-            elif command -v dnf >/dev/null 2>&1; then
-                PACKAGE_MANAGER="dnf"
                 return 0
             elif command -v pacman >/dev/null 2>&1; then
                 PACKAGE_MANAGER="pacman"
@@ -132,7 +174,7 @@ install_via_package_manager() {
     
     case $PACKAGE_MANAGER in
         apt)
-            package_url="https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$VERSION/${BINARY_NAME}_${VERSION#v}_amd64.deb"
+            package_url="https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$VERSION/${BINARY_NAME}_${VERSION}_amd64.deb"
             print_status "Installing via APT..."
             
             # Download package
@@ -148,7 +190,7 @@ install_via_package_manager() {
             ;;
             
         yum|dnf)
-            package_url="https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$VERSION/${BINARY_NAME}-${VERSION#v}-1.x86_64.rpm"
+            package_url="https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$VERSION/${BINARY_NAME}-${VERSION}-1.x86_64.rpm"
             print_status "Installing via $PACKAGE_MANAGER..."
             
             # Install package directly from URL
@@ -169,28 +211,107 @@ install_via_package_manager() {
     esac
 }
 
+# Download file with retries
+download_file() {
+    local url=$1
+    local output=$2
+    local retries=0
+    
+    while [ $retries -lt $MAX_RETRIES ]; do
+        if command -v curl >/dev/null 2>&1; then
+            if curl -L --fail --progress-bar -o "$output" "$url"; then
+                return 0
+            fi
+        elif command -v wget >/dev/null 2>&1; then
+            if wget --show-progress -O "$output" "$url"; then
+                return 0
+            fi
+        fi
+        
+        retries=$((retries + 1))
+        if [ $retries -lt $MAX_RETRIES ]; then
+            print_warning "Download failed, retrying in ${RETRY_DELAY}s... (attempt $retries/$MAX_RETRIES)"
+            sleep $RETRY_DELAY
+        fi
+    done
+    
+    return 1
+}
+
+# Verify checksum
+verify_checksum() {
+    local file=$1
+    local expected_checksum=$2
+    
+    if [ -z "$expected_checksum" ]; then
+        print_warning "No checksum provided, skipping verification"
+        return 0
+    fi
+    
+    print_status "Verifying checksum..."
+    
+    local actual_checksum
+    if command -v sha256sum >/dev/null 2>&1; then
+        actual_checksum=$(sha256sum "$file" | cut -d' ' -f1)
+    elif command -v shasum >/dev/null 2>&1; then
+        actual_checksum=$(shasum -a 256 "$file" | cut -d' ' -f1)
+    else
+        print_warning "No checksum utility available, skipping verification"
+        return 0
+    fi
+    
+    if [ "$actual_checksum" = "$expected_checksum" ]; then
+        print_success "Checksum verified"
+        return 0
+    else
+        print_error "Checksum mismatch!"
+        print_error "Expected: $expected_checksum"
+        print_error "Got: $actual_checksum"
+        return 1
+    fi
+}
+
 # Download and install binary manually
 install_binary() {
     local archive_name="${BINARY_NAME}-${OS}-${ARCH}"
     local archive_ext=".tar.gz"
     local download_url="https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$VERSION/${archive_name}${archive_ext}"
-    local temp_dir=$(mktemp -d)
+    local checksums_url="https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$VERSION/checksums.txt"
+    
+    TEMP_DIR=$(mktemp -d)
     
     print_status "Downloading $archive_name$archive_ext..."
     
-    # Download archive
-    if command -v curl >/dev/null 2>&1; then
-        curl -L -o "$temp_dir/${archive_name}${archive_ext}" "$download_url"
-    elif command -v wget >/dev/null 2>&1; then
-        wget -O "$temp_dir/${archive_name}${archive_ext}" "$download_url"
-    else
-        print_error "Neither curl nor wget is available"
+    # Download archive with retries
+    if ! download_file "$download_url" "$TEMP_DIR/${archive_name}${archive_ext}"; then
+        print_error "Failed to download after $MAX_RETRIES attempts"
+        print_status "URL: $download_url"
         exit 1
+    fi
+    
+    # Download and verify checksum
+    if download_file "$checksums_url" "$TEMP_DIR/checksums.txt" 2>/dev/null; then
+        local expected_checksum=$(grep "${archive_name}${archive_ext}" "$TEMP_DIR/checksums.txt" | cut -d' ' -f1)
+        if ! verify_checksum "$TEMP_DIR/${archive_name}${archive_ext}" "$expected_checksum"; then
+            print_error "Checksum verification failed"
+            exit 1
+        fi
+    else
+        print_warning "Could not download checksums, skipping verification"
     fi
     
     # Extract archive
     print_status "Extracting archive..."
-    tar -xzf "$temp_dir/${archive_name}${archive_ext}" -C "$temp_dir"
+    if ! tar -xzf "$TEMP_DIR/${archive_name}${archive_ext}" -C "$TEMP_DIR"; then
+        print_error "Failed to extract archive"
+        exit 1
+    fi
+    
+    # Verify binary exists
+    if [ ! -f "$TEMP_DIR/$archive_name/$BINARY_NAME" ]; then
+        print_error "Binary not found in archive"
+        exit 1
+    fi
     
     # Determine installation directory
     local install_dir
@@ -200,27 +321,31 @@ install_binary() {
         install_dir="$INSTALL_DIR"
         if [ "$(id -u)" != "0" ] && [ ! -w "$INSTALL_DIR" ]; then
             needs_sudo=true
+            print_warning "Installing to $install_dir requires sudo privileges"
+            print_status "You may be prompted for your password"
         fi
     else
         install_dir="$USER_INSTALL_DIR"
         mkdir -p "$install_dir"
-        print_warning "Installing to user directory: $install_dir"
-        print_status "Make sure $install_dir is in your PATH"
+        print_status "Installing to user directory: $install_dir"
     fi
     
     # Install binary
     print_status "Installing to $install_dir..."
     
     if [ "$needs_sudo" = true ]; then
-        sudo cp "$temp_dir/$archive_name/$BINARY_NAME" "$install_dir/"
+        if ! sudo cp "$TEMP_DIR/$archive_name/$BINARY_NAME" "$install_dir/"; then
+            print_error "Failed to copy binary (permission denied)"
+            exit 1
+        fi
         sudo chmod +x "$install_dir/$BINARY_NAME"
     else
-        cp "$temp_dir/$archive_name/$BINARY_NAME" "$install_dir/"
+        if ! cp "$TEMP_DIR/$archive_name/$BINARY_NAME" "$install_dir/"; then
+            print_error "Failed to copy binary"
+            exit 1
+        fi
         chmod +x "$install_dir/$BINARY_NAME"
     fi
-    
-    # Clean up
-    rm -rf "$temp_dir"
     
     # Update PATH if needed
     if [ "$install_dir" = "$USER_INSTALL_DIR" ]; then
@@ -235,34 +360,53 @@ update_path() {
     
     case $current_shell in
         bash)
-            shell_config="$HOME/.bashrc"
+            if [ -f "$HOME/.bash_profile" ]; then
+                shell_config="$HOME/.bash_profile"
+            else
+                shell_config="$HOME/.bashrc"
+            fi
             ;;
         zsh)
             shell_config="$HOME/.zshrc"
             ;;
         fish)
             shell_config="$HOME/.config/fish/config.fish"
+            mkdir -p "$(dirname "$shell_config")"
             ;;
         *)
             shell_config="$HOME/.profile"
             ;;
     esac
     
-    # Check if PATH update is needed
-    if ! echo "$PATH" | grep -q "$USER_INSTALL_DIR"; then
-        print_status "Adding $USER_INSTALL_DIR to PATH in $shell_config"
-        
-        case $current_shell in
-            fish)
-                echo "set -gx PATH $USER_INSTALL_DIR \$PATH" >> "$shell_config"
-                ;;
-            *)
-                echo "export PATH=\"$USER_INSTALL_DIR:\$PATH\"" >> "$shell_config"
-                ;;
-        esac
-        
-        print_warning "Please restart your shell or run: source $shell_config"
+    # Check if PATH already contains the directory
+    if echo ":$PATH:" | grep -q ":$USER_INSTALL_DIR:"; then
+        print_status "$USER_INSTALL_DIR is already in PATH"
+        return
     fi
+    
+    # Check if shell config already has the PATH entry
+    if [ -f "$shell_config" ] && grep -q "$USER_INSTALL_DIR" "$shell_config"; then
+        print_status "PATH entry already exists in $shell_config"
+        print_warning "Please restart your shell or run: source $shell_config"
+        return
+    fi
+    
+    print_status "Adding $USER_INSTALL_DIR to PATH in $shell_config"
+    
+    case $current_shell in
+        fish)
+            echo "" >> "$shell_config"
+            echo "# Added by generator installer" >> "$shell_config"
+            echo "set -gx PATH $USER_INSTALL_DIR \$PATH" >> "$shell_config"
+            ;;
+        *)
+            echo "" >> "$shell_config"
+            echo "# Added by generator installer" >> "$shell_config"
+            echo "export PATH=\"$USER_INSTALL_DIR:\$PATH\"" >> "$shell_config"
+            ;;
+    esac
+    
+    print_warning "Please restart your shell or run: source $shell_config"
 }
 
 # Verify installation
@@ -284,55 +428,41 @@ verify_installation() {
 
 # Show usage
 show_usage() {
-    echo "Open Source Project Generator Installation Script"
-    echo ""
-    echo "Usage: $0 [OPTIONS]"
-    echo ""
-    echo "Options:"
-    echo "  --version VERSION    Install specific version (e.g., v1.0.0)"
-    echo "  --force-binary       Force binary installation (skip package managers)"
-    echo "  --user               Install to user directory (~/.local/bin)"
-    echo "  --help               Show this help message"
-    echo ""
-    echo "Examples:"
-    echo "  $0                           # Install latest version"
-    echo "  $0 --version v1.0.0          # Install specific version"
-    echo "  $0 --force-binary            # Skip package manager, install binary"
-    echo "  $0 --user                    # Install to user directory"
-    echo ""
-    echo "Environment variables:"
-    echo "  INSTALL_DIR              Custom installation directory"
-    echo "  GENERATOR_SKIP_VERIFY    Skip installation verification"
+    cat << EOF
+Installation Script
+
+Usage: $0 [OPTIONS]
+
+Description:
+  Automatically detects the platform and installs the generator binary.
+  Supports package managers (apt, yum, dnf) and direct binary installation.
+
+Options:
+  --version VERSION   Install specific version (e.g., v1.0.0)
+  --force-binary      Force binary installation (skip package managers)
+  --user              Install to user directory (~/.local/bin)
+  -h, --help          Show this help message
+
+Environment Variables:
+  INSTALL_DIR              Custom installation directory
+  GENERATOR_SKIP_VERIFY    Skip installation verification
+
+Examples:
+  $0                        # Install latest version
+  $0 --version v1.0.0       # Install specific version
+  $0 --force-binary         # Skip package manager, install binary
+  $0 --user                 # Install to user directory
+
+Requirements:
+  - curl or wget
+  - tar
+
+Output:
+  Binary installed to: /usr/local/bin/ or ~/.local/bin/
+EOF
 }
 
-# Parse command line arguments
-parse_args() {
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            --version)
-                VERSION="$2"
-                shift 2
-                ;;
-            --force-binary)
-                FORCE_BINARY=true
-                shift
-                ;;
-            --user)
-                INSTALL_DIR="$USER_INSTALL_DIR"
-                shift
-                ;;
-            --help|-h)
-                show_usage
-                exit 0
-                ;;
-            *)
-                print_error "Unknown option: $1"
-                show_usage
-                exit 1
-                ;;
-        esac
-    done
-}
+
 
 # Check system requirements
 check_requirements() {
@@ -353,13 +483,10 @@ check_requirements() {
 }
 
 # Main installation function
-main() {
+install_generator() {
     echo "Open Source Project Generator Installation Script"
     echo "================================================="
     echo ""
-    
-    # Parse arguments
-    parse_args "$@"
     
     # Check requirements
     check_requirements
@@ -400,7 +527,41 @@ main() {
     echo "  2. Run 'generator generate' to create your first project"
     echo "  3. Visit https://github.com/$REPO_OWNER/$REPO_NAME for documentation"
     echo ""
+    echo "To uninstall:"
+    if [ -f "$INSTALL_DIR/$BINARY_NAME" ]; then
+        echo "  sudo rm $INSTALL_DIR/$BINARY_NAME"
+    elif [ -f "$USER_INSTALL_DIR/$BINARY_NAME" ]; then
+        echo "  rm $USER_INSTALL_DIR/$BINARY_NAME"
+    fi
+    echo ""
 }
 
-# Run main function
-main "$@"
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --version)
+            VERSION="$2"
+            shift 2
+            ;;
+        --force-binary)
+            FORCE_BINARY=true
+            shift
+            ;;
+        --user)
+            INSTALL_DIR="$USER_INSTALL_DIR"
+            shift
+            ;;
+        "help"|"-h"|"--help")
+            show_usage
+            exit 0
+            ;;
+        *)
+            print_error "Unknown option: $1"
+            show_usage
+            exit 1
+            ;;
+    esac
+done
+
+# Run installation
+install_generator

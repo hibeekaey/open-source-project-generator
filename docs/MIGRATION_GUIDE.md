@@ -427,9 +427,9 @@ err := generateHandler.GenerateProjectFromComponents(config, outputPath, options
 
 If issues arise, the refactoring can be rolled back:
 
-1. **Backup available**: All original files backed up in `.dead_code_backups/`
-2. **Git history**: Complete refactoring history in git commits
-3. **Feature flags**: New implementations can be disabled if needed
+1. **Git history**: Complete refactoring history in git commits
+2. **Feature flags**: New implementations can be disabled if needed
+3. **Version control**: Use git to revert to previous stable versions
 
 ### Getting Help
 

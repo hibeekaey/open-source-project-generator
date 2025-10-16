@@ -236,7 +236,7 @@ generator version --json
   "version": "1.0.0",
   "gitCommit": "abc123def",
   "buildTime": "2024-01-01T00:00:00Z",
-  "goVersion": "go1.21.0",
+  "goVersion": "go1.25.0",
   "platform": "darwin",
   "architecture": "arm64"
 }
@@ -357,23 +357,23 @@ go mod download
 # Build binary
 make build
 
-# Run tests
+# Run tests with coverage
 make test
 
-# Run tests with coverage
-make test-coverage
-
-# Run linter
-make lint
+# Run all checks (format, vet, lint, test)
+make check
 
 # Format code
 make fmt
 
-# Clean build artifacts
+# Run linter
+make lint
+
+# Clean all build artifacts (binaries, packages, reports, archives)
 make clean
 
 # Generate cross-platform binaries
-make build-all
+make dist
 ```
 
 ### Development Workflow
@@ -382,17 +382,17 @@ make build-all
 # Build for current platform
 make build
 
-# Run all tests
+# Run tests with coverage
 make test
 
-# Run tests with coverage report
-make test-coverage
+# Run all quality checks (recommended before commit)
+make check
 
-# Run golangci-lint
-make lint
-
-# Format code with gofmt
+# Format code
 make fmt
+
+# Run linter
+make lint
 
 # Build and test
 make build && ./bin/generator --version
@@ -403,6 +403,9 @@ make build && ./bin/generator --version
 # Docker builds (optional)
 make docker-build
 make docker-test
+
+# Show version information
+make version
 ```
 
 ### Architecture Highlights
