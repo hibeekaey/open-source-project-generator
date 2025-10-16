@@ -2,6 +2,7 @@ package integration
 
 import (
 	"bytes"
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -237,7 +238,8 @@ func runCLICommandWithOutput(t *testing.T, binaryPath string, args ...string) (s
 	err := cmd.Run()
 	exitCode := 0
 	if err != nil {
-		if exitError, ok := err.(*exec.ExitError); ok {
+		exitError := &exec.ExitError{}
+		if errors.As(err, &exitError) {
 			exitCode = exitError.ExitCode()
 		} else {
 			t.Logf("Command execution error: %v", err)

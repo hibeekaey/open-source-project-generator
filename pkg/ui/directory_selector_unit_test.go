@@ -2,6 +2,7 @@ package ui
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -404,7 +405,8 @@ func TestDirectoryValidator_ValidateDirectoryPath(t *testing.T) {
 					return
 				}
 
-				if validationErr, ok := err.(*interfaces.ValidationError); ok {
+				validationErr := &interfaces.ValidationError{}
+				if errors.As(err, &validationErr) {
 					if validationErr.Code != tt.errorCode {
 						t.Errorf("Expected error code %s, got %s", tt.errorCode, validationErr.Code)
 					}
@@ -437,7 +439,8 @@ func TestDirectoryValidator_ValidateParentDirectory(t *testing.T) {
 		t.Error("Expected error for non-existent directory")
 	}
 
-	if validationErr, ok := err.(*interfaces.ValidationError); ok {
+	validationErr := &interfaces.ValidationError{}
+	if errors.As(err, &validationErr) {
 		if validationErr.Code != "not_exists" {
 			t.Errorf("Expected error code 'not_exists', got %s", validationErr.Code)
 		}

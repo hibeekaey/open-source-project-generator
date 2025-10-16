@@ -65,6 +65,12 @@ linters:
   # Disable all linters by default
   disable-all: true
   
+  # Explicitly disable overly strict linters
+  disable:
+    - wsl               # Too strict about whitespace (3,605 issues)
+    - gocyclo           # Cyclomatic complexity (can be enabled if needed)
+    - gocognit          # Cognitive complexity (can be enabled if needed)
+  
   # Enable specific linters
   enable:
     # Error checking
@@ -105,7 +111,6 @@ linters:
     - goconst           # Finds repeated strings that could be replaced by a constant
     - gocritic          # Provides diagnostics that check for bugs, performance and style issues
     - whitespace        # Detection of leading and trailing whitespace
-    - wsl               # Whitespace linter forces you to use empty lines
 
 # =============================================================================
 # Linters Settings
@@ -267,6 +272,7 @@ issues:
   new: false
   
   # Fix found issues (if it's supported by the linter)
+  # Set to true to automatically fix issues
   fix: false
 
 # =============================================================================

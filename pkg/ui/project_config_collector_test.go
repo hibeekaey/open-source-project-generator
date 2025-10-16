@@ -2,6 +2,7 @@ package ui
 
 import (
 	"context"
+	"errors"
 	"regexp"
 	"strings"
 	"testing"
@@ -85,7 +86,8 @@ func TestProjectConfigValidator_ValidateProjectName(t *testing.T) {
 					return
 				}
 
-				if validationErr, ok := err.(*interfaces.ValidationError); ok {
+				validationErr := &interfaces.ValidationError{}
+				if errors.As(err, &validationErr) {
 					if validationErr.Code != tt.errorCode {
 						t.Errorf("expected error code %q, got %q", tt.errorCode, validationErr.Code)
 					}
@@ -157,7 +159,8 @@ func TestProjectConfigValidator_ValidateEmail(t *testing.T) {
 					return
 				}
 
-				if validationErr, ok := err.(*interfaces.ValidationError); ok {
+				validationErr := &interfaces.ValidationError{}
+				if errors.As(err, &validationErr) {
 					if validationErr.Code != tt.errorCode {
 						t.Errorf("expected error code %q, got %q", tt.errorCode, validationErr.Code)
 					}

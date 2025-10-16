@@ -5,6 +5,7 @@
 package ui
 
 import (
+	"errors"
 	"fmt"
 	"net/mail"
 	"regexp"
@@ -500,7 +501,8 @@ func ValidateAndSuggest(input string, chain *ValidationChain) (string, []string,
 		suggestions = append(suggestions, "Refer to the help for examples")
 
 		// Add specific suggestions based on validation error
-		if validationErr, ok := err.(*interfaces.ValidationError); ok {
+		validationErr := &interfaces.ValidationError{}
+		if errors.As(err, &validationErr) {
 			suggestions = append(suggestions, validationErr.Suggestions...)
 		}
 

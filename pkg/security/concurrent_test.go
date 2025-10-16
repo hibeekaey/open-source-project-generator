@@ -73,14 +73,14 @@ func testConcurrentCacheAccess(t *testing.T) {
 
 				// Set operation
 				if err := cacheManager.Set(key, value, 5*time.Minute); err != nil {
-					errors <- fmt.Errorf("goroutine %d: set failed: %v", goroutineID, err)
+					errors <- fmt.Errorf("goroutine %d: set failed: %w", goroutineID, err)
 					continue
 				}
 
 				// Get operation
 				retrievedValue, err := cacheManager.Get(key)
 				if err != nil {
-					errors <- fmt.Errorf("goroutine %d: get failed: %v", goroutineID, err)
+					errors <- fmt.Errorf("goroutine %d: get failed: %w", goroutineID, err)
 					continue
 				}
 
@@ -157,7 +157,7 @@ func testConcurrentValidation(t *testing.T) {
 			// Validate project
 			result, err := validationEngine.ValidateProject(projectPath)
 			if err != nil {
-				errors <- fmt.Errorf("goroutine %d: validation failed: %v", goroutineID, err)
+				errors <- fmt.Errorf("goroutine %d: validation failed: %w", goroutineID, err)
 				return
 			}
 
@@ -169,7 +169,7 @@ func testConcurrentValidation(t *testing.T) {
 			// Validate specific files
 			packageJSONPath := filepath.Join(projectPath, "package.json")
 			if err := validationEngine.ValidatePackageJSON(packageJSONPath); err != nil {
-				errors <- fmt.Errorf("goroutine %d: package.json validation failed: %v", goroutineID, err)
+				errors <- fmt.Errorf("goroutine %d: package.json validation failed: %w", goroutineID, err)
 				return
 			}
 
@@ -217,14 +217,14 @@ func testConcurrentConfigOperations(t *testing.T) {
 
 			// Validate config
 			if err := utils.ValidateProjectConfig(config); err != nil {
-				errors <- fmt.Errorf("goroutine %d: config validation failed: %v", goroutineID, err)
+				errors <- fmt.Errorf("goroutine %d: config validation failed: %w", goroutineID, err)
 				return
 			}
 
 			// Sanitize config fields
 			sanitizedName, err := utils.SanitizeInput(config.Name)
 			if err != nil {
-				errors <- fmt.Errorf("goroutine %d: name sanitization failed: %v", goroutineID, err)
+				errors <- fmt.Errorf("goroutine %d: name sanitization failed: %w", goroutineID, err)
 				return
 			}
 

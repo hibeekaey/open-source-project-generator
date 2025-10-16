@@ -596,7 +596,6 @@ func (pspg *ProjectStructurePreviewGenerator) populateDirectoryFromTemplates(dir
 				// Check if file belongs to this subdirectory
 				if strings.HasPrefix(file.Path, targetSubdir+"/") ||
 					(targetSubdir == "" && !strings.Contains(file.Path, "/")) {
-
 					relativePath := strings.TrimPrefix(file.Path, targetSubdir+"/")
 					if relativePath == "" {
 						relativePath = file.Path

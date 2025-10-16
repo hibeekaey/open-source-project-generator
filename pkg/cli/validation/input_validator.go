@@ -319,7 +319,7 @@ func (iv *InputValidator) checkDiskSpace(path string) error {
 
 	if err != nil {
 		if removeErr := os.Remove(testFile); removeErr != nil {
-			return fmt.Errorf("write failed and cleanup failed: %w (cleanup error: %v)", err, removeErr)
+			return fmt.Errorf("write failed and cleanup failed: %w (cleanup error: %w)", err, removeErr)
 		}
 		return fmt.Errorf("cannot write test data: %w", err)
 	}

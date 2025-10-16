@@ -164,7 +164,6 @@ func (cs *ComponentSelection) selectInfrastructureComponents(config *models.Proj
 
 // promptYesNo prompts for a yes/no answer with a description
 func (cs *ComponentSelection) promptYesNo(prompt, description string, defaultValue bool) (bool, error) {
-
 	cs.output.QuietOutput("   %s", cs.output.Info(prompt))
 	cs.output.QuietOutput("   %s", cs.output.Dim(description))
 

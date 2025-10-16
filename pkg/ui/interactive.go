@@ -11,6 +11,7 @@ package ui
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -207,7 +208,8 @@ func (ui *InteractiveUI) handleTextInput(input string, config interfaces.TextPro
 	// Run custom validator
 	if config.Validator != nil {
 		if err := config.Validator(input); err != nil {
-			if validationErr, ok := err.(*interfaces.ValidationError); ok {
+			validationErr := &interfaces.ValidationError{}
+			if errors.As(err, &validationErr) {
 				ui.showValidationError(validationErr)
 			} else {
 				ui.showError(err.Error())

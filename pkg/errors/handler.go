@@ -2,6 +2,7 @@
 package errors
 
 import (
+	stderrors "errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -126,7 +127,8 @@ func (eh *ErrorHandler) HandleError(err error, context map[string]interface{}) *
 
 	// Convert to CLIError if needed
 	var cliErr *CLIError
-	if ce, ok := err.(*CLIError); ok {
+	ce := &CLIError{}
+	if stderrors.As(err, &ce) {
 		cliErr = ce
 	} else {
 		cliErr = eh.convertToCLIError(err, context)

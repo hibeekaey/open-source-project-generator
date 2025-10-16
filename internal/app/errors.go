@@ -1,6 +1,7 @@
 package app
 
 import (
+	stderrors "errors"
 	"fmt"
 	"runtime"
 	"strings"
@@ -99,7 +100,8 @@ func NewErrorHandler(logger *Logger) *ErrorHandler {
 
 // Handle handles an error appropriately based on its type
 func (h *ErrorHandler) Handle(err error) {
-	if appErr, ok := err.(*AppError); ok {
+	appErr := &AppError{}
+	if stderrors.As(err, &appErr) {
 		h.handleAppError(appErr)
 	} else {
 		h.handleGenericError(err)
@@ -263,7 +265,8 @@ func PropagateError(err error, context string) error {
 	}
 
 	// If it's already an AppError, add context and return
-	if appErr, ok := err.(*AppError); ok {
+	appErr := &AppError{}
+	if stderrors.As(err, &appErr) {
 		return appErr.WithContext("propagation_context", context)
 	}
 
@@ -278,7 +281,11 @@ func ChainErrors(errors []error, operation string) *AppError {
 	}
 
 	if len(errors) == 1 {
-		return PropagateError(errors[0], operation).(*AppError)
+		return func() *AppError {
+			target := &AppError{}
+			_ = stderrors.As(PropagateError(errors[0], operation), &target)
+			return target
+		}()
 	}
 
 	// Create a summary error for multiple errors

@@ -49,7 +49,7 @@ func TestAppError_Unwrap(t *testing.T) {
 		Cause:   cause,
 	}
 
-	if unwrapped := appError.Unwrap(); unwrapped != cause {
+	if unwrapped := appError.Unwrap(); !errors.Is(unwrapped, cause) {
 		t.Errorf("AppError.Unwrap() = %v, want %v", unwrapped, cause)
 	}
 
@@ -77,7 +77,7 @@ func TestNewAppError(t *testing.T) {
 		t.Errorf("Expected message 'test message', got '%s'", appError.Message)
 	}
 
-	if appError.Cause != cause {
+	if !errors.Is(appError.Cause, cause) {
 		t.Errorf("Expected cause %v, got %v", cause, appError.Cause)
 	}
 
@@ -276,7 +276,7 @@ func TestWrapperFunctions(t *testing.T) {
 			if appError.Message != "test message" {
 				t.Errorf("Expected message 'test message', got '%s'", appError.Message)
 			}
-			if appError.Cause != cause {
+			if !errors.Is(appError.Cause, cause) {
 				t.Errorf("Expected cause %v, got %v", cause, appError.Cause)
 			}
 		})
@@ -356,7 +356,7 @@ func TestPropagateError(t *testing.T) {
 	// Test with AppError
 	appError := NewAppError(ErrorTypeValidation, "test error", nil)
 	result = PropagateError(appError, "test context")
-	if result != appError {
+	if !errors.Is(result, appError) {
 		t.Error("PropagateError should return the same AppError instance")
 	}
 	if appError.Context["propagation_context"] != "test context" {
@@ -369,7 +369,8 @@ func TestPropagateError(t *testing.T) {
 	if result == nil {
 		t.Fatal("PropagateError should not return nil for generic error")
 	}
-	appErr, ok := result.(*AppError)
+	appErr := &AppError{}
+	ok := errors.As(result, &appErr)
 	if !ok {
 		t.Fatal("PropagateError should return AppError for generic error")
 	}

@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"runtime"
 	"strings"
@@ -142,7 +143,8 @@ func ValidateAndWrapError(err error, ctx *ErrorContext) error {
 	}
 
 	// Check if it's already a GeneratorError
-	if genErr, ok := err.(*models.GeneratorError); ok {
+	genErr := &models.GeneratorError{}
+	if errors.As(err, &genErr) {
 		// Return the error as-is since WithContext method was removed
 		return genErr
 	}
@@ -158,7 +160,8 @@ func FormatErrorForUser(err error) string {
 	}
 
 	// Handle GeneratorError
-	if genErr, ok := err.(*models.GeneratorError); ok {
+	genErr := &models.GeneratorError{}
+	if errors.As(err, &genErr) {
 		return formatGeneratorErrorForUser(genErr)
 	}
 

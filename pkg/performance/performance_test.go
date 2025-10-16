@@ -125,19 +125,19 @@ func testConcurrentCacheOperations(t *testing.T, cacheManager interfaces.CacheMa
 
 			// Set operation
 			if err := cacheManager.Set(key, value, 5*time.Minute); err != nil {
-				errors <- fmt.Errorf("set operation failed for %s: %v", key, err)
+				errors <- fmt.Errorf("set operation failed for %s: %w", key, err)
 				return
 			}
 
 			// Get operation
 			if _, err := cacheManager.Get(key); err != nil {
-				errors <- fmt.Errorf("get operation failed for %s: %v", key, err)
+				errors <- fmt.Errorf("get operation failed for %s: %w", key, err)
 				return
 			}
 
 			// Delete operation
 			if err := cacheManager.Delete(key); err != nil {
-				errors <- fmt.Errorf("delete operation failed for %s: %v", key, err)
+				errors <- fmt.Errorf("delete operation failed for %s: %w", key, err)
 				return
 			}
 		}(i)
@@ -186,7 +186,7 @@ func testConcurrentValidationOperations(t *testing.T, tempDir string, numOperati
 
 			result, err := validationEngine.ValidateProject(path)
 			if err != nil {
-				errors <- fmt.Errorf("validation failed for project %d: %v", id, err)
+				errors <- fmt.Errorf("validation failed for project %d: %w", id, err)
 				return
 			}
 

@@ -3,6 +3,7 @@ package errors
 
 import (
 	"encoding/json"
+	stderrors "errors"
 	"fmt"
 	"runtime"
 	"strings"
@@ -435,7 +436,8 @@ func WrapError(err error, errorType string, message string, code int) *CLIError 
 	}
 
 	// If it's already a CLIError, enhance it
-	if cliErr, ok := err.(*CLIError); ok {
+	cliErr := &CLIError{}
+	if stderrors.As(err, &cliErr) {
 		cliErr.Message = fmt.Sprintf("%s: %s", message, cliErr.Message)
 		return cliErr
 	}
@@ -487,7 +489,8 @@ func PropagateError(err error, context string) error {
 	}
 
 	// If it's already a CLIError, add context
-	if cliErr, ok := err.(*CLIError); ok {
+	cliErr := &CLIError{}
+	if stderrors.As(err, &cliErr) {
 		if cliErr.Context == nil {
 			cliErr.Context = &ErrorContext{}
 		}

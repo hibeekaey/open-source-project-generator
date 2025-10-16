@@ -547,7 +547,7 @@ func testConcurrentFileAccess(t *testing.T) {
 			// Attempt to read file safely
 			content, err := utils.SafeReadFile(testFile)
 			if err != nil {
-				errors <- fmt.Errorf("goroutine %d failed to read file: %v", id, err)
+				errors <- fmt.Errorf("goroutine %d failed to read file: %w", id, err)
 				return
 			}
 
@@ -589,7 +589,7 @@ func testConcurrentValidationSecurity(t *testing.T) {
 
 			err := utils.ValidateProjectConfig(config)
 			if err != nil {
-				errors <- fmt.Errorf("goroutine %d validation failed: %v", id, err)
+				errors <- fmt.Errorf("goroutine %d validation failed: %w", id, err)
 				return
 			}
 
