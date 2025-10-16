@@ -7,17 +7,20 @@ This guide provides detailed information for developers working with the refacto
 ## Key Changes Summary
 
 ### File Size Reduction
+
 - **6 large files** (>1,000 lines) split into **focused modules** (<1,000 lines each)
 - **Total reduction**: ~12,000 lines reorganized into 50+ focused files
 - **Largest file**: Now ~500 lines (previously 3,217 lines)
 
 ### Code Quality Improvements
+
 - **78 linting violations** resolved (errcheck, unused code, staticcheck, etc.)
 - **Performance optimizations** applied (regex compilation, string operations)
 - **Error handling** improved across all components
 
 ### Test Coverage Enhancement
-- **Overall coverage**: 53.9% → 70%+ 
+
+- **Overall coverage**: 53.9% → 70%+
 - **Critical packages**: 80%+ coverage (validation, security, audit)
 - **New test files**: 25+ comprehensive test suites added
 
@@ -26,6 +29,7 @@ This guide provides detailed information for developers working with the refacto
 ### CLI Package (`pkg/cli/`)
 
 #### Before (Single File)
+
 ```go
 // pkg/cli/cli.go (3,217 lines)
 type CLI struct {
@@ -39,6 +43,7 @@ func (c *CLI) HandleOutput() { /* 200+ lines */ }
 ```
 
 #### After (Modular Structure)
+
 ```go
 // pkg/cli/cli.go (~300 lines) - Main coordinator
 type CLI struct {
@@ -68,6 +73,7 @@ func (wh *WorkflowHandler) ExecuteGenerationWorkflow(config *models.ProjectConfi
 ```
 
 #### Import Changes
+
 ```go
 // Old imports
 import "github.com/cuesoftinc/open-source-project-generator/pkg/cli"
@@ -82,6 +88,7 @@ import (
 ### Cache Package (`pkg/cache/`)
 
 #### Before (Single File)
+
 ```go
 // pkg/cache/manager.go (1,180 lines)
 type Manager struct {
@@ -95,6 +102,7 @@ func (m *Manager) Cleanup() error { /* complex logic */ }
 ```
 
 #### After (Modular Operations)
+
 ```go
 // pkg/cache/manager.go (~300 lines) - Coordination
 type Manager struct {
@@ -120,6 +128,7 @@ func (go *GetOperation) Execute(key string, entries map[string]*interfaces.Cache
 ```
 
 #### Function Migration
+
 ```go
 // Old usage
 manager := cache.NewManager(config)
@@ -133,6 +142,7 @@ value, err := manager.Get("key") // Internally uses operations.Get()
 ### Filesystem Package (`pkg/filesystem/`)
 
 #### Before (Large Generator)
+
 ```go
 // pkg/filesystem/project_generator.go (1,112 lines)
 type ProjectGenerator struct {
@@ -145,6 +155,7 @@ func (pg *ProjectGenerator) GenerateProject(config *models.ProjectConfig) error 
 ```
 
 #### After (Specialized Generators)
+
 ```go
 // pkg/filesystem/project_generator.go (~300 lines) - Coordination
 type ProjectGenerator struct {
@@ -171,6 +182,7 @@ func (tg *TemplateGenerator) ProcessTemplates(projectPath string, config *models
 ### Infrastructure Components (`pkg/filesystem/components/infrastructure.go`)
 
 #### Before (Monolithic)
+
 ```go
 // pkg/filesystem/components/infrastructure.go (1,075 lines)
 func GenerateInfrastructure(config *models.ProjectConfig) error {
@@ -182,6 +194,7 @@ func GenerateInfrastructure(config *models.ProjectConfig) error {
 ```
 
 #### After (Focused Components)
+
 ```go
 // pkg/filesystem/components/infrastructure.go (~400 lines) - Coordination
 type InfrastructureGenerator struct {
@@ -208,6 +221,7 @@ func (ig *InfrastructureGenerator) generateTerraformFiles(projectPath string, co
 ### New Interfaces
 
 #### CLI Interfaces
+
 ```go
 // pkg/interfaces/cli.go - Enhanced CLI interfaces
 type CLIInterface interface {
@@ -227,6 +241,7 @@ type GenerateOptions interface {
 ```
 
 #### Cache Interfaces
+
 ```go
 // pkg/interfaces/cache.go - Enhanced cache interfaces
 type CacheOperations interface {
@@ -247,6 +262,7 @@ type StorageBackend interface {
 ### Updated Interfaces
 
 #### Template Manager
+
 ```go
 // Enhanced template processing capabilities
 type TemplateManager interface {
@@ -260,12 +276,14 @@ type TemplateManager interface {
 ## Breaking Changes
 
 ### None for Public APIs
+
 - **All public APIs remain unchanged**
 - **CLI commands work identically**
 - **Configuration formats preserved**
 - **Template processing unchanged**
 
 ### Internal Package Changes
+
 If you were importing internal packages directly (not recommended):
 
 ```go
@@ -282,6 +300,7 @@ import (
 ## Development Workflow Changes
 
 ### File Navigation
+
 ```bash
 # Old: Find functionality in large files
 find pkg/cli -name "*.go" -exec grep -l "GenerateProject" {} \;
@@ -293,6 +312,7 @@ ls pkg/cli/handlers/
 ```
 
 ### Testing Strategy
+
 ```bash
 # Old: Test large monolithic components
 go test ./pkg/cli -run TestCLI
@@ -305,6 +325,7 @@ go test ./pkg/cache/operations -run TestCacheOperations
 ### Adding New Features
 
 #### Before (Monolithic)
+
 ```go
 // Add to large file (pkg/cli/cli.go)
 func (c *CLI) NewFeature() error {
@@ -313,6 +334,7 @@ func (c *CLI) NewFeature() error {
 ```
 
 #### After (Modular)
+
 ```go
 // Create focused component
 // pkg/cli/handlers/new_feature_handler.go
@@ -333,6 +355,7 @@ func (c *CLI) RegisterNewFeature() {
 ## Testing Migration
 
 ### New Test Structure
+
 ```text
 pkg/
 ├── cli/
@@ -349,6 +372,7 @@ pkg/
 ```
 
 ### Test Coverage Improvements
+
 ```bash
 # Check coverage for specific components
 go test -cover ./pkg/cli/handlers
@@ -363,11 +387,13 @@ go tool cover -html=coverage.out
 ## Performance Considerations
 
 ### Compilation Performance
+
 - **Faster builds**: Smaller files compile in parallel
 - **Better caching**: Go build cache more effective
 - **IDE performance**: Better responsiveness with smaller files
 
 ### Runtime Performance
+
 - **No degradation**: Interface calls have negligible overhead
 - **Memory efficiency**: Better memory locality with focused components
 - **Optimizations applied**: Regex compilation, string operations optimized
@@ -377,6 +403,7 @@ go tool cover -html=coverage.out
 ### Common Issues
 
 #### Import Errors
+
 ```bash
 # Error: package not found
 go build: cannot find package "github.com/cuesoftinc/open-source-project-generator/pkg/cli/internal"
@@ -386,6 +413,7 @@ import "github.com/cuesoftinc/open-source-project-generator/pkg/cli/handlers"
 ```
 
 #### Missing Dependencies
+
 ```bash
 # Error: undefined interface method
 ./main.go:10:15: cli.GenerateProject undefined
@@ -396,6 +424,7 @@ err := generateHandler.GenerateProjectFromComponents(config, outputPath, options
 ```
 
 ### Rollback Procedure
+
 If issues arise, the refactoring can be rolled back:
 
 1. **Backup available**: All original files backed up in `.dead_code_backups/`
@@ -405,26 +434,30 @@ If issues arise, the refactoring can be rolled back:
 ### Getting Help
 
 #### Documentation
+
 - **Package Structure**: [docs/PACKAGE_STRUCTURE.md](PACKAGE_STRUCTURE.md)
 - **API Reference**: [docs/API_REFERENCE.md](API_REFERENCE.md)
 - **Troubleshooting**: [docs/TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 
 #### Support Channels
+
 - **GitHub Issues**: Report bugs or ask questions
 - **GitHub Discussions**: Community support and feature requests
-- **Email Support**: [support@generator.dev](mailto:support@generator.dev)
+- **Email Support**: [support@cuesoft.io](mailto:support@cuesoft.io)
 
 ## Best Practices
 
 ### Working with Modular Code
 
 #### Do's
+
 - **Use interfaces**: Depend on interfaces, not concrete types
 - **Test components**: Write focused tests for individual components
 - **Follow patterns**: Use established patterns for similar functionality
 - **Keep files small**: Target maximum 1,000 lines per file
 
 #### Don'ts
+
 - **Don't bypass interfaces**: Always use provided interfaces
 - **Don't create large files**: Split functionality when files grow large
 - **Don't duplicate code**: Use shared utilities and helpers
@@ -433,6 +466,7 @@ If issues arise, the refactoring can be rolled back:
 ### Contributing Guidelines
 
 #### Adding New Features
+
 1. **Identify package**: Determine appropriate package for new functionality
 2. **Check interfaces**: Ensure feature fits existing interfaces
 3. **Create focused files**: Keep new files small and focused
@@ -440,6 +474,7 @@ If issues arise, the refactoring can be rolled back:
 5. **Update documentation**: Document new interfaces and functionality
 
 #### Modifying Existing Features
+
 1. **Locate components**: Use package structure to find relevant code
 2. **Understand dependencies**: Review interfaces and dependencies
 3. **Test changes**: Ensure modifications don't break existing functionality

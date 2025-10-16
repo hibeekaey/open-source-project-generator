@@ -1,14 +1,277 @@
+# golangci-lint configuration for Open Source Project Generator
+#
+# This configuration enforces code quality, security, and style standards.
+# See https://golangci-lint.run/usage/configuration/ for full documentation.
+
 version: "2"
 
-linters:
-  disable:
-    - gocyclo
-  enable:
-    - errcheck
-    - govet
-    - misspell
-    - staticcheck
-
+# =============================================================================
+# Run Configuration
+# =============================================================================
 run:
+  # Timeout for analysis
   timeout: 5m
+  
+  # Go version to target
   go: "1.25"
+  
+  # Number of CPUs to use (0 = all available)
+  concurrency: 4
+  
+  # Exit code when issues are found
+  issues-exit-code: 1
+  
+  # Include test files
+  tests: true
+  
+  # Paths to skip
+  skip-dirs:
+    - vendor
+    - testdata
+    - .cache
+    - .kiro
+  
+  # Files to skip
+  skip-files:
+    - ".*\\.generated\\.go$"
+    - ".*_gen\\.go$"
+  
+  # Allow multiple parallel golangci-lint instances
+  allow-parallel-runners: true
+
+# =============================================================================
+# Output Configuration
+# =============================================================================
+output:
+  # Output format: colored-line-number, line-number, json, tab, checkstyle, code-climate
+  format: colored-line-number
+  
+  # Print lines of code with issue
+  print-issued-lines: true
+  
+  # Print linter name in the end of issue text
+  print-linter-name: true
+  
+  # Make issues output unique by line
+  uniq-by-line: true
+  
+  # Sort results by: filepath, line, and column
+  sort-results: true
+
+# =============================================================================
+# Linters Configuration
+# =============================================================================
+linters:
+  # Disable all linters by default
+  disable-all: true
+  
+  # Enable specific linters
+  enable:
+    # Error checking
+    - errcheck          # Check for unchecked errors
+    - errorlint         # Find code that will cause problems with Go 1.13+ error wrapping
+    
+    # Code quality
+    - govet             # Reports suspicious constructs
+    - staticcheck       # Go static analysis
+    - unused            # Check for unused constants, variables, functions and types
+    - ineffassign       # Detect ineffectual assignments
+    
+    # Security
+    - gosec             # Security problems
+    
+    # Style and formatting
+    - misspell          # Finds commonly misspelled English words
+    - revive            # Fast, configurable, extensible, flexible, and beautiful linter for Go
+    
+    # Bugs
+    - bodyclose         # Check whether HTTP response body is closed successfully
+    - nilerr            # Finds code that returns nil even if it checks that error is not nil
+    - noctx             # Finds sending http request without context.Context
+    - rowserrcheck      # Check whether Err of rows is checked successfully
+    - sqlclosecheck     # Check that sql.Rows and sql.Stmt are closed
+    
+    # Performance
+    - prealloc          # Find slice declarations that could potentially be pre-allocated
+    
+    # Complexity (disabled by default, can be enabled if needed)
+    # - gocyclo         # Computes and checks the cyclomatic complexity of functions
+    # - gocognit        # Computes and checks the cognitive complexity of functions
+    # - nestif          # Reports deeply nested if statements
+    
+    # Additional useful linters
+    - unconvert         # Remove unnecessary type conversions
+    - unparam           # Reports unused function parameters
+    - goconst           # Finds repeated strings that could be replaced by a constant
+    - gocritic          # Provides diagnostics that check for bugs, performance and style issues
+    - whitespace        # Detection of leading and trailing whitespace
+    - wsl               # Whitespace linter forces you to use empty lines
+
+# =============================================================================
+# Linters Settings
+# =============================================================================
+linters-settings:
+  # errcheck configuration
+  errcheck:
+    # Report about not checking of errors in type assertions: `a := b.(MyStruct)`
+    check-type-assertions: true
+    
+    # Report about assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`
+    check-blank: true
+    
+    # List of functions to exclude from checking
+    exclude-functions:
+      - (io.Closer).Close
+      - (*os.File).Close
+  
+  # govet configuration
+  govet:
+    # Enable all analyzers
+    enable-all: true
+    
+    # Disable specific analyzers if needed
+    disable:
+      - shadow  # Reports variables that shadow other variables
+  
+  # staticcheck configuration
+  staticcheck:
+    # Select the Go version to target
+    go: "1.25"
+    
+    # Enable all checks
+    checks: ["all"]
+  
+  # gosec configuration
+  gosec:
+    # Severity level: low, medium, high
+    severity: medium
+    
+    # Confidence level: low, medium, high
+    confidence: medium
+    
+    # Exclude specific rules (G104 is unchecked errors, handled by errcheck)
+    excludes:
+      - G104  # Audit errors not checked (handled by errcheck)
+  
+  # revive configuration
+  revive:
+    # Minimal confidence for issues
+    confidence: 0.8
+    
+    # Enable all rules by default
+    enable-all-rules: false
+    
+    # Specific rules to enable
+    rules:
+      - name: blank-imports
+      - name: context-as-argument
+      - name: context-keys-type
+      - name: dot-imports
+      - name: error-return
+      - name: error-strings
+      - name: error-naming
+      - name: exported
+      - name: if-return
+      - name: increment-decrement
+      - name: var-naming
+      - name: var-declaration
+      - name: package-comments
+      - name: range
+      - name: receiver-naming
+      - name: time-naming
+      - name: unexported-return
+      - name: indent-error-flow
+      - name: errorf
+      - name: empty-block
+      - name: superfluous-else
+      - name: unused-parameter
+      - name: unreachable-code
+      - name: redefines-builtin-id
+  
+  # misspell configuration
+  misspell:
+    # Locale to use
+    locale: US
+  
+  # gocritic configuration
+  gocritic:
+    # Enable multiple checks by tags
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+    
+    # Disable specific checks
+    disabled-checks:
+      - commentFormatting  # Too strict for some cases
+      - whyNoLint          # We use nolint directives appropriately
+  
+  # prealloc configuration
+  prealloc:
+    # Report pre-allocation suggestions only on simple loops
+    simple: true
+    range-loops: true
+    for-loops: false
+
+# =============================================================================
+# Issues Configuration
+# =============================================================================
+issues:
+  # Maximum issues count per one linter
+  max-issues-per-linter: 0
+  
+  # Maximum count of issues with the same text
+  max-same-issues: 0
+  
+  # Show only new issues created after git revision
+  # new-from-rev: HEAD
+  
+  # Exclude specific issues
+  exclude-rules:
+    # Exclude some linters from running on tests files
+    - path: _test\.go
+      linters:
+        - errcheck
+        - gosec
+        - gocritic
+    
+    # Exclude some staticcheck messages
+    - linters:
+        - staticcheck
+      text: "SA9003:"  # Empty branch
+    
+    # Exclude lll issues for long lines with go:generate
+    - linters:
+        - lll
+      source: "^//go:generate "
+    
+    # Exclude some revive rules for test files
+    - path: _test\.go
+      linters:
+        - revive
+      text: "unused-parameter"
+    
+    # Exclude package comment requirement for main packages
+    - linters:
+        - revive
+      text: "package-comments"
+      path: "cmd/"
+  
+  # Independently of option `exclude` we use default exclude patterns
+  exclude-use-default: true
+  
+  # If set to true, exclude and exclude-rules regular expressions become case-sensitive
+  exclude-case-sensitive: false
+  
+  # Show only new issues
+  new: false
+  
+  # Fix found issues (if it's supported by the linter)
+  fix: false
+
+# =============================================================================
+# Severity Configuration
+# =============================================================================
+severity:
+  # Set the default severity for issues
+  default-severity: error

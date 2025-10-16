@@ -25,6 +25,17 @@ community include:
 * Focusing on what is best not just for us as individuals, but for the
   overall community
 
+### Project-Specific Examples
+
+In the context of this project, positive behavior includes:
+
+* Providing constructive feedback on code reviews and pull requests
+* Offering helpful suggestions for template improvements
+* Using inclusive language in documentation and code comments
+* Welcoming newcomers and helping them get started
+* Sharing knowledge and best practices with the community
+* Respecting different levels of experience and expertise
+
 Examples of unacceptable behavior include:
 
 * The use of sexualized language or imagery, and sexual attention or
@@ -56,15 +67,36 @@ Examples of representing our community include using an official project e-mail
 address, posting via an official social media account, or acting as an appointed
 representative at an online or offline event.
 
+### Community Spaces
+
+This Code of Conduct applies to all project spaces, including but not limited to:
+
+* GitHub Issues and Pull Requests
+* GitHub Discussions
+* Code reviews and comments
+* Documentation contributions
+* Template submissions
+* Community forums and chat channels
+* Project-related events and meetups
+
+For contribution guidelines and processes, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to the community leaders responsible for enforcement at
-<support@cuesoft.io>. All complaints will be reviewed and investigated
+[support@cuesoft.io](mailto:support@cuesoft.io). All complaints will be reviewed and investigated
 promptly and fairly.
 
 All community leaders are obligated to respect the privacy and security of the
 reporter of any incident.
+
+### Security Vulnerabilities
+
+**Note**: For reporting security vulnerabilities, please follow the process outlined in
+[SECURITY.md](SECURITY.md) rather than using this Code of Conduct enforcement channel.
+Security issues require specialized handling and should be reported through the
+appropriate security channels.
 
 ## Enforcement Guidelines
 
@@ -134,6 +166,21 @@ For questions or concerns about this Code of Conduct, please contact:
 
 * **Project Maintainers**: Cuesoft Inc.
 * **Email**: [support@cuesoft.io](mailto:support@cuesoft.io)
-* **GitHub Issues**: [Create an issue](https://github.com/cuesoftinc/open-source-project-generator/issues)
+* **GitHub Discussions**: [Community Discussions](https://github.com/cuesoftinc/open-source-project-generator/discussions)
+* **GitHub Issues**: [Create an issue](https://github.com/cuesoftinc/open-source-project-generator/issues) (for non-sensitive matters)
+
+### Different Contact Channels
+
+* **Code of Conduct Issues**: [support@cuesoft.io](mailto:support@cuesoft.io)
+* **Security Vulnerabilities**: See [SECURITY.md](SECURITY.md) for security reporting
+* **General Questions**: [GitHub Discussions](https://github.com/cuesoftinc/open-source-project-generator/discussions)
+* **Bug Reports**: [GitHub Issues](https://github.com/cuesoftinc/open-source-project-generator/issues)
+* **Contributions**: See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines
 
 We are committed to providing a safe and welcoming environment for all contributors.
+
+## Additional Resources
+
+* **[CONTRIBUTING.md](CONTRIBUTING.md)**: Guidelines for contributing to the project
+* **[SECURITY.md](SECURITY.md)**: Security policy and vulnerability reporting
+* **[README.md](README.md)**: Project overview and getting started guide

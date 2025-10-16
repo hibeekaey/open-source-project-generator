@@ -175,12 +175,14 @@ generator generate --config base.yaml --force --minimal
 **Status**: ✅ **FIXED** - All test failures have been resolved in version 1.5.0
 
 **Previous Issues**:
+
 - CLI interactive tests failing in non-interactive environments
 - Filesystem generator tests with nil configuration handling
 - Integration test concurrency and race conditions
 - Security test timing and environment issues
 
 **Solutions Implemented**:
+
 - Enhanced environment detection for interactive vs non-interactive modes
 - Comprehensive nil configuration validation and error handling
 - Proper synchronization mechanisms for concurrent operations
@@ -193,6 +195,7 @@ generator generate --config base.yaml --force --minimal
 **Status**: ✅ **FIXED** - All 88 linting issues have been resolved in version 1.5.0
 
 **Previous Issues**:
+
 - 45 errcheck issues (unhandled errors)
 - 19 staticcheck issues (code quality violations)
 - 20 unused code issues
@@ -200,6 +203,7 @@ generator generate --config base.yaml --force --minimal
 - 2 go vet and ineffassign issues
 
 **Solutions Implemented**:
+
 - Comprehensive error handling for all critical code paths
 - Code quality improvements and optimization
 - Unused code removal and cleanup
@@ -212,12 +216,14 @@ generator generate --config base.yaml --force --minimal
 **Status**: ✅ **FIXED** - All 55 security issues have been resolved in version 1.5.0
 
 **Previous Issues**:
+
 - Integer overflow vulnerabilities in memory calculations
 - File permission issues (overly permissive)
 - Path validation gaps and potential traversal vulnerabilities
 - Error handling security concerns
 
 **Solutions Implemented**:
+
 - Comprehensive bounds checking for all numeric operations
 - Restrictive file permissions (0600 for files, 0750 for directories)
 - Complete path validation and sanitization
@@ -584,7 +590,7 @@ generator config show >> diagnostic.txt
 - **GitHub Issues**: [Report bugs and request features](https://github.com/cuesoftinc/open-source-project-generator/issues)
 - **Discussions**: [Community discussions](https://github.com/cuesoftinc/open-source-project-generator/discussions)
 - **Documentation**: [Online documentation](https://github.com/cuesoftinc/open-source-project-generator/wiki)
-- **Email Support**: [support@generator.dev](mailto:support@generator.dev)
+- **Email Support**: [support@cuesoft.io](mailto:support@cuesoft.io)
 
 ### Reporting Issues
 

@@ -96,9 +96,15 @@ git checkout -b feature/your-feature-name
 # Make your changes
 # ... edit files ...
 
-# Test your changes
-make test
-make lint
+# Run pre-commit checks (recommended before committing)
+make pre-commit
+
+# This runs: fmt, vet, lint, test
+
+# Or run individual checks
+make test            # Run tests
+make lint            # Run linter
+make security-scan   # Run security scans
 
 # Commit your changes
 git add .
@@ -109,6 +115,37 @@ git push origin feature/your-feature-name
 
 # Create a Pull Request on GitHub
 ```
+
+### Docker Compose Development Workflow
+
+Use Docker Compose for a containerized development environment:
+
+```bash
+# Start development environment
+docker compose --profile development up -d generator-dev
+
+# Enter interactive shell
+docker compose --profile development run --rm generator-dev bash
+
+# Inside the container, you can:
+make build
+make test
+make lint
+
+# Run tests in containers
+docker compose --profile testing up generator-test
+
+# Run security scans in containers
+docker compose --profile security up generator-security
+
+# Run linting in containers
+docker compose --profile lint up generator-lint
+
+# Stop all services
+docker compose down
+```
+
+See [docker-compose.yml](docker-compose.yml) for all available profiles and services.
 
 ## Contributing Guidelines
 
@@ -160,11 +197,14 @@ git push origin feature/your-feature-name
 
 ### Before Submitting
 
-- [ ] **Tests Pass**: Ensure all tests pass locally
-- [ ] **Linting**: Code passes all linting checks
+- [ ] **Tests Pass**: Ensure all tests pass locally (`make test`)
+- [ ] **Linting**: Code passes all linting checks (`make lint`)
+- [ ] **Security Scans**: Run security scans (`make security-scan`)
+- [ ] **Pre-commit Checks**: Run pre-commit checks (`make pre-commit`)
 - [ ] **Documentation**: Update relevant documentation
 - [ ] **Templates**: Test template generation if templates were modified
 - [ ] **Rebase**: Rebase your branch on the latest main branch
+- [ ] **Docker**: Test Docker builds if Dockerfiles were modified (`make docker-build`)
 
 ### PR Checklist
 
@@ -362,6 +402,9 @@ Key requirements for template changes:
 - **Function Documentation**: Document all public functions
 - **README Updates**: Update README for user-facing changes
 - **Template Documentation**: Document template variables and usage
+- **Security Documentation**: Update SECURITY.md for security-related changes
+- **Distribution Documentation**: Update DISTRIBUTION.md for build/release changes
+- **Docker Documentation**: Update docker-compose.yml comments for service changes
 
 ### Git Standards
 
@@ -467,17 +510,39 @@ make test
 # Run tests with coverage
 make test-coverage
 
+# Run integration tests
+make test-integration
+
 # Run specific test packages
 go test ./pkg/template/...
 
-# Run integration tests
-go test ./test/integration/...
+# Run all security scans
+make security-scan
+
+# Run individual security tools
+make gosec           # Security scanner
+make govulncheck     # Vulnerability checker
+make staticcheck     # Static analysis
+
+# Run linting
+make lint
+
+# Format code
+make fmt
+
+# Run go vet
+make vet
+
+# Using Docker Compose for testing
+docker compose --profile testing up generator-test
+docker compose --profile testing up generator-test-coverage
+docker compose --profile testing up generator-test-integration
 
 # Validate templates (recommended before committing template changes)
-go run cmd/generator/main.go template validate
+./bin/generator template validate
 
 # Generate test project to verify templates
-go run cmd/generator/main.go generate --config configs/test-config.yaml --output test-validation
+./bin/generator generate --config configs/test-config.yaml --output test-validation
 ```
 
 ## Documentation
@@ -527,9 +592,21 @@ When requesting features, please include:
 
 Instead, please report them responsibly:
 
-- **Email**: <security@your-org.com>
 - **Security Advisory**: Use GitHub's private vulnerability reporting
-- **Details**: See our Security Policy for full details
+- **Details**: See [SECURITY.md](SECURITY.md) for complete security policy and reporting guidelines
+
+### Security Best Practices for Contributors
+
+When contributing code, follow these security practices:
+
+- **Path Sanitization**: Always use `pkg/security/SanitizePath()` for user-provided paths
+- **Categorized Errors**: Use error types from `pkg/errors/` package
+- **No Code Execution**: Never execute user-provided code
+- **Input Validation**: Validate all user inputs through `pkg/validation/`
+- **File Permissions**: Use restrictive permissions (0600 for files, 0750 for directories)
+- **Security Scanning**: Run `make security-scan` before submitting PRs
+
+See [SECURITY.md](SECURITY.md) for detailed security guidelines.
 
 ## Community
 
@@ -573,6 +650,7 @@ The codebase has been refactored into a modular architecture. Understanding this
 #### Package-Specific Development
 
 **CLI Development** (`pkg/cli/`):
+
 - **Main Logic**: Core CLI coordination in `pkg/cli/cli.go` (~500 lines max)
 - **Commands**: Add new commands in `pkg/cli/commands/`
 - **Output**: Use `pkg/cli/output.go` for formatting and colors
@@ -580,6 +658,7 @@ The codebase has been refactored into a modular architecture. Understanding this
 - **Interactive**: Handle user interaction in `pkg/cli/interactive.go`
 
 **Audit Development** (`pkg/audit/`):
+
 - **Core Engine**: Main orchestration in `pkg/audit/engine.go` (~300 lines max)
 - **Security**: Add security audits in `pkg/audit/security/`
 - **Quality**: Add quality checks in `pkg/audit/quality/`
@@ -587,6 +666,7 @@ The codebase has been refactored into a modular architecture. Understanding this
 - **Rules**: Manage audit rules in `pkg/audit/rules.go`
 
 **Template Development** (`pkg/template/`):
+
 - **Manager**: Template coordination in `pkg/template/manager.go` (~400 lines max)
 - **Processing**: Template engine in `pkg/template/processor/`
 - **Discovery**: Template discovery in `pkg/template/discovery.go`
@@ -594,6 +674,7 @@ The codebase has been refactored into a modular architecture. Understanding this
 - **Metadata**: Metadata handling in `pkg/template/metadata/`
 
 **Validation Development** (`pkg/validation/`):
+
 - **Engine**: Main validation in `pkg/validation/engine.go`
 - **Formats**: Add format validators in `pkg/validation/formats/`
 - **Schemas**: Manage schemas in `pkg/validation/schemas.go`
@@ -614,16 +695,28 @@ For detailed information about the package structure, see the [Package Structure
 
 ## Development Resources
 
+### Project Documentation
+
+- **[README.md](README.md)**: Project overview and quick start
+- **[SECURITY.md](SECURITY.md)**: Security practices and reporting
+- **[DISTRIBUTION.md](DISTRIBUTION.md)**: Distribution and release process
+- **[env.example](env.example)**: Environment variable reference
+- **[docker-compose.yml](docker-compose.yml)**: Docker orchestration with profiles
+
 ### Useful Links
 
 - **Go Documentation**: [https://golang.org/doc/](https://golang.org/doc/)
 - **Cobra CLI**: [https://cobra.dev/](https://cobra.dev/)
 - **Go Templates**: [https://pkg.go.dev/text/template](https://pkg.go.dev/text/template)
 - **Testing**: [https://golang.org/doc/tutorial/add-a-test](https://golang.org/doc/tutorial/add-a-test)
+- **Docker Compose**: [https://docs.docker.com/compose/](https://docs.docker.com/compose/)
+- **Conventional Commits**: [https://www.conventionalcommits.org/](https://www.conventionalcommits.org/)
 
 ### Project Structure
 
 Understanding the project structure helps with contributions:
+
+**Core Directories:**
 
 - **`cmd/`**: Command-line applications
 - **`internal/`**: Private application code
@@ -634,32 +727,110 @@ Understanding the project structure helps with contributions:
 - **`docs/`**: Documentation files
 - **`output/`**: Generated project output
 
+**Docker Files:**
+
+- **`Dockerfile`**: Production image (alpine:3.19, ~39 MB, UID 1001)
+- **`Dockerfile.dev`**: Development image (golang:1.25-alpine, ~500 MB, UID 1001)
+- **`Dockerfile.build`**: Build image (ubuntu:24.04, ~1.5 GB, UID 1001)
+- **`docker-compose.yml`**: Multi-profile orchestration (production, development, testing, build, lint, security)
+
+**Configuration Files:**
+
+- **`Makefile`**: Build automation and commands
+- **`go.mod`**: Go dependencies (Go 1.25.0)
+- **`env.example`**: Environment variable reference
+
+**Documentation:**
+
+- **`README.md`**: Project overview and quick start
+- **`CONTRIBUTING.md`**: This file - contribution guidelines
+- **`SECURITY.md`**: Security practices and reporting
+- **`DISTRIBUTION.md`**: Distribution and release process
+- **`LICENSE`**: MIT License
+
+**Important Notes:**
+
+- All Docker containers use **UID 1001** for consistency
+- Use `pkg/security/` for path sanitization
+- Use `pkg/errors/` for categorized error handling
+- Follow the modular architecture patterns
+
 ## FAQ
 
 ### Common Questions
 
 **Q: How do I add a new template?**
-A: Create the template files in the appropriate `templates/` subdirectory, following existing patterns. Include proper variable substitution and test the template generation.
+A: Create the template files in the appropriate `pkg/template/templates/` subdirectory, following existing patterns. Include proper variable substitution, test the template generation, and update template metadata.
 
 **Q: How do I test template changes?**
-A: Use `make test` to run unit tests, validate templates with `go run scripts/validate-templates/main.go --check-imports`, then test template generation manually with `./bin/generator generate --dry-run`.
+A: Use `make test` to run unit tests, then test template generation manually with `./bin/generator generate` or use Docker Compose: `docker compose --profile testing up generator-test`.
 
 **Q: What should I work on as a first contribution?**
-A: Look for issues labeled `good first issue` or `help wanted`. Template improvements are often good starting points.
+A: Look for issues labeled `good first issue` or `help wanted`. Template improvements, documentation updates, and test additions are often good starting points.
 
 **Q: How do I update package versions in templates?**
-A: Update the version variables in template files and test that generated projects build successfully with the new versions.
+A: Update the version variables in template files and test that generated projects build successfully with the new versions. Run `make test` and generate a test project to verify.
 
 **Q: Can I add support for a new technology stack?**
 A: Yes! Create an issue first to discuss the approach, then add the necessary templates and update the CLI to support the new stack.
+
+**Q: How do I work with Docker for development?**
+A: Use `docker compose --profile development run --rm generator-dev bash` to get an interactive shell with all development tools. All containers use UID 1001.
+
+**Q: What security practices should I follow?**
+A: Always use `pkg/security/SanitizePath()` for user paths, return categorized errors from `pkg/errors/`, and run `make security-scan` before submitting PRs. See [SECURITY.md](SECURITY.md) for details.
+
+**Q: How do I run CI checks locally?**
+A: Run `make ci` (runs lint, test, security-scan) or `make pre-commit` (runs fmt, vet, lint, test) before pushing. For full validation, run `make pre-release`.
+
+**Q: What's the difference between the three Dockerfiles?**
+A: `Dockerfile` is for production (39 MB), `Dockerfile.dev` is for development with all tools (500 MB), and `Dockerfile.build` is for creating packages (1.5 GB). All use UID 1001.
 
 ## Thank You
 
 Thank you for contributing to the Open Source Project Generator! Your contributions help developers worldwide create better projects with modern best practices.
 
+## Quick Command Reference
+
+### Essential Commands
+
+```bash
+# Development
+make build              # Build for current platform
+make test               # Run all tests
+make lint               # Run linter
+make fmt                # Format code
+
+# Quality Assurance
+make pre-commit         # Run pre-commit checks (fmt, vet, lint, test)
+make ci                 # Run CI pipeline (lint, test, security-scan)
+make pre-release        # Full validation before release
+
+# Security
+make security-scan      # Run all security scans
+make gosec              # Run gosec scanner
+make govulncheck        # Check vulnerabilities
+make staticcheck        # Run static analysis
+
+# Docker Compose
+docker compose --profile development run --rm generator-dev bash
+docker compose --profile testing up generator-test
+docker compose --profile lint up generator-lint
+docker compose --profile security up generator-security
+
+# Testing
+make test               # Unit tests
+make test-coverage      # Tests with coverage
+make test-integration   # Integration tests
+
+# Building
+make build-all          # Build for all platforms
+make docker-build       # Build production Docker image
+make docker-test        # Test Docker image
+```
+
 ---
 
 **Questions?** Feel free to reach out through GitHub Discussions or create an issue.
 
-*Last updated: December 2024*
-</text>
+**Need Help?** Check out our [README](README.md), [SECURITY.md](SECURITY.md), or [DISTRIBUTION.md](DISTRIBUTION.md) for more information.

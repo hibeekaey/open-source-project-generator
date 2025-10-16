@@ -35,6 +35,7 @@ pkg/
 **Purpose**: Modularized command-line interface implementation
 
 **Structure**:
+
 ```text
 pkg/cli/
 ├── cli.go              # Main CLI struct and coordination (~500 lines)
@@ -63,6 +64,7 @@ pkg/cli/
 ```
 
 **Key Components**:
+
 - **CLI**: Main coordinator struct that orchestrates all CLI functionality
 - **OutputManager**: Handles all output formatting, colors, and verbosity levels
 - **FlagHandler**: Manages command-line flags and validation
@@ -77,6 +79,7 @@ pkg/cli/
 **Purpose**: Modularized security and quality auditing system
 
 **Structure**:
+
 ```text
 pkg/audit/
 ├── engine.go           # Main audit orchestration (~300 lines)
@@ -97,6 +100,7 @@ pkg/audit/
 ```
 
 **Key Components**:
+
 - **Engine**: Orchestrates all audit types and generates comprehensive reports
 - **RuleManager**: Manages audit rules, filtering, and validation
 - **ResultAggregator**: Aggregates results from different audit types
@@ -110,6 +114,7 @@ pkg/audit/
 **Purpose**: Modularized template processing and management system
 
 **Structure**:
+
 ```text
 pkg/template/
 ├── manager.go          # Template coordination (~400 lines)
@@ -130,6 +135,7 @@ pkg/template/
 ```
 
 **Key Components**:
+
 - **Manager**: Coordinates all template operations
 - **TemplateDiscovery**: Discovers and scans available templates
 - **TemplateCache**: Manages template caching and invalidation
@@ -143,6 +149,7 @@ pkg/template/
 **Purpose**: Modularized project validation system
 
 **Structure**:
+
 ```text
 pkg/validation/
 ├── engine.go           # Validation orchestration
@@ -158,6 +165,7 @@ pkg/validation/
 ```
 
 **Key Components**:
+
 - **Engine**: Orchestrates all validation types
 - **ConfigValidator**: Coordinates configuration validation
 - **SchemaManager**: Manages validation schemas and rules
@@ -168,6 +176,7 @@ pkg/validation/
 **Purpose**: Modularized file system operations and project generation
 
 **Structure**:
+
 ```text
 pkg/filesystem/
 ├── project_generator.go # Main project generation coordination (~300 lines)
@@ -195,6 +204,7 @@ pkg/filesystem/
 ```
 
 **Key Components**:
+
 - **ProjectGenerator**: Coordinates project generation workflow and component orchestration
 - **StructureManager**: Manages project structure definitions and directory layouts
 - **ComponentGenerators**: Generate component-specific files (frontend, backend, mobile, infrastructure)
@@ -207,6 +217,7 @@ pkg/filesystem/
 **Purpose**: Modularized interactive user interface components
 
 **Structure**:
+
 ```text
 pkg/ui/
 ├── interactive.go          # Main interactive UI coordination
@@ -241,6 +252,7 @@ pkg/ui/
 ```
 
 **Key Components**:
+
 - **InteractiveUI**: Main coordinator for user interactions and workflow management
 - **ConfigManager**: Manages configuration collection, validation, and formatting
 - **PreviewManager**: Handles project structure previews and component visualization
@@ -254,6 +266,7 @@ pkg/ui/
 **Purpose**: Modularized caching system
 
 **Structure**:
+
 ```text
 pkg/cache/
 ├── manager.go          # Cache coordination (~300 lines)
@@ -279,6 +292,7 @@ pkg/cache/
 ```
 
 **Key Components**:
+
 - **Manager**: Coordinates all cache operations and manages storage backends
 - **CacheOperations**: Orchestrates get, set, delete, and cleanup operations with callbacks
 - **StorageBackends**: Pluggable storage implementations (filesystem, memory)
@@ -291,12 +305,14 @@ pkg/cache/
 ### Core Interfaces (`pkg/interfaces/`)
 
 All major components implement well-defined interfaces to enable:
+
 - **Dependency Injection**: Components receive dependencies through interfaces
 - **Testing**: Easy mocking and unit testing
 - **Extensibility**: New implementations can be added without changing existing code
 - **Modularity**: Clear contracts between components
 
 Key interface categories:
+
 - **CLI Interfaces**: Command handling, output management, interaction
 - **Template Interfaces**: Template processing, discovery, validation
 - **Audit Interfaces**: Security scanning, quality analysis, reporting
@@ -307,6 +323,7 @@ Key interface categories:
 ## Data Models (`pkg/models/`)
 
 Centralized data structures used across the application:
+
 - **Configuration Models**: Project configuration, component settings
 - **Template Models**: Template metadata, processing context
 - **Audit Models**: Audit results, rules, reports
@@ -316,17 +333,20 @@ Centralized data structures used across the application:
 ## Benefits of the New Structure
 
 ### Maintainability
+
 - **Single Responsibility**: Each file has a clear, focused purpose
 - **Smaller Files**: No file exceeds 1,000 lines (target achieved for most packages)
 - **Clear Dependencies**: Interface-based design makes dependencies explicit
 - **Modular Testing**: Components can be tested in isolation
 
 ### Extensibility
+
 - **Plugin Architecture**: New audit types, validators, or generators can be added easily
 - **Interface Compliance**: New implementations just need to satisfy interfaces
 - **Component Isolation**: Changes to one component don't affect others
 
 ### Developer Experience
+
 - **Easier Navigation**: Developers can quickly find relevant code
 - **Parallel Development**: Multiple developers can work on different components
 - **Clear Ownership**: Each package has a clear purpose and maintainer
@@ -411,16 +431,19 @@ Centralized data structures used across the application:
 ## Testing Strategy
 
 ### Unit Testing
+
 - Each component has focused unit tests
 - Interfaces enable easy mocking
 - Smaller files make tests more targeted
 
 ### Integration Testing
+
 - Tests verify components work together correctly
 - Interface contracts are validated
 - End-to-end workflows are tested
 
 ### Performance Testing
+
 - Benchmarks ensure no performance regressions
 - Memory usage is monitored
 - Build times are tracked

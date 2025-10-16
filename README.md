@@ -506,7 +506,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - 📖 [Documentation](https://github.com/cuesoftinc/open-source-project-generator/wiki)
 - 🐛 [Issue Tracker](https://github.com/cuesoftinc/open-source-project-generator/issues)
 - 💬 [Discussions](https://github.com/cuesoftinc/open-source-project-generator/discussions)
-- 📧 [Email Support](mailto:support@generator.dev)
+- 📧 [Email Support](mailto:support@cuesoft.io)
 
 ## 🙏 Acknowledgments
 

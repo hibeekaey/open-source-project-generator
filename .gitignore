@@ -1,57 +1,269 @@
-# Binaries for programs and plugins
+# .gitignore - Files and directories to exclude from version control
+#
+# This file prevents committing build artifacts, temporary files, secrets,
+# and other files that should not be tracked in Git.
+
+# =============================================================================
+# Go Build Artifacts
+# =============================================================================
+# Compiled binaries
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
+
+# Build output directories
 bin/
 dist/
+artifacts/
 
-# Test binary, built with `go test -c`
+# Test binaries built with `go test -c`
 *.test
 
-# Output of the go coverage tool
+# Go coverage files
 *.out
+coverage.out
 coverage.html
 
-# Dependency directories
+# Profiling files
+*.prof
+*.pprof
+
+# Dependency directories (if using vendoring)
 vendor/
 
 # Go workspace file
 go.work
+go.work.sum
 
-# IDE files
+# =============================================================================
+# Project-Specific Build Artifacts
+# =============================================================================
+# Generated project output
+output/
+generated/
+
+# Package build artifacts
+packages/
+packages/deb/
+packages/rpm/
+packages/arch/
+*.deb
+*.rpm
+*.pkg.tar.zst
+
+# Distribution files
+checksums.txt
+
+# Security scan reports
+gosec-report.txt
+
+# Template testing output
+test-output/
+test-validation/
+
+# Generated Go files
+*.generated.go
+
+# =============================================================================
+# IDE and Editor Files
+# =============================================================================
+# Visual Studio Code
 .vscode/
+*.code-workspace
+
+# JetBrains IDEs (IntelliJ, GoLand, etc.)
 .idea/
+*.iml
+*.iws
+*.ipr
+
+# JetBrains Fleet
+.fleet/
+
+# Vim
 *.swp
 *.swo
 *~
+.*.sw[a-z]
 
-# OS generated files
+# Emacs
+*~
+\#*\#
+.\#*
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# Atom
+.atom/
+
+# =============================================================================
+# Operating System Files
+# =============================================================================
+# macOS
 .DS_Store
 .DS_Store?
 ._*
+.AppleDouble
+.LSOverride
 .Spotlight-V100
 .Trashes
-ehthumbs.db
-Thumbs.db
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.fseventsd
+.TemporaryItems
+.apdisk
 
-# Temporary files
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+*~
+.directory
+.Trash-*
+.nfs*
+
+# =============================================================================
+# Temporary and Cache Files
+# =============================================================================
 *.tmp
 *.temp
+*.bak
+*.backup
+*.old
 .cache/
-.kiro/
 
+# Go build cache (if local)
+.go-build/
+
+# =============================================================================
 # Logs
+# =============================================================================
 *.log
 logs/
+*.log.*
 
-# Environment files
+# =============================================================================
+# Environment and Configuration Files
+# =============================================================================
+# Environment files (may contain secrets)
 .env
 .env.local
 .env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# Generated files
-generated/
-*.generated.go
-test-output/
+# Keep example environment file
+!env.example
+!.env.example
+
+# Local configuration overrides
+*.local.yaml
+*.local.yml
+*.local.json
+
+# =============================================================================
+# Docker
+# =============================================================================
+# Docker volumes and data
+.docker/
+docker-compose.override.yml
+
+# =============================================================================
+# Node.js / Frontend (if any frontend tooling exists)
+# =============================================================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm/
+.yarn/
+.pnp.*
+.yarn-integrity
+
+# Optional: Uncomment if not tracking lock files
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# =============================================================================
+# CI/CD Artifacts
+# =============================================================================
+# Local CI test results
+.github/workflows/artifacts/
+ci-artifacts/
+
+# =============================================================================
+# Kiro IDE
+# =============================================================================
+# Exclude entire Kiro directory
+.kiro/
+
+# =============================================================================
+# Security and Secrets
+# =============================================================================
+# Private keys and certificates
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Secrets files
+secrets/
+secrets.yaml
+secrets.yml
+secrets.json
+
+# =============================================================================
+# Documentation Build Artifacts
+# =============================================================================
+# Generated documentation
+docs/_build/
+docs/.doctrees/
+site/
+
+# =============================================================================
+# Miscellaneous
+# =============================================================================
+# Backup files
+*.bak
+*.backup
+*.swp
+
+# Archive files (if generated locally)
+*.tar.gz
+*.zip
+*.7z
+*.rar
+
+# Database files (if any local testing)
+*.db
+*.sqlite
+*.sqlite3
+
+# =============================================================================
+# Keep These Files (explicit inclusions)
+# =============================================================================
+# These files should be tracked even if patterns above would exclude them
+!.gitkeep
+!.gitignore
+!.dockerignore
+!.github/
+!env.example

@@ -133,7 +133,7 @@ If you can't find what you're looking for:
 - **Check the Troubleshooting Guide** - Common issues and solutions
 - **Search the documentation** - Use your browser's search function
 - **Ask the community** - GitHub Discussions or Issues
-- **Contact support** - [support@generator.dev](mailto:support@generator.dev)
+- **Contact support** - [support@cuesoft.io](mailto:support@cuesoft.io)
 
 ## 🔄 Documentation Updates
 
