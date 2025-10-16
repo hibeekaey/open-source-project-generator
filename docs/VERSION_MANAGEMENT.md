@@ -228,8 +228,8 @@ The GitHub Actions release workflow will:
 
 ```bash
 # Build locally with specific version
-VERSION=v1.0.0 make build-all
-VERSION=v1.0.0 make package-all
+VERSION=v1.0.0 make dist
+VERSION=v1.0.0 make package
 
 # Or use scripts directly
 VERSION=v1.0.0 ./scripts/build.sh
