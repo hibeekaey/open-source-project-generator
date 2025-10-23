@@ -17,7 +17,7 @@ DOCKER_VERSION := $(shell echo $(VERSION) | sed 's/\//-/g')
 .PHONY: help build test clean run install dev fmt vet lint security-scan \
         validate audit dist package release docker-build docker-test docker-push \
         docker-login docker-info ci check benchmark version validate-setup \
-        check-versions
+        check-versions update-versions
 
 # Default target
 help: ## Show this help message
@@ -106,6 +106,9 @@ security-scan: ## Run all security scanners (installs tools if needed)
 # Version Management
 check-versions: ## Check for latest versions of dependencies
 	@./scripts/check-latest-versions.sh
+
+update-versions: ## Update versions in configs/versions.yaml
+	@./scripts/update-versions.sh --auto-update
 
 # Project Validation
 validate: build ## Validate a project (Usage: make validate PROJECT=./path)

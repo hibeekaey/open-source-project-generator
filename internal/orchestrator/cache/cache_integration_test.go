@@ -75,9 +75,9 @@ func TestCacheManager_GetStats(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	// Add some entries
-	cache.Set("npx", true, "9.0.0")
-	cache.Set("go", true, "1.21.0")
+	// Add some entries with fake test versions
+	cache.Set("npx", true, "99.0.0")
+	cache.Set("go", true, "99.1.0")
 	cache.Set("gradle", false, "")
 
 	manager := NewCacheManager(cache, log)
@@ -104,9 +104,9 @@ func TestCacheManager_Validate(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	// Add valid entries
-	cache.Set("npx", true, "9.0.0")
-	cache.Set("go", true, "1.21.0")
+	// Add valid entries with fake test versions
+	cache.Set("npx", true, "99.0.0")
+	cache.Set("go", true, "99.1.0")
 	err = cache.Save()
 	require.NoError(t, err)
 
@@ -162,10 +162,10 @@ func TestCacheManager_Refresh(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	// Setup mock tool discovery
+	// Setup mock tool discovery with fake test versions
 	mockDiscovery := NewMockToolDiscovery().
-		WithTool("npx", true, "9.0.0").
-		WithTool("go", true, "1.21.0").
+		WithTool("npx", true, "99.0.0").
+		WithTool("go", true, "99.1.0").
 		WithTool("gradle", false, "")
 
 	manager := NewCacheManager(cache, log)
@@ -194,9 +194,9 @@ func TestCacheManager_Export(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	// Add entries
-	cache.Set("npx", true, "9.0.0")
-	cache.Set("go", true, "1.21.0")
+	// Add entries with fake test versions
+	cache.Set("npx", true, "99.0.0")
+	cache.Set("go", true, "99.1.0")
 	err = cache.Save()
 	require.NoError(t, err)
 
@@ -235,13 +235,13 @@ func TestCacheManager_Import(t *testing.T) {
 		Entries: map[string]*models.CachedTool{
 			"npx": {
 				Available: true,
-				Version:   "9.0.0",
+				Version:   "99.0.0",
 				CachedAt:  time.Now(),
 				TTL:       5 * time.Minute,
 			},
 			"go": {
 				Available: true,
-				Version:   "1.21.0",
+				Version:   "99.1.0",
 				CachedAt:  time.Now(),
 				TTL:       5 * time.Minute,
 			},
@@ -289,8 +289,8 @@ func TestCacheValidator_CheckExpired(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	// Add entry and wait for expiration
-	cache.Set("npx", true, "9.0.0")
+	// Add entry with fake test version and wait for expiration
+	cache.Set("npx", true, "99.0.0")
 	time.Sleep(10 * time.Millisecond)
 
 	validator := NewCacheValidator(log)
@@ -319,7 +319,7 @@ func TestCacheValidator_ValidateCacheEntry(t *testing.T) {
 			name: "valid entry",
 			entry: &models.CachedTool{
 				Available: true,
-				Version:   "1.0.0",
+				Version:   "99.0.0",
 				CachedAt:  time.Now(),
 				TTL:       5 * time.Minute,
 			},
@@ -388,7 +388,7 @@ func TestCacheExporter_Export(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	cache.Set("npx", true, "9.0.0")
+	cache.Set("npx", true, "99.0.0")
 	cache.Set("go", false, "")
 	err = cache.Save()
 	require.NoError(t, err)
@@ -510,7 +510,7 @@ func TestCacheExporter_GetExportStats(t *testing.T) {
 		Entries: map[string]*models.CachedTool{
 			"npx": {
 				Available: true,
-				Version:   "9.0.0",
+				Version:   "99.0.0",
 				CachedAt:  time.Now(),
 				TTL:       5 * time.Minute,
 			},
@@ -548,8 +548,8 @@ func TestCacheManager_Integration(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	cache.Set("npx", true, "9.0.0")
-	cache.Set("go", true, "1.21.0")
+	cache.Set("npx", true, "99.0.0")
+	cache.Set("go", true, "99.1.0")
 	cache.Set("gradle", false, "")
 	err = cache.Save()
 	require.NoError(t, err)
@@ -595,11 +595,11 @@ func TestCacheManager_Integration(t *testing.T) {
 	assert.Equal(t, stats.TotalEntries, newStats.TotalEntries)
 	assert.Equal(t, stats.AvailableTools, newStats.AvailableTools)
 
-	// Step 7: Refresh cache
+	// Step 7: Refresh cache with updated fake test versions
 	mockDiscovery := NewMockToolDiscovery().
-		WithTool("npx", true, "9.1.0").
-		WithTool("go", true, "1.22.0").
-		WithTool("gradle", true, "8.11.1")
+		WithTool("npx", true, "99.2.0").
+		WithTool("go", true, "99.3.0").
+		WithTool("gradle", true, "99.4.0")
 
 	err = newManager.Refresh(mockDiscovery)
 	require.NoError(t, err)

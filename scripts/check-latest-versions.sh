@@ -1,19 +1,28 @@
 #!/bin/bash
 # Script to check latest versions of dependencies
-# This helps identify which hardcoded versions are outdated
+# Reads current versions from configs/versions.yaml and compares with latest available
 #
-# Usage: ./scripts/check-latest-versions.sh [--json]
+# Usage: ./scripts/check-latest-versions.sh [OPTIONS]
 #
 # Options:
 #   --json    Output results in JSON format
 #   --quiet   Only show outdated packages
+#   --help    Show this help message
 #
 # Environment Variables:
 #   GITHUB_TOKEN  Optional GitHub token for higher rate limits (5000/hour vs 60/hour)
 #
-# Example with GitHub token:
-#   export GITHUB_TOKEN="your_token_here"
+# Requirements:
+#   - npm (for Node.js packages)
+#   - go (for Go modules)
+#   - curl (for API checks)
+#   - jq (optional, for JSON processing)
+#   - yq (optional, for reading versions.yaml - falls back to hardcoded values)
+#
+# Example:
 #   ./scripts/check-latest-versions.sh
+#   ./scripts/check-latest-versions.sh --json
+#   GITHUB_TOKEN="your_token" ./scripts/check-latest-versions.sh
 
 set -e
 
@@ -57,14 +66,44 @@ fi
 
 # JSON output array
 JSON_RESULTS='[]'
+VERSIONS_FILE="configs/versions.yaml"
 
 if [ "$JSON_OUTPUT" = false ]; then
     echo -e "${BLUE}=== Checking Latest Versions ===${NC}\n"
 fi
 
+# Check if yq is available for reading versions.yaml
+if ! command -v yq >/dev/null 2>&1; then
+    if [ "$JSON_OUTPUT" = false ]; then
+        echo -e "${YELLOW}Warning: yq is not installed. Using fallback hardcoded versions.${NC}"
+        echo -e "${YELLOW}Install yq for automatic version reading: brew install yq${NC}\n"
+    fi
+    USE_YAML=false
+else
+    USE_YAML=true
+fi
+
+# Function to get version from YAML or use fallback
+get_version() {
+    local yaml_path=$1
+    local fallback=$2
+    
+    if [ "$USE_YAML" = true ] && [ -f "$VERSIONS_FILE" ]; then
+        local version=$(yq "$yaml_path" "$VERSIONS_FILE" 2>/dev/null)
+        if [ -n "$version" ] && [ "$version" != "null" ]; then
+            echo "$version"
+            return
+        fi
+    fi
+    
+    echo "$fallback"
+}
+
 # Function to print section header
 print_section() {
-    echo -e "\n${BLUE}### $1 ###${NC}"
+    if [ "$JSON_OUTPUT" = false ]; then
+        echo -e "\n${BLUE}### $1 ###${NC}"
+    fi
 }
 
 # Function to compare versions (returns 0 if outdated, 1 if up-to-date)
@@ -281,18 +320,63 @@ check_docker_image() {
 
 # Node.js & Frontend
 print_section "Node.js & Frontend"
-check_npm "create-next-app" "16.0.0" "frontend"
-check_npm "next" "16.0.0" "frontend"
-check_npm "react" "19.2.0" "frontend"
-check_npm "react-dom" "19.2.0" "frontend"
-check_npm "typescript" "5.9.3" "frontend"
+check_npm "create-next-app" "$(get_version '.frontend.nextjs.version' '16.0.0')" "frontend"
+check_npm "next" "$(get_version '.frontend.nextjs.version' '16.0.0')" "frontend"
+check_npm "react" "$(get_version '.frontend.react.version' '19.2.0')" "frontend"
+check_npm "react-dom" "$(get_version '.frontend.react_dom.version' '19.2.0')" "frontend"
+check_npm "typescript" "$(get_version '.frontend.typescript.version' '5.9.3')" "frontend"
+
+# Go Backend
+print_section "Go Backend"
+
+# Check Go version from Docker Hub golang image
+current_go_version="$(get_version '.backend.go.version' '1.25.0')"
+if command -v curl >/dev/null 2>&1; then
+    if [ "$JSON_OUTPUT" = false ] && [ "$QUIET_MODE" = false ]; then
+        echo -n "Checking Go... "
+    fi
+    
+    # Get latest golang docker image tag
+    latest_docker_tag=$(curl -s "https://registry.hub.docker.com/v2/repositories/library/golang/tags?page_size=100" 2>/dev/null | grep -o '"name":"[0-9]*\.[0-9]*-alpine"' | head -1 | sed 's/"name":"//;s/-alpine"//')
+    
+    if [ -n "$latest_docker_tag" ]; then
+        latest_go_version="${latest_docker_tag}.0"
+        
+        if version_compare "$current_go_version" "$latest_go_version"; then
+            status="outdated"
+            add_json_result "backend" "go" "$current_go_version" "$latest_go_version" "$status"
+            if [ "$JSON_OUTPUT" = false ]; then
+                if [ "$QUIET_MODE" = true ] && [ "$status" = "up-to-date" ]; then
+                    return
+                fi
+                echo -e "${RED}⚠️  Latest: $latest_go_version (Current: $current_go_version)${NC}"
+            fi
+        else
+            status="up-to-date"
+            add_json_result "backend" "go" "$current_go_version" "$latest_go_version" "$status"
+            if [ "$JSON_OUTPUT" = false ] && [ "$QUIET_MODE" = false ]; then
+                echo -e "${GREEN}✓ Latest: $latest_go_version (Current: $current_go_version)${NC}"
+            fi
+        fi
+    else
+        add_json_result "backend" "go" "$current_go_version" "N/A" "error"
+        if [ "$JSON_OUTPUT" = false ] && [ "$QUIET_MODE" = false ]; then
+            echo -e "${YELLOW}Unable to fetch${NC}"
+        fi
+    fi
+else
+    add_json_result "backend" "go" "$current_go_version" "N/A" "tool-missing"
+    if [ "$JSON_OUTPUT" = false ] && [ "$QUIET_MODE" = false ]; then
+        echo -e "${YELLOW}curl not installed${NC}"
+    fi
+fi
 
 # Go Backend Frameworks
 print_section "Go Backend Frameworks"
-check_go_module "github.com/gin-gonic/gin" "v1.11.0" "backend"
-check_go_module "github.com/gin-contrib/cors" "v1.7.6" "backend"
-check_go_module "github.com/labstack/echo/v4" "v4.13.4" "backend"
-check_go_module "github.com/gofiber/fiber/v2" "v2.52.9" "backend"
+check_go_module "github.com/gin-gonic/gin" "$(get_version '.backend.frameworks.gin.version' 'v1.11.0')" "backend"
+check_go_module "github.com/gin-contrib/cors" "$(get_version '.backend.frameworks.gin_cors.version' 'v1.7.6')" "backend"
+check_go_module "github.com/labstack/echo/v4" "$(get_version '.backend.frameworks.echo.version' 'v4.13.4')" "backend"
+check_go_module "github.com/gofiber/fiber/v2" "$(get_version '.backend.frameworks.fiber.version' 'v2.52.9')" "backend"
 
 # Function to check GitHub releases
 check_github_release() {
@@ -474,10 +558,10 @@ check_gradle() {
 
 # Android Dependencies (Maven Central)
 print_section "Android Dependencies"
-check_maven "androidx.core" "core-ktx" "1.17.0" "android"
-check_maven "androidx.appcompat" "appcompat" "1.7.1" "android"
-check_maven "com.google.android.material" "material" "1.13.0" "android"
-check_maven "androidx.constraintlayout" "constraintlayout" "2.2.1" "android"
+check_maven "androidx.core" "core-ktx" "$(get_version '.android.androidx.core_ktx.version' '1.17.0')" "android"
+check_maven "androidx.appcompat" "appcompat" "$(get_version '.android.androidx.appcompat.version' '1.7.1')" "android"
+check_maven "com.google.android.material" "material" "$(get_version '.android.androidx.material.version' '1.13.0')" "android"
+check_maven "androidx.constraintlayout" "constraintlayout" "$(get_version '.android.androidx.constraintlayout.version' '2.2.1')" "android"
 
 # Function to check Android SDK API level
 check_android_sdk() {
@@ -573,9 +657,9 @@ check_xcode() {
 
 # Android Build Tools
 print_section "Android Build Tools"
-check_gradle "9.1.0" "android"
-check_github_release "JetBrains/kotlin" "2.2.21" "android" "Kotlin"
-check_android_sdk "36" "android"
+check_gradle "$(get_version '.android.gradle.version' '9.1.0')" "android"
+check_github_release "JetBrains/kotlin" "$(get_version '.android.kotlin.version' '2.2.21')" "android" "Kotlin"
+check_android_sdk "$(get_version '.android.compile_sdk' '36')" "android"
 
 # Function to check iOS version
 check_ios_version() {
@@ -628,30 +712,32 @@ check_ios_version() {
 
 # iOS
 print_section "iOS"
-check_github_release "apple/swift" "swift-6.2-RELEASE" "ios" "Swift"
-check_xcode "26.0.1" "ios"
-check_ios_version "26.0" "ios"
+check_github_release "apple/swift" "$(get_version '.ios.swift.version' 'swift-6.2-RELEASE')" "ios" "Swift"
+check_xcode "$(get_version '.ios.xcode.version' '26.0.1')" "ios"
+check_ios_version "$(get_version '.ios.deployment_target' '26.0')" "ios"
 
 # Docker Base Images
 print_section "Docker Base Images"
-check_docker_image "alpine" "3.22" "docker"
-check_docker_image "golang" "1.25-alpine" "docker"
-check_docker_image "ubuntu" "25.10" "docker"
+check_docker_image "alpine" "$(get_version '.docker.alpine.version' '3.22')" "docker"
+check_docker_image "golang" "$(get_version '.docker.golang.version' '1.25-alpine')" "docker"
+check_docker_image "ubuntu" "$(get_version '.docker.ubuntu.version' '25.10')" "docker"
 
 # Go Toolchain
 print_section "Go Toolchain"
-if command -v go >/dev/null 2>&1; then
-    installed=$(go version | awk '{print $3}' | sed 's/go//')
-    echo -e "Installed: ${GREEN}$installed${NC} (Required: 1.25.0)"
-    echo "Latest: Check https://go.dev/dl/"
-else
-    echo -e "${YELLOW}go not installed${NC}"
+if [ "$JSON_OUTPUT" = false ]; then
+    if command -v go >/dev/null 2>&1; then
+        installed=$(go version | awk '{print $3}' | sed 's/go//')
+        echo -e "Installed: ${GREEN}$installed${NC} (Required: 1.25.0)"
+        echo "Latest: Check https://go.dev/dl/"
+    else
+        echo -e "${YELLOW}go not installed${NC}"
+    fi
 fi
 
 # Infrastructure Tools
 print_section "Infrastructure Tools"
-check_github_release "hashicorp/terraform" "v1.13.4" "infrastructure" "Terraform"
-check_github_release "kubernetes/kubernetes" "v1.34.1" "infrastructure" "Kubernetes"
+check_github_release "hashicorp/terraform" "$(get_version '.infrastructure.terraform.version' 'v1.13.4')" "infrastructure" "Terraform"
+check_github_release "kubernetes/kubernetes" "$(get_version '.infrastructure.kubernetes.version' 'v1.34.1')" "infrastructure" "Kubernetes"
 
 # Development Tools
 print_section "Go Development Tools"

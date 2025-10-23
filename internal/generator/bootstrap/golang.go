@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/versions"
 )
 
 // GoExecutor handles Go backend project generation
@@ -166,23 +167,43 @@ func (ge *GoExecutor) installDependencies(ctx context.Context, projectDir, frame
 
 	switch framework {
 	case "gin":
+		// Get versions from centralized config
+		versionConfig, err := versions.Get()
+		if err != nil {
+			return fmt.Errorf("failed to load version config: %w", err)
+		}
 		packages = []string{
-			"github.com/gin-gonic/gin@v1.11.0",
-			"github.com/gin-contrib/cors@v1.7.6",
+			fmt.Sprintf("github.com/gin-gonic/gin@%s", versionConfig.Backend.Frameworks.Gin.Version),
+			fmt.Sprintf("github.com/gin-contrib/cors@%s", versionConfig.Backend.Frameworks.GinCORS.Version),
 		}
 	case "echo":
+		// Get versions from centralized config
+		versionConfig, err := versions.Get()
+		if err != nil {
+			return fmt.Errorf("failed to load version config: %w", err)
+		}
 		packages = []string{
-			"github.com/labstack/echo/v4@v4.13.4",
-			"github.com/labstack/echo/v4/middleware@v4.13.4",
+			fmt.Sprintf("github.com/labstack/echo/v4@%s", versionConfig.Backend.Frameworks.Echo.Version),
+			fmt.Sprintf("github.com/labstack/echo/v4/middleware@%s", versionConfig.Backend.Frameworks.Echo.Version),
 		}
 	case "fiber":
+		// Get versions from centralized config
+		versionConfig, err := versions.Get()
+		if err != nil {
+			return fmt.Errorf("failed to load version config: %w", err)
+		}
 		packages = []string{
-			"github.com/gofiber/fiber/v2@v2.52.9",
+			fmt.Sprintf("github.com/gofiber/fiber/v2@%s", versionConfig.Backend.Frameworks.Fiber.Version),
 		}
 	default:
+		// Get versions from centralized config
+		versionConfig, err := versions.Get()
+		if err != nil {
+			return fmt.Errorf("failed to load version config: %w", err)
+		}
 		packages = []string{
-			"github.com/gin-gonic/gin@v1.11.0",
-			"github.com/gin-contrib/cors@v1.7.6",
+			fmt.Sprintf("github.com/gin-gonic/gin@%s", versionConfig.Backend.Frameworks.Gin.Version),
+			fmt.Sprintf("github.com/gin-contrib/cors@%s", versionConfig.Backend.Frameworks.GinCORS.Version),
 		}
 	}
 

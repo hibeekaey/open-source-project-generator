@@ -33,14 +33,16 @@ func TestMockToolAvailable(t *testing.T) {
 	env := SetupTestEnv(t)
 	defer env.Cleanup()
 
-	err := env.MockToolAvailable("test-tool", "1.0.0")
+	// Using fake test version for consistency
+	testVersion := "99.0.0"
+	err := env.MockToolAvailable("test-tool", testVersion)
 	require.NoError(t, err)
 
 	// Verify mock tool was created
 	mockTool, exists := env.MockTools["test-tool"]
 	assert.True(t, exists)
 	assert.Equal(t, "test-tool", mockTool.Name)
-	assert.Equal(t, "1.0.0", mockTool.Version)
+	assert.Equal(t, testVersion, mockTool.Version)
 	assert.True(t, mockTool.Available)
 
 	// Verify script file exists

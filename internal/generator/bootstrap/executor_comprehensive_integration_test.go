@@ -1,8 +1,10 @@
 package bootstrap
 
 import (
+	"fmt"
 	"testing"
 
+	"github.com/cuesoftinc/open-source-project-generator/pkg/versions"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -141,7 +143,11 @@ func TestAllExecutors_GetDefaultFlags(t *testing.T) {
 			componentType: "nextjs",
 			wantNonEmpty:  true,
 			validateFlags: func(t *testing.T, flags []string) {
-				assert.Contains(t, flags, "create-next-app@16.0.0")
+				// Load version from centralized config to avoid brittle tests
+				versionConfig, err := versions.Get()
+				require.NoError(t, err, "Failed to load version config")
+				expectedFlag := fmt.Sprintf("create-next-app@%s", versionConfig.Frontend.NextJS.Version)
+				assert.Contains(t, flags, expectedFlag)
 			},
 		},
 		{

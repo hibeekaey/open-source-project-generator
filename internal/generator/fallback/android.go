@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/versions"
 )
 
 //go:embed templates/android/*
@@ -172,17 +173,23 @@ include ':app'
 }
 
 func (g *AndroidGenerator) generateRootBuildGradle() string {
-	return `// Top-level build file
+	// Get versions from centralized config
+	versionConfig, err := versions.Get()
+	if err != nil {
+		panic(fmt.Sprintf("Failed to load version config: %v", err))
+	}
+
+	return fmt.Sprintf(`// Top-level build file
 plugins {
-    id 'com.android.application' version '8.7.3' apply false
-    id 'com.android.library' version '8.7.3' apply false
-    id 'org.jetbrains.kotlin.android' version '2.2.21' apply false
+    id 'com.android.application' version '%s' apply false
+    id 'com.android.library' version '%s' apply false
+    id 'org.jetbrains.kotlin.android' version '%s' apply false
 }
 
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
-`
+`, versionConfig.Android.GradlePlugin.Version, versionConfig.Android.GradlePlugin.Version, versionConfig.Android.Kotlin.Version)
 }
 
 func (g *AndroidGenerator) generateGradleProperties() string {
@@ -195,6 +202,12 @@ kotlin.code.style=official
 }
 
 func (g *AndroidGenerator) generateAppBuildGradle(packageName string) string {
+	// Get versions from centralized config
+	versionConfig, err := versions.Get()
+	if err != nil {
+		panic(fmt.Sprintf("Failed to load version config: %v", err))
+	}
+
 	return fmt.Sprintf(`plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
@@ -202,12 +215,12 @@ func (g *AndroidGenerator) generateAppBuildGradle(packageName string) string {
 
 android {
     namespace '%s'
-    compileSdk 36
+    compileSdk %s
 
     defaultConfig {
         applicationId "%s"
-        minSdk 24
-        targetSdk 36
+        minSdk %s
+        targetSdk %s
         versionCode 1
         versionName "1.0"
 
@@ -222,12 +235,12 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
+        sourceCompatibility JavaVersion.VERSION_%s
+        targetCompatibility JavaVersion.VERSION_%s
     }
 
     kotlinOptions {
-        jvmTarget = '17'
+        jvmTarget = '%s'
     }
 
     buildFeatures {
@@ -236,16 +249,16 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.core:core-ktx:1.17.0'
-    implementation 'androidx.appcompat:appcompat:1.7.1'
-    implementation 'com.google.android.material:material:1.13.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.2.1'
+    implementation 'androidx.core:core-ktx:%s'
+    implementation 'androidx.appcompat:appcompat:%s'
+    implementation 'com.google.android.material:material:%s'
+    implementation 'androidx.constraintlayout:constraintlayout:%s'
     
-    testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
+    testImplementation 'junit:junit:%s'
+    androidTestImplementation 'androidx.test.ext:junit:%s'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:%s'
 }
-`, packageName, packageName)
+`, packageName, versionConfig.Android.CompileSDK, packageName, versionConfig.Android.MinSDK, versionConfig.Android.TargetSDK, versionConfig.Android.JavaVersion, versionConfig.Android.JavaVersion, versionConfig.Android.JavaVersion, versionConfig.Android.AndroidX.CoreKTX.Version, versionConfig.Android.AndroidX.AppCompat.Version, versionConfig.Android.AndroidX.Material.Version, versionConfig.Android.AndroidX.ConstraintLayout.Version, versionConfig.Android.Testing.JUnit.Version, versionConfig.Android.Testing.AndroidXJUnit.Version, versionConfig.Android.Testing.Espresso.Version)
 }
 
 func (g *AndroidGenerator) generateProguardRules() string {
@@ -357,12 +370,18 @@ func (g *AndroidGenerator) generateThemes() string {
 }
 
 func (g *AndroidGenerator) generateGradleWrapperProperties() string {
-	return `distributionBase=GRADLE_USER_HOME
+	// Get Gradle version from centralized config
+	versionConfig, err := versions.Get()
+	if err != nil {
+		panic(fmt.Sprintf("Failed to load version config: %v", err))
+	}
+
+	return fmt.Sprintf(`distributionBase=GRADLE_USER_HOME
 distributionPath=wrapper/dists
-distributionUrl=https\://services.gradle.org/distributions/gradle-9.1.0-bin.zip
+distributionUrl=https\://services.gradle.org/distributions/gradle-%s-bin.zip
 zipStoreBase=GRADLE_USER_HOME
 zipStorePath=wrapper/dists
-`
+`, versionConfig.Android.Gradle.Version)
 }
 
 func (g *AndroidGenerator) generateGitignore() string {

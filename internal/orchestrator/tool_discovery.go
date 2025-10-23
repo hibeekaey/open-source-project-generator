@@ -11,6 +11,7 @@ import (
 	"github.com/cuesoftinc/open-source-project-generator/pkg/interfaces"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/logger"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/versions"
 )
 
 // ToolDiscovery implements tool discovery and validation functionality
@@ -67,12 +68,18 @@ func NewToolDiscoveryWithCache(log *logger.Logger, cache *ToolCache) *ToolDiscov
 
 // registerKnownTools registers all known bootstrap tools with their metadata
 func (td *ToolDiscovery) registerKnownTools() {
+	// Get versions from centralized config
+	versionConfig, err := versions.Get()
+	if err != nil {
+		panic(fmt.Sprintf("failed to load version config: %v", err))
+	}
+
 	// Register npx for Next.js projects
 	td.registry.Tools["npx"] = &models.ToolMetadata{
 		Name:              "npx",
 		Command:           "npx",
 		VersionFlag:       "--version",
-		MinVersion:        "7.0.0",
+		MinVersion:        "", // No minimum version - npx is just a package runner
 		FallbackAvailable: false,
 		ComponentTypes:    []string{"nextjs"},
 		InstallDocs: map[string]string{
@@ -87,7 +94,7 @@ func (td *ToolDiscovery) registerKnownTools() {
 		Name:              "go",
 		Command:           "go",
 		VersionFlag:       "version",
-		MinVersion:        "1.21.0",
+		MinVersion:        versionConfig.Backend.Go.Version,
 		FallbackAvailable: false,
 		ComponentTypes:    []string{"go-backend"},
 		InstallDocs: map[string]string{
@@ -102,7 +109,7 @@ func (td *ToolDiscovery) registerKnownTools() {
 		Name:              "gradle",
 		Command:           "gradle",
 		VersionFlag:       "--version",
-		MinVersion:        "8.0.0",
+		MinVersion:        versionConfig.Android.Gradle.Version,
 		FallbackAvailable: true,
 		ComponentTypes:    []string{"android"},
 		InstallDocs: map[string]string{
@@ -117,7 +124,7 @@ func (td *ToolDiscovery) registerKnownTools() {
 		Name:              "xcodebuild",
 		Command:           "xcodebuild",
 		VersionFlag:       "-version",
-		MinVersion:        "14.0",
+		MinVersion:        versionConfig.IOS.Xcode.Version,
 		FallbackAvailable: true,
 		ComponentTypes:    []string{"ios"},
 		InstallDocs: map[string]string{
@@ -130,7 +137,7 @@ func (td *ToolDiscovery) registerKnownTools() {
 		Name:              "docker",
 		Command:           "docker",
 		VersionFlag:       "--version",
-		MinVersion:        "20.10.0",
+		MinVersion:        "", // No minimum version requirement
 		FallbackAvailable: false,
 		ComponentTypes:    []string{"docker"},
 		InstallDocs: map[string]string{
@@ -145,7 +152,7 @@ func (td *ToolDiscovery) registerKnownTools() {
 		Name:              "terraform",
 		Command:           "terraform",
 		VersionFlag:       "version",
-		MinVersion:        "1.0.0",
+		MinVersion:        versionConfig.Infrastructure.Terraform.Version,
 		FallbackAvailable: false,
 		ComponentTypes:    []string{"terraform"},
 		InstallDocs: map[string]string{

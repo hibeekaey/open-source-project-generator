@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/versions"
 )
 
 // NextJSExecutor handles Next.js project generation using create-next-app
@@ -40,7 +41,7 @@ func (ne *NextJSExecutor) Execute(ctx context.Context, spec *BootstrapSpec) (*mo
 	// Execute using base executor
 	result, err := ne.BaseExecutor.Execute(ctx, execSpec)
 	if err != nil {
-		return result, fmt.Errorf("Next.js generation failed: %w", err)
+		return result, fmt.Errorf("failed to generate Next.js project: %w", err)
 	}
 
 	// Set output directory to the generated project
@@ -62,8 +63,15 @@ func (ne *NextJSExecutor) GetDefaultFlags(componentType string) []string {
 		return []string{}
 	}
 
+	// Get version from centralized config
+	versionConfig, err := versions.Get()
+	if err != nil {
+		// This should never happen as versions.yaml is part of the codebase
+		panic(fmt.Sprintf("failed to load version config: %v", err))
+	}
+
 	return []string{
-		"create-next-app@16.0.0",
+		fmt.Sprintf("create-next-app@%s", versionConfig.Frontend.NextJS.Version),
 		"--typescript",
 		"--tailwind",
 		"--app",
@@ -101,7 +109,13 @@ func (ne *NextJSExecutor) ValidateConfig(config map[string]interface{}) error {
 
 // buildNextJSCommand builds the create-next-app command with appropriate flags
 func (ne *NextJSExecutor) buildNextJSCommand(spec *BootstrapSpec) ([]string, error) {
-	args := []string{"create-next-app@16.0.0"}
+	// Get version from centralized config
+	versionConfig, err := versions.Get()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load version config: %w", err)
+	}
+
+	args := []string{fmt.Sprintf("create-next-app@%s", versionConfig.Frontend.NextJS.Version)}
 
 	// Get project name from config
 	projectName, ok := spec.Config["name"].(string)

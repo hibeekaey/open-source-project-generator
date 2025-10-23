@@ -103,8 +103,8 @@ func TestE2E_OfflineMode_WithCachedTools(t *testing.T) {
 	cache, err := NewToolCache(cacheConfig, log)
 	require.NoError(t, err)
 
-	// Pre-populate cache with tool availability
-	cache.Set("go", true, "1.21.0")
+	// Pre-populate cache with tool availability (using fake test version)
+	cache.Set("go", true, "99.0.0")
 	cache.Set("npx", false, "")
 	err = cache.Save()
 	require.NoError(t, err)
@@ -436,8 +436,8 @@ func TestE2E_CacheRefresh(t *testing.T) {
 	cache, err := NewToolCache(cacheConfig, log)
 	require.NoError(t, err)
 
-	// Pre-populate cache
-	cache.Set("go", true, "1.20.0")
+	// Pre-populate cache with fake test version
+	cache.Set("go", true, "99.0.0")
 	err = cache.Save()
 	require.NoError(t, err)
 

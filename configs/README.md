@@ -2,6 +2,22 @@
 
 This directory contains example configuration files for the Open Source Project Generator. These examples demonstrate different project types and configuration options.
 
+## Version Management
+
+All dependency versions are centrally managed in `versions.yaml` - a single source of truth for all framework and tool versions used in generated projects.
+
+**Quick Commands:**
+
+- `make check-versions` - Check for outdated versions
+- `make update-versions` - Update to latest versions without prompting
+
+**Files:**
+
+- `versions.yaml` - Version configuration (single source of truth)
+- `VERSIONS.md` - Comprehensive version management guide
+
+See [VERSIONS.md](./VERSIONS.md) for detailed documentation on the version management system.
+
 ## Available Examples
 
 ### Quick Start

@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/versions"
 )
 
 // TestEnvironment provides utilities for setting up test environments
@@ -246,8 +247,13 @@ func SkipIfToolNotAvailable(t *testing.T, toolName string) {
 func (te *TestEnvironment) CreateMockNextJSProject(dir string) error {
 	te.t.Helper()
 
-	files := map[string]string{
-		"package.json": `{
+	// Get versions from centralized config
+	versionConfig, err := versions.Get()
+	if err != nil {
+		te.t.Fatalf("failed to load version config: %v", err)
+	}
+
+	packageJSON := fmt.Sprintf(`{
   "name": "test-app",
   "version": "0.1.0",
   "private": true,
@@ -257,11 +263,14 @@ func (te *TestEnvironment) CreateMockNextJSProject(dir string) error {
     "start": "next start"
   },
   "dependencies": {
-    "next": "16.0.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "next": "%s",
+    "react": "%s",
+    "react-dom": "%s"
   }
-}`,
+}`, versionConfig.Frontend.NextJS.Version, "^"+versionConfig.Frontend.React.Version, "^"+versionConfig.Frontend.React.Version)
+
+	files := map[string]string{
+		"package.json": packageJSON,
 		"next.config.js": `/** @type {import('next').NextConfig} */
 const nextConfig = {}
 module.exports = nextConfig`,
@@ -290,13 +299,19 @@ module.exports = nextConfig`,
 func (te *TestEnvironment) CreateMockGoProject(dir string, moduleName string) error {
 	te.t.Helper()
 
+	// Get versions from centralized config
+	versionConfig, err := versions.Get()
+	if err != nil {
+		te.t.Fatalf("failed to load version config: %v", err)
+	}
+
 	files := map[string]string{
 		"go.mod": fmt.Sprintf(`module %s
 
-go 1.25
+go %s
 
-require github.com/gin-gonic/gin v1.11.0
-`, moduleName),
+require github.com/gin-gonic/gin %s
+`, moduleName, versionConfig.Backend.Go.Version, versionConfig.Backend.Frameworks.Gin.Version),
 		"main.go": `package main
 
 import (

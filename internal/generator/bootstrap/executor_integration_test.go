@@ -5,12 +5,14 @@ package bootstrap
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/testhelpers"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/versions"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -63,8 +65,8 @@ func TestNextJSExecutor_WithMockTool(t *testing.T) {
 	env := testhelpers.SetupTestEnv(t)
 	defer env.Cleanup()
 
-	// Mock npx to simulate successful execution
-	err := env.MockToolAvailable("npx", "10.2.3")
+	// Mock npx to simulate successful execution (using fake test version)
+	err := env.MockToolAvailable("npx", "99.0.0")
 	require.NoError(t, err)
 
 	// Create mock Next.js project structure
@@ -89,7 +91,13 @@ func TestNextJSExecutor_WithMockTool(t *testing.T) {
 	// Verify command building works
 	args, err := executor.buildNextJSCommand(spec)
 	require.NoError(t, err)
-	assert.Contains(t, args, "create-next-app@16.0.0")
+
+	// Load version from centralized config to avoid brittle tests
+	versionConfig, err := versions.Get()
+	require.NoError(t, err, "Failed to load version config")
+	expectedPackage := fmt.Sprintf("create-next-app@%s", versionConfig.Frontend.NextJS.Version)
+
+	assert.Contains(t, args, expectedPackage)
 	assert.Contains(t, args, "test-nextjs-app")
 	assert.Contains(t, args, "--typescript")
 }
@@ -143,8 +151,8 @@ func TestGoExecutor_WithMockTool(t *testing.T) {
 	env := testhelpers.SetupTestEnv(t)
 	defer env.Cleanup()
 
-	// Mock go command
-	err := env.MockToolAvailable("go", "1.21.0")
+	// Mock go command (using fake test version)
+	err := env.MockToolAvailable("go", "99.0.0")
 	require.NoError(t, err)
 
 	// Create mock Go project structure
@@ -215,13 +223,13 @@ func TestAndroidExecutor_WithGradle(t *testing.T) {
 	env := testhelpers.SetupTestEnv(t)
 	defer env.Cleanup()
 
-	// Create mock tool discovery that reports gradle available
+	// Create mock tool discovery that reports gradle available (using fake test version)
 	mockDiscovery := &MockToolDiscovery{
 		tools: map[string]bool{
 			"gradle": true,
 		},
 		versions: map[string]string{
-			"gradle": "8.11.1",
+			"gradle": "99.0.0",
 		},
 	}
 
@@ -291,14 +299,15 @@ func TestIOSExecutor_FallbackRequired(t *testing.T) {
 
 // TestIOSExecutor_RequiresFallback tests that iOS always requires fallback
 func TestIOSExecutor_RequiresFallback(t *testing.T) {
+	// Using fake test versions for mock tool discovery
 	mockDiscovery := &MockToolDiscovery{
 		tools: map[string]bool{
 			"swift":      true,
 			"xcodebuild": true,
 		},
 		versions: map[string]string{
-			"swift":      "6.2.0",
-			"xcodebuild": "26.0.1",
+			"swift":      "99.0.0",
+			"xcodebuild": "99.1.0",
 		},
 	}
 

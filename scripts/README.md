@@ -9,6 +9,7 @@ This directory contains utility scripts for the Open Source Project Generator.
 | `build.sh` | Cross-platform binary compilation | `./scripts/build.sh [platform]` |
 | `build-packages.sh` | Build distribution packages | `./scripts/build-packages.sh [deb\|rpm\|arch\|all]` |
 | `check-latest-versions.sh` | Check for outdated dependencies | `./scripts/check-latest-versions.sh [--quiet\|--json]` |
+| `update-versions.sh` | Update versions in versions.yaml | `./scripts/update-versions.sh [--dry-run\|--auto-update]` |
 | `ci-test.sh` | Run comprehensive test suite | `./scripts/ci-test.sh` |
 | `get-version.sh` | Get version information | `./scripts/get-version.sh [version\|commit\|all]` |
 | `install.sh` | Install the generator binary | `./scripts/install.sh [--version VERSION]` |
@@ -146,8 +147,16 @@ Check for the latest versions of all dependencies used in the project. Automatic
 - **Infrastructure (3):** Terraform, Kubernetes, Go toolchain
 - **Docker (3):** Alpine, Golang, Ubuntu base images
 
+**How It Works:**
+
+1. Reads current versions from `configs/versions.yaml` (single source of truth)
+2. Queries external registries for latest versions
+3. Compares and reports differences
+4. Outputs results in human-readable or JSON format
+
 **Features:**
 
+- ✅ Reads from centralized `configs/versions.yaml`
 - ✅ 95% automation rate (24/25 packages)
 - ✅ Color-coded output (green = up-to-date, red = outdated)
 - ✅ JSON output for CI/CD integration
@@ -155,6 +164,7 @@ Check for the latest versions of all dependencies used in the project. Automatic
 - ✅ Smart version comparison logic
 - ✅ Filters out beta/alpha versions
 - ✅ GitHub API integration with token support
+- ✅ Fallback to hardcoded versions if yq unavailable
 
 **Requirements:**
 
@@ -162,6 +172,7 @@ Check for the latest versions of all dependencies used in the project. Automatic
 - `go` (for Go modules)
 - `curl` (for API checks)
 - `jq` (optional, for JSON processing and summary)
+- `yq` (optional, for reading versions.yaml - falls back to hardcoded values)
 
 **Environment Variables:**
 
@@ -221,6 +232,115 @@ check-versions:
 check-versions-quiet:
  @./scripts/check-latest-versions.sh --quiet
 ```
+
+---
+
+### update-versions.sh
+
+Update dependency versions in `configs/versions.yaml` by fetching the latest versions from external registries.
+
+**Usage:**
+
+```bash
+# Interactive mode (prompts before updating)
+./scripts/update-versions.sh
+
+# Dry run (show what would be updated)
+./scripts/update-versions.sh --dry-run
+
+# Automatic mode (update without prompting)
+./scripts/update-versions.sh --auto-update
+
+# Show help
+./scripts/update-versions.sh --help
+```
+
+**How It Works:**
+
+1. Calls `check-latest-versions.sh --json` to get version data
+2. Parses JSON output to identify outdated packages
+3. Uses `yq` to update only outdated versions in `configs/versions.yaml`
+4. Updates `metadata.last_updated` timestamp
+5. Prompts for confirmation (unless `--auto-update` is used)
+
+**Options:**
+
+- `--dry-run` - Show what would be updated without making changes
+- `--auto-update` - Automatically update without prompting
+- `--help` - Show help message
+
+**Requirements:**
+
+- `yq` - YAML processor (required)
+  - macOS: `brew install yq`
+  - Linux: `snap install yq`
+  - Or download from: <https://github.com/mikefarah/yq/releases>
+- `jq` - JSON processor (required)
+- All requirements from `check-latest-versions.sh`
+
+**Environment Variables:**
+
+- `GITHUB_TOKEN` - Optional GitHub token for higher rate limits (passed to check-latest-versions.sh)
+
+**Example Output:**
+
+```bash
+=== Updating Versions from Latest ===
+
+Fetching latest versions...
+Found 2 outdated package(s)
+
+📦 Updated react → 19.2.0
+📦 Updated typescript → 5.9.3
+
+=== Summary ===
+
+Updates available. Apply changes? (y/n)
+```
+
+**Features:**
+
+- ✅ Leverages existing `check-latest-versions.sh` (no duplicate logic)
+- ✅ Updates only outdated packages
+- ✅ Preserves YAML formatting and comments
+- ✅ Updates metadata timestamp
+- ✅ Dry-run mode for safety
+- ✅ Interactive and automatic modes
+- ✅ Shows diff of proposed changes
+
+**CI/CD Integration:**
+
+```yaml
+# GitHub Actions example
+- name: Update dependency versions
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  run: |
+    ./scripts/update-versions.sh --auto-update
+    
+    # Check if versions.yaml was modified
+    if git diff --quiet configs/versions.yaml; then
+      echo "No version updates needed"
+    else
+      echo "Version updates available"
+      git diff configs/versions.yaml
+      # Optionally create a PR with the changes
+    fi
+```
+
+**Makefile Integration:**
+
+```makefile
+.PHONY: update-versions
+update-versions:
+ @./scripts/update-versions.sh --auto-update
+```
+
+**Related:**
+
+- See `check-latest-versions.sh` for checking versions without updating
+- See `configs/VERSIONS.md` for version management documentation
+- See `pkg/versions` for Go package that reads versions.yaml
 
 ---
 

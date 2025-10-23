@@ -304,6 +304,7 @@ generator init-config --output project.yaml # Generate configuration template
 ### Component Configuration
 
 **Next.js Component**:
+
 ```yaml
 - type: nextjs
   name: web-app
@@ -316,6 +317,7 @@ generator init-config --output project.yaml # Generate configuration template
 ```
 
 **Go Backend Component**:
+
 ```yaml
 - type: go-backend
   name: api-server
@@ -327,6 +329,7 @@ generator init-config --output project.yaml # Generate configuration template
 ```
 
 **Android Component**:
+
 ```yaml
 - type: android
   name: mobile-android
@@ -338,6 +341,7 @@ generator init-config --output project.yaml # Generate configuration template
 ```
 
 **iOS Component**:
+
 ```yaml
 - type: ios
   name: mobile-ios
@@ -374,23 +378,27 @@ options:
 ## 🔒 Security Features
 
 ### Input Sanitization
+
 - All user inputs sanitized before processing
 - Path traversal attack prevention
 - Project name validation
 
 ### Security Scanning
+
 - Post-generation security scan
 - Detection of exposed secrets
 - Identification of insecure configurations
 - Security report generation
 
 ### Tool Execution Safety
+
 - Whitelisted tools and flags only
 - Command injection prevention
 - Timeout protection
 - Sandboxed execution
 
 ### Backup and Rollback
+
 - Automatic backups before generation
 - Rollback on failure
 - Backup restoration
@@ -523,7 +531,19 @@ make test
 
 # Run linter
 make lint
+
+# Check for version updates
+make check-versions
+
+# Update to latest versions
+make update-versions
 ```
+
+### Version Management
+
+All dependency versions are centrally managed in `configs/versions.yaml`. This provides a single source of truth for all framework and tool versions used in generated projects.
+
+See [configs/VERSIONS.md](configs/VERSIONS.md) for details.
 
 ## 📄 License
 
