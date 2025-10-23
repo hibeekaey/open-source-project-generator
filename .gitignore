@@ -60,7 +60,7 @@ checksums.txt
 results.sarif
 gosec-report.txt
 
-# Template testing output
+# Test output
 test-output/
 test-validation/
 
