@@ -713,7 +713,7 @@ Understanding the project structure helps with contributions:
 
 **Core Directories:**
 
-```
+```text
 .
 ├── cmd/                    # Command-line applications
 │   └── generator/          # Main generator CLI (main.go)
@@ -739,6 +739,7 @@ Understanding the project structure helps with contributions:
 ├── scripts/              # Build and utility scripts
 └── .github/              # GitHub workflows and templates
 ```
+
 - **`docs/`**: Documentation files
 - **`output/`**: Generated project output
 
