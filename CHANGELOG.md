@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Existing projects generated with v1.x will continue to work
 - New projects should use component-based configuration format
-- Install required external tools (Node.js/npm, Go 1.21+) or use `--no-external-tools` flag
+- Install required external tools (Node.js/npm, Go 1.25+) or use `--no-external-tools` flag
 - Use `generator init-config` to generate new configuration templates
 - Android/iOS generation requires native tooling or will use minimal fallback structure
 
@@ -378,9 +378,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Default Version Management**: Added automatic fallback versions for all package dependencies
-  - React: `^18.3.1`, Next.js: `14.2.0`, Go: `1.22.0`, Node.js: `20.11.0`
-  - Kotlin: `2.0.0`, Swift: `5.9.0` with automatic version resolution
+- **Default Version Management**: Updated to latest stable versions for all package dependencies
+  - React: `^19.2.0`, Next.js: `16.0.0`, Go: `1.25.0`, Node.js: `20.11.0`
+  - Kotlin: `2.1.0`, Swift: `6.0` with automatic version resolution
+  - Android: SDK 35, Gradle 8.11.1, AndroidX Core KTX 1.17.0
 - **Enhanced Security**: Comprehensive security improvements across all templates
   - Secure file operations with path validation and traversal protection
   - Secure file permissions (0600 for files, 0750 for directories)
@@ -502,14 +503,18 @@ This version consolidates all development work leading up to the first stable re
 
 #### Platform and Dependency Updates
 
-- **BREAKING:** Updated Go version requirement to 1.22+
-- Updated Node.js templates to use version 20.0.0+
-- Updated Next.js templates to version 15.5.3
-- Updated React templates to version 19.1.0
-- Updated TypeScript templates to version 5.3.3
-- Updated Kotlin templates to version 2.0+
-- Updated Swift templates to version 5.9+
-- Updated Docker base images to version 24+
+- **BREAKING:** Updated Go version requirement to 1.25+
+- Updated Node.js templates to use version 20.11.0+
+- Updated Next.js templates to version 16.0.0
+- Updated React templates to version 19.2.0
+- Updated TypeScript templates to version 5.9.3
+- Updated Kotlin templates to version 2.1.0
+- Updated Swift templates to version 6.0
+- Updated Android SDK to API level 35
+- Updated Gradle to version 8.11.1
+- Updated AndroidX libraries to latest stable versions
+- Updated Go backend frameworks (Gin 1.11.0, Echo 4.13.4, Fiber 2.52.9)
+- Updated Docker base images to alpine:3.19, golang:1.25-alpine
 - Updated Kubernetes API versions to 1.28+
 - Updated Terraform templates to version 1.6+
 

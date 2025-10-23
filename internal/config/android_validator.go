@@ -144,7 +144,7 @@ func (v *AndroidConfigValidator) ValidateMinSDK(value interface{}) error {
 		return fmt.Errorf("must be a number")
 	}
 
-	// Android API levels range from 1 to current (as of 2024, API 34 is latest)
+	// Android API levels range from 1 to current (as of 2025, API 35 is latest)
 	// We'll allow up to API 40 for future-proofing
 	if minSDK < 1 || minSDK > 40 {
 		return fmt.Errorf("must be a valid Android API level (1-40)")

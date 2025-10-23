@@ -63,7 +63,7 @@ func (ne *NextJSExecutor) GetDefaultFlags(componentType string) []string {
 	}
 
 	return []string{
-		"create-next-app@latest",
+		"create-next-app@16.0.0",
 		"--typescript",
 		"--tailwind",
 		"--app",
@@ -101,7 +101,7 @@ func (ne *NextJSExecutor) ValidateConfig(config map[string]interface{}) error {
 
 // buildNextJSCommand builds the create-next-app command with appropriate flags
 func (ne *NextJSExecutor) buildNextJSCommand(spec *BootstrapSpec) ([]string, error) {
-	args := []string{"create-next-app@latest"}
+	args := []string{"create-next-app@16.0.0"}
 
 	// Get project name from config
 	projectName, ok := spec.Config["name"].(string)

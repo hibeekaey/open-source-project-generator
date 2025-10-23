@@ -63,9 +63,9 @@ generator check-tools
 Checking 4 tools...
 
 ✓ Available Tools:
-  ✓ npx (version: 10.2.3)
+  ✓ npx (version: 16.0.0)
     Supports: [nextjs]
-  ✓ go (version: 1.21.0)
+  ✓ go (version: 1.25.0)
     Supports: [go-backend]
 
 ✗ Missing Tools:
@@ -188,7 +188,7 @@ sudo apt install nodejs npm
 # Download from https://nodejs.org/
 ```
 
-**What it does:** Runs `npx create-next-app@latest` with your specified options
+**What it does:** Runs `npx create-next-app@16.0.0` with your specified options
 
 ### Backend (Go)
 

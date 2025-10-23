@@ -167,22 +167,22 @@ func (ge *GoExecutor) installDependencies(ctx context.Context, projectDir, frame
 	switch framework {
 	case "gin":
 		packages = []string{
-			"github.com/gin-gonic/gin@latest",
-			"github.com/gin-contrib/cors@latest",
+			"github.com/gin-gonic/gin@v1.11.0",
+			"github.com/gin-contrib/cors@v1.7.6",
 		}
 	case "echo":
 		packages = []string{
-			"github.com/labstack/echo/v4@latest",
-			"github.com/labstack/echo/v4/middleware@latest",
+			"github.com/labstack/echo/v4@v4.13.4",
+			"github.com/labstack/echo/v4/middleware@v4.13.4",
 		}
 	case "fiber":
 		packages = []string{
-			"github.com/gofiber/fiber/v2@latest",
+			"github.com/gofiber/fiber/v2@v2.52.9",
 		}
 	default:
 		packages = []string{
-			"github.com/gin-gonic/gin@latest",
-			"github.com/gin-contrib/cors@latest",
+			"github.com/gin-gonic/gin@v1.11.0",
+			"github.com/gin-contrib/cors@v1.7.6",
 		}
 	}
 
@@ -338,7 +338,7 @@ A Go backend service built with %s framework.
 
 ### Prerequisites
 
-- Go 1.21 or higher
+- Go 1.25 or higher
 
 ### Installation
 

@@ -269,7 +269,7 @@ generator check-tools
 
 ### Tool Version Too Old
 
-**Problem:** `Warning: Tool 'go' version 1.18.0 is below minimum required version 1.21.0`
+**Problem:** `Warning: Tool 'go' version 1.18.0 is below minimum required version 1.25.0`
 
 **Solutions:**
 
@@ -345,7 +345,7 @@ generator check-tools
 generator generate --config project.yaml --verbose
 
 # Test tool manually
-npx create-next-app@latest test-app --typescript
+npx create-next-app@16.0.0 test-app --typescript
 
 # Check logs
 cat ~/.cache/generator/logs/generator.log
@@ -405,7 +405,7 @@ cat ~/.cache/generator/logs/generator.log
    ```bash
    # Some tools may be waiting for input
    # Run tool manually to see prompts
-   npx create-next-app@latest test-app
+   npx create-next-app@16.0.0 test-app
 
    # Ensure non-interactive mode
    generator generate --config project.yaml
@@ -1290,14 +1290,14 @@ esac
 ```makefile
 .PHONY: generate
 generate:
-	@generator generate --config project.yaml || \
-	(EXIT_CODE=$$?; \
-	 if [ $$EXIT_CODE -eq 2 ]; then \
-	   echo "Tools missing, trying fallback..."; \
-	   generator generate --config project.yaml --no-external-tools; \
-	 else \
-	   exit $$EXIT_CODE; \
-	 fi)
+ @generator generate --config project.yaml || \
+ (EXIT_CODE=$$?; \
+  if [ $$EXIT_CODE -eq 2 ]; then \
+    echo "Tools missing, trying fallback..."; \
+    generator generate --config project.yaml --no-external-tools; \
+  else \
+    exit $$EXIT_CODE; \
+  fi)
 ```
 
 **CI/CD (GitHub Actions):**
@@ -1386,7 +1386,7 @@ generator generate --config test.yaml --verbose
 
 ```bash
 # Run tools manually to isolate issues
-npx create-next-app@latest test-app --typescript
+npx create-next-app@16.0.0 test-app --typescript
 go mod init github.com/test/app
 
 # Compare with generator output

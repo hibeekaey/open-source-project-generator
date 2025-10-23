@@ -31,7 +31,7 @@ Adding a new bootstrap tool involves:
 
 Before adding a new bootstrap tool, ensure you have:
 
-- Go 1.21+ installed
+- Go 1.25+ installed
 - Familiarity with the tool you're adding
 - Understanding of the tool's CLI interface
 - Access to the tool for testing
@@ -459,7 +459,7 @@ Let's walk through a complete example of adding Vite support.
 "vite": {
     Name:            "vite",
     Command:         "npm",
-    VersionFlag:     "create vite@latest -- --version",
+    VersionFlag:     "create vite@6.0.0 -- --version",
     MinVersion:      "4.0.0",
     ComponentTypes:  []string{"vite"},
     InstallDocs: map[string]string{
@@ -498,7 +498,7 @@ func (ve *ViteExecutor) Execute(ctx context.Context, spec *BootstrapSpec) (*Exec
     
     flags := []string{
         "create",
-        "vite@latest",
+        "vite@6.0.0",
         name,
         "--",
         "--template", template,

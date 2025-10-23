@@ -124,7 +124,7 @@ options:
     eslint: true               # Optional: Include ESLint (default: true)
 ```
 
-**Generated with:** `npx create-next-app@latest` (when `use_external_tools: true`)
+**Generated with:** `npx create-next-app@16.0.0` (when `use_external_tools: true`)
 
 ### Backend Components
 
@@ -170,7 +170,7 @@ options:
   config:
     name: mobile-ios                        # Required: App name
     bundle_id: com.example.app              # Required: Bundle identifier
-    deployment_target: "15.0"               # Optional: Min iOS version (default: "15.0")
+    deployment_target: "16.0"               # Optional: Min iOS version (default: "16.0")
     language: swift                         # Optional: Language (default: swift)
 ```
 
@@ -195,6 +195,7 @@ integration:
 ```
 
 Generates build and run scripts for all components:
+
 - `build.sh` / `build.bat` - Build all components
 - `run.sh` / `run.bat` - Run all components
 - `dev.sh` / `dev.bat` - Development mode
@@ -251,6 +252,7 @@ options:
 ```
 
 Show detailed output during generation, including:
+
 - Tool detection results
 - Command execution details
 - File operations
@@ -373,6 +375,7 @@ project-generator generate --config your-config.yaml --dry-run
 ### "Component type not supported"
 
 Ensure the component type is one of:
+
 - `nextjs`
 - `go-backend`
 - `android`
@@ -389,6 +392,7 @@ Review validation rules for the specific field mentioned in the error message.
 ### "Tool not found"
 
 If external tools are not available:
+
 - Install the required tools (npx, go, gradle, xcodebuild)
 - Or set `use_external_tools: false` to use fallback generation
 
@@ -402,6 +406,7 @@ If external tools are not available:
 ## Support
 
 For issues or questions:
+
 - Check the [Troubleshooting Guide](../docs/TROUBLESHOOTING.md)
 - Review existing [GitHub Issues](https://github.com/cuesoftinc/open-source-project-generator/issues)
 - Create a new issue with your configuration file and error output

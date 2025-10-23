@@ -95,8 +95,8 @@ func (ae *AndroidExecutor) ValidateConfig(config map[string]interface{}) error {
 	if minSDK, exists := config["min_sdk"]; exists {
 		switch v := minSDK.(type) {
 		case int:
-			if v < 21 || v > 34 {
-				return fmt.Errorf("min_sdk must be between 21 and 34")
+			if v < 21 || v > 36 {
+				return fmt.Errorf("min_sdk must be between 21 and 36")
 			}
 		case float64:
 			if v < 21 || v > 34 {
@@ -110,8 +110,8 @@ func (ae *AndroidExecutor) ValidateConfig(config map[string]interface{}) error {
 	if targetSDK, exists := config["target_sdk"]; exists {
 		switch v := targetSDK.(type) {
 		case int:
-			if v < 21 || v > 34 {
-				return fmt.Errorf("target_sdk must be between 21 and 34")
+			if v < 21 || v > 36 {
+				return fmt.Errorf("target_sdk must be between 21 and 36")
 			}
 		case float64:
 			if v < 21 || v > 34 {

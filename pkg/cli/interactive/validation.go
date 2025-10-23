@@ -107,8 +107,8 @@ func ValidateAPILevel(input string) error {
 		return fmt.Errorf("API level must be a number")
 	}
 
-	if level < 21 || level > 35 {
-		return fmt.Errorf("API level must be between 21 and 35")
+	if level < 21 || level > 36 {
+		return fmt.Errorf("API level must be between 21 and 36")
 	}
 
 	return nil

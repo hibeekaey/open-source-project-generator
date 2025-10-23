@@ -89,7 +89,7 @@ func TestNextJSExecutor_WithMockTool(t *testing.T) {
 	// Verify command building works
 	args, err := executor.buildNextJSCommand(spec)
 	require.NoError(t, err)
-	assert.Contains(t, args, "create-next-app@latest")
+	assert.Contains(t, args, "create-next-app@16.0.0")
 	assert.Contains(t, args, "test-nextjs-app")
 	assert.Contains(t, args, "--typescript")
 }
@@ -221,7 +221,7 @@ func TestAndroidExecutor_WithGradle(t *testing.T) {
 			"gradle": true,
 		},
 		versions: map[string]string{
-			"gradle": "8.0.0",
+			"gradle": "8.11.1",
 		},
 	}
 
@@ -297,8 +297,8 @@ func TestIOSExecutor_RequiresFallback(t *testing.T) {
 			"xcodebuild": true,
 		},
 		versions: map[string]string{
-			"swift":      "5.9.0",
-			"xcodebuild": "15.0",
+			"swift":      "6.0.0",
+			"xcodebuild": "16.0",
 		},
 	}
 

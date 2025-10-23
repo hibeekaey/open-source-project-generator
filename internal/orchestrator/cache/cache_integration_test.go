@@ -599,7 +599,7 @@ func TestCacheManager_Integration(t *testing.T) {
 	mockDiscovery := NewMockToolDiscovery().
 		WithTool("npx", true, "9.1.0").
 		WithTool("go", true, "1.22.0").
-		WithTool("gradle", true, "8.0")
+		WithTool("gradle", true, "8.11.1")
 
 	err = newManager.Refresh(mockDiscovery)
 	require.NoError(t, err)

@@ -257,9 +257,9 @@ func (te *TestEnvironment) CreateMockNextJSProject(dir string) error {
     "start": "next start"
   },
   "dependencies": {
-    "next": "14.0.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "next": "16.0.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   }
 }`,
 		"next.config.js": `/** @type {import('next').NextConfig} */
@@ -293,9 +293,9 @@ func (te *TestEnvironment) CreateMockGoProject(dir string, moduleName string) er
 	files := map[string]string{
 		"go.mod": fmt.Sprintf(`module %s
 
-go 1.21
+go 1.25
 
-require github.com/gin-gonic/gin v1.9.1
+require github.com/gin-gonic/gin v1.11.0
 `, moduleName),
 		"main.go": `package main
 
@@ -345,7 +345,7 @@ include ':app'`,
 
 android {
     namespace 'com.test.app'
-    compileSdk 34
+    compileSdk 35
 }`,
 		"app/src/main/AndroidManifest.xml": `<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -372,7 +372,7 @@ func (te *TestEnvironment) CreateMockIOSProject(dir string, appName string) erro
 	te.t.Helper()
 
 	files := map[string]string{
-		"Package.swift": fmt.Sprintf(`// swift-tools-version:5.9
+		"Package.swift": fmt.Sprintf(`// swift-tools-version:6.0
 import PackageDescription
 
 let package = Package(

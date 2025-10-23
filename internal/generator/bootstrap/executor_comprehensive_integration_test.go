@@ -141,7 +141,7 @@ func TestAllExecutors_GetDefaultFlags(t *testing.T) {
 			componentType: "nextjs",
 			wantNonEmpty:  true,
 			validateFlags: func(t *testing.T, flags []string) {
-				assert.Contains(t, flags, "create-next-app@latest")
+				assert.Contains(t, flags, "create-next-app@16.0.0")
 			},
 		},
 		{

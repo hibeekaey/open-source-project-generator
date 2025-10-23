@@ -443,7 +443,7 @@ This is a minimal iOS project generated using fallback templates.
 
 ### Prerequisites
 - macOS (required for iOS development)
-- Xcode 15.0 or later
+- Xcode 16.0 or later
 - Apple Developer account (for device deployment)
 
 ### Steps to Run

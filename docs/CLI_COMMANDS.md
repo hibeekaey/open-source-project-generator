@@ -148,9 +148,9 @@ generator check-tools --verbose
 Checking 4 tools...
 
 ✓ Available Tools:
-  ✓ npx (version: 10.2.3)
+  ✓ npx (version: 16.0.0)
     Supports: [nextjs]
-  ✓ go (version: 1.21.0)
+  ✓ go (version: 1.25.0)
     Supports: [go-backend]
 
 ✗ Missing Tools:
@@ -320,7 +320,7 @@ Corrupted Entries: 0
 Expired Entries: 1
 
 Expired:
-  - gradle (last checked: 2024-01-10T10:00:00Z)
+  - gradle (last checked: 2025-10-23T10:00:00Z)
 
 Warnings:
   - Cache is older than 7 days, consider refreshing
@@ -340,12 +340,12 @@ The export format is a portable JSON file that can be shared across machines:
   "entries": {
     "npx": {
       "available": true,
-      "version": "10.2.3",
+      "version": "16.0.0",
       "last_checked": "2024-01-15T10:00:00Z"
     },
     "go": {
       "available": true,
-      "version": "1.21.0",
+      "version": "1.25.0",
       "last_checked": "2024-01-15T10:00:00Z"
     }
   }
@@ -446,6 +446,7 @@ generator generate -i
 The wizard guides you through these steps:
 
 **1. Project Information**
+
 - Project name
 - Project description
 - Output directory
@@ -453,11 +454,13 @@ The wizard guides you through these steps:
 - License (optional)
 
 **2. Component Selection**
+
 - Multi-select menu of available component types
 - Descriptions for each component
 - Select one or more components to include
 
 **3. Component Configuration**
+
 - For each selected component, configure specific options
 - TypeScript, Tailwind, App Router for Next.js
 - Module path, framework, port for Go backend
@@ -465,12 +468,14 @@ The wizard guides you through these steps:
 - Bundle ID, deployment target for iOS
 
 **4. Integration Options**
+
 - Docker Compose generation
 - Build scripts generation
 - API endpoint configuration
 - Shared environment variables
 
 **5. Confirmation**
+
 - Review complete configuration summary
 - Confirm to proceed or cancel to restart
 
@@ -759,14 +764,14 @@ esac
 ```makefile
 .PHONY: generate
 generate:
-	@generator generate --config project.yaml || \
-	(echo "Generation failed with exit code $$?"; exit 1)
+ @generator generate --config project.yaml || \
+ (echo "Generation failed with exit code $$?"; exit 1)
 
 .PHONY: generate-or-fallback
 generate-or-fallback:
-	@generator generate --config project.yaml || \
-	(echo "Trying with fallback..."; \
-	 generator generate --config project.yaml --no-external-tools)
+ @generator generate --config project.yaml || \
+ (echo "Trying with fallback..."; \
+  generator generate --config project.yaml --no-external-tools)
 ```
 
 ### Exit Code Handling Best Practices

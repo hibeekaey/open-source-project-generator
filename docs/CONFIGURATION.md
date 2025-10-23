@@ -217,8 +217,8 @@ config:
 | Field | Type | Required | Default | Description | Validation |
 |-------|------|----------|---------|-------------|------------|
 | `package` | string | **Yes** | - | Java/Kotlin package name | Must be valid Java package name |
-| `min_sdk` | integer | No | `24` | Minimum Android SDK level | Must be valid API level (21-34) |
-| `target_sdk` | integer | No | `34` | Target Android SDK level | Must be valid API level (21-34), >= min_sdk |
+| `min_sdk` | integer | No | `24` | Minimum Android SDK level | Must be valid API level (21-36) |
+| `target_sdk` | integer | No | `35` | Target Android SDK level | Must be valid API level (21-36), >= min_sdk |
 | `language` | string | No | `kotlin` | Programming language | Must be `kotlin` or `java` |
 | `compose` | boolean | No | `true` | Use Jetpack Compose | Must be boolean |
 
@@ -272,7 +272,7 @@ config:
   enabled: true
   config:
     bundle_id: com.example.app      # Bundle ID (required)
-    deployment_target: "15.0"       # Min iOS version (default: "15.0")
+    deployment_target: "16.0"       # Min iOS version (default: "16.0")
     language: swift                 # Language (default: swift)
     swiftui: true                   # Use SwiftUI (default: true)
 ```
@@ -613,7 +613,7 @@ The generator validates configuration before generation to catch errors early.
   - Reverse domain notation (e.g., `com.example.app`)
   - At least 2 segments
   - Only alphanumeric and dots allowed
-- **config.deployment_target**: Optional, valid iOS version string (default: "15.0")
+- **config.deployment_target**: Optional, valid iOS version string (default: "16.0")
 - **config.language**: Optional, must be `swift` or `objective-c` (default: swift)
 - **config.swiftui**: Optional, boolean (default: true)
 
@@ -721,21 +721,25 @@ config:
 ### Validation Best Practices
 
 1. **Use init-config**: Generate a valid template to start from
+
    ```bash
    generator init-config --example fullstack
    ```
 
 2. **Test with dry-run**: Validate before generating
+
    ```bash
    generator generate --config project.yaml --dry-run
    ```
 
 3. **Check syntax**: Validate YAML syntax
+
    ```bash
    yamllint project.yaml
    ```
 
 4. **Use verbose mode**: See detailed validation errors
+
    ```bash
    generator generate --config project.yaml --verbose
    ```

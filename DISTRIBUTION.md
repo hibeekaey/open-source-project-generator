@@ -616,7 +616,7 @@ The project uses GitHub Actions for continuous integration and deployment:
 - Triggered on: Push, Pull Request
 - Runs: `make test`, `make lint`, `make security-scan`
 - Tests on: Linux, macOS, Windows
-- Go versions: 1.25+
+- Go versions: 1.25.0+
 
 **Release Workflow:**
 
