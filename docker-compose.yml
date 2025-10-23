@@ -213,17 +213,17 @@ services:
     profiles:
       - build
 
-  generator-build-all:
+  generator-dist:
     extends: generator-build
-    container_name: generator-build-all
-    command: ["bash", "-c", "make build-all"]
+    container_name: generator-dist
+    command: ["bash", "-c", "make dist"]
     profiles:
       - build
 
-  generator-package-all:
+  generator-package:
     extends: generator-build
-    container_name: generator-package-all
-    command: ["bash", "-c", "make package-all"]
+    container_name: generator-package
+    command: ["bash", "-c", "make package"]
     profiles:
       - build
 

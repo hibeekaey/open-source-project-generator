@@ -23,6 +23,9 @@ FROM golang:1.25-alpine
 ARG TARGETARCH
 ARG TARGETOS
 
+# Update base image packages to fix vulnerabilities
+RUN apk update && apk upgrade --no-cache
+
 # Install system dependencies
 RUN apk add --no-cache \
     git \

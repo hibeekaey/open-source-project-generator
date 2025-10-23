@@ -29,7 +29,7 @@ This project and everyone participating in it is governed by our Code of Conduct
 - 📝 **Documentation**: Improve our documentation
 - 🧪 **Testing**: Add or improve tests
 - 💻 **Code**: Submit bug fixes or new features
-- 🎨 **Templates**: Add or improve project templates
+- 🔧 **Tools**: Add support for new bootstrap tools
 
 ### Before You Start
 
@@ -171,12 +171,12 @@ See [docker-compose.yml](docker-compose.yml) for all available profiles and serv
 - Fix typos and grammar
 - Add examples and tutorials
 
-#### 🎨 Templates
+#### 🔧 Bootstrap Tools
 
-- Add new project templates
-- Improve existing templates
-- Update templates to latest versions
-- Add template validation
+- Add support for new CLI tools (Vite, Angular, etc.)
+- Improve existing tool executors
+- Add fallback generators for tools
+- Update tool version requirements
 
 #### 🧪 Tests
 
@@ -201,7 +201,7 @@ See [docker-compose.yml](docker-compose.yml) for all available profiles and serv
 - [ ] **Tests Pass**: Ensure all tests pass locally (`make test`)
 - [ ] **Security Scans**: Run security scans if needed (`make security-scan`)
 - [ ] **Documentation**: Update relevant documentation
-- [ ] **Templates**: Test template generation if templates were modified
+- [ ] **Tool Testing**: Test tool executors if bootstrap code was modified
 - [ ] **Rebase**: Rebase your branch on the latest main branch
 - [ ] **Docker**: Test Docker builds if Dockerfiles were modified (`make docker-build`)
 
@@ -217,7 +217,7 @@ See [docker-compose.yml](docker-compose.yml) for all available profiles and serv
 - [ ] I have updated the documentation accordingly
 - [ ] My commits are properly formatted and descriptive
 - [ ] I have rebased my branch on the latest main branch
-- [ ] I have tested template generation if templates were modified
+- [ ] I have tested tool executors if bootstrap code was modified
 
 ## Description
 
@@ -229,7 +229,7 @@ Brief description of changes...
 - [ ] New feature (non-breaking change which adds functionality)
 - [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
 - [ ] Documentation update
-- [ ] Template update
+- [ ] Bootstrap tool update
 - [ ] Performance improvement
 - [ ] Code refactoring
 
@@ -237,19 +237,20 @@ Brief description of changes...
 
 Describe the tests you ran and how to reproduce them...
 
-## Template Testing (if applicable)
+## Tool Executor Testing (if applicable)
 
-If you modified templates, describe how you tested them:
-- [ ] Generated sample projects with modified templates
+If you modified tool executors, describe how you tested them:
+- [ ] Generated sample projects with modified executors
 - [ ] Verified generated projects build successfully
 - [ ] Tested with different component combinations
+- [ ] Tested fallback generation when tool is unavailable
 ```
 
 ### Review Process
 
 1. **Automated Checks**: All PRs must pass automated CI checks
 2. **Code Review**: At least one maintainer must review and approve
-3. **Template Testing**: Template changes are tested with sample generation
+3. **Tool Testing**: Tool executor changes are tested with sample generation
 4. **Merge**: Approved PRs are merged by maintainers
 
 ## Coding Standards
@@ -268,13 +269,12 @@ If you modified templates, describe how you tested them:
 
 ```go
 // Use clear, descriptive names
-type TemplateEngine struct {
-    versionManager interfaces.VersionManager
-    logger         *slog.Logger
+type BootstrapExecutor struct {
+    logger *logger.Logger
 }
 
 // Document public functions
-// ProcessTemplate processes a template file with the provided configuration
+// Execute runs the bootstrap tool with the provided configuration
 func (e *TemplateEngine) ProcessTemplate(templatePath string, config *models.ProjectConfig) error {
     if err := e.validateTemplate(templatePath); err != nil {
         return fmt.Errorf("template validation failed: %w", err)
@@ -295,71 +295,74 @@ func (e *TemplateEngine) ProcessTemplate(templatePath string, config *models.Pro
 
 #### File Organization
 
-The project follows a modular architecture with clear separation of concerns:
+The project follows a tool-orchestration architecture with clear separation of concerns:
 
 ```text
 cmd/                    # Command-line applications
 └── generator/          # Main generator CLI
+    └── main.go        # Main entry point with Cobra commands
 
 internal/               # Private application code
-├── app/               # Application logic
-├── config/            # Configuration management
-└── container/         # Dependency injection
+├── config/            # Configuration parsing and validation
+│   ├── parser.go      # YAML/JSON parsing
+│   ├── validator.go   # Configuration validation
+│   ├── schema.go      # Configuration schema
+│   ├── nextjs_validator.go    # Next.js validation
+│   ├── go_validator.go        # Go validation
+│   ├── android_validator.go   # Android validation
+│   └── ios_validator.go       # iOS validation
+├── generator/         # Component generators
+│   ├── bootstrap/     # Bootstrap tool executors
+│   │   ├── executor.go    # Base executor
+│   │   ├── nextjs.go      # Next.js executor (uses create-next-app)
+│   │   ├── golang.go      # Go executor (uses go mod init)
+│   │   ├── android.go     # Android executor (uses Gradle)
+│   │   └── ios.go         # iOS executor (uses Xcode)
+│   ├── fallback/      # Fallback generators
+│   │   ├── generator.go   # Generator interface and registry
+│   │   ├── android.go     # Android fallback
+│   │   ├── ios.go         # iOS fallback
+│   │   └── templates/     # Minimal templates
+│   └── mapper/        # Structure mapping
+│       └── structure.go   # Maps generated output to standard layout
+└── orchestrator/      # Project generation orchestration
+    ├── coordinator.go         # Main coordinator
+    ├── tool_discovery.go      # Tool detection and version checking
+    ├── executor_registry.go   # Executor registry
+    ├── integration.go         # Component integration
+    ├── rollback.go           # Rollback on failure
+    ├── progress.go           # Progress tracking
+    └── cache/                # Tool metadata caching
+        └── manager.go        # Cache management
 
-pkg/                   # Public interfaces and libraries (modularized)
-├── interfaces/        # Core interfaces and contracts
-├── models/           # Data structures and configuration models
-├── cli/              # CLI interface (modularized)
-│   ├── cli.go        # Main CLI coordination (~500 lines)
-│   ├── commands.go   # Command registration
-│   ├── handlers.go   # Command execution
-│   ├── output.go     # Output formatting and colors
-│   ├── flags.go      # Flag management
-│   ├── interactive.go # Interactive mode
-│   ├── validation.go # CLI validation
-│   └── commands/     # Command-specific implementations
-│       ├── generate.go
-│       ├── validate.go
-│       ├── audit.go
-│       └── template.go
-├── audit/            # Audit engine (modularized)
-│   ├── engine.go     # Main orchestration (~300 lines)
-│   ├── rules.go      # Rule management
-│   ├── result.go     # Result aggregation
-│   ├── security/     # Security audit modules
-│   ├── quality/      # Code quality modules
-│   ├── license/      # License compliance
-│   └── performance/  # Performance analysis
-├── template/         # Template system (modularized)
-│   ├── manager.go    # Template coordination (~400 lines)
-│   ├── discovery.go  # Template discovery
-│   ├── cache.go      # Template caching
-│   ├── validation.go # Template validation
-│   ├── processor/    # Template processing engine
-│   ├── metadata/     # Template metadata handling
-│   └── templates/    # Template files
-│       ├── base/     # Base project templates
-│       ├── frontend/ # Frontend templates
-│       ├── backend/  # Backend templates
-│       ├── mobile/   # Mobile templates
-│       └── infrastructure/ # Infrastructure templates
-├── validation/       # Validation engine (modularized)
-│   ├── engine.go     # Validation orchestration
-│   ├── schemas.go    # Schema management
-│   └── formats/      # Format-specific validators
-├── filesystem/       # File system operations (modularized)
-│   ├── operations.go # File operations
-│   ├── structure.go  # Project structure management
-│   └── components/   # Component-specific generators
-├── cache/            # Caching system (modularized)
-│   ├── manager.go    # Cache coordination
-│   ├── storage.go    # Cache storage
-│   ├── operations.go # Cache operations
-│   └── validation.go # Cache validation
-├── version/          # Version management
-├── security/         # Security utilities
-├── ui/               # User interface components
-├── errors/           # Error handling and categorization
+pkg/                   # Public interfaces and libraries
+├── cli/              # CLI utilities and error types
+│   ├── exit_codes.go      # Exit code definitions
+│   ├── diagnostics.go     # Error diagnostics
+│   ├── suggestion_engine.go # Error suggestions
+│   └── interactive/       # Interactive prompts
+│       └── prompter.go    # User prompts
+├── filesystem/       # File system operations
+│   ├── operations.go     # File operations
+│   └── backup.go         # Backup and restore
+├── interfaces/       # Core interfaces
+│   ├── executor.go       # Executor interface
+│   ├── generator.go      # Generator interface
+│   └── mapper.go         # Mapper interface
+├── logger/           # Logging infrastructure
+│   ├── logger.go         # Logger implementation
+│   └── formatter.go      # Output formatting
+├── models/           # Data structures
+│   ├── project.go        # Project configuration
+│   ├── result.go         # Generation results
+│   └── tool.go           # Tool metadata
+├── security/         # Security operations
+│   ├── sanitizer.go      # Path sanitization
+│   ├── scanner.go        # Security scanning
+│   ├── validator.go      # Input validation
+│   └── tool_validator.go # Tool command validation
+└── testhelpers/      # Test utilities
+    └── environment.go    # Test environment setup
 ├── utils/            # Utility functions
 └── constants/        # Application constants
 ```
@@ -467,7 +470,7 @@ func TestTemplateEngine_ProcessTemplate(t *testing.T) {
     }
     
     // Execute
-    err := engine.ProcessTemplate("templates/test.tmpl", config)
+    result, err := executor.Execute(ctx, spec)
     
     // Assert
     assert.NoError(t, err)
@@ -511,7 +514,7 @@ make test TEST_FLAGS="-v -race"
 
 # Run tests with integration tags
 make test TEST_FLAGS="-tags=integration"
-go test ./pkg/template/...
+go test ./internal/generator/...
 
 # Run all security scans (gosec, govulncheck, staticcheck)
 make security-scan
@@ -592,9 +595,10 @@ Instead, please report them responsibly:
 When contributing code, follow these security practices:
 
 - **Path Sanitization**: Always use `pkg/security/SanitizePath()` for user-provided paths
-- **Categorized Errors**: Use error types from `pkg/errors/` package
+- **Categorized Errors**: Use error types from `pkg/cli` package
 - **No Code Execution**: Never execute user-provided code
-- **Input Validation**: Validate all user inputs through `pkg/validation/`
+- **Input Validation**: Validate all user inputs through `internal/config/` validators
+- **Tool Execution**: Validate all tool commands before execution
 - **File Permissions**: Use restrictive permissions (0600 for files, 0750 for directories)
 - **Security Scanning**: Run `make security-scan` before submitting PRs
 
@@ -641,35 +645,34 @@ The codebase has been refactored into a modular architecture. Understanding this
 
 #### Package-Specific Development
 
-**CLI Development** (`pkg/cli/`):
+**CLI Development** (`cmd/generator/` and `pkg/cli/`):
 
-- **Main Logic**: Core CLI coordination in `pkg/cli/cli.go` (~500 lines max)
-- **Commands**: Add new commands in `pkg/cli/commands/`
-- **Output**: Use `pkg/cli/output.go` for formatting and colors
-- **Flags**: Manage flags in `pkg/cli/flags.go`
-- **Interactive**: Handle user interaction in `pkg/cli/interactive.go`
+- **Main Entry**: Main CLI logic in `cmd/generator/main.go`
+- **Error Types**: Custom error types in `pkg/cli/exit_codes.go`
+- **Diagnostics**: Error diagnostics in `pkg/cli/diagnostics.go`
+- **Suggestions**: Error suggestions in `pkg/cli/suggestion_engine.go`
+- **Interactive**: Interactive prompts in `pkg/cli/interactive/`
 
-**Audit Development** (`pkg/audit/`):
+**Bootstrap Tool Development** (`internal/generator/bootstrap/`):
 
-- **Core Engine**: Main orchestration in `pkg/audit/engine.go` (~300 lines max)
-- **Security**: Add security audits in `pkg/audit/security/`
-- **Quality**: Add quality checks in `pkg/audit/quality/`
-- **Performance**: Add performance audits in `pkg/audit/performance/`
-- **Rules**: Manage audit rules in `pkg/audit/rules.go`
+- **Executors**: Tool executors in `internal/generator/bootstrap/` (~200 lines max per executor)
+- **Base Executor**: Common functionality in `executor.go`
+- **Tool-Specific**: Component executors (nextjs.go, golang.go, android.go, ios.go)
+- **Testing**: Comprehensive tests for each executor
 
-**Template Development** (`pkg/template/`):
+**Fallback Generator Development** (`internal/generator/fallback/`):
 
-- **Manager**: Template coordination in `pkg/template/manager.go` (~400 lines max)
-- **Processing**: Template engine in `pkg/template/processor/`
-- **Discovery**: Template discovery in `pkg/template/discovery.go`
-- **Validation**: Template validation in `pkg/template/validation.go`
-- **Metadata**: Metadata handling in `pkg/template/metadata/`
+- **Generators**: Fallback generators for when tools are unavailable
+- **Android**: Android fallback in `android.go`
+- **iOS**: iOS fallback in `ios.go`
+- **Templates**: Minimal templates in `templates/` directory
 
-**Validation Development** (`pkg/validation/`):
+**Configuration Development** (`internal/config/`):
 
-- **Engine**: Main validation in `pkg/validation/engine.go`
-- **Formats**: Add format validators in `pkg/validation/formats/`
-- **Schemas**: Manage schemas in `pkg/validation/schemas.go`
+- **Parser**: Configuration parsing in `parser.go`
+- **Validator**: Configuration validation in `validator.go`
+- **Component Validators**: Component-specific validation (nextjs_validator.go, go_validator.go, etc.)
+- **Schema**: Configuration schema in `schema.go`
 
 #### Best Practices for Modular Development
 
@@ -710,12 +713,32 @@ Understanding the project structure helps with contributions:
 
 **Core Directories:**
 
-- **`cmd/`**: Command-line applications
-- **`internal/`**: Private application code
-- **`pkg/`**: Public interfaces and libraries
-- **`pkg/template/templates/`**: Project templates
-- **`configs/`**: Configuration examples
-- **`scripts/`**: Build and utility scripts
+```
+.
+├── cmd/                    # Command-line applications
+│   └── generator/          # Main generator CLI (main.go)
+├── internal/               # Private application code
+│   ├── config/            # Configuration parsing and validation
+│   ├── generator/         # Component generators
+│   │   ├── bootstrap/     # Bootstrap tool executors (nextjs, go, android, ios)
+│   │   ├── fallback/      # Fallback generators when tools unavailable
+│   │   └── mapper/        # Structure mapping
+│   └── orchestrator/      # Project generation orchestration
+│       └── cache/         # Tool metadata caching
+├── pkg/                   # Public interfaces and libraries
+│   ├── cli/              # CLI utilities and error types
+│   │   └── interactive/  # Interactive prompts
+│   ├── filesystem/       # File operations
+│   ├── interfaces/       # Core interfaces
+│   ├── logger/           # Logging infrastructure
+│   ├── models/           # Data structures
+│   ├── security/         # Security operations
+│   └── testhelpers/      # Test utilities
+├── configs/              # Example configuration files
+├── docs/                 # Documentation
+├── scripts/              # Build and utility scripts
+└── .github/              # GitHub workflows and templates
+```
 - **`docs/`**: Documentation files
 - **`output/`**: Generated project output
 
@@ -744,17 +767,17 @@ Understanding the project structure helps with contributions:
 
 - All Docker containers use **UID 1001** for consistency
 - Use `pkg/security/` for path sanitization
-- Use `pkg/errors/` for categorized error handling
+- Use `pkg/cli` error types for categorized error handling
 - Follow the modular architecture patterns
 
 ## FAQ
 
 ### Common Questions
 
-**Q: How do I add a new template?**
-A: Create the template files in the appropriate `pkg/template/templates/` subdirectory, following existing patterns. Include proper variable substitution, test the template generation, and update template metadata.
+**Q: How do I add support for a new tool?**
+A: Create a new executor in `internal/generator/bootstrap/`, register it in the tool discovery system, and add tests. See `docs/ADDING_TOOLS.md` for detailed instructions.
 
-**Q: How do I test template changes?**
+**Q: How do I test tool executor changes?**
 A: Run `make test` for unit tests, then test template generation manually with `./bin/generator generate` or use Docker Compose: `docker compose --profile testing up generator-test`.
 
 **Q: What should I work on as a first contribution?**
@@ -770,7 +793,7 @@ A: Yes! Create an issue first to discuss the approach, then add the necessary te
 A: Use `docker compose --profile development run --rm generator-dev bash` to get an interactive shell with all development tools. All containers use UID 1001.
 
 **Q: What security practices should I follow?**
-A: Always use `pkg/security/SanitizePath()` for user paths, return categorized errors from `pkg/errors/`, and run `make security-scan` before submitting PRs. See [SECURITY.md](SECURITY.md) for details.
+A: Always use `pkg/security/SanitizePath()` for user paths, return categorized errors from `pkg/cli` error types, and run `make security-scan` before submitting PRs. See [SECURITY.md](SECURITY.md) for details.
 
 **Q: How do I run CI checks locally?**
 A: Run `make check` for quick checks (fmt, vet, lint, test) or `make ci` for the full CI pipeline. For release validation, run `make release`.

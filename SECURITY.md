@@ -161,20 +161,20 @@ func NewFileSystemManager(sec security.Interface, val validation.Interface) *Fil
 
 ## Remaining Security Considerations
 
-### Template Security
+### Tool Execution Security
 
-- Templates in `pkg/template/templates/` are validated before processing
-- Generated code follows security best practices defined in templates
-- Template metadata in `template.yaml` defines security requirements
-- Disable untrusted templates with `.disabled` extension
-- Security validation runs before template processing
+- Only whitelisted tools and flags are executed
+- All tool commands are validated before execution
+- Command injection prevention through parameter validation
+- Tool output is sanitized before processing
+- Timeout protection prevents hanging processes
 
 ### Input Validation
 
-- All user inputs validated through `pkg/validation/` interfaces
+- All user inputs validated through `internal/config/` validators
 - Path inputs sanitized via `pkg/security/SanitizePath()`
-- Template variables validated before substitution
-- Categorized error handling via `pkg/errors/` package
+- Configuration fields validated before tool execution
+- Categorized error handling via `pkg/cli` error types
 - Early validation with fail-fast approach
 
 ### Dependency Security
@@ -182,8 +182,8 @@ func NewFileSystemManager(sec security.Interface, val validation.Interface) *Fil
 - Regularly update dependencies using `go get -u`
 - Use dependency scanning tools (nancy, govulncheck)
 - Pin dependency versions in `go.mod`
-- Version management handled by `pkg/version/` package
-- Offline mode supported via `pkg/cache/` for security-sensitive environments
+- Tool version requirements defined in `internal/orchestrator/tool_discovery.go`
+- Offline mode supported via cached tool metadata
 
 ## Security Testing
 
@@ -202,8 +202,8 @@ staticcheck ./...
 # Run govulncheck for Go vulnerabilities
 govulncheck ./...
 
-# Scan for secrets in templates
-trufflehog filesystem ./pkg/template/templates/
+# Scan for secrets in code
+trufflehog filesystem ./
 
 # Validate generated projects
 generator audit ./output --security --fail-on-high
@@ -253,10 +253,10 @@ The generator creates projects with built-in security features:
 
 - [ ] Sanitize all file paths using `pkg/security/SanitizePath()`
 - [ ] Use secure file permissions (0600 for files, 0750 for directories)
-- [ ] Return categorized errors from `pkg/errors/` package
-- [ ] Validate user inputs through `pkg/validation/` interfaces
+- [ ] Return categorized errors from `pkg/cli` error types
+- [ ] Validate user inputs through `internal/config/` validators
 - [ ] Use dependency injection with interfaces from `pkg/interfaces/`
-- [ ] Review templates in `pkg/template/templates/` for security issues
+- [ ] Review tool execution code for command injection vulnerabilities
 - [ ] Run security scanners before submitting PRs (`make security-scan`)
 - [ ] Test generated projects for security vulnerabilities
 - [ ] Update security documentation for new features

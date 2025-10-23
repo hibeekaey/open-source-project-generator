@@ -133,11 +133,11 @@ RUN git config --global user.name "Builder" && \
 
 # Add helpful build aliases
 RUN echo 'alias build="make build"' >> /home/builder/.bashrc && \
-    echo 'alias build-all="make build-all"' >> /home/builder/.bashrc && \
-    echo 'alias package-all="make package-all"' >> /home/builder/.bashrc && \
+    echo 'alias dist="make dist"' >> /home/builder/.bashrc && \
+    echo 'alias package="make package"' >> /home/builder/.bashrc && \
     echo 'echo "🏗️  Generator Build Environment Ready!"' >> /home/builder/.bashrc && \
     echo 'echo "Version: ${VERSION} | Commit: ${GIT_COMMIT} | Build Time: ${BUILD_TIME}"' >> /home/builder/.bashrc && \
-    echo 'echo "Available commands: make build, make build-all, make package-all"' >> /home/builder/.bashrc && \
+    echo 'echo "Available commands: make build, make dist, make package, make release"' >> /home/builder/.bashrc && \
     echo 'echo "Output: dist/ (binaries), packages/ (DEB/RPM/Arch packages)"' >> /home/builder/.bashrc
 
 # Health check to verify build environment
@@ -145,4 +145,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
     CMD go version && make --version || exit 1
 
 # Default command runs the build script if it exists, otherwise opens shell
-CMD ["/bin/bash", "-c", "if [ -x './scripts/build.sh' ]; then echo 'Running build script...' && ./scripts/build.sh; else echo 'No build script found. Available commands:' && echo '  make build          - Build for current platform' && echo '  make build-all      - Build for all platforms' && echo '  make dist-packages  - Create all distribution packages' && echo '  make package-all    - Create all packages (DEB, RPM, Arch)' && echo '  ./scripts/build.sh  - Run build script directly' && echo '' && echo 'Starting interactive shell...' && /bin/bash; fi"]
+CMD ["/bin/bash", "-c", "if [ -x './scripts/build.sh' ]; then echo 'Running build script...' && ./scripts/build.sh; else echo 'No build script found. Available commands:' && echo '  make build          - Build for current platform' && echo '  make dist           - Build cross-platform binaries' && echo '  make package        - Create distribution packages' && echo '  make release        - Full release (test, lint, security, dist, package)' && echo '  ./scripts/build.sh  - Run build script directly' && echo '' && echo 'Starting interactive shell...' && /bin/bash; fi"]

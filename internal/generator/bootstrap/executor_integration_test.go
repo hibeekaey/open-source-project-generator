@@ -1,4 +1,5 @@
 package bootstrap
+
 // Test file - gosec warnings suppressed for test utilities
 //nolint:gosec
 

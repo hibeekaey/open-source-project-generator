@@ -204,6 +204,7 @@ func (im *IntegrationManager) ConfigureEnvironment(components []*models.Componen
 }
 
 // generateRootEnvFile creates a shared .env file with common configuration
+//
 //nolint:unparam // error return reserved for future validation
 func (im *IntegrationManager) generateRootEnvFile(components []*models.Component, config *models.IntegrationConfig) (string, error) {
 	var envVars []string
@@ -383,6 +384,7 @@ func (im *IntegrationManager) GenerateScripts(components []*models.Component) er
 }
 
 // generateBuildScript creates a script to build all components
+//
 //nolint:unparam // error return reserved for future validation
 func (im *IntegrationManager) generateBuildScript(components []*models.Component) (string, error) {
 	var lines []string
@@ -436,6 +438,7 @@ func (im *IntegrationManager) generateBuildScript(components []*models.Component
 }
 
 // generateDevScript creates a script to run all components in development mode
+//
 //nolint:unparam // error return reserved for future validation
 func (im *IntegrationManager) generateDevScript(components []*models.Component) (string, error) {
 	var lines []string
@@ -491,6 +494,7 @@ func (im *IntegrationManager) generateDevScript(components []*models.Component) 
 }
 
 // generateProdScript creates a script to run all components in production mode
+//
 //nolint:unparam // error return reserved for future validation
 func (im *IntegrationManager) generateProdScript(components []*models.Component) (string, error) {
 	var lines []string
@@ -625,6 +629,7 @@ func (im *IntegrationManager) GenerateDocumentation(components []*models.Compone
 }
 
 // generateMainReadme creates a comprehensive README for the project
+//
 //nolint:unparam // error return reserved for future validation
 func (im *IntegrationManager) generateMainReadme(components []*models.Component, config *models.IntegrationConfig) (string, error) {
 	var sections []string
@@ -878,6 +883,7 @@ func (im *IntegrationManager) generateMainReadme(components []*models.Component,
 }
 
 // generateTroubleshootingGuide creates a troubleshooting guide
+//
 //nolint:unparam // error return reserved for future validation
 func (im *IntegrationManager) generateTroubleshootingGuide(components []*models.Component) (string, error) {
 	var sections []string

@@ -4,7 +4,7 @@
 # - Multi-stage build for minimal image size
 # - Static binary with no external dependencies
 # - Non-root user for security
-# - Embedded templates and resources
+# - Tool-orchestration architecture (no templates needed)
 # - Health check for container orchestration
 #
 # Usage:
@@ -34,6 +34,9 @@ ARG BUILD_TIME=unknown
 ARG TARGETOS=linux
 ARG TARGETARCH
 
+# Update base image packages to fix vulnerabilities
+RUN apk update && apk upgrade --no-cache
+
 # Install build dependencies
 RUN apk add --no-cache \
     git \
@@ -50,7 +53,7 @@ COPY go.mod go.sum ./
 # Download dependencies (cached if go.mod/go.sum unchanged)
 RUN go mod download && go mod verify
 
-# Copy source code and templates
+# Copy source code
 COPY . .
 
 # Build the static binary with version information and optimizations
@@ -99,9 +102,6 @@ RUN addgroup -g 1001 generator && \
 
 # Copy binary from builder stage
 COPY --from=builder /app/generator /usr/local/bin/generator
-
-# Copy embedded templates and resources (if they exist)
-COPY --from=builder --chown=generator:generator /app/pkg/template/templates /usr/local/share/generator/templates
 
 # Switch to non-root user
 USER generator
