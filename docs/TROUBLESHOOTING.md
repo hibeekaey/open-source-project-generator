@@ -1,101 +1,287 @@
 # Troubleshooting Guide
 
-This guide helps you diagnose and resolve common issues with the Open Source Project Generator.
+Common issues and solutions for the Open Source Project Generator.
 
 ## Table of Contents
 
-- [Installation Issues](#installation-issues)
+- [Tool Discovery Issues](#tool-discovery-issues)
+- [Tool Execution Failures](#tool-execution-failures)
 - [Configuration Problems](#configuration-problems)
 - [Generation Errors](#generation-errors)
-- [Validation Issues](#validation-issues)
-- [Template Problems](#template-problems)
-- [Performance Issues](#performance-issues)
-- [Debugging](#debugging)
-- [Getting Help](#getting-help)
+- [Offline Mode Issues](#offline-mode-issues)
+- [Performance Problems](#performance-problems)
+- [Debug Techniques](#debug-techniques)
 
-## Installation Issues
+---
 
-### Permission Denied Errors
+## Tool Discovery Issues
 
-**Problem**: Cannot install or run the generator due to permission errors.
+### Tool Not Found
 
-**Solutions**:
+**Problem:** `Error: Tool 'npx' not found in PATH`
 
-```bash
-# Check current permissions
-ls -la /usr/local/bin/generator
-
-# Fix permissions
-sudo chmod +x /usr/local/bin/generator
-
-# Install to user directory instead
-mkdir -p ~/.local/bin
-cp generator ~/.local/bin/
-export PATH="$HOME/.local/bin:$PATH"
-```
-
-### Binary Not Found
-
-**Problem**: `generator: command not found` after installation.
-
-**Solutions**:
+**Diagnosis:**
 
 ```bash
-# Check if binary exists
-which generator
-ls -la /usr/local/bin/generator
+# Check if tool is installed
+which npx
+echo $PATH
 
-# Add to PATH
-echo 'export PATH="/usr/local/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
-
-# Or use full path
-/usr/local/bin/generator --version
+# Check tool availability
+generator check-tools
 ```
 
-### Go Version Compatibility
+**Solutions:**
 
-**Problem**: Build fails due to Go version incompatibility.
+1. **Install the missing tool:**
 
-**Solutions**:
+   ```bash
+   # For npx (Node.js)
+   # macOS
+   brew install node
+
+   # Ubuntu/Debian
+   sudo apt install nodejs npm
+
+   # Windows
+   # Download from https://nodejs.org/
+
+   # Verify installation
+   npx --version
+   generator check-tools
+   ```
+
+2. **Add tool to PATH:**
+
+   ```bash
+   # Find tool location
+   find /usr -name npx 2>/dev/null
+
+   # Add to PATH (bash/zsh)
+   export PATH="/usr/local/bin:$PATH"
+
+   # Make permanent
+   echo 'export PATH="/usr/local/bin:$PATH"' >> ~/.bashrc
+   source ~/.bashrc
+   ```
+
+3. **Use fallback generation:**
+
+   ```bash
+   # Force fallback generators
+   generator generate --config project.yaml --no-external-tools
+   ```
+
+### Tool Version Too Old
+
+**Problem:** `Warning: Tool 'go' version 1.18.0 is below minimum required version 1.21.0`
+
+**Solutions:**
+
+1. **Update the tool:**
+
+   ```bash
+   # Update Go
+   # macOS
+   brew upgrade go
+
+   # Ubuntu/Debian
+   sudo add-apt-repository ppa:longsleep/golang-backports
+   sudo apt update
+   sudo apt install golang-go
+
+   # Verify version
+   go version
+   generator check-tools
+   ```
+
+2. **Install specific version:**
+
+   ```bash
+   # Using version managers
+   # For Node.js (nvm)
+   nvm install 20
+   nvm use 20
+
+   # For Go (gvm)
+   gvm install go1.21
+   gvm use go1.21
+   ```
+
+### Multiple Tool Versions Conflict
+
+**Problem:** `Error: Multiple versions of 'node' found in PATH`
+
+**Solutions:**
+
+1. **Use version manager:**
+
+   ```bash
+   # Install nvm for Node.js
+   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+
+   # Set default version
+   nvm alias default 20
+   nvm use default
+   ```
+
+2. **Clean up PATH:**
+
+   ```bash
+   # Check PATH
+   echo $PATH | tr ':' '\n'
+
+   # Remove duplicate entries
+   export PATH=$(echo "$PATH" | awk -v RS=':' -v ORS=":" '!a[$1]++')
+   ```
+
+---
+
+## Tool Execution Failures
+
+### Bootstrap Tool Fails to Execute
+
+**Problem:** `Error: Tool execution failed: npx create-next-app`
+
+**Diagnosis:**
 
 ```bash
-# Check Go version
-go version
+# Run with verbose output
+generator generate --config project.yaml --verbose
 
-# Update Go (if needed)
-# Using g (Go version manager)
-g install latest
-g use latest
+# Test tool manually
+npx create-next-app@latest test-app --typescript
 
-# Or download from https://golang.org/dl/
+# Check logs
+cat ~/.cache/generator/logs/generator.log
 ```
 
-### Docker Issues
+**Solutions:**
 
-**Problem**: Docker container fails to start or run.
+1. **Check network connectivity:**
 
-**Solutions**:
+   ```bash
+   # Test internet connection
+   ping registry.npmjs.org
 
-```bash
-# Check Docker is running
-docker --version
-docker ps
+   # Use offline mode if needed
+   generator generate --offline
+   ```
 
-# Pull latest image
-docker pull ghcr.io/cuesoftinc/open-source-project-generator:latest
+2. **Clear tool cache:**
 
-# Run with proper volume mounting
-docker run -it --rm -v $(pwd):/workspace ghcr.io/cuesoftinc/open-source-project-generator:latest generate
-```
+   ```bash
+   # Clear npm cache
+   npm cache clean --force
+
+   # Clear generator cache
+   generator cache-tools --clear
+
+   # Retry generation
+   generator generate --config project.yaml
+   ```
+
+3. **Check disk space:**
+
+   ```bash
+   # Check available space
+   df -h
+
+   # Clean up if needed
+   npm cache clean --force
+   go clean -cache -modcache -testcache
+   ```
+
+4. **Use fallback generation:**
+
+   ```bash
+   # Skip external tools
+   generator generate --config project.yaml --no-external-tools
+   ```
+
+### Tool Hangs or Times Out
+
+**Problem:** `Error: Tool execution timeout after 5 minutes`
+
+**Solutions:**
+
+1. **Check for prompts:**
+
+   ```bash
+   # Some tools may be waiting for input
+   # Run tool manually to see prompts
+   npx create-next-app@latest test-app
+
+   # Ensure non-interactive mode
+   generator generate --config project.yaml
+   ```
+
+2. **Check system resources:**
+
+   ```bash
+   # Monitor during execution
+   top
+   htop
+
+   # Check for resource constraints
+   free -h
+   df -h
+   ```
+
+3. **Increase timeout (if supported):**
+
+   ```bash
+   # Set timeout environment variable
+   export GENERATOR_TOOL_TIMEOUT=600  # 10 minutes
+
+   # Retry generation
+   generator generate --config project.yaml
+   ```
+
+### Permission Denied During Tool Execution
+
+**Problem:** `Error: EACCES: permission denied, mkdir '/usr/local/lib/node_modules'`
+
+**Solutions:**
+
+1. **Fix npm permissions:**
+
+   ```bash
+   # Change npm default directory
+   mkdir ~/.npm-global
+   npm config set prefix '~/.npm-global'
+   export PATH=~/.npm-global/bin:$PATH
+
+   # Add to shell profile
+   echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
+   ```
+
+2. **Fix directory permissions:**
+
+   ```bash
+   # Change output directory ownership
+   sudo chown -R $USER:$USER ./output-directory
+
+   # Or use different output directory
+   generator generate --output ~/projects/my-project
+   ```
+
+3. **Use sudo (not recommended):**
+
+   ```bash
+   # Only if absolutely necessary
+   sudo generator generate --config project.yaml
+   ```
+
+---
 
 ## Configuration Problems
 
 ### Configuration File Not Found
 
-**Problem**: `Error: configuration file not found`.
+**Problem:** `Error: configuration file not found`
 
-**Solutions**:
+**Solutions:**
 
 ```bash
 # Check file exists
@@ -105,135 +291,78 @@ ls -la ./project-config.yaml
 generator generate --config /full/path/to/config.yaml
 
 # Create default configuration
-generator config export default-config.yaml
+generator init-config project.yaml
 ```
 
 ### Invalid Configuration Format
 
-**Problem**: `Error: failed to parse configuration file`.
+**Problem:** `Error: failed to parse configuration file`
 
-**Solutions**:
+**Solutions:**
 
 ```bash
 # Validate YAML syntax
-generator config validate ./config.yaml
+# Use online validator or yamllint
+yamllint project.yaml
 
-# Check for common YAML issues
+# Check for common YAML issues:
 # - Proper indentation (spaces, not tabs)
 # - Correct quotes around strings
 # - Valid boolean values (true/false, not True/False)
 
-# Use online YAML validator
-# https://www.yamllint.com/
+# Generate valid template
+generator init-config template.yaml
+
+# Compare with your configuration
+diff template.yaml project.yaml
 ```
 
-### Environment Variable Issues
+### Missing Required Fields
 
-**Problem**: Environment variables not being recognized.
+**Problem:** `Error: Invalid configuration: missing required field 'name'`
 
-**Solutions**:
+**Solutions:**
 
 ```bash
-# Check environment variables
-env | grep GENERATOR
+# Check required fields
+generator init-config --full > template.yaml
 
-# Set required variables
-export GENERATOR_PROJECT_NAME="my-project"
-export GENERATOR_NON_INTERACTIVE=true
+# Compare with your configuration
+diff template.yaml project.yaml
 
-# Use .env file
-echo "GENERATOR_PROJECT_NAME=my-project" > .env
-source .env
+# Add missing fields
+# Minimum required:
+# - name
+# - output_dir
+# - components (at least one enabled)
 ```
 
-### Configuration Conflicts
+### Component Configuration Invalid
 
-**Problem**: Configuration values conflict or override unexpectedly.
+**Problem:** `Error: Invalid component configuration: unknown component type 'react-app'`
 
-**Solutions**:
+**Solutions:**
 
 ```bash
-# Show configuration sources
-generator config show --sources
+# Valid component types:
+# - nextjs
+# - go-backend
+# - android
+# - ios
 
-# Check precedence order
-# 1. Command-line arguments
-# 2. Environment variables
-# 3. Configuration files
-# 4. Default values
-
-# Override specific values
-generator generate --config base.yaml --force --minimal
+# Fix component type in configuration
+# Change 'react-app' to 'nextjs'
 ```
+
+---
 
 ## Generation Errors
 
-### Test Failures (RESOLVED in v1.5.0)
-
-**Problem**: Tests failing in CI or non-interactive environments.
-
-**Status**: ✅ **FIXED** - All test failures have been resolved in version 1.5.0
-
-**Previous Issues**:
-
-- CLI interactive tests failing in non-interactive environments
-- Filesystem generator tests with nil configuration handling
-- Integration test concurrency and race conditions
-- Security test timing and environment issues
-
-**Solutions Implemented**:
-
-- Enhanced environment detection for interactive vs non-interactive modes
-- Comprehensive nil configuration validation and error handling
-- Proper synchronization mechanisms for concurrent operations
-- Improved test isolation and cleanup procedures
-
-### Linting Issues (RESOLVED in v1.5.0)
-
-**Problem**: Code quality issues reported by golangci-lint.
-
-**Status**: ✅ **FIXED** - All 88 linting issues have been resolved in version 1.5.0
-
-**Previous Issues**:
-
-- 45 errcheck issues (unhandled errors)
-- 19 staticcheck issues (code quality violations)
-- 20 unused code issues
-- 2 spelling issues
-- 2 go vet and ineffassign issues
-
-**Solutions Implemented**:
-
-- Comprehensive error handling for all critical code paths
-- Code quality improvements and optimization
-- Unused code removal and cleanup
-- Spelling corrections and documentation improvements
-
-### Security Vulnerabilities (RESOLVED in v1.5.0)
-
-**Problem**: Security issues identified by gosec scanner.
-
-**Status**: ✅ **FIXED** - All 55 security issues have been resolved in version 1.5.0
-
-**Previous Issues**:
-
-- Integer overflow vulnerabilities in memory calculations
-- File permission issues (overly permissive)
-- Path validation gaps and potential traversal vulnerabilities
-- Error handling security concerns
-
-**Solutions Implemented**:
-
-- Comprehensive bounds checking for all numeric operations
-- Restrictive file permissions (0600 for files, 0750 for directories)
-- Complete path validation and sanitization
-- Secure error handling preventing information leakage
-
 ### Output Directory Issues
 
-**Problem**: Cannot create or write to output directory.
+**Problem:** `Error: Cannot create or write to output directory`
 
-**Solutions**:
+**Solutions:**
 
 ```bash
 # Check directory permissions
@@ -250,227 +379,180 @@ generator generate --output ~/projects/my-project
 df -h
 ```
 
-### Template Not Found
-
-**Problem**: `Error: template not found`.
-
-**Solutions**:
-
-```bash
-# List available templates
-generator list-templates
-
-# Search for specific template
-generator list-templates --search "go"
-
-# Check template name spelling
-generator template info go-gin
-
-# Use full template path
-generator generate --template ./custom-templates/my-template
-```
-
 ### Generation Timeout
 
-**Problem**: Generation process times out or hangs.
+**Problem:** Generation process times out or hangs
 
-**Solutions**:
+**Solutions:**
 
 ```bash
 # Use offline mode
 generator generate --offline
 
-# Increase timeout
-export GENERATOR_TIMEOUT="60m"
-generator generate
-
-# Use minimal generation
-generator generate --minimal
+# Use fallback generators
+generator generate --no-external-tools
 
 # Check system resources
 top
 df -h
+free -h
 ```
 
-### Network Issues
+### Partial Generation
 
-**Problem**: Cannot fetch package versions or templates.
+**Problem:** Some components generated, others failed
 
-**Solutions**:
+**Diagnosis:**
 
 ```bash
-# Use offline mode
-generator generate --offline
+# Check which components failed
+generator generate --config project.yaml --verbose
+
+# Review logs
+cat ~/.cache/generator/logs/generator.log
+```
+
+**Solutions:**
+
+```bash
+# Disable failed components temporarily
+# Edit config to set enabled: false for failing components
+
+# Generate successfully working components first
+generator generate --config working-components.yaml
+
+# Debug failed components separately
+generator generate --config failed-component.yaml --verbose
+```
+
+### File Conflicts
+
+**Problem:** `Error: File already exists`
+
+**Solutions:**
+
+```bash
+# Create backup before overwriting
+generator generate --config project.yaml --backup
+
+# Force overwrite
+generator generate --config project.yaml --force
+
+# Use different output directory
+generator generate --config project.yaml --output ./new-project
+```
+
+---
+
+## Offline Mode Issues
+
+### Cannot Generate in Offline Mode
+
+**Problem:** `Error: Tool 'npx' requires network access and is not cached`
+
+**Solutions:**
+
+1. **Cache tools before going offline:**
+
+   ```bash
+   # While online, cache all tools
+   generator cache-tools --save
+
+   # Verify cache
+   generator cache-tools --stats
+
+   # Then go offline
+   generator generate --offline
+   ```
+
+2. **Use fallback generators:**
+
+   ```bash
+   # Fallback generators work offline
+   generator generate --config project.yaml --no-external-tools
+   ```
+
+3. **Check cache location:**
+
+   ```bash
+   # Verify cache exists
+   generator cache-tools --info
+
+   # If cache is missing, recache while online
+   generator cache-tools --save
+   ```
+
+### Cached Tools Expired
+
+**Problem:** `Warning: Cached tool 'npx' is outdated`
+
+**Solutions:**
+
+```bash
+# Update cache (while online)
+generator cache-tools --clear
+generator cache-tools --save
+
+# Verify update
+generator cache-tools --stats
+```
+
+### Network Detection Issues
+
+**Problem:** Generator thinks it's offline when online
+
+**Solutions:**
+
+```bash
+# Force online mode
+unset GENERATOR_OFFLINE
 
 # Check network connectivity
-ping github.com
-curl -I https://registry.npmjs.org
+ping google.com
 
-# Use proxy (if needed)
-export HTTP_PROXY=http://proxy.company.com:8080
-export HTTPS_PROXY=http://proxy.company.com:8080
-
-# Disable SSL verification (not recommended)
-export GENERATOR_INSECURE=true
+# Regenerate
+generator generate --config project.yaml
 ```
 
-## Validation Issues
+---
 
-### Validation Failures
-
-**Problem**: Generated project fails validation.
-
-**Solutions**:
-
-```bash
-# Run validation with detailed output
-generator validate ./my-project --verbose
-
-# Auto-fix common issues
-generator validate ./my-project --fix
-
-# Check specific validation rules
-generator validate ./my-project --rules structure,dependencies
-
-# Show fix suggestions
-generator validate ./my-project --show-fixes
-```
-
-### Import Errors
-
-**Problem**: Generated Go code has import errors.
-
-**Solutions**:
-
-```bash
-# Check Go module initialization
-cd ./my-project
-go mod init my-project
-go mod tidy
-
-# Fix import paths
-goimports -w .
-
-# Check for missing dependencies
-go mod download
-go build ./...
-```
-
-### Dependency Issues
-
-**Problem**: Package dependencies are outdated or incompatible.
-
-**Solutions**:
-
-```bash
-# Update dependencies
-generator generate --update-versions
-
-# Check for security vulnerabilities
-generator audit --security
-
-# Use specific versions
-# In configuration file:
-versions:
-  react: "18.2.0"
-  typescript: "4.9.5"
-```
-
-## Template Problems
-
-### Template Syntax Errors
-
-**Problem**: Template compilation fails due to syntax errors.
-
-**Solutions**:
-
-```bash
-# Validate template syntax
-generator template validate ./my-template
-
-# Check for common syntax issues
-# - Missing {{end}} for {{if}} statements
-# - Incorrect variable references
-# - Invalid function calls
-
-# Test template with sample data
-generator template test ./my-template --data sample-data.yaml
-```
-
-### Template Variable Issues
-
-**Problem**: Template variables are undefined or incorrect.
-
-**Solutions**:
-
-```bash
-# Check template metadata
-generator template info my-template
-
-# Validate variable definitions
-generator template validate ./my-template --check-variables
-
-# Use template with explicit variables
-generator generate --template my-template --var project_name="MyProject"
-```
-
-### Custom Template Issues
-
-**Problem**: Custom template doesn't work as expected.
-
-**Solutions**:
-
-```bash
-# Validate custom template
-generator template validate ./custom-template --detailed
-
-# Check template structure
-ls -la ./custom-template/
-cat ./custom-template/metadata.yaml
-
-# Test with minimal configuration
-generator generate --template ./custom-template --minimal
-```
-
-## Performance Issues
+## Performance Problems
 
 ### Slow Generation
 
-**Problem**: Project generation is slow.
+**Problem:** Project generation is slow
 
-**Solutions**:
+**Solutions:**
 
 ```bash
 # Use offline mode
 generator generate --offline
 
-# Enable caching
-generator cache enable
-
-# Use minimal generation
-generator generate --minimal
+# Use fallback generators (faster)
+generator generate --no-external-tools
 
 # Check system resources
 top
 free -h
 df -h
+
+# Close other applications
 ```
 
 ### Memory Issues
 
-**Problem**: Out of memory errors during generation.
+**Problem:** Out of memory errors during generation
 
-**Solutions**:
+**Solutions:**
 
 ```bash
 # Check available memory
 free -h
 
-# Use minimal generation
-generator generate --minimal
+# Close other applications
 
-# Clear cache
-generator cache clear
+# Generate components separately
+# Split configuration into smaller files
 
 # Increase swap space (if needed)
 sudo swapon --show
@@ -478,82 +560,130 @@ sudo swapon --show
 
 ### Cache Issues
 
-**Problem**: Cache corruption or performance issues.
+**Problem:** Cache corruption or performance issues
 
-**Solutions**:
+**Solutions:**
 
 ```bash
 # Check cache status
-generator cache show
+generator cache-tools --stats
 
-# Clean expired cache
-generator cache clean
-
-# Clear all cache
-generator cache clear --force
+# Clear cache
+generator cache-tools --clear
 
 # Rebuild cache
-generator update --templates --packages
+generator cache-tools --save
 ```
 
-## Debugging
+---
+
+## Debug Techniques
 
 ### Enable Debug Mode
 
 ```bash
-# Debug mode with detailed logging
-generator generate --debug --verbose
+# Full debug output
+generator generate --config project.yaml --debug --verbose
 
-# Set debug log level
-export GENERATOR_LOG_LEVEL=debug
-generator generate
-
-# Show debug information
-generator version --build-info
+# Save debug output to file
+generator generate --config project.yaml --debug 2>&1 | tee debug.log
 ```
 
-### Log Analysis
+### Check Log Files
 
 ```bash
 # View recent logs
-generator logs --lines 100
+tail -f ~/.cache/generator/logs/generator.log
 
-# Filter by log level
-generator logs --level error
+# Search for errors
+grep -i error ~/.cache/generator/logs/generator.log
 
-# Follow logs in real-time
-generator logs --follow
-
-# Show log file locations
-generator logs --locations
+# View specific component logs
+grep "Next.js" ~/.cache/generator/logs/generator.log
 ```
 
-### System Information
+### Test Components Individually
 
 ```bash
-# Show system information
-generator version --system-info
+# Test tool availability
+generator check-tools --verbose
 
-# Check dependencies
-generator version --dependencies
+# Test configuration
+generator generate --config project.yaml --dry-run --verbose
 
-# Verify installation
-generator version --verify
+# Test specific component
+# Create minimal config with one component
+cat > test.yaml << EOF
+name: "test"
+output_dir: "./test"
+components:
+  - type: nextjs
+    name: test-app
+    enabled: true
+    config:
+      typescript: true
+EOF
+
+generator generate --config test.yaml --verbose
 ```
 
-### Performance Profiling
+### Verify Tool Execution
 
 ```bash
-# Enable performance metrics
-generator generate --debug --profile
+# Run tools manually to isolate issues
+npx create-next-app@latest test-app --typescript
+go mod init github.com/test/app
 
-# Check generation time
-time generator generate
-
-# Monitor resource usage
-generator generate --debug &
-top -p $!
+# Compare with generator output
+generator generate --config project.yaml --verbose
 ```
+
+### Check System Resources
+
+```bash
+# Monitor during generation
+# Terminal 1: Run generator
+generator generate --config project.yaml --verbose
+
+# Terminal 2: Monitor resources
+watch -n 1 'ps aux | grep generator'
+watch -n 1 'df -h'
+watch -n 1 'free -h'
+```
+
+### Validate Generated Project
+
+```bash
+# Check directory structure
+tree ./my-project -L 2
+
+# Verify files were created
+find ./my-project -type f | wc -l
+
+# Check for errors in generated files
+cd ./my-project/CommonServer
+go vet ./...
+
+cd ./my-project/App
+npm run build
+```
+
+---
+
+## Common Error Messages
+
+| Error Message | Likely Cause | Solution |
+|---------------|--------------|----------|
+| `Tool 'X' not found` | Tool not installed or not in PATH | Install tool or add to PATH |
+| `Tool execution failed` | Network issue, permissions, or tool error | Check logs, verify tool works manually |
+| `Invalid configuration` | YAML/JSON syntax error | Validate configuration file |
+| `Permission denied` | Insufficient permissions | Fix file/directory permissions |
+| `Structure mapping failed` | Generated files in unexpected location | Check debug logs, verify component names |
+| `Offline mode failed` | Tools not cached | Cache tools while online |
+| `Timeout` | Tool taking too long | Check network, increase timeout |
+| `Out of memory` | Insufficient RAM | Close applications, increase swap |
+
+---
 
 ## Getting Help
 
@@ -565,104 +695,105 @@ generator --help
 
 # Command-specific help
 generator generate --help
-generator validate --help
-generator audit --help
+generator check-tools --help
 
 # Show examples
-generator <command> --help | grep -A 20 "Examples:"
+generator <command> --help
 ```
 
 ### Diagnostic Information
 
 ```bash
 # Generate diagnostic report
-generator version --diagnostic > diagnostic.txt
+generator version
 
-# Include system information
-generator version --system-info >> diagnostic.txt
+# Check tool availability
+generator check-tools --verbose
 
-# Include configuration
-generator config show >> diagnostic.txt
+# Check cache status
+generator cache-tools --stats
+
+# View logs
+cat ~/.cache/generator/logs/generator.log
 ```
 
 ### Community Support
 
-- **GitHub Issues**: [Report bugs and request features](https://github.com/cuesoftinc/open-source-project-generator/issues)
+- **GitHub Issues**: [Report bugs](https://github.com/cuesoftinc/open-source-project-generator/issues)
 - **Discussions**: [Community discussions](https://github.com/cuesoftinc/open-source-project-generator/discussions)
-- **Documentation**: [Online documentation](https://github.com/cuesoftinc/open-source-project-generator/wiki)
-- **Email Support**: [support@cuesoft.io](mailto:support@cuesoft.io)
+- **Documentation**: [Online documentation](https://github.com/cuesoftinc/open-source-project-generator)
+- **Email**: <support@cuesoft.io>
 
 ### Reporting Issues
 
 When reporting issues, include:
 
 1. **Generator version**: `generator version`
-2. **System information**: `generator version --system-info`
-3. **Configuration**: `generator config show`
-4. **Error logs**: `generator logs --level error --lines 50`
-5. **Steps to reproduce**: Detailed steps to reproduce the issue
-6. **Expected behavior**: What you expected to happen
+2. **Tool availability**: `generator check-tools`
+3. **Configuration**: Your configuration file (sanitized)
+4. **Error logs**: Relevant error messages
+5. **Steps to reproduce**: Detailed steps
+6. **Expected behavior**: What you expected
 7. **Actual behavior**: What actually happened
 
 ### Example Issue Report
 
 ```bash
-# Generate complete diagnostic information
-generator version --diagnostic > issue-report.txt
-generator config show >> issue-report.txt
-generator logs --level error --lines 100 >> issue-report.txt
+# Collect diagnostic information
+generator version > issue-report.txt
+generator check-tools >> issue-report.txt
+echo "--- Configuration ---" >> issue-report.txt
+cat project.yaml >> issue-report.txt
+echo "--- Error Log ---" >> issue-report.txt
+tail -100 ~/.cache/generator/logs/generator.log >> issue-report.txt
 
 # Attach to GitHub issue
 ```
 
-## Common Solutions
+---
 
-### Quick Fixes
+## Quick Fixes
 
-```bash
-# Reset to defaults
-generator config reset
-
-# Clear cache and rebuild
-generator cache clear
-generator update --templates --packages
-
-# Use offline mode
-generator generate --offline
-
-# Use minimal generation
-generator generate --minimal
-
-# Force regeneration
-generator generate --force
-```
-
-### Environment Reset
+### Reset to Defaults
 
 ```bash
-# Remove all configuration
-rm -rf ~/.generator
-rm -rf ~/.cache/generator
+# Clear cache
+generator cache-tools --clear
 
-# Reinstall
-curl -sSL https://raw.githubusercontent.com/cuesoftinc/open-source-project-generator/main/scripts/install.sh | bash
+# Regenerate configuration
+generator init-config project.yaml
 
-# Verify installation
-generator --version
+# Try again
+generator generate --config project.yaml
 ```
 
-### Configuration Reset
+### Force Fallback
 
 ```bash
-# Reset configuration to defaults
-generator config reset
-
-# Remove custom configuration
-rm -f ~/.config/generator/config.yaml
-rm -f ./generator.yaml
-
-# Start fresh
-generator generate
+# Skip external tools entirely
+generator generate --config project.yaml --no-external-tools
 ```
 
-This troubleshooting guide should help you resolve most common issues with the Open Source Project Generator. If you continue to experience problems, please refer to the community support channels listed above.
+### Use Verbose Mode
+
+```bash
+# See detailed output
+generator generate --config project.yaml --verbose --debug
+```
+
+### Test with Dry Run
+
+```bash
+# Preview without creating files
+generator generate --config project.yaml --dry-run
+```
+
+---
+
+## See Also
+
+- [Getting Started](GETTING_STARTED.md) - Installation and quick start
+- [CLI Commands](CLI_COMMANDS.md) - Command reference
+- [Configuration Guide](CONFIGURATION.md) - Configuration options
+- [Examples](EXAMPLES.md) - Example configurations
+- [Architecture](ARCHITECTURE.md) - How it works

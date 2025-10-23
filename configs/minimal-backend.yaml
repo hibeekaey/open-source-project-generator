@@ -1,0 +1,33 @@
+# Minimal Backend Configuration
+# This example generates a simple Go backend API with minimal configuration
+
+name: "simple-api"
+description: "Simple REST API with Go"
+output_dir: "./simple-api"
+
+# Components to generate
+components:
+  # Go Backend API
+  - type: go-backend
+    name: api
+    enabled: true
+    config:
+      module: github.com/myorg/simple-api
+      framework: gin
+      port: 8080
+
+# Integration settings
+integration:
+  generate_docker_compose: false  # No Docker Compose
+  generate_scripts: true          # Generate build scripts
+  
+  api_endpoints:
+    backend: http://localhost:8080
+
+# Generation options
+options:
+  use_external_tools: true
+  dry_run: false
+  verbose: false
+  create_backup: false
+  update_versions: true

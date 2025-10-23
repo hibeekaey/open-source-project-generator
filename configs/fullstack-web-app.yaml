@@ -1,0 +1,65 @@
+# Full-Stack Web Application Configuration
+# This example generates a complete web application with Next.js frontend and Go backend
+
+name: "fullstack-web-app"
+description: "Full-stack web application with Next.js and Go"
+output_dir: "./fullstack-web-app"
+
+# Components to generate
+components:
+  # Next.js Frontend Application
+  - type: nextjs
+    name: web-app
+    enabled: true
+    config:
+      typescript: true        # Use TypeScript
+      tailwind: true          # Include Tailwind CSS
+      app_router: true        # Use App Router (Next.js 13+)
+      eslint: true            # Include ESLint configuration
+      src_dir: false          # Don't use src/ directory
+
+  # Go Backend API Server
+  - type: go-backend
+    name: api-server
+    enabled: true
+    config:
+      module: github.com/myorg/fullstack-web-app
+      framework: gin          # Use Gin web framework
+      port: 8080             # API server port
+      cors_enabled: true     # Enable CORS for frontend
+
+  # Docker Configuration
+  - type: docker
+    name: docker-config
+    enabled: true
+    config:
+      compose_version: "3.8"
+      include_dev: true      # Include development configuration
+
+# Integration settings
+integration:
+  # Generate Docker Compose file
+  generate_docker_compose: true
+  
+  # Generate build and run scripts
+  generate_scripts: true
+  
+  # API endpoint configuration
+  api_endpoints:
+    backend: http://localhost:8080
+    frontend: http://localhost:3000
+  
+  # Environment variables
+  environment:
+    NODE_ENV: development
+    GO_ENV: development
+    API_URL: http://localhost:8080
+    FRONTEND_URL: http://localhost:3000
+
+# Generation options
+options:
+  use_external_tools: true   # Use bootstrap tools (create-next-app, go mod init)
+  dry_run: false             # Actually create files
+  verbose: false             # Normal output
+  create_backup: true        # Backup existing files
+  update_versions: true      # Use latest package versions

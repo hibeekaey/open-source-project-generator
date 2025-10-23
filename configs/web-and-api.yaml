@@ -1,0 +1,105 @@
+# Web Frontend + API Backend Configuration
+# Common configuration for web applications with backend API
+#
+# This configuration generates a typical web application stack:
+# - Next.js frontend for the user interface
+# - Go backend API for business logic and data
+# - Docker Compose for local development
+# - Integration scripts and documentation
+#
+# Usage:
+#   project-generator generate --config configs/web-and-api.yaml
+
+# Project metadata
+name: web-api-app
+description: Web application with Next.js frontend and Go backend API
+output_dir: ./web-api-app
+
+# Component definitions
+components:
+  # Frontend - Next.js web application
+  - type: nextjs
+    name: web-app
+    enabled: true
+    config:
+      name: web-app
+      typescript: true        # TypeScript for type safety
+      tailwind: true          # Tailwind CSS for styling
+      app_router: true        # Next.js App Router
+      eslint: true            # ESLint for code quality
+
+  # Backend - Go API server
+  - type: go-backend
+    name: api-server
+    enabled: true
+    config:
+      name: api-server
+      module: github.com/example/web-api-app
+      framework: gin
+      port: 8080
+
+  # Mobile - Not included in this configuration
+  - type: android
+    name: mobile-android
+    enabled: false
+    config:
+      name: mobile-android
+      package: com.example.webapiapp
+      min_sdk: 24
+      target_sdk: 34
+      language: kotlin
+
+  - type: ios
+    name: mobile-ios
+    enabled: false
+    config:
+      name: mobile-ios
+      bundle_id: com.example.webapiapp
+      deployment_target: "15.0"
+      language: swift
+
+# Integration configuration
+integration:
+  # Generate Docker Compose for local development
+  generate_docker_compose: true
+  
+  # Generate build and run scripts
+  generate_scripts: true
+  
+  # Configure frontend to connect to backend
+  api_endpoints:
+    backend: http://localhost:8080
+    frontend: http://localhost:3000
+  
+  # Shared environment variables
+  shared_environment:
+    # Development environment
+    NODE_ENV: development
+    ENV: development
+    
+    # Logging
+    LOG_LEVEL: info
+    
+    # API configuration
+    API_TIMEOUT: "30"
+    NEXT_PUBLIC_API_URL: http://localhost:8080
+    
+    # CORS for local development
+    CORS_ORIGINS: http://localhost:3000
+
+# Generation options
+options:
+  # Use external tools (npx, go) for latest versions
+  use_external_tools: true
+  
+  # Not a dry run - actually generate files
+  dry_run: false
+  
+  # Show detailed output
+  verbose: false
+  
+  # Create backup of existing files
+  create_backup: true
+  
+  # Prompt before overwriting
+  force_overwrite: false

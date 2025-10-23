@@ -1,0 +1,85 @@
+# Performance-Optimized Configuration Example
+# This example demonstrates the new performance optimization features
+
+name: "performance-demo"
+description: "Multi-component project with performance optimizations"
+output_dir: "./performance-demo"
+
+# Components to generate
+components:
+  # Next.js Frontend
+  - type: nextjs
+    name: web-app
+    enabled: true
+    config:
+      typescript: true
+      tailwind: true
+      app_router: true
+
+  # Go Backend
+  - type: go-backend
+    name: api-server
+    enabled: true
+    config:
+      module: github.com/myorg/performance-demo
+      framework: gin
+      port: 8080
+
+  # Android Mobile App
+  - type: android
+    name: mobile-android
+    enabled: true
+    config:
+      package: com.myorg.performancedemo
+      min_sdk: 24
+
+  # iOS Mobile App
+  - type: ios
+    name: mobile-ios
+    enabled: true
+    config:
+      bundle_id: com.myorg.performancedemo
+      min_ios: "14.0"
+
+# Integration settings
+integration:
+  generate_docker_compose: true
+  generate_scripts: true
+  api_endpoints:
+    backend: http://localhost:8080
+    frontend: http://localhost:3000
+
+# Performance optimization options
+options:
+  # Use bootstrap tools when available
+  use_external_tools: true
+  
+  # Enable parallel component generation (default: true)
+  # Generates independent components concurrently for faster execution
+  disable_parallel: false
+  
+  # Enable streaming output for long operations (default: false)
+  # Shows real-time output from bootstrap tools
+  stream_output: true
+  
+  # Enable verbose logging to see detailed output
+  verbose: true
+  
+  # Standard options
+  dry_run: false
+  create_backup: true
+  force_overwrite: false
+
+# Usage Examples:
+#
+# 1. Fast parallel generation with progress indicators:
+#    generator generate --config performance-optimized.yaml
+#
+# 2. Parallel generation with real-time streaming output:
+#    generator generate --config performance-optimized.yaml --stream-output --verbose
+#
+# 3. Sequential generation for debugging:
+#    generator generate --config performance-optimized.yaml --disable-parallel
+#
+# 4. Dry run to preview without generating:
+#    generator generate --config performance-optimized.yaml --dry-run

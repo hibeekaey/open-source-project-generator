@@ -5,6 +5,46 @@ All notable changes to the Open Source Project Generator will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - TBD - Tool-Orchestration Architecture
+
+### Breaking Changes
+
+- Old template-based generation system moved to `deprecated/` directory
+- Configuration schema updated to component-based format with `components`, `integration`, and `options` fields
+- Removed `--template` flag (replaced with component-based configuration)
+- Internal package structure reorganized:
+  - Deprecated: `deprecated/pkg/template/`, `deprecated/pkg/cli/`, `deprecated/internal/app/`
+  - New: `internal/orchestrator/`, `internal/generator/bootstrap/`, `internal/generator/fallback/`, `internal/generator/mapper/`, `pkg/logger/`
+
+### Added
+
+- Tool-orchestration system using industry-standard CLI tools (`create-next-app`, `go mod init`)
+- Bootstrap tool executors for Next.js, Go, Android, and iOS with real-time output streaming
+- Fallback generators for when external tools are unavailable
+- Tool discovery and validation system with version checking and OS-specific installation instructions
+- Enhanced logging with file output, timestamps, structured context, and colored terminal output
+- Backup and rollback system with timestamped backups in `.backups/` directory
+- Security enhancements: input sanitization, path validation, configuration value sanitization
+- Offline support with tool caching and TTL-based cache invalidation
+- Parallel component generation with configurable worker pool
+- Integration features: Docker Compose generation, shared `.env` files, build scripts, comprehensive documentation
+- New CLI commands: `check-tools`, `init-config`
+- New CLI flags: `--no-external-tools`, `--stream-output`
+
+### Changed
+
+- Project generation now delegates to official framework tools instead of maintaining templates
+- Configuration format updated to support multiple components per project
+- Error handling improved with categorization, recovery strategies, and retry logic
+
+### Migration Notes
+
+- Existing projects generated with v1.x will continue to work
+- New projects should use component-based configuration format
+- Install required external tools (Node.js/npm, Go 1.21+) or use `--no-external-tools` flag
+- Use `generator init-config` to generate new configuration templates
+- Android/iOS generation requires native tooling or will use minimal fallback structure
+
 ## [1.5.0] - 2025-10-02 - Comprehensive Code Quality and Security Enhancement
 
 ### Added

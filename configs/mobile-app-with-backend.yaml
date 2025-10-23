@@ -1,0 +1,72 @@
+# Mobile Application with Backend Configuration
+# This example generates Android and iOS apps with a shared Go backend API
+
+name: "mobile-app"
+description: "Cross-platform mobile application with backend API"
+output_dir: "./mobile-app"
+
+# Components to generate
+components:
+  # Android Mobile Application
+  - type: android
+    name: android-app
+    enabled: true
+    config:
+      package: com.example.mobileapp
+      min_sdk: 24            # Android 7.0 (Nougat)
+      target_sdk: 34         # Android 14
+      language: kotlin       # Use Kotlin
+      compose: true          # Use Jetpack Compose
+
+  # iOS Mobile Application
+  - type: ios
+    name: ios-app
+    enabled: true
+    config:
+      bundle_id: com.example.mobileapp
+      min_ios: "15.0"        # iOS 15.0+
+      language: swift        # Use Swift
+      swiftui: true          # Use SwiftUI
+
+  # Go Backend API Server
+  - type: go-backend
+    name: api-server
+    enabled: true
+    config:
+      module: github.com/myorg/mobile-app
+      framework: gin
+      port: 8080
+      cors_enabled: true
+      auth_enabled: true     # Include authentication
+
+  # Docker Configuration
+  - type: docker
+    name: docker-config
+    enabled: true
+    config:
+      compose_version: "3.8"
+      include_dev: true
+
+# Integration settings
+integration:
+  generate_docker_compose: true
+  generate_scripts: true
+  
+  # API endpoints for mobile apps
+  api_endpoints:
+    backend: http://localhost:8080
+    backend_prod: https://api.example.com
+  
+  # Shared configuration
+  environment:
+    API_URL: http://localhost:8080
+    API_TIMEOUT: "30"
+    ENABLE_LOGGING: "true"
+
+# Generation options
+options:
+  use_external_tools: true
+  dry_run: false
+  verbose: false
+  create_backup: true
+  update_versions: true

@@ -1,712 +1,527 @@
-# Getting Started Guide
+# Getting Started
 
-This comprehensive guide will help you install, configure, and use the Open Source Project Generator to create production-ready projects.
+This guide will help you install and use the Open Source Project Generator to create production-ready projects.
 
-## Table of Contents
+## What is This Tool?
 
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Configuration](#configuration)
-- [Usage Examples](#usage-examples)
-- [Advanced Features](#advanced-features)
-- [Troubleshooting](#troubleshooting)
+The Open Source Project Generator uses a **tool-orchestration architecture** that delegates project creation to industry-standard CLI tools like `create-next-app`, `go mod init`, and others. This means:
+
+- ✅ **Always up-to-date** - No manual template maintenance
+- ✅ **Industry-standard** - Uses official framework CLIs
+- ✅ **Graceful fallback** - Works even when tools are unavailable
+- ✅ **Offline support** - Can work without internet after initial setup
 
 ## Installation
 
-### Quick Install (Recommended)
+### Quick Install
 
-#### Linux and macOS
+**Linux/macOS:**
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/cuesoftinc/open-source-project-generator/main/scripts/install.sh | bash
 ```
 
-#### Windows
-
-Download the Windows binary from the [releases page](https://github.com/cuesoftinc/open-source-template-generator/releases) and follow the installation instructions included in the archive.
-
-### Package Manager Installation
-
-#### Debian/Ubuntu (APT)
+**Using Go:**
 
 ```bash
-wget https://github.com/cuesoftinc/open-source-template-generator/releases/latest/download/generator_VERSION_amd64.deb
-sudo dpkg -i generator_VERSION_amd64.deb
-sudo apt-get install -f
+go install github.com/cuesoftinc/open-source-project-generator/cmd/generator@latest
 ```
 
-#### Red Hat/CentOS/Fedora (YUM/DNF)
+**Using Docker:**
 
 ```bash
-# Using YUM
-sudo yum install https://github.com/cuesoftinc/open-source-project-generator/releases/latest/download/generator-VERSION-1.x86_64.rpm
-
-# Using DNF
-sudo dnf install https://github.com/cuesoftinc/open-source-project-generator/releases/latest/download/generator-VERSION-1.x86_64.rpm
-```
-
-#### macOS (Homebrew)
-
-```bash
-brew tap cuesoftinc/tap
-brew install generator
-```
-
-#### Windows (Chocolatey)
-
-```powershell
-choco install generator
-```
-
-### Manual Installation
-
-#### Download Pre-built Binaries
-
-1. Visit the [releases page](https://github.com/cuesoftinc/open-source-project-generator/releases)
-2. Download the appropriate archive for your platform:
-   - Linux: `generator-linux-amd64.tar.gz`
-   - macOS (Intel): `generator-darwin-amd64.tar.gz`
-   - macOS (Apple Silicon): `generator-darwin-arm64.tar.gz`
-   - Windows: `generator-windows-amd64.zip`
-
-#### Extract and Install
-
-**Linux/macOS/FreeBSD:**
-
-```bash
-# Extract the archive
-tar -xzf generator-linux-amd64.tar.gz
-
-# Move to installation directory
-sudo mv generator-linux-amd64/generator /usr/local/bin/
-
-# Make executable
-sudo chmod +x /usr/local/bin/generator
-
-# Verify installation
-generator --version
-```
-
-**Windows:**
-
-1. Extract the ZIP file to a directory (e.g., `C:\Program Files\generator`)
-2. Add the directory to your PATH environment variable
-3. Open a new command prompt and run: `generator --help`
-
-### Docker Installation
-
-```bash
-# Pull from GitHub Container Registry
 docker pull ghcr.io/cuesoftinc/open-source-project-generator:latest
-
-# Run interactively
-docker run -it --rm -v $(pwd):/workspace ghcr.io/cuesoftinc/open-source-project-generator:latest generate
-
-# One-time generation
-docker run --rm -v $(pwd):/workspace ghcr.io/cuesoftinc/open-source-project-generator:latest generate --config /workspace/config.yaml
 ```
 
 ### Build from Source
 
-#### Prerequisites
-
-- Go 1.25 or later
-- Git
-- Make (optional)
-
-#### Clone and Build
-
 ```bash
-# Clone the repository
-git clone https://github.com/cuesoftinc/open-source-project-generator.git
+# Clone repository
+git clone https://github.com/cuesoftinc/open-source-project-generator
 cd open-source-project-generator
 
-# Install dependencies
-go mod download
-
-# Build the binary
-go build -o bin/generator ./cmd/generator
-
-# Or use Make
+# Build
 make build
 
-# Install to system (optional)
+# Install (optional)
 sudo cp bin/generator /usr/local/bin/
 ```
 
 ## Quick Start
 
-### Interactive Project Generation
+### 1. Check Your Environment
 
-The most common use case is generating a new project interactively:
-
-```bash
-generator generate
-```
-
-This will:
-
-1. Prompt you for project details (name, organization, description, etc.)
-2. Let you select which components to include (frontend, backend, mobile, infrastructure)
-3. Show a comprehensive configuration preview
-4. Generate the complete project structure with best practices
-
-### Generate with Configuration File
-
-You can also generate projects using a pre-defined configuration file:
+Before generating projects, check which bootstrap tools are available:
 
 ```bash
-generator generate --config project-config.yaml --output ./my-project
+generator check-tools
 ```
 
-### Non-Interactive Mode (CI/CD)
+**Example output:**
 
-For automation and CI/CD pipelines:
+```text
+Checking 4 tools...
+
+✓ Available Tools:
+  ✓ npx (version: 10.2.3)
+    Supports: [nextjs]
+  ✓ go (version: 1.21.0)
+    Supports: [go-backend]
+
+✗ Missing Tools:
+  ✗ gradle
+    Required for: [android]
+    
+    Install instructions:
+    macOS: brew install gradle
+    Ubuntu: sudo apt install gradle
+
+2 of 4 tools available
+```
+
+### 2. Create a Configuration File
+
+Generate a configuration template:
 
 ```bash
-# Using environment variables
-GENERATOR_PROJECT_NAME=myapp GENERATOR_TEMPLATE=go-gin generator generate --non-interactive
-
-# Using configuration file
-generator generate --config ci-config.yaml --non-interactive --output ./build
+generator init-config my-project.yaml
 ```
 
-### Dry Run Mode
-
-Preview what would be generated without creating any files:
-
-```bash
-generator generate --dry-run --config project.yaml
-```
-
-### Offline Mode
-
-Generate projects using cached templates and versions:
-
-```bash
-generator generate --offline --template nextjs-app
-```
-
-## Configuration
-
-### Environment Variables
-
-Configure the generator using environment variables for non-interactive operation:
-
-#### Project Configuration
-
-```bash
-# Required
-export GENERATOR_PROJECT_NAME="my-awesome-project"
-
-# Optional
-export GENERATOR_PROJECT_ORGANIZATION="my-org"
-export GENERATOR_PROJECT_DESCRIPTION="An awesome project"
-export GENERATOR_PROJECT_LICENSE="MIT"
-export GENERATOR_OUTPUT_PATH="./output"
-```
-
-#### Generation Options
-
-```bash
-# Generation behavior
-export GENERATOR_FORCE=true                # Overwrite existing files
-export GENERATOR_MINIMAL=false             # Generate full project structure
-export GENERATOR_OFFLINE=false             # Use cached data only
-export GENERATOR_UPDATE_VERSIONS=true      # Fetch latest package versions
-export GENERATOR_SKIP_VALIDATION=false     # Skip configuration validation
-export GENERATOR_BACKUP_EXISTING=true      # Backup existing files
-export GENERATOR_INCLUDE_EXAMPLES=true     # Include example code
-export GENERATOR_TEMPLATE="go-gin"         # Specific template to use
-```
-
-#### Component Selection
-
-```bash
-# Enable/disable components
-export GENERATOR_FRONTEND=true
-export GENERATOR_BACKEND=true
-export GENERATOR_MOBILE=false
-export GENERATOR_INFRASTRUCTURE=true
-
-# Technology selection
-export GENERATOR_FRONTEND_TECH="nextjs-app"
-export GENERATOR_BACKEND_TECH="go-gin"
-export GENERATOR_MOBILE_TECH="android-kotlin"
-export GENERATOR_INFRASTRUCTURE_TECH="docker"
-```
-
-### Configuration File Format
-
-Configuration files support YAML, JSON, and TOML formats with environment variable substitution:
-
-#### YAML Configuration Example
+This creates a YAML file you can customize. Example:
 
 ```yaml
-# Project metadata
 name: "my-awesome-project"
-organization: "myorg"
-description: "An awesome open source project"
-license: "MIT"
-author: "John Doe"
-email: "john@example.com"
-repository: "https://github.com/myorg/my-awesome-project"
+description: "A full-stack web application"
+output_dir: "./my-awesome-project"
 
-# Component selection
 components:
-  frontend:
-    main_app: true
-    home: true
-    admin: false
-    shared_components: true
-  backend:
-    api: true
-    auth: true
-    database: true
-  mobile:
-    android: true
-    ios: true
-    shared: true
-  infrastructure:
-    docker: true
-    kubernetes: true
-    terraform: false
-    monitoring: true
+  - type: nextjs
+    name: web-app
+    enabled: true
+    config:
+      typescript: true
+      tailwind: true
+      app_router: true
 
-# Generation options
-generate_options:
-  force: false
-  minimal: false
-  offline: false
-  update_versions: true
-  skip_validation: false
-  backup_existing: true
-  include_examples: true
+  - type: go-backend
+    name: api-server
+    enabled: true
+    config:
+      module: github.com/myorg/my-awesome-project
+      framework: gin
+      port: 8080
 
-# Version overrides
-versions:
-  go: "1.21"
-  node: "20"
-  react: "19"
-  typescript: "5"
+integration:
+  generate_docker_compose: true
+  generate_scripts: true
+  api_endpoints:
+    backend: http://localhost:8080
 
-# Custom variables
-custom_vars:
-  database_name: "myapp_db"
-  api_port: "8080"
-  frontend_port: "3000"
-
-# Output configuration
-output_path: "./my-awesome-project"
+options:
+  use_external_tools: true
+  create_backup: true
+  verbose: false
 ```
 
-#### JSON Configuration Example
-
-```json
-{
-  "name": "my-awesome-project",
-  "organization": "myorg",
-  "description": "An awesome open source project",
-  "license": "MIT",
-  "author": "John Doe",
-  "email": "john@example.com",
-  "repository": "https://github.com/myorg/my-awesome-project",
-  "components": {
-    "frontend": {
-      "main_app": true,
-      "home": true,
-      "admin": false,
-      "shared_components": true
-    },
-    "backend": {
-      "api": true,
-      "auth": true,
-      "database": true
-    },
-    "mobile": {
-      "android": true,
-      "ios": true,
-      "shared": true
-    },
-    "infrastructure": {
-      "docker": true,
-      "kubernetes": true,
-      "terraform": false,
-      "monitoring": true
-    }
-  },
-  "generate_options": {
-    "force": false,
-    "minimal": false,
-    "offline": false,
-    "update_versions": true,
-    "skip_validation": false,
-    "backup_existing": true,
-    "include_examples": true
-  },
-  "versions": {
-    "go": "1.21",
-    "node": "20",
-    "react": "19",
-    "typescript": "5"
-  },
-  "custom_vars": {
-    "database_name": "myapp_db",
-    "api_port": "8080",
-    "frontend_port": "3000"
-  },
-  "output_path": "./my-awesome-project"
-}
-```
-
-## Usage Examples
-
-### Full-Stack Web Application
-
-Generate a complete web application with frontend, backend, and infrastructure:
+### 3. Generate Your Project
 
 ```bash
-# Interactive generation
-generator generate
-# Select: Frontend (Next.js + React), Backend (Go + Gin), Infrastructure (Docker + K8s)
-
-# Or using configuration file
-cat > fullstack-config.yaml << EOF
-name: "awesome-webapp"
-organization: "mycompany"
-description: "Full-stack web application"
-license: "MIT"
-components:
-  frontend:
-    main_app: true
-    admin: true
-  backend:
-    api: true
-    auth: true
-  infrastructure:
-    docker: true
-    kubernetes: true
-generate_options:
-  update_versions: true
-  include_examples: true
-EOF
-
-generator generate --config fullstack-config.yaml --output ./awesome-webapp
+generator generate --config my-project.yaml
 ```
 
-**Generated Structure:**
+**What happens:**
+
+1. Validates your configuration
+2. Checks which bootstrap tools are available
+3. Executes tools (e.g., `npx create-next-app`, `go mod init`)
+4. Maps outputs to standardized structure
+5. Generates integration files (Docker Compose, scripts, etc.)
+
+### 4. Explore the Generated Project
+
+```bash
+cd my-awesome-project
+ls -la
+```
+
+**Generated structure:**
 
 ```text
-awesome-webapp/
-├── App/
-│   ├── main/              # Next.js main application
-│   └── home/              # Landing page
-├── CommonServer/          # Go API server
+my-awesome-project/
+├── App/                    # Next.js frontend
+│   ├── app/
+│   ├── public/
+│   ├── package.json
+│   └── next.config.js
+├── CommonServer/          # Go backend
+│   ├── cmd/
+│   ├── internal/
+│   ├── pkg/
+│   ├── go.mod
+│   └── main.go
 ├── Deploy/
-│   ├── docker/            # Docker configurations
-│   └── k8s/               # Kubernetes manifests
-├── .github/workflows/     # CI/CD pipelines
+│   └── docker/
+│       ├── Dockerfile.frontend
+│       └── Dockerfile.backend
+├── docker-compose.yml
 ├── Makefile
-└── docker-compose.yml
+└── README.md
 ```
 
-### Mobile Application
+## Tool Requirements
 
-Generate a mobile application with backend API:
+The generator uses external bootstrap tools to create projects. Here's what you need:
+
+### Frontend (Next.js)
+
+**Tool:** `npx` (comes with Node.js)
 
 ```bash
-# Configuration for mobile-first project
-cat > mobile-config.yaml << EOF
-name: "mobile-app"
-components:
-  mobile:
-    android: true
-    ios: true
-  backend:
-    api: true
-  infrastructure:
-    docker: true
-EOF
+# Install Node.js
+# macOS
+brew install node
 
-generator generate --config mobile-config.yaml
+# Ubuntu/Debian
+sudo apt install nodejs npm
+
+# Windows
+# Download from https://nodejs.org/
 ```
 
-**Generated Structure:**
+**What it does:** Runs `npx create-next-app@latest` with your specified options
 
-```text
-mobile-app/
-├── CommonServer/          # Go API server
-├── Mobile/
-│   ├── android/           # Kotlin Android app
-│   ├── ios/               # Swift iOS app
-│   └── shared/            # Shared resources
-├── Deploy/docker/         # Docker configurations
-└── .github/workflows/     # Mobile CI/CD
-```
+### Backend (Go)
 
-### Microservices Architecture
-
-Generate multiple related services:
+**Tool:** `go`
 
 ```bash
-# Generate API Gateway
-generator generate --config api-gateway.yaml
+# Install Go
+# macOS
+brew install go
 
-# Generate User Service
-generator generate --config user-service.yaml
+# Ubuntu/Debian
+sudo apt install golang-go
 
-# Generate Notification Service
-generator generate --config notification-service.yaml
+# Windows
+# Download from https://golang.org/dl/
 ```
 
-### Enterprise SaaS Platform
+**What it does:** Runs `go mod init` and sets up a Gin-based API server
 
-Generate a comprehensive enterprise platform:
+### Mobile (Android)
+
+**Tool:** `gradle` (or Android Studio)
 
 ```bash
-generator generate --dry-run  # Preview first
-generator generate --config enterprise-config.yaml
+# Install Gradle
+# macOS
+brew install gradle
+
+# Ubuntu/Debian
+sudo apt install gradle
 ```
 
-## Advanced Features
+**Fallback:** If Gradle is unavailable, generates minimal structure with setup instructions
 
-### Interactive UI Framework
+### Mobile (iOS)
 
-The generator includes a comprehensive interactive UI framework:
+**Tool:** `xcodebuild` (comes with Xcode, macOS only)
 
 ```bash
-# Interactive mode with advanced features
-generator generate --interactive
-
-# Interactive with specific output directory
-generator generate --interactive --output ./my-project
-
-# Interactive with template pre-selection
-generator generate --interactive --template go-gin
+# Install Xcode Command Line Tools
+xcode-select --install
 ```
 
-**Features:**
+**Fallback:** If unavailable, generates minimal structure with setup instructions
 
-- Guided project configuration with intelligent prompts
-- Multi-select interface for choosing project components
-- Real-time validation with helpful error messages
-- Progress tracking during project generation
-- Context-sensitive help system
+## Common Commands
 
-### Template Management
+### Generate Projects
 
 ```bash
-# List available templates
-generator list-templates
+# From configuration file
+generator generate --config project.yaml
 
-# Search templates
-generator list-templates --search "api"
+# With custom output directory
+generator generate --config project.yaml --output ./my-project
 
-# Show template details
-generator template info go-gin
+# Dry run (preview without creating files)
+generator generate --config project.yaml --dry-run
 
-# Validate custom templates
-generator template validate ./my-custom-template
+# Force fallback (don't use external tools)
+generator generate --config project.yaml --no-external-tools
+
+# Verbose output
+generator generate --config project.yaml --verbose
 ```
 
-### Project Validation and Auditing
+### Check Tools
 
 ```bash
-# Basic validation
-generator validate ./my-project
+# Check all registered tools
+generator check-tools
 
-# Detailed validation with auto-fix
-generator validate --fix --report
+# Check with verbose output
+generator check-tools --verbose
 
-# Security audit
-generator audit --security --detailed
-
-# Quality analysis
-generator audit --quality --min-score 8.0
+# Check specific tools
+generator check-tools npx go
 ```
 
-### Configuration Management
+### Configuration Templates
 
 ```bash
-# Show current configuration
-generator config show
+# Generate default configuration
+generator init-config
 
-# Set configuration values
-generator config set default.license MIT
-generator config set default.organization "MyCompany"
+# Generate minimal configuration
+generator init-config --minimal
 
-# Export configuration
-generator config export team-defaults.yaml
-
-# Import configuration
-generator config import --file team-defaults.yaml
-```
-
-### Version Management
-
-```bash
-# Show version information
-generator version
-
-# Show latest package versions
-generator version --packages
-
-# Check for updates
-generator update --check
-
-# Install updates
-generator update --install
+# Generate example configuration
+generator init-config --example fullstack
+generator init-config --example frontend
+generator init-config --example backend
+generator init-config --example mobile
 ```
 
 ### Cache Management
 
 ```bash
-# Show cache status
-generator cache show
+# View cache statistics
+generator cache-tools --stats
 
-# Clean expired entries
-generator cache clean
+# Save current tool availability
+generator cache-tools --save
 
-# Clear all cache
-generator cache clear --force
+# Clear cache
+generator cache-tools --clear
 
-# Enable offline mode
-generator cache offline enable
+# Show cache information
+generator cache-tools --info
 ```
+
+## Configuration File Format
+
+The configuration file defines your project structure:
+
+```yaml
+# Project metadata
+name: "project-name"
+description: "Project description"
+output_dir: "./output-directory"
+
+# Components to generate
+components:
+  - type: nextjs              # Component type
+    name: web-app             # Component name
+    enabled: true             # Enable/disable
+    config:                   # Component-specific config
+      typescript: true
+      tailwind: true
+
+  - type: go-backend
+    name: api-server
+    enabled: true
+    config:
+      module: github.com/org/project
+      framework: gin
+      port: 8080
+
+# Integration settings
+integration:
+  generate_docker_compose: true
+  generate_scripts: true
+  api_endpoints:
+    backend: http://localhost:8080
+  shared_environment:
+    NODE_ENV: development
+    API_URL: http://localhost:8080
+
+# Generation options
+options:
+  use_external_tools: true    # Use bootstrap tools
+  dry_run: false              # Preview mode
+  verbose: false              # Verbose output
+  create_backup: true         # Backup existing files
+  force_overwrite: false      # Force overwrite
+```
+
+### Supported Component Types
+
+| Type | Description | Tool Required | Fallback |
+|------|-------------|---------------|----------|
+| `nextjs` | Next.js frontend | `npx` | No |
+| `go-backend` | Go API server | `go` | No |
+| `android` | Android app | `gradle` | Yes |
+| `ios` | iOS app | `xcodebuild` | Yes |
+
+## Examples
+
+### Full-Stack Web App
+
+```yaml
+name: "fullstack-app"
+output_dir: "./fullstack-app"
+
+components:
+  - type: nextjs
+    name: web-app
+    enabled: true
+    config:
+      typescript: true
+      tailwind: true
+
+  - type: go-backend
+    name: api
+    enabled: true
+    config:
+      module: github.com/myorg/fullstack-app
+      framework: gin
+
+integration:
+  generate_docker_compose: true
+  api_endpoints:
+    backend: http://localhost:8080
+```
+
+### Frontend Only
+
+```yaml
+name: "frontend-app"
+output_dir: "./frontend-app"
+
+components:
+  - type: nextjs
+    name: web-app
+    enabled: true
+    config:
+      typescript: true
+      tailwind: true
+      app_router: true
+
+integration:
+  generate_docker_compose: false
+```
+
+### Backend Only
+
+```yaml
+name: "api-service"
+output_dir: "./api-service"
+
+components:
+  - type: go-backend
+    name: api
+    enabled: true
+    config:
+      module: github.com/myorg/api-service
+      framework: gin
+      port: 8080
+
+integration:
+  generate_docker_compose: true
+```
+
+## Offline Mode
+
+The generator supports offline operation:
+
+### 1. Cache Tools (While Online)
+
+```bash
+generator cache-tools --save
+```
+
+This caches tool availability information.
+
+### 2. Generate Offline
+
+```bash
+generator generate --config project.yaml --offline
+```
+
+**Note:** External bootstrap tools themselves must be installed before going offline. The cache only stores availability information.
 
 ## Troubleshooting
 
-### Common Issues
+### Tool Not Found
 
-#### Permission Denied Errors
+**Problem:** `Error: Tool 'npx' not found`
 
-```bash
-# Check output directory permissions
-ls -la ./output-directory
-
-# Create directory with proper permissions
-mkdir -p ./my-project && chmod 755 ./my-project
-
-# Use different output directory
-generator generate --output ~/projects/my-project
-```
-
-#### Network and Connectivity Issues
+**Solution:**
 
 ```bash
-# Use offline mode
-generator generate --offline --template go-gin
+# Check which tools are missing
+generator check-tools
 
-# Check cache status
-generator cache show
-
-# Populate cache for offline use
-generator update --templates --packages
+# Install the missing tool
+brew install node  # macOS
+sudo apt install nodejs npm  # Ubuntu
 ```
 
-#### Template and Configuration Errors
+### Tool Execution Failed
+
+**Problem:** `Error: Tool execution failed`
+
+**Solution:**
 
 ```bash
-# Validate configuration before generation
-generator config validate ./my-config.yaml
+# Run with verbose output
+generator generate --config project.yaml --verbose
 
-# Check template information
-generator template info go-gin --detailed
+# Check tool version
+npx --version
 
-# Validate custom templates
-generator template validate ./my-custom-template --fix
+# Try with fallback
+generator generate --config project.yaml --no-external-tools
 ```
 
-#### Validation and Audit Failures
+### Configuration Errors
+
+**Problem:** `Error: Invalid configuration`
+
+**Solution:**
 
 ```bash
-# Run validation with detailed output
-generator validate --verbose --detailed
+# Generate a valid template
+generator init-config template.yaml
 
-# Fix common issues automatically
-generator validate --fix --backup
-
-# Check specific validation rules
-generator validate --rules structure,dependencies --show-fixes
+# Validate with dry run
+generator generate --config my-config.yaml --dry-run
 ```
 
-### Debug Mode
+### Permission Denied
 
-Enable debug output for troubleshooting:
+**Problem:** `Error: Permission denied`
+
+**Solution:**
 
 ```bash
-# Debug mode (includes verbose output automatically)
-generator generate --debug
+# Fix permissions
+chmod +x /usr/local/bin/generator
 
-# Check logs
-generator logs --level error --lines 50
-
-# Show configuration and sources with verbose output
-generator config show --sources --verbose
+# Or install to user directory
+mkdir -p ~/bin
+cp generator ~/bin/
+export PATH="$HOME/bin:$PATH"
 ```
-
-### Getting Help
-
-```bash
-# General help
-generator --help
-
-# Command-specific help
-generator generate --help
-generator validate --help
-
-# Show examples and usage patterns
-generator <command> --help | grep -A 20 "Examples:"
-```
-
-### Log Files and Diagnostics
-
-- **Log Location**: `~/.cache/template-generator/logs/`
-- **Configuration**: `~/.generator/config.yaml`
-- **Cache Location**: `~/.cache/template-generator/cache/`
-
-## Best Practices
-
-### Project Generation
-
-1. **Start with Interactive Mode**: Use `generator generate` for your first project
-2. **Use Configuration Files**: Save and version control your project configurations
-3. **Enable Validation**: Always validate generated projects with `generator validate`
-4. **Regular Audits**: Run `generator audit` periodically to check security and quality
-5. **Keep Updated**: Regularly check for updates with `generator update --check`
-
-### CI/CD Integration
-
-```bash
-# Example CI/CD pipeline step
-- name: Generate Project
-  run: |
-    generator generate --non-interactive --config .generator/ci-config.yaml
-    generator validate --non-interactive --output-format json > validation-results.json
-    generator audit --non-interactive --fail-on-high --min-score 8.0
-```
-
-### Team Collaboration
-
-1. **Shared Configuration**: Use `generator config export` to create team templates
-2. **Custom Templates**: Validate custom templates with `generator template validate`
-3. **Documentation**: Include generator configuration in project documentation
-4. **Standards**: Establish team standards for component selection and configuration
-
-### Security Considerations
-
-1. **Regular Audits**: Use `generator audit --security` for security scanning
-2. **Dependency Updates**: Enable `--update-versions` for latest secure versions
-3. **Validation**: Use strict validation with `generator validate --strict`
-4. **Offline Mode**: Use offline mode in secure environments
 
 ## Next Steps
 
-- **[Configuration Guide](CONFIGURATION.md)** - Advanced configuration options
-- **[Template Development](TEMPLATE_DEVELOPMENT.md)** - Creating custom templates
-- **[API Reference](API_REFERENCE.md)** - Developer API documentation
+- **[CLI Commands](CLI_COMMANDS.md)** - Complete command reference
+- **[Configuration Guide](CONFIGURATION.md)** - Detailed configuration options
+- **[Examples](EXAMPLES.md)** - More example configurations
 - **[Troubleshooting](TROUBLESHOOTING.md)** - Common issues and solutions
+- **[Architecture](ARCHITECTURE.md)** - How the system works
+
+## Best Practices
+
+1. **Check tools first** - Run `generator check-tools` before generating
+2. **Use configuration files** - Save and version control your configs
+3. **Test with dry run** - Preview with `--dry-run` before generating
+4. **Cache for offline** - Use `generator cache-tools --save` for offline work
+5. **Enable verbose mode** - Use `--verbose` when debugging issues
 
 ---
 
-**Ready to generate your next project?** Start with `generator generate` and follow the interactive prompts!
+**Ready to generate your project?** Run `generator check-tools` to verify your environment, then `generator generate --config your-config.yaml`!

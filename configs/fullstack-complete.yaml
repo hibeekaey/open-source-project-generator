@@ -1,0 +1,100 @@
+# Full-Stack Project Configuration
+# Complete example with frontend, backend, mobile apps, and infrastructure
+#
+# This configuration generates a complete full-stack application with:
+# - Next.js frontend (TypeScript + Tailwind CSS)
+# - Go backend API (Gin framework)
+# - Android mobile app (Kotlin)
+# - iOS mobile app (Swift)
+# - Docker Compose for local development
+# - Build and deployment scripts
+#
+# Usage:
+#   project-generator generate --config configs/fullstack-complete.yaml
+
+# Project metadata
+name: fullstack-app
+description: A complete full-stack application with web and mobile clients
+output_dir: ./fullstack-app
+
+# Component definitions
+components:
+  # Frontend - Next.js web application
+  - type: nextjs
+    name: web-app
+    enabled: true
+    config:
+      name: web-app
+      typescript: true        # Use TypeScript
+      tailwind: true          # Include Tailwind CSS
+      app_router: true        # Use Next.js App Router
+      eslint: true            # Include ESLint configuration
+
+  # Backend - Go API server with Gin framework
+  - type: go-backend
+    name: api-server
+    enabled: true
+    config:
+      name: api-server
+      module: github.com/example/fullstack-app  # Go module path
+      framework: gin                             # Web framework (gin)
+      port: 8080                                 # API server port
+
+  # Mobile - Android application
+  - type: android
+    name: mobile-android
+    enabled: true
+    config:
+      name: mobile-android
+      package: com.example.fullstackapp  # Android package name
+      min_sdk: 24                        # Minimum Android SDK version
+      target_sdk: 34                     # Target Android SDK version
+      language: kotlin                   # Programming language
+
+  # Mobile - iOS application
+  - type: ios
+    name: mobile-ios
+    enabled: true
+    config:
+      name: mobile-ios
+      bundle_id: com.example.fullstackapp  # iOS bundle identifier
+      deployment_target: "15.0"            # Minimum iOS version
+      language: swift                      # Programming language
+
+# Integration configuration
+# Defines how components work together
+integration:
+  # Generate Docker Compose file for local development
+  generate_docker_compose: true
+  
+  # Generate build and run scripts
+  generate_scripts: true
+  
+  # API endpoint configuration for frontend/mobile to connect to backend
+  api_endpoints:
+    backend: http://localhost:8080
+    frontend: http://localhost:3000
+  
+  # Shared environment variables across all components
+  shared_environment:
+    NODE_ENV: development
+    LOG_LEVEL: info
+    API_TIMEOUT: "30"
+    CORS_ORIGINS: "http://localhost:3000"
+
+# Generation options
+options:
+  # Use external tools (npx, go) when available
+  use_external_tools: true
+  
+  # Preview changes without creating files
+  dry_run: false
+  
+  # Show detailed output during generation
+  verbose: false
+  
+  # Create backup before overwriting existing directories
+  create_backup: true
+  
+  # Force overwrite existing directories without prompting
+  force_overwrite: false

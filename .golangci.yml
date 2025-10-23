@@ -30,6 +30,7 @@ run:
     - testdata
     - .cache
     - .kiro
+    - deprecated
   
   # Files to skip
   skip-files:

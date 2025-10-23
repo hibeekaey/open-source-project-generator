@@ -1,158 +1,260 @@
-# Open Source Project Generator
+# Open Source Project Generator v2.0
 
-A comprehensive command-line tool that generates production-ready, enterprise-grade project structures following modern best practices and security standards.
+> **🎉 New in v2.0**: Tool-Orchestration Architecture - Leverage industry-standard CLI tools for always up-to-date project generation!
 
-## 🚀 Quick Start
+A modern command-line tool that generates production-ready project structures by orchestrating industry-standard CLI tools (create-next-app, go mod init, etc.) with intelligent fallback generation.
 
-### Installation
+## 🚀 What's New in v2.0?
+
+### Tool-Orchestration Architecture
+
+Instead of maintaining templates, v2.0 delegates project generation to official framework tools:
+
+- **Next.js**: Uses `create-next-app` for latest Next.js projects
+- **Go**: Uses `go mod init` and official Go tooling
+- **Android/iOS**: Uses native tooling when available, falls back to minimal generation
+- **Always Current**: Get the latest framework versions automatically
+
+### Key Improvements
+
+- ✅ **No Template Maintenance**: Framework tools handle updates
+- ✅ **Better Quality**: Official tools generate best-practice code
+- ✅ **Enhanced Logging**: Comprehensive file logging with timestamps
+- ✅ **Automatic Backups**: Rollback on failure
+- ✅ **Beautiful Output**: Colored terminal output with status symbols
+- ✅ **Security Scanning**: Post-generation security checks
+- ✅ **Offline Support**: Works without internet after initial setup
+
+## 📦 Installation
 
 ```bash
-# Quick install (Linux/macOS)
-curl -sSL https://raw.githubusercontent.com/cuesoftinc/open-source-project-generator/main/scripts/install.sh | bash
-
 # Using Go
 go install github.com/cuesoftinc/open-source-project-generator/cmd/generator@latest
 
-# Using Docker
-docker run -it --rm -v $(pwd):/workspace ghcr.io/cuesoftinc/open-source-project-generator:latest generate
+# From source
+git clone https://github.com/cuesoftinc/open-source-project-generator
+cd open-source-project-generator
+make build
+
+# Verify installation
+generator --version
 ```
 
-### Generate Your First Project
+## 🎯 Quick Start
+
+### 1. Check Your Environment
 
 ```bash
-# Interactive mode (recommended for beginners)
-generator generate
+# Verify required tools are installed
+generator check-tools
 
-# Using a configuration file
-generator generate --config project.yaml --output ./my-project
-
-# Non-interactive mode (CI/CD)
-GENERATOR_PROJECT_NAME=myapp generator generate --non-interactive
+# Output:
+# ✓ npx (v10.2.3) - Available
+# ✓ go (v1.21.0) - Available
+# ✗ gradle - Not found
+#   Install: https://gradle.org/install/
 ```
 
-## ✨ Features
+### 2. Generate Configuration
 
-- **🎯 Interactive Project Configuration** - Guided setup with intelligent prompts
-- **🏗️ Multi-Stack Support** - Frontend (Next.js, React), Backend (Go, Node.js), Mobile (Android, iOS), Infrastructure (Docker, K8s)
-- **🔒 Security-First** - Path sanitization, categorized error handling, and security validation before template processing
-- **⚡ Offline Mode** - Generate projects without internet connectivity
-- **🤖 CI/CD Ready** - Non-interactive mode for automation and pipelines
-- **📦 Template Management** - Custom templates and validation
-- **🔍 Project Validation** - Comprehensive validation and auditing
-- **📊 Quality Assurance** - Code quality analysis and compliance checking
-- **🧩 Modular Architecture** - Clean, maintainable codebase with focused components
-- **🚀 High Performance** - Optimized for speed with comprehensive test coverage
+```bash
+# Create a configuration template
+generator init-config --output project.yaml
+```
+
+### 3. Customize Configuration
+
+Edit `project.yaml`:
+
+```yaml
+name: my-awesome-app
+description: My full-stack application
+output_dir: ./my-awesome-app
+
+components:
+  - type: nextjs
+    name: web-app
+    enabled: true
+    config:
+      typescript: true
+      tailwind: true
+      app_router: true
+
+  - type: go-backend
+    name: api-server
+    enabled: true
+    config:
+      module: github.com/user/my-awesome-app
+      framework: gin
+
+integration:
+  generate_docker_compose: true
+  generate_scripts: true
+  api_endpoints:
+    backend: http://localhost:8080
+
+options:
+  use_external_tools: true
+  create_backup: true
+  verbose: false
+```
+
+### 4. Preview Generation
+
+```bash
+# Dry-run to see what will be generated
+generator generate --config project.yaml --dry-run
+```
+
+### 5. Generate Project
+
+```bash
+# Generate your project
+generator generate --config project.yaml
+
+# Output:
+# ═══════════════════════════════════════════════════════════════════
+# Step 1/11: Validating configuration...
+# ✓ Configuration validation passed
+# Step 2/11: Applying default configuration values...
+# ✓ Defaults applied successfully
+# ...
+# ═══════════════════════════════════════════════════════════════════
+# PROJECT GENERATION COMPLETED
+# ═══════════════════════════════════════════════════════════════════
+# ✓ Project generated successfully in 45.2s
+# Project Name: my-awesome-app
+# Location: ./my-awesome-app
+# Components: 2
+```
 
 ## 🏗️ Generated Project Structure
 
-The generator creates a standardized, modern project structure:
-
 ```text
-my-awesome-project/
-├── App/                    # Frontend applications (Next.js 15+, React 19+)
-│   ├── main/              # Main application with TypeScript and Tailwind CSS
-│   ├── home/              # Landing page optimized for performance
-│   ├── admin/             # Admin dashboard with comprehensive UI components
-│   └── shared-components/ # Reusable component library
-├── CommonServer/          # Backend API server (Go 1.25+)
+my-awesome-app/
+├── App/                    # Next.js frontend (generated by create-next-app)
+│   ├── app/               # App router
+│   ├── components/        # React components
+│   ├── public/            # Static assets
+│   ├── package.json       # Dependencies
+│   └── next.config.js     # Next.js configuration
+├── CommonServer/          # Go backend (generated by go mod init)
 │   ├── cmd/               # Application entry points
 │   ├── internal/          # Private application code
-│   ├── pkg/               # Public interfaces and utilities
-│   ├── migrations/        # Database migrations
-│   └── docs/              # API documentation (Swagger/OpenAPI)
+│   ├── pkg/               # Public packages
+│   ├── go.mod             # Go modules
+│   └── main.go            # Main application
 ├── Mobile/                # Mobile applications
-│   ├── android/           # Android Kotlin 2.0+ with Jetpack Compose
-│   ├── ios/               # iOS Swift 5.9+ with SwiftUI
-│   └── shared/            # Shared resources, API specs, design system
-├── Deploy/                # Infrastructure configurations (latest versions)
-│   ├── docker/            # Docker 24+ with multi-stage builds
-│   ├── k8s/               # Kubernetes 1.28+ with security policies
-│   ├── terraform/         # Terraform 1.6+ for infrastructure as code
-│   └── monitoring/        # Prometheus, Grafana configurations
-├── Docs/                  # Comprehensive documentation
-├── Scripts/               # Build and deployment automation
-├── .github/workflows/     # CI/CD pipelines
-├── Makefile              # Build system
-└── docker-compose.yml     # Development environment
+│   ├── android/           # Android project (Gradle/Kotlin)
+│   └── ios/               # iOS project (Xcode/Swift)
+├── Deploy/                # Infrastructure
+│   ├── docker/            # Docker configurations
+│   └── k8s/               # Kubernetes manifests
+├── .logs/                 # Generation logs
+├── docker-compose.yml     # Docker Compose configuration
+├── .env                   # Environment variables
+├── README.md              # Project documentation
+├── TROUBLESHOOTING.md     # Troubleshooting guide
+├── build.sh               # Build script
+├── dev.sh                 # Development script
+└── prod.sh                # Production script
 ```
 
 ## 📖 Usage Examples
 
 ### Full-Stack Web Application
 
-```bash
-# Interactive generation
-generator generate
-# Select: Frontend (Next.js), Backend (Go), Infrastructure (Docker + K8s)
+```yaml
+# fullstack.yaml
+name: fullstack-app
+output_dir: ./fullstack-app
 
-# Or using configuration
-cat > fullstack-config.yaml << EOF
-name: "awesome-webapp"
-organization: "mycompany"
-description: "Full-stack web application"
-license: "MIT"
 components:
-  frontend:
-    main_app: true
-    admin: true
-  backend:
-    api: true
-    auth: true
-  infrastructure:
-    docker: true
-    kubernetes: true
-EOF
+  - type: nextjs
+    name: web-app
+    enabled: true
+    config:
+      typescript: true
+      tailwind: true
 
-generator generate --config fullstack-config.yaml --output ./awesome-webapp
+  - type: go-backend
+    name: api-server
+    enabled: true
+    config:
+      module: github.com/user/fullstack-app
+      framework: gin
+
+integration:
+  generate_docker_compose: true
+  generate_scripts: true
 ```
 
-### Mobile Application
-
 ```bash
-# Mobile-first project
-cat > mobile-config.yaml << EOF
-name: "mobile-app"
-components:
-  mobile:
-    android: true
-    ios: true
-  backend:
-    api: true
-  infrastructure:
-    docker: true
-EOF
-
-generator generate --config mobile-config.yaml
+generator generate --config fullstack.yaml
 ```
 
-### CI/CD Pipeline Integration
+### Mobile Application with Backend
 
 ```yaml
-# .github/workflows/generate-and-deploy.yml
-name: Generate and Deploy
-on: [push]
+# mobile-app.yaml
+name: mobile-app
+output_dir: ./mobile-app
 
-jobs:
-  generate:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Generate Project
-        env:
-          GENERATOR_PROJECT_NAME: ${{ github.event.repository.name }}
-          GENERATOR_BACKEND: true
-          GENERATOR_FRONTEND: true
-        run: |
-          generator generate --non-interactive
-          
-      - name: Validate Project
-        run: |
-          generator validate ./output --output-format json
-          
-      - name: Security Audit
-        run: |
-          generator audit ./output --security --fail-on-high
+components:
+  - type: android
+    name: mobile-android
+    enabled: true
+    config:
+      package: com.user.mobileapp
+      language: kotlin
+
+  - type: ios
+    name: mobile-ios
+    enabled: true
+    config:
+      bundle_id: com.user.mobileapp
+      language: swift
+
+  - type: go-backend
+    name: api-server
+    enabled: true
+    config:
+      module: github.com/user/mobile-app
+      framework: gin
+
+integration:
+  generate_docker_compose: true
+  api_endpoints:
+    backend: http://localhost:8080
+```
+
+```bash
+generator generate --config mobile-app.yaml
+```
+
+### Frontend Only
+
+```yaml
+# frontend.yaml
+name: my-frontend
+output_dir: ./my-frontend
+
+components:
+  - type: nextjs
+    name: web-app
+    enabled: true
+    config:
+      typescript: true
+      tailwind: true
+      app_router: true
+
+integration:
+  generate_docker_compose: false
+  generate_scripts: true
+```
+
+```bash
+generator generate --config frontend.yaml
 ```
 
 ## 🛠️ Commands
@@ -161,190 +263,249 @@ jobs:
 
 ```bash
 # Generate projects
-generator generate                    # Interactive mode
-generator generate --config file.yaml # From configuration
-generator generate --non-interactive  # CI/CD mode
+generator generate --config project.yaml    # Generate from configuration
+generator generate --config project.yaml --dry-run  # Preview without creating files
 
-# Validate projects
-generator validate ./my-project       # Basic validation
-generator validate --fix             # Auto-fix issues
-generator validate --report          # Generate detailed report
-
-# Audit projects
-generator audit ./my-project          # Security and quality audit
-generator audit --security           # Security-focused audit
-generator audit --quality            # Code quality analysis
-
-# Template management
-generator list-templates             # List available templates from pkg/template/templates/
-generator template info go-gin       # Template details
-generator template validate ./custom  # Validate custom templates
+# Environment validation
+generator check-tools                       # Check tool availability
 
 # Configuration
-generator config show                # Show current configuration
-generator config set key value       # Set configuration values
-generator config export file.yaml    # Export configuration
-
-# Version management
-generator version                    # Show version info
-generator version --packages         # Show package versions
-generator update --check             # Check for updates
+generator init-config --output project.yaml # Generate configuration template
 ```
 
-### Global Options
+### Command Options
 
 ```bash
---verbose, -v          # Verbose output (conflicts with --quiet)
---quiet, -q            # Quiet mode (conflicts with --verbose, --debug)
---debug, -d            # Debug mode (conflicts with --quiet)
---non-interactive      # Non-interactive mode (conflicts with --interactive)
---interactive          # Interactive mode (conflicts with --non-interactive)
---output-format json   # JSON output for automation
---log-level debug      # Set log level
-```
-
-### Enhanced Flag Validation
-
-The CLI includes intelligent flag conflict detection:
-
-```bash
-# ✅ Valid combinations
-generator generate --verbose --interactive
-generator generate --quiet --non-interactive
-generator version --json --packages
-
-# ❌ Invalid combinations (will show helpful error messages)
-generator generate --verbose --quiet          # Output mode conflict
-generator generate --interactive --non-interactive  # Mode conflict
-generator generate --debug --quiet            # Debug conflicts with quiet
-
-# 💡 The CLI provides specific suggestions for resolving conflicts
-generator generate --verbose --quiet
-# Error: Verbose and quiet modes are mutually exclusive
-# Suggestion: Choose either verbose output for detailed information OR quiet mode for minimal output
-# Examples: --verbose, --quiet, --debug (implies verbose)
-```
-
-### Enhanced JSON Output
-
-The version command now provides structured JSON output with comprehensive information:
-
-```bash
-# Enhanced JSON output with build metadata
-generator version --json
-{
-  "version": "1.0.0",
-  "gitCommit": "abc123def",
-  "buildTime": "2024-01-01T00:00:00Z",
-  "goVersion": "go1.25.0",
-  "platform": "darwin",
-  "architecture": "arm64"
-}
-
-# Perfect for CI/CD automation and scripting
-generator version --json --packages | jq '.version'
-```
-
-## 🔒 Security
-
-The generator implements comprehensive security measures:
-
-- **Path Sanitization**: All user-provided paths sanitized via `pkg/security/SanitizePath()` before file operations
-- **Categorized Error Handling**: Security errors use `pkg/errors/NewSecurityError()` for consistent handling
-- **Template Validation**: Templates in `pkg/template/templates/` validated before processing
-- **File Permissions**: Restrictive permissions (0600 for files, 0750 for directories)
-- **No Code Execution**: Templates processed safely without executing user-provided code
-- **Dependency Injection**: Security components injected via interfaces from `pkg/interfaces/`
-
-Example security usage:
-
-```go
-import (
-    "github.com/cuesoftinc/open-source-project-generator/pkg/security"
-    "github.com/cuesoftinc/open-source-project-generator/pkg/errors"
-)
-
-// Sanitize user input before file operations
-sanitized, err := security.SanitizePath(userPath)
-if err != nil {
-    return errors.NewSecurityError("invalid path", err)
-}
-```
-
-See [SECURITY.md](SECURITY.md) for complete security documentation.
-
-## ⚙️ Configuration
-
-### Environment Variables
-
-```bash
-# Project configuration
-export GENERATOR_PROJECT_NAME="my-project"
-export GENERATOR_ORGANIZATION="my-org"
-export GENERATOR_DESCRIPTION="My awesome project"
-export GENERATOR_LICENSE="MIT"
-
 # Generation options
-export GENERATOR_FORCE=true
-export GENERATOR_MINIMAL=false
-export GENERATOR_OFFLINE=false
-export GENERATOR_UPDATE_VERSIONS=true
+--config <file>          # Configuration file path (required)
+--dry-run                # Preview generation without creating files
+--verbose                # Enable detailed logging
+--no-external-tools      # Force fallback generation
+--create-backup          # Create backup before generation
+--stream-output          # Stream tool output in real-time
+--force-overwrite        # Overwrite existing directories
 
-# Component selection
-export GENERATOR_FRONTEND=true
-export GENERATOR_BACKEND=true
-export GENERATOR_MOBILE=false
-export GENERATOR_INFRASTRUCTURE=true
+# Output options
+--output <dir>           # Override output directory from config
+--log-level <level>      # Set log level (debug, info, warn, error)
 ```
 
-### Configuration File
+## 🔧 Configuration Reference
+
+### Component Types
+
+| Type | Description | Bootstrap Tool | Fallback Available |
+|------|-------------|----------------|-------------------|
+| `nextjs` | Next.js frontend | `create-next-app` | No |
+| `go-backend` | Go backend API | `go mod init` | No |
+| `android` | Android mobile app | `gradle` | Yes |
+| `ios` | iOS mobile app | `xcodebuild` | Yes |
+
+### Component Configuration
+
+**Next.js Component**:
+```yaml
+- type: nextjs
+  name: web-app
+  enabled: true
+  config:
+    typescript: true      # Use TypeScript
+    tailwind: true        # Include Tailwind CSS
+    app_router: true      # Use App Router
+    eslint: true          # Include ESLint
+```
+
+**Go Backend Component**:
+```yaml
+- type: go-backend
+  name: api-server
+  enabled: true
+  config:
+    module: github.com/user/project  # Go module path
+    framework: gin                    # Framework (gin, echo, chi)
+    database: postgres                # Database (postgres, mysql, sqlite)
+```
+
+**Android Component**:
+```yaml
+- type: android
+  name: mobile-android
+  enabled: true
+  config:
+    package: com.user.app    # Package name
+    language: kotlin         # Language (kotlin, java)
+    min_sdk: 24             # Minimum SDK version
+```
+
+**iOS Component**:
+```yaml
+- type: ios
+  name: mobile-ios
+  enabled: true
+  config:
+    bundle_id: com.user.app  # Bundle identifier
+    language: swift          # Language (swift, objc)
+    deployment_target: 15.0  # Minimum iOS version
+```
+
+### Integration Options
 
 ```yaml
-# project-config.yaml
-name: "my-awesome-project"
-organization: "mycompany"
-description: "An awesome open source project"
-license: "MIT"
-author: "John Doe"
-email: "john@example.com"
-repository: "https://github.com/mycompany/my-awesome-project"
-
-components:
-  frontend:
-    main_app: true
-    home: true
-    admin: false
-  backend:
-    api: true
-    auth: true
-  mobile:
-    android: true
-    ios: true
-  infrastructure:
-    docker: true
-    kubernetes: true
-    terraform: false
-
-generate_options:
-  force: false
-  minimal: false
-  offline: false
-  update_versions: true
-  include_examples: true
-
-output_path: "./my-awesome-project"
+integration:
+  generate_docker_compose: true    # Generate docker-compose.yml
+  generate_scripts: true           # Generate build/run scripts
+  api_endpoints:
+    backend: http://localhost:8080 # Backend API endpoint
+    auth: http://localhost:8081    # Auth service endpoint
 ```
 
-## 🔧 Development
+### Generation Options
 
-### Prerequisites
+```yaml
+options:
+  use_external_tools: true   # Use bootstrap tools (recommended)
+  create_backup: true        # Create backup before generation
+  verbose: false             # Enable verbose logging
+  stream_output: false       # Stream tool output in real-time
+  force_overwrite: false     # Overwrite existing directories
+  disable_parallel: false    # Disable parallel component generation
+```
 
-- Go 1.25+
-- Git
-- Make (optional)
-- Docker (optional)
+## 🔒 Security Features
 
-### Build from Source
+### Input Sanitization
+- All user inputs sanitized before processing
+- Path traversal attack prevention
+- Project name validation
+
+### Security Scanning
+- Post-generation security scan
+- Detection of exposed secrets
+- Identification of insecure configurations
+- Security report generation
+
+### Tool Execution Safety
+- Whitelisted tools and flags only
+- Command injection prevention
+- Timeout protection
+- Sandboxed execution
+
+### Backup and Rollback
+- Automatic backups before generation
+- Rollback on failure
+- Backup restoration
+- Cleanup of partial generations
+
+## 📊 Logging and Monitoring
+
+### File Logging
+
+All operations are logged to files:
+
+```bash
+# Log file location
+./my-project/.logs/generation-20240101-120000.log
+
+# Log format
+[INFO] 2024-01-01 12:00:00 Starting project generation | project=my-app
+[DEBUG] 2024-01-01 12:00:01 Sanitizing project name: my-app
+[INFO] 2024-01-01 12:00:02 Tool discovery completed | component=nextjs
+[INFO] 2024-01-01 12:00:05 Component generated successfully | component=web-app type=nextjs method=bootstrap duration=3.2s
+```
+
+### Console Output
+
+Beautiful, colored terminal output:
+
+```bash
+═══════════════════════════════════════════════════════════════════
+PROJECT GENERATION COMPLETED
+═══════════════════════════════════════════════════════════════════
+✓ Project generated successfully in 45.2s
+Project Name: my-awesome-app
+Location: ./my-awesome-app
+Components: 2
+
+─────────────────────────────────────────────────────
+Generated Components
+─────────────────────────────────────────────────────
+✓ web-app (nextjs) - bootstrap
+✓ api-server (go-backend) - bootstrap
+
+─────────────────────────────────────────────────────
+Next Steps
+─────────────────────────────────────────────────────
+  • Navigate to: cd ./my-awesome-app
+  • Review the README.md for detailed instructions
+  • Run with Docker: docker-compose up
+  • Run development mode: ./dev.sh
+
+Log File: ./my-awesome-app/.logs/generation-20240101-120000.log
+```
+
+## 🚨 Troubleshooting
+
+### Tool Not Found
+
+```bash
+Error: Required tool 'npx' not found
+
+Solution:
+# Install Node.js (includes npx)
+brew install node  # macOS
+sudo apt-get install nodejs npm  # Ubuntu
+```
+
+### Generation Failed
+
+```bash
+Error: Component generation failed: nextjs
+
+Solution:
+1. Check the log file for details
+2. Verify tool versions: generator check-tools
+3. Try with verbose logging: --verbose
+4. Use fallback generation: --no-external-tools
+```
+
+### Permission Denied
+
+```bash
+Error: failed to create directory: permission denied
+
+Solution:
+# Ensure write permissions
+chmod +w ./output-directory
+# Or use a different output directory
+generator generate --config project.yaml --output ~/projects/my-app
+```
+
+## 📚 Documentation
+
+- **[Changelog](CHANGELOG.md)** - What's new in v2.0
+- **[Migration Guide](MIGRATION_GUIDE.md)** - Migrating from v1.x
+- **[Configuration Guide](docs/CONFIGURATION.md)** - Detailed configuration options
+- **[CLI Reference](docs/CLI_COMMANDS.md)** - Complete command reference
+- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
+- **[Security Guide](SECURITY.md)** - Security best practices
+
+## 🔄 Migrating from v1.x
+
+If you're upgrading from v1.x, see the [Migration Guide](MIGRATION_GUIDE.md) for detailed instructions.
+
+Quick migration steps:
+
+1. **Backup existing projects**
+2. **Install required tools** (`generator check-tools`)
+3. **Convert configuration** (template → components)
+4. **Test with dry-run** (`--dry-run`)
+5. **Generate new project**
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md).
+
+### Development Setup
 
 ```bash
 # Clone repository
@@ -354,151 +515,15 @@ cd open-source-project-generator
 # Install dependencies
 go mod download
 
-# Build binary
+# Build
 make build
 
-# Run tests with coverage
+# Run tests
 make test
-
-# Run all checks (format, vet, lint, test)
-make check
-
-# Format code
-make fmt
 
 # Run linter
 make lint
-
-# Clean all build artifacts (binaries, packages, reports, archives)
-make clean
-
-# Generate cross-platform binaries
-make dist
 ```
-
-### Development Workflow
-
-```bash
-# Build for current platform
-make build
-
-# Run tests with coverage
-make test
-
-# Run all quality checks (recommended before commit)
-make check
-
-# Format code
-make fmt
-
-# Run linter
-make lint
-
-# Build and test
-make build && ./bin/generator --version
-
-# Run with debug logging
-./bin/generator generate --debug --verbose
-
-# Docker builds (optional)
-make docker-build
-make docker-test
-
-# Show version information
-make version
-```
-
-### Architecture Highlights
-
-The codebase follows **Clean Architecture** with clear separation of concerns:
-
-**Architectural Layers**:
-
-- **Presentation Layer** (`pkg/cli/`, `pkg/ui/`) - User interaction and command handling
-- **Business Logic Layer** (`pkg/template/`, `pkg/validation/`, `pkg/audit/`) - Core functionality
-- **Infrastructure Layer** (`pkg/filesystem/`, `pkg/cache/`, `pkg/security/`) - External operations
-
-**Key Design Patterns**:
-
-- **🔌 Interface-First Design**: All major components implement interfaces from `pkg/interfaces/`
-- **💉 Dependency Injection**: Components receive dependencies via constructors, orchestrated by `internal/container/`
-- **🛡️ Categorized Error Handling**: All errors use typed categories from `pkg/errors/` (ValidationError, SecurityError, ConfigError)
-- **🔒 Security-First**: Path sanitization via `pkg/security/` before all file operations
-- **📦 Focused Packages**: Each package has a single, clear responsibility
-
-**Key Architectural Benefits**:
-
-- **Maintainability**: No file exceeds 1,000 lines, making code easy to navigate and modify
-- **Testability**: Interface-based design enables easy mocking and isolated testing
-- **Extensibility**: New features can be added without modifying existing components
-- **Performance**: Smaller files compile faster and enable better IDE performance
-- **Security**: All user inputs sanitized, templates validated before processing
-
-## 📚 Documentation
-
-- **[Getting Started Guide](docs/GETTING_STARTED.md)** - Complete installation and usage guide
-- **[Configuration Guide](docs/CONFIGURATION.md)** - Configuration management and customization
-- **[Template Development](docs/TEMPLATE_DEVELOPMENT.md)** - Creating and maintaining templates in `pkg/template/templates/`
-- **[API Reference](docs/API_REFERENCE.md)** - Developer API documentation
-- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
-- **[Package Structure](docs/PACKAGE_STRUCTURE.md)** - Modular architecture documentation
-- **[Migration Guide](docs/MIGRATION_GUIDE.md)** - Code splitting refactoring guide
-- **[Security Guide](SECURITY.md)** - Security best practices and implementation details
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
-### Development Setup
-
-```bash
-# Fork and clone the repository
-git clone https://github.com/your-username/open-source-project-generator
-cd open-source-project-generator
-
-# Create a feature branch
-git checkout -b feature/amazing-feature
-
-# Make your changes following architecture patterns:
-# - Define interfaces in pkg/interfaces/ for new components
-# - Use dependency injection via constructors
-# - Return categorized errors from pkg/errors/
-# - Sanitize paths via pkg/security/ before file operations
-
-# Run tests and linting
-make test
-make lint
-make fmt
-
-# Commit your changes
-git commit -m "Add amazing feature"
-
-# Push to your fork
-git push origin feature/amazing-feature
-
-# Create a Pull Request
-```
-
-### Architecture Guidelines for Contributors
-
-When contributing, follow these patterns:
-
-**Package Organization**:
-
-- `internal/` - Private app code (not importable externally)
-- `pkg/` - Public packages (reusable by external projects)
-- `pkg/interfaces/` - All major component interfaces
-- `pkg/models/` - Data structures and config models
-- `pkg/errors/` - Error categorization and handling
-
-**Dependency Flow**: Presentation → Business Logic → Infrastructure (dependencies flow inward only)
-
-**Security Requirements**:
-
-- Always sanitize user input via `pkg/security` before file operations
-- Return categorized errors from `pkg/errors/` package
-- Use interfaces from `pkg/interfaces/` for dependencies
-- Never use direct `os` package calls; use `pkg/filesystem/` and `pkg/security/` abstractions
 
 ## 📄 License
 
@@ -506,18 +531,17 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🆘 Support
 
-- 📖 [Documentation](https://github.com/cuesoftinc/open-source-project-generator/wiki)
+- 📖 [Documentation](docs/)
 - 🐛 [Issue Tracker](https://github.com/cuesoftinc/open-source-project-generator/issues)
 - 💬 [Discussions](https://github.com/cuesoftinc/open-source-project-generator/discussions)
-- 📧 [Email Support](mailto:support@cuesoft.io)
 
 ## 🙏 Acknowledgments
 
 - Built with [Go](https://golang.org/)
 - Uses [Cobra](https://github.com/spf13/cobra) for CLI
-- Inspired by modern development practices
+- Leverages official framework tools for generation
 - Community feedback and contributions
 
 ---
 
-**Ready to generate your next project?** Start with `generator generate` and follow the interactive prompts!
+**Ready to generate your next project?** Start with `generator check-tools` to verify your environment!
