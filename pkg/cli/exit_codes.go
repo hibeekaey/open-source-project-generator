@@ -55,6 +55,12 @@ func (ech *ExitCodeHandler) DetermineExitCode(err error) ExitCode {
 		return ExitUserCancelled
 	}
 
+	// Check for CLIError types
+	var cliErr *CLIError
+	if errors.As(err, &cliErr) {
+		return cliErr.ExitCode
+	}
+
 	// Check for GenerationError types
 	var genErr *orchestrator.GenerationError
 	if errors.As(err, &genErr) {
@@ -91,7 +97,7 @@ func (ech *ExitCodeHandler) DetermineExitCode(err error) ExitCode {
 // exitCodeFromGenerationError converts a GenerationError to an exit code
 func (ech *ExitCodeHandler) exitCodeFromGenerationError(genErr *orchestrator.GenerationError) ExitCode {
 	switch genErr.Category {
-	case orchestrator.ErrCategoryConfig:
+	case orchestrator.ErrCategoryInvalidConfig:
 		return ExitConfigError
 	case orchestrator.ErrCategoryToolNotFound:
 		return ExitToolsMissing
@@ -99,8 +105,14 @@ func (ech *ExitCodeHandler) exitCodeFromGenerationError(genErr *orchestrator.Gen
 		return ExitGenerationFailed
 	case orchestrator.ErrCategoryFileSystem:
 		return ExitFileSystemError
-	case orchestrator.ErrCategoryGeneration:
+	case orchestrator.ErrCategoryIntegration:
 		return ExitGenerationFailed
+	case orchestrator.ErrCategoryValidation:
+		return ExitGenerationFailed
+	case orchestrator.ErrCategoryTimeout:
+		return ExitGenerationFailed
+	case orchestrator.ErrCategorySecurity:
+		return ExitConfigError
 	default:
 		return ExitGenerationFailed
 	}
@@ -110,6 +122,22 @@ func (ech *ExitCodeHandler) exitCodeFromGenerationError(genErr *orchestrator.Gen
 func (ech *ExitCodeHandler) ExitWithCode(err error, code ExitCode) {
 	if err != nil {
 		ech.logger.Error(fmt.Sprintf("Error: %v", err))
+
+		// Display suggestions if available
+		var cliErr *CLIError
+		if errors.As(err, &cliErr) {
+			if suggestions := cliErr.GetSuggestions(); suggestions != "" {
+				fmt.Fprintf(os.Stderr, "%s", suggestions)
+			}
+		}
+
+		// Display suggestions from GenerationError
+		var genErr *orchestrator.GenerationError
+		if errors.As(err, &genErr) {
+			if suggestions := genErr.GetSuggestions(); suggestions != "" {
+				fmt.Fprintf(os.Stderr, "%s", suggestions)
+			}
+		}
 	}
 
 	ech.logExitCode(code)
@@ -192,3 +220,134 @@ func containsAny(s string, substrings []string) bool {
 
 // ErrUserCancelled is returned when the user cancels an operation
 var ErrUserCancelled = errors.New("operation cancelled by user")
+
+// CLIError represents a CLI-specific error with exit code and suggestions
+type CLIError struct {
+	Category    string
+	Message     string
+	Cause       error
+	ExitCode    ExitCode
+	Suggestions []string
+}
+
+// Error implements the error interface
+func (e *CLIError) Error() string {
+	if e.Cause != nil {
+		return fmt.Sprintf("[%s] %s: %v", e.Category, e.Message, e.Cause)
+	}
+	return fmt.Sprintf("[%s] %s", e.Category, e.Message)
+}
+
+// Unwrap returns the underlying cause error
+func (e *CLIError) Unwrap() error {
+	return e.Cause
+}
+
+// WithSuggestions adds recovery suggestions to the error
+func (e *CLIError) WithSuggestions(suggestions ...string) *CLIError {
+	e.Suggestions = append(e.Suggestions, suggestions...)
+	return e
+}
+
+// WithExitCode sets the exit code for the error
+func (e *CLIError) WithExitCode(code ExitCode) *CLIError {
+	e.ExitCode = code
+	return e
+}
+
+// GetSuggestions returns formatted suggestions for resolving the error
+func (e *CLIError) GetSuggestions() string {
+	if len(e.Suggestions) == 0 {
+		return ""
+	}
+
+	result := "\nNext Steps:\n"
+	for i, suggestion := range e.Suggestions {
+		result += fmt.Sprintf("  %d. %s\n", i+1, suggestion)
+	}
+	return result
+}
+
+// NewCLIError creates a new CLI error
+func NewCLIError(category string, message string, cause error) *CLIError {
+	return &CLIError{
+		Category:    category,
+		Message:     message,
+		Cause:       cause,
+		ExitCode:    ExitGenerationFailed, // Default exit code
+		Suggestions: make([]string, 0),
+	}
+}
+
+// NewConfigError creates a configuration error
+func NewConfigError(message string, cause error) *CLIError {
+	return &CLIError{
+		Category: "configuration",
+		Message:  message,
+		Cause:    cause,
+		ExitCode: ExitConfigError,
+		Suggestions: []string{
+			"Check your configuration file for errors",
+			"Refer to the configuration schema documentation",
+			"Use 'generator init-config' to generate a valid configuration template",
+		},
+	}
+}
+
+// NewToolError creates a tool-related error
+func NewToolError(toolName string, message string, cause error) *CLIError {
+	return &CLIError{
+		Category: "tool",
+		Message:  fmt.Sprintf("tool '%s': %s", toolName, message),
+		Cause:    cause,
+		ExitCode: ExitToolsMissing,
+		Suggestions: []string{
+			fmt.Sprintf("Install %s on your system", toolName),
+			"Use --no-external-tools flag to force fallback generation",
+			"Run 'generator check-tools' to see installation instructions",
+		},
+	}
+}
+
+// NewGenerationError creates a generation error
+func NewGenerationError(component string, message string, cause error) *CLIError {
+	return &CLIError{
+		Category: "generation",
+		Message:  fmt.Sprintf("component '%s': %s", component, message),
+		Cause:    cause,
+		ExitCode: ExitGenerationFailed,
+		Suggestions: []string{
+			"Check the error messages above for details",
+			"Try running with --verbose flag for more information",
+			"Use --no-external-tools to try fallback generation",
+		},
+	}
+}
+
+// NewFileSystemError creates a file system error
+func NewFileSystemError(operation string, path string, cause error) *CLIError {
+	return &CLIError{
+		Category: "filesystem",
+		Message:  fmt.Sprintf("operation '%s' failed for path '%s'", operation, path),
+		Cause:    cause,
+		ExitCode: ExitFileSystemError,
+		Suggestions: []string{
+			"Check file system permissions",
+			"Verify disk space is available",
+			"Ensure the path is accessible",
+		},
+	}
+}
+
+// NewUserCancelledError creates a user cancellation error
+func NewUserCancelledError(message string) *CLIError {
+	return &CLIError{
+		Category: "user",
+		Message:  message,
+		Cause:    nil,
+		ExitCode: ExitUserCancelled,
+		Suggestions: []string{
+			"Run the command again when ready",
+		},
+	}
+}

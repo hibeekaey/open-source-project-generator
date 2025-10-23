@@ -9,21 +9,40 @@ import (
 
 // Validator validates project configurations
 type Validator struct {
-	schema *Schema
+	schema             *Schema
+	componentValidator *ComponentConfigValidator
 }
 
 // NewValidator creates a new configuration validator
 func NewValidator() *Validator {
-	return &Validator{
-		schema: DefaultSchema(),
+	v := &Validator{
+		schema:             DefaultSchema(),
+		componentValidator: NewComponentConfigValidator(),
 	}
+
+	// Register component-specific validators
+	v.componentValidator.RegisterValidator("nextjs", NewNextJSConfigValidator())
+	v.componentValidator.RegisterValidator("go-backend", NewGoConfigValidator())
+	v.componentValidator.RegisterValidator("android", NewAndroidConfigValidator())
+	v.componentValidator.RegisterValidator("ios", NewIOSConfigValidator())
+
+	return v
 }
 
 // NewValidatorWithSchema creates a validator with a custom schema
 func NewValidatorWithSchema(schema *Schema) *Validator {
-	return &Validator{
-		schema: schema,
+	v := &Validator{
+		schema:             schema,
+		componentValidator: NewComponentConfigValidator(),
 	}
+
+	// Register component-specific validators
+	v.componentValidator.RegisterValidator("nextjs", NewNextJSConfigValidator())
+	v.componentValidator.RegisterValidator("go-backend", NewGoConfigValidator())
+	v.componentValidator.RegisterValidator("android", NewAndroidConfigValidator())
+	v.componentValidator.RegisterValidator("ios", NewIOSConfigValidator())
+
+	return v
 }
 
 // Validate validates a complete project configuration
@@ -81,9 +100,14 @@ func (v *Validator) ValidateComponent(comp *models.ComponentConfig) error {
 		return err
 	}
 
-	// Validate component-specific configuration
+	// Validate component-specific configuration using schema
 	if err := compSchema.ValidateConfig(comp.Config); err != nil {
 		return fmt.Errorf("component configuration validation failed: %w", err)
+	}
+
+	// Use component-specific validator for enhanced validation
+	if err := v.componentValidator.Validate(comp.Type, comp.Config); err != nil {
+		return fmt.Errorf("component-specific validation failed: %w", err)
 	}
 
 	return nil
@@ -229,6 +253,34 @@ func (v *Validator) GetSupportedComponentTypes() []string {
 // GetComponentSchema returns the schema for a specific component type
 func (v *Validator) GetComponentSchema(componentType string) (*ComponentSchema, error) {
 	return v.schema.GetComponentSchema(componentType)
+}
+
+// GetComponentValidator returns the component config validator
+func (v *Validator) GetComponentValidator() *ComponentConfigValidator {
+	return v.componentValidator
+}
+
+// ValidateComponentWithDetails validates a component and returns detailed results
+func (v *Validator) ValidateComponentWithDetails(comp *models.ComponentConfig) *ComponentValidationResult {
+	result := v.componentValidator.ValidateWithDetails(comp.Type, comp.Config)
+
+	// Add additional validation from schema
+	compSchema, err := v.schema.GetComponentSchema(comp.Type)
+	if err == nil {
+		if schemaErr := compSchema.ValidateConfig(comp.Config); schemaErr != nil {
+			result.Valid = false
+			if fieldErr, ok := schemaErr.(*FieldError); ok {
+				result.Errors = append(result.Errors, *fieldErr)
+			} else {
+				result.Errors = append(result.Errors, FieldError{
+					Field:   "",
+					Message: schemaErr.Error(),
+				})
+			}
+		}
+	}
+
+	return result
 }
 
 // Helper functions

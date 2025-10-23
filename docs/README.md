@@ -7,10 +7,11 @@ Welcome to the Open Source Project Generator documentation. This tool uses a **t
 ### For Users
 
 - **[Getting Started](GETTING_STARTED.md)** - Installation, quick start, and basic usage
-- **[CLI Commands](CLI_COMMANDS.md)** - Complete command reference
-- **[Configuration Guide](CONFIGURATION.md)** - Configuration file format and options
+- **[Interactive Mode Guide](INTERACTIVE_MODE.md)** - Step-by-step guide for interactive configuration wizard
+- **[CLI Commands](CLI_COMMANDS.md)** - Complete command reference with exit codes
+- **[Configuration Guide](CONFIGURATION.md)** - Configuration file format, validation rules, and options
 - **[Examples](EXAMPLES.md)** - Real-world project configurations
-- **[Troubleshooting](TROUBLESHOOTING.md)** - Common issues and solutions
+- **[Troubleshooting](TROUBLESHOOTING.md)** - Common issues, cache management, and solutions
 
 ### For Developers
 
@@ -24,10 +25,14 @@ Welcome to the Open Source Project Generator documentation. This tool uses a **t
 | I want to... | Go to... |
 |--------------|----------|
 | Install and use the generator | [Getting Started](GETTING_STARTED.md) |
+| Use the interactive wizard | [Interactive Mode Guide](INTERACTIVE_MODE.md) |
 | See all available commands | [CLI Commands](CLI_COMMANDS.md) |
+| Understand exit codes | [CLI Commands - Exit Codes](CLI_COMMANDS.md#exit-codes-reference) |
 | Create a configuration file | [Configuration Guide](CONFIGURATION.md) |
+| Validate my configuration | [Configuration Guide - Validation](CONFIGURATION.md#configuration-validation) |
 | See example projects | [Examples](EXAMPLES.md) |
 | Fix an issue | [Troubleshooting](TROUBLESHOOTING.md) |
+| Manage tool cache | [Troubleshooting - Cache Issues](TROUBLESHOOTING.md#cache-management-issues) |
 | Understand the architecture | [Architecture](ARCHITECTURE.md) |
 | Add support for a new tool | [Adding Bootstrap Tools](ADDING_TOOLS.md) |
 | Contribute code | [Contributing](../CONTRIBUTING.md) |
@@ -55,10 +60,11 @@ Instead of maintaining templates manually, this generator:
 docs/
 ├── README.md                   # This file - Documentation index
 ├── GETTING_STARTED.md          # Installation, quick start, tool requirements
-├── CLI_COMMANDS.md             # Complete CLI command reference
-├── CONFIGURATION.md            # Configuration file format and options
+├── INTERACTIVE_MODE.md         # Interactive configuration wizard guide
+├── CLI_COMMANDS.md             # Complete CLI command reference with exit codes
+├── CONFIGURATION.md            # Configuration file format, validation, and options
 ├── EXAMPLES.md                 # Real-world configuration examples
-├── TROUBLESHOOTING.md          # Common issues and solutions
+├── TROUBLESHOOTING.md          # Common issues, cache management, and solutions
 ├── ARCHITECTURE.md             # System architecture and design
 ├── ADDING_TOOLS.md             # Guide for adding new bootstrap tools
 ├── API_REFERENCE.md            # Developer API documentation
@@ -67,11 +73,15 @@ docs/
 
 ### Documentation Coverage
 
-- ✅ **9 documentation files** covering all aspects
-- ✅ **150+ pages** of comprehensive documentation
+- ✅ **10 documentation files** covering all aspects
+- ✅ **200+ pages** of comprehensive documentation
+- ✅ **Interactive mode** fully documented with examples
+- ✅ **Exit codes** reference and usage guide
+- ✅ **Cache management** troubleshooting and best practices
+- ✅ **Component validation** rules and examples
 - ✅ **10+ examples** for common project types
 - ✅ **All 5 CLI commands** fully documented
-- ✅ **All 4 component types** explained
+- ✅ **All 4 component types** explained with validation rules
 - ✅ **10 core components** architecture documented
 
 ## 🆘 Getting Help

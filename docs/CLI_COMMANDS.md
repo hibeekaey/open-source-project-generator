@@ -48,7 +48,9 @@ The generate command orchestrates bootstrap tools (like `create-next-app`, `go m
 --offline                  # Force offline mode
 --backup                   # Create backup before overwriting (default: true)
 --force                    # Force overwrite existing directory
---interactive, -i          # Interactive mode (not yet implemented)
+--interactive, -i          # Interactive mode (guided configuration wizard)
+--stream-output            # Stream real-time output from bootstrap tools
+--no-rollback              # Skip automatic rollback on failure
 ```
 
 ### generate Examples
@@ -56,6 +58,9 @@ The generate command orchestrates bootstrap tools (like `create-next-app`, `go m
 ```bash
 # Generate from config file
 generator generate --config project.yaml
+
+# Interactive mode (guided wizard)
+generator generate --interactive
 
 # With custom output directory
 generator generate --config project.yaml --output ./my-project
@@ -72,20 +77,35 @@ generator generate --config project.yaml --offline
 # Verbose output
 generator generate --config project.yaml --verbose
 
+# Stream real-time output from bootstrap tools
+generator generate --config project.yaml --stream-output --verbose
+
 # Force overwrite
 generator generate --config project.yaml --force
+
+# Skip automatic rollback on failure
+generator generate --config project.yaml --no-rollback
 ```
 
 ### generate Exit Codes
 
-| Code | Meaning |
-|------|---------|
-| 0 | Success |
-| 1 | Configuration error |
-| 2 | Tool not found (and no fallback) |
-| 3 | Tool execution failed |
-| 4 | File system error |
-| 5 | Validation error |
+| Code | Meaning | Description |
+|------|---------|-------------|
+| 0 | Success | Project generated successfully |
+| 1 | Configuration Error | Invalid or missing configuration |
+| 2 | Tools Missing | Required tools not found and no fallback available |
+| 3 | Generation Failed | Component generation or tool execution failed |
+| 4 | File System Error | Cannot read/write files or directories |
+| 5 | User Cancelled | User cancelled the operation (e.g., in interactive mode) |
+
+**Exit Code Details:**
+
+- **Exit Code 0 (Success)**: All components generated successfully, project structure validated
+- **Exit Code 1 (Configuration Error)**: Configuration file not found, invalid YAML/JSON syntax, missing required fields, or invalid component configuration
+- **Exit Code 2 (Tools Missing)**: Required bootstrap tools (npx, go, gradle, xcodebuild) not found in PATH and no fallback generator available
+- **Exit Code 3 (Generation Failed)**: Bootstrap tool execution failed, component generation error, or integration step failed
+- **Exit Code 4 (File System Error)**: Cannot create output directory, permission denied, disk full, or file operation failed
+- **Exit Code 5 (User Cancelled)**: User cancelled operation in interactive mode or via Ctrl+C
 
 ---
 
@@ -171,7 +191,8 @@ Creates a YAML configuration file that you can customize for your project. The t
 
 ```bash
 --minimal          # Generate minimal configuration (only required fields)
---example TYPE     # Generate example configuration (fullstack, frontend, backend, mobile)
+--example TYPE     # Generate example configuration (fullstack, frontend, backend, mobile, microservice)
+--force            # Force overwrite existing configuration file
 ```
 
 ### init-config Examples
@@ -191,16 +212,24 @@ generator init-config --example fullstack
 generator init-config --example frontend
 generator init-config --example backend
 generator init-config --example mobile
+generator init-config --example microservice
+
+# Force overwrite existing file
+generator init-config --force
+generator init-config my-project.yaml --example fullstack --force
 ```
 
 ### init-config Example Types
 
-| Type | Description |
-|------|-------------|
-| `fullstack` | Next.js frontend + Go backend + Docker |
-| `frontend` | Next.js frontend only |
-| `backend` | Go backend only |
-| `mobile` | Android + iOS apps |
+| Type | Description | Components |
+|------|-------------|------------|
+| `fullstack` | Full-stack web application | Next.js frontend + Go backend + Docker |
+| `frontend` | Frontend-only application | Next.js with TypeScript and Tailwind |
+| `backend` | Backend-only API service | Go backend with Gin framework |
+| `mobile` | Mobile applications | Android (Kotlin) + iOS (Swift) + API backend |
+| `microservice` | Microservice architecture | Go backend optimized for microservices |
+
+All generated templates include inline comments explaining each configuration option.
 
 ---
 
@@ -221,11 +250,15 @@ Manages cached tool availability information to speed up tool checks and enable 
 ### cache-tools Flags
 
 ```bash
---stats      # Show cache statistics (default if no flags)
---save       # Save current tool availability to cache
---clear      # Clear the tool cache
---info       # Show cache information and location
---verbose, -v # Enable verbose logging
+--stats          # Show cache statistics (default if no flags)
+--save           # Save current tool availability to cache
+--clear          # Clear the tool cache
+--info           # Show cache information and location
+--validate       # Validate cache integrity and report issues
+--refresh        # Re-check all cached tools and update status
+--export FILE    # Export cache data to portable format
+--import FILE    # Import cache data from file
+--verbose, -v    # Enable verbose logging
 ```
 
 ### cache-tools Examples
@@ -243,6 +276,21 @@ generator cache-tools --clear
 
 # Show cache information
 generator cache-tools --info
+
+# Validate cache integrity
+generator cache-tools --validate
+
+# Refresh all cached tools
+generator cache-tools --refresh
+
+# Export cache for sharing
+generator cache-tools --export tools-cache.json
+
+# Import cache from file
+generator cache-tools --import tools-cache.json
+
+# Verbose output
+generator cache-tools --validate --verbose
 ```
 
 ### cache-tools Cache Statistics Output
@@ -259,6 +307,49 @@ Cache File: ~/.cache/generator/tools.cache
 Cache TTL: 24h0m0s
 Last Saved: 2024-01-15T10:30:00Z
 Time Since Check: 2h15m30s
+```
+
+### cache-tools Validation Output
+
+```text
+CACHE VALIDATION REPORT
+
+Status: Valid
+Total Entries: 4
+Corrupted Entries: 0
+Expired Entries: 1
+
+Expired:
+  - gradle (last checked: 2024-01-10T10:00:00Z)
+
+Warnings:
+  - Cache is older than 7 days, consider refreshing
+
+Checked At: 2024-01-15T10:30:00Z
+```
+
+### cache-tools Export Format
+
+The export format is a portable JSON file that can be shared across machines:
+
+```json
+{
+  "version": "1.0",
+  "exported_at": "2024-01-15T10:30:00Z",
+  "platform": "darwin",
+  "entries": {
+    "npx": {
+      "available": true,
+      "version": "10.2.3",
+      "last_checked": "2024-01-15T10:00:00Z"
+    },
+    "go": {
+      "available": true,
+      "version": "1.21.0",
+      "last_checked": "2024-01-15T10:00:00Z"
+    }
+  }
+}
 ```
 
 ### cache-tools What Gets Cached
@@ -338,7 +429,106 @@ generator generate --config project.yaml
 
 ---
 
+## Interactive Mode
+
+The interactive mode provides a guided wizard for configuring your project without manually creating a configuration file.
+
+### Starting Interactive Mode
+
+```bash
+generator generate --interactive
+# or
+generator generate -i
+```
+
+### Interactive Mode Workflow
+
+The wizard guides you through these steps:
+
+**1. Project Information**
+- Project name
+- Project description
+- Output directory
+- Author (optional)
+- License (optional)
+
+**2. Component Selection**
+- Multi-select menu of available component types
+- Descriptions for each component
+- Select one or more components to include
+
+**3. Component Configuration**
+- For each selected component, configure specific options
+- TypeScript, Tailwind, App Router for Next.js
+- Module path, framework, port for Go backend
+- Package name, SDK levels for Android
+- Bundle ID, deployment target for iOS
+
+**4. Integration Options**
+- Docker Compose generation
+- Build scripts generation
+- API endpoint configuration
+- Shared environment variables
+
+**5. Confirmation**
+- Review complete configuration summary
+- Confirm to proceed or cancel to restart
+
+### Interactive Mode Features
+
+- **Input Validation**: Real-time validation of all inputs
+- **Smart Defaults**: Sensible defaults for all options
+- **Cancellation**: Press Ctrl+C at any prompt to cancel
+- **Error Recovery**: Clear error messages with re-prompting
+- **Configuration Preview**: See complete configuration before generation
+
+### Interactive Mode Examples
+
+```bash
+# Start interactive wizard
+generator generate --interactive
+
+# Interactive with streaming output
+generator generate --interactive --stream-output
+
+# Interactive with verbose logging
+generator generate --interactive --verbose
+```
+
+### Interactive Mode Exit Codes
+
+Interactive mode uses the same exit codes as non-interactive mode:
+
+- **0**: Project generated successfully
+- **1**: Configuration validation failed
+- **2**: Required tools missing
+- **3**: Generation failed
+- **4**: File system error
+- **5**: User cancelled operation
+
+---
+
 ## Common Workflows
+
+### Interactive Project Creation
+
+```bash
+# 1. Start interactive mode
+generator generate --interactive
+
+# 2. Follow the prompts:
+#    - Enter project name: "my-awesome-app"
+#    - Enter description: "A full-stack web application"
+#    - Select output directory: "./my-awesome-app"
+#    - Select components: [nextjs, go-backend]
+#    - Configure Next.js: TypeScript=yes, Tailwind=yes
+#    - Configure Go backend: Module path, Port=8080
+#    - Enable Docker Compose: yes
+#    - Confirm and generate
+
+# 3. Project is generated automatically
+cd my-awesome-app
+```
 
 ### First-Time Setup
 
@@ -403,6 +593,45 @@ generator check-tools --verbose
 
 # 4. Try with fallback
 generator generate --config project.yaml --no-external-tools
+
+# 5. Stream real-time output
+generator generate --config project.yaml --stream-output --verbose
+```
+
+### Streaming Output
+
+View real-time output from bootstrap tools during generation:
+
+```bash
+# Enable streaming output
+generator generate --config project.yaml --stream-output
+
+# With verbose mode for detailed output
+generator generate --config project.yaml --stream-output --verbose
+```
+
+**Streaming Output Features:**
+
+- Real-time display of tool output (npx, go, gradle, etc.)
+- Component name prefixing for clarity
+- Both stdout and stderr in verbose mode
+- Immediate error display
+- Progress indicators for non-streaming operations
+
+**Example Output:**
+
+```text
+[nextjs] Creating Next.js application...
+[nextjs] ✓ Creating project directory
+[nextjs] ✓ Installing dependencies
+[nextjs] ✓ Initializing git repository
+[nextjs] Success! Created web-app
+
+[go-backend] Initializing Go module...
+[go-backend] go: creating new go.mod: module github.com/myorg/project
+[go-backend] go: to add module requirements and sums:
+[go-backend]     go mod tidy
+[go-backend] Success! Initialized Go module
 ```
 
 ---
@@ -450,6 +679,103 @@ mkdir -p .generator
 generator init-config .generator/project.yaml
 git add .generator/
 ```
+
+---
+
+## Exit Codes Reference
+
+All commands return specific exit codes for different scenarios. Use these in CI/CD pipelines and scripts.
+
+### Exit Code Summary
+
+| Code | Name | Description | Common Causes |
+|------|------|-------------|---------------|
+| 0 | Success | Operation completed successfully | - |
+| 1 | Configuration Error | Invalid or missing configuration | Missing config file, invalid YAML, missing required fields |
+| 2 | Tools Missing | Required tools not available | npx, go, gradle, or xcodebuild not in PATH |
+| 3 | Generation Failed | Component generation failed | Tool execution error, network issue, invalid options |
+| 4 | File System Error | Cannot access files/directories | Permission denied, disk full, invalid path |
+| 5 | User Cancelled | User cancelled the operation | Ctrl+C pressed, cancelled in interactive mode |
+
+### Using Exit Codes in Scripts
+
+**Bash Script Example:**
+
+```bash
+#!/bin/bash
+
+# Generate project
+generator generate --config project.yaml
+
+# Check exit code
+case $? in
+  0)
+    echo "✓ Project generated successfully"
+    cd my-project && make build
+    ;;
+  1)
+    echo "✗ Configuration error - check your config file"
+    exit 1
+    ;;
+  2)
+    echo "✗ Missing tools - install required tools"
+    generator check-tools
+    exit 2
+    ;;
+  3)
+    echo "✗ Generation failed - check logs"
+    cat ~/.cache/generator/logs/generator.log
+    exit 3
+    ;;
+  4)
+    echo "✗ File system error - check permissions"
+    exit 4
+    ;;
+  5)
+    echo "✗ Operation cancelled by user"
+    exit 5
+    ;;
+esac
+```
+
+**CI/CD Pipeline Example:**
+
+```yaml
+# GitHub Actions
+- name: Generate Project
+  run: generator generate --config .generator/project.yaml
+  continue-on-error: false
+
+- name: Handle Generation Failure
+  if: failure()
+  run: |
+    echo "Generation failed with exit code $?"
+    generator check-tools
+    cat ~/.cache/generator/logs/generator.log
+```
+
+**Makefile Example:**
+
+```makefile
+.PHONY: generate
+generate:
+	@generator generate --config project.yaml || \
+	(echo "Generation failed with exit code $$?"; exit 1)
+
+.PHONY: generate-or-fallback
+generate-or-fallback:
+	@generator generate --config project.yaml || \
+	(echo "Trying with fallback..."; \
+	 generator generate --config project.yaml --no-external-tools)
+```
+
+### Exit Code Handling Best Practices
+
+1. **Always check exit codes** in automated scripts
+2. **Log exit codes** for debugging
+3. **Provide fallback options** for non-zero exits
+4. **Use specific error handling** for each exit code
+5. **Display helpful messages** based on exit code
 
 ---
 

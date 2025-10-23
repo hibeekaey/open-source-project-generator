@@ -27,6 +27,7 @@ type ProjectCoordinator struct {
 	componentMapper    interfaces.ComponentMapperInterface
 	integrationManager *IntegrationManager //nolint:unused // Reserved for future use
 	fallbackRegistry   *fallback.Registry
+	executorRegistry   *ExecutorRegistry
 	logger             *logger.Logger
 	backupDir          string
 	sanitizer          *security.Sanitizer
@@ -38,6 +39,12 @@ func NewProjectCoordinator(log *logger.Logger) *ProjectCoordinator {
 	componentMapper := mapper.NewComponentMapper()
 	structureMapper := mapper.NewStructureMapper(componentMapper)
 	offlineDetector := NewOfflineDetector(DefaultOfflineDetectorConfig(), log)
+	executorRegistry := NewExecutorRegistry(log)
+
+	// Register component-specific executors with adapters
+	executorRegistry.Register("nextjs", bootstrap.NewExecutorAdapter(bootstrap.NewNextJSExecutor()))
+	executorRegistry.Register("go-backend", bootstrap.NewExecutorAdapter(bootstrap.NewGoExecutor()))
+	// Note: Android and iOS executors require tool discovery, will be registered when needed
 
 	return &ProjectCoordinator{
 		validator:        config.NewValidator(),
@@ -46,6 +53,7 @@ func NewProjectCoordinator(log *logger.Logger) *ProjectCoordinator {
 		structureMapper:  structureMapper,
 		componentMapper:  componentMapper,
 		fallbackRegistry: fallback.DefaultRegistry(),
+		executorRegistry: executorRegistry,
 		logger:           log,
 		backupDir:        ".backups",
 		sanitizer:        security.NewSanitizer(),
@@ -77,6 +85,13 @@ func (pc *ProjectCoordinator) GetOfflineMessage() string {
 		return pc.offlineDetector.GetOfflineMessage()
 	}
 	return ""
+}
+
+// SetAutoRollbackEnabled enables or disables automatic rollback on failure
+func (pc *ProjectCoordinator) SetAutoRollbackEnabled(enabled bool) {
+	if pc.rollbackManager != nil {
+		pc.rollbackManager.SetAutoRollbackEnabled(enabled)
+	}
 }
 
 // Ensure ProjectCoordinator implements the interface
@@ -183,18 +198,23 @@ func (pc *ProjectCoordinator) Generate(ctx context.Context, configInterface inte
 	pc.logToolAvailability(toolCheckResult)
 	pc.logger.Info("Tool discovery completed")
 
-	// Step 5: Create backup if needed
-	if config.Options.CreateBackup && !config.Options.DryRun {
-		pc.logger.Info("Step 5/11: Creating backup of existing directory...")
+	// Step 5: Create automatic backup before generation
+	if !config.Options.DryRun {
+		pc.logger.Info("Step 5/11: Creating automatic backup before generation...")
 		pc.logger.Debug(fmt.Sprintf("Backup directory: %s", pc.backupDir))
-		if err := pc.createBackup(config.OutputDir); err != nil {
-			pc.logger.Warn(fmt.Sprintf("Failed to create backup: %v", err))
-			result.Warnings = append(result.Warnings, fmt.Sprintf("Failed to create backup: %v", err))
+		if err := pc.rollbackManager.CreateAutomaticBackup(config.OutputDir); err != nil {
+			pc.logger.Warn(fmt.Sprintf("Failed to create automatic backup: %v", err))
+			result.Warnings = append(result.Warnings, fmt.Sprintf("Failed to create automatic backup: %v", err))
 		} else {
-			pc.logger.Info("Backup created successfully")
+			backupLocation := pc.rollbackManager.GetAutoBackupLocation()
+			if backupLocation != "" {
+				pc.logger.Info(fmt.Sprintf("Automatic backup created: %s", backupLocation))
+			} else {
+				pc.logger.Info("No backup needed (directory does not exist)")
+			}
 		}
 	} else {
-		pc.logger.Info("Step 5/11: Skipping backup (not requested or dry-run mode)")
+		pc.logger.Info("Step 5/11: Skipping backup (dry-run mode)")
 	}
 
 	// Step 6: Prepare output directory
@@ -229,15 +249,30 @@ func (pc *ProjectCoordinator) Generate(ctx context.Context, configInterface inte
 		pc.logger.PrintHeader("PROJECT GENERATION FAILED")
 		pc.logger.Error(fmt.Sprintf("Generation failed: %v", err))
 
-		// Attempt rollback on error
-		if !config.Options.DryRun {
-			pc.logger.Warn("Attempting to rollback changes...")
-			if rollbackErr := pc.rollbackManager.Rollback(ctx); rollbackErr != nil {
-				pc.logger.Error(fmt.Sprintf("Rollback failed: %v", rollbackErr))
-				result.Warnings = append(result.Warnings, fmt.Sprintf("Rollback failed: %v", rollbackErr))
+		// Attempt automatic rollback on error if enabled
+		if !config.Options.DryRun && pc.rollbackManager.IsAutoRollbackEnabled() {
+			pc.logger.Warn("Triggering automatic rollback...")
+			if rollbackErr := pc.performRollback(ctx); rollbackErr != nil {
+				pc.logger.Error(fmt.Sprintf("Automatic rollback failed: %v", rollbackErr))
+				result.Warnings = append(result.Warnings, fmt.Sprintf("Automatic rollback failed: %v", rollbackErr))
+
+				// Provide manual cleanup instructions
+				pc.logger.PrintSection("Manual Cleanup Required")
+				pc.logger.Warn("Automatic rollback failed. Please clean up manually:")
+				pc.logger.PrintBullet(fmt.Sprintf("Remove generated files: rm -rf %s", config.OutputDir))
+				if backupLocation := pc.rollbackManager.GetAutoBackupLocation(); backupLocation != "" {
+					pc.logger.PrintBullet(fmt.Sprintf("Restore backup: mv %s %s", backupLocation, config.OutputDir))
+				}
+				for _, tempDir := range pc.rollbackManager.GetTempDirs() {
+					pc.logger.PrintBullet(fmt.Sprintf("Remove temp directory: rm -rf %s", tempDir))
+				}
 			} else {
-				pc.logger.Success("Rollback completed successfully")
+				pc.logger.Success("Automatic rollback completed successfully")
+				pc.logger.Info("All changes have been reverted")
 			}
+		} else if !config.Options.DryRun && !pc.rollbackManager.IsAutoRollbackEnabled() {
+			pc.logger.Warn("Automatic rollback is disabled (--no-rollback flag)")
+			pc.logger.Info("Generated files have been left in place for inspection")
 		}
 
 		// Show what was attempted
@@ -266,13 +301,25 @@ func (pc *ProjectCoordinator) Generate(ctx context.Context, configInterface inte
 			result.Errors = append(result.Errors, fmt.Errorf("structure mapping failed: %w", err))
 			result.Duration = time.Since(startTime)
 
-			// Attempt rollback
-			pc.logger.Warn("Mapping failed, attempting rollback...")
-			if rollbackErr := pc.rollbackManager.Rollback(ctx); rollbackErr != nil {
-				pc.logger.Error(fmt.Sprintf("Rollback failed: %v", rollbackErr))
-				result.Warnings = append(result.Warnings, fmt.Sprintf("Rollback failed: %v", rollbackErr))
+			// Attempt automatic rollback if enabled
+			if pc.rollbackManager.IsAutoRollbackEnabled() {
+				pc.logger.Warn("Mapping failed, triggering automatic rollback...")
+				if rollbackErr := pc.performRollback(ctx); rollbackErr != nil {
+					pc.logger.Error(fmt.Sprintf("Automatic rollback failed: %v", rollbackErr))
+					result.Warnings = append(result.Warnings, fmt.Sprintf("Automatic rollback failed: %v", rollbackErr))
+
+					// Provide manual cleanup instructions
+					pc.logger.PrintSection("Manual Cleanup Required")
+					pc.logger.Warn("Automatic rollback failed. Please clean up manually:")
+					pc.logger.PrintBullet(fmt.Sprintf("Remove generated files: rm -rf %s", config.OutputDir))
+					if backupLocation := pc.rollbackManager.GetAutoBackupLocation(); backupLocation != "" {
+						pc.logger.PrintBullet(fmt.Sprintf("Restore backup: mv %s %s", backupLocation, config.OutputDir))
+					}
+				} else {
+					pc.logger.Success("Automatic rollback completed successfully")
+				}
 			} else {
-				pc.logger.Info("Rollback completed successfully")
+				pc.logger.Warn("Automatic rollback is disabled (--no-rollback flag)")
 			}
 
 			return result, err
@@ -977,7 +1024,14 @@ func (pc *ProjectCoordinator) generateWithBootstrap(ctx context.Context, comp *m
 		streamWriter := NewStreamingWriter(pc.logger.GetWriter(), comp.Name, true)
 
 		// Execute with streaming
-		execResult, err = executor.ExecuteWithStreaming(ctx, spec, streamWriter)
+		result, err := executor.ExecuteWithStreaming(ctx, spec, streamWriter)
+		if err == nil {
+			var ok bool
+			execResult, ok = result.(*models.ExecutionResult)
+			if !ok {
+				return fmt.Errorf("unexpected result type from executor: %T", result)
+			}
+		}
 
 		// Flush any remaining output
 		streamWriter.Flush()
@@ -991,7 +1045,14 @@ func (pc *ProjectCoordinator) generateWithBootstrap(ctx context.Context, comp *m
 		progress.Start()
 
 		// Execute bootstrap tool
-		execResult, err = executor.Execute(ctx, spec)
+		result, err := executor.Execute(ctx, spec)
+		if err == nil {
+			var ok bool
+			execResult, ok = result.(*models.ExecutionResult)
+			if !ok {
+				return fmt.Errorf("unexpected result type from executor: %T", result)
+			}
+		}
 
 		progress.Stop()
 
@@ -1059,18 +1120,22 @@ func (pc *ProjectCoordinator) generateWithFallback(ctx context.Context, comp *mo
 }
 
 // getBootstrapExecutor returns the appropriate bootstrap executor for a component type
-func (pc *ProjectCoordinator) getBootstrapExecutor(componentType string) (*bootstrap.BaseExecutor, error) {
-	// For now, return a base executor
-	// In a full implementation, this would return type-specific executors
+func (pc *ProjectCoordinator) getBootstrapExecutor(componentType string) (interfaces.BootstrapExecutorInterface, error) {
+	// Try to get from registry first
+	if pc.executorRegistry.Has(componentType) {
+		return pc.executorRegistry.Get(componentType)
+	}
+
+	// Register on-demand executors that need dependencies
 	switch componentType {
-	case "nextjs":
-		return bootstrap.NewBaseExecutor("npx"), nil
-	case "go-backend":
-		return bootstrap.NewBaseExecutor("go"), nil
 	case "android":
-		return bootstrap.NewBaseExecutor("gradle"), nil
+		executor := bootstrap.NewExecutorAdapter(bootstrap.NewAndroidExecutor(pc.toolDiscovery))
+		pc.executorRegistry.Register(componentType, executor)
+		return executor, nil
 	case "ios":
-		return bootstrap.NewBaseExecutor("xcodebuild"), nil
+		executor := bootstrap.NewExecutorAdapter(bootstrap.NewiOSExecutor(pc.toolDiscovery))
+		pc.executorRegistry.Register(componentType, executor)
+		return executor, nil
 	default:
 		return nil, fmt.Errorf("no bootstrap executor for component type: %s", componentType)
 	}
@@ -1137,12 +1202,44 @@ func (pc *ProjectCoordinator) validateFinalStructure(config *models.ProjectConfi
 		}
 	}
 
-	// Validate structure
-	if err := pc.structureMapper.ValidateStructureWithComponents(config.OutputDir, componentTypes); err != nil {
-		return err
+	// Use detailed validation for better reporting
+	validationResult := pc.structureMapper.(*mapper.StructureMapper).ValidateStructureDetailed(config.OutputDir, componentTypes)
+
+	// Report validation results
+	if !validationResult.Valid {
+		pc.logger.Error("Structure validation failed")
+
+		// Report errors by component
+		for componentType, compValidation := range validationResult.Components {
+			if !compValidation.Valid {
+				pc.logger.Error(fmt.Sprintf("  %s:", componentType))
+				for _, err := range compValidation.Errors {
+					pc.logger.Error(fmt.Sprintf("    - %s", err))
+				}
+			}
+		}
+
+		// Report missing files or directories
+		if len(validationResult.Errors) > 0 {
+			pc.logger.PrintSection("Missing Files or Directories")
+			for _, err := range validationResult.Errors {
+				pc.logger.Error(fmt.Sprintf("  - %s", err))
+			}
+		}
+
+		return fmt.Errorf("structure validation failed with %d errors", len(validationResult.Errors))
 	}
 
-	pc.logger.Info("Final structure validation passed")
+	// Display success message with checkmark
+	pc.logger.Success("✓ Structure validation passed - all expected files and directories are present")
+
+	// Report warnings if any
+	if len(validationResult.Warnings) > 0 {
+		pc.logger.Info("Structure validation warnings:")
+		for _, warning := range validationResult.Warnings {
+			pc.logger.Warn(fmt.Sprintf("  - %s", warning))
+		}
+	}
 
 	return nil
 }
@@ -1192,4 +1289,34 @@ func (pc *ProjectCoordinator) runSecurityScan(ctx context.Context, projectRoot s
 	}
 
 	return scanResult, nil
+}
+
+// performRollback performs rollback operations with detailed logging
+func (pc *ProjectCoordinator) performRollback(ctx context.Context) error {
+	pc.logger.Info("Starting rollback operations...")
+
+	// Display what will be rolled back
+	if pc.rollbackManager.HasBackups() {
+		backups := pc.rollbackManager.GetBackups()
+		pc.logger.Info(fmt.Sprintf("Will restore %d backup(s)", len(backups)))
+		for original := range backups {
+			pc.logger.Debug(fmt.Sprintf("  - %s", original))
+		}
+	}
+
+	if pc.rollbackManager.HasTempDirs() {
+		tempDirs := pc.rollbackManager.GetTempDirs()
+		pc.logger.Info(fmt.Sprintf("Will clean up %d temporary director(ies)", len(tempDirs)))
+		for _, tempDir := range tempDirs {
+			pc.logger.Debug(fmt.Sprintf("  - %s", tempDir))
+		}
+	}
+
+	// Perform rollback
+	if err := pc.rollbackManager.Rollback(ctx); err != nil {
+		return fmt.Errorf("rollback operation failed: %w", err)
+	}
+
+	pc.logger.Info("Rollback operations completed successfully")
+	return nil
 }

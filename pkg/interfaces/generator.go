@@ -17,15 +17,25 @@ type GeneratorInterface interface {
 }
 
 // BootstrapExecutorInterface defines the contract for executing external CLI tools
+// Note: This interface uses interface{} types for flexibility across different implementations
+// Concrete implementations should use specific types (e.g., *bootstrap.BootstrapSpec, *models.ExecutionResult)
 type BootstrapExecutorInterface interface {
 	// Execute runs an external bootstrap tool with the given specification
+	// spec should be *bootstrap.BootstrapSpec, returns *models.ExecutionResult
 	Execute(ctx context.Context, spec interface{}) (interface{}, error)
+
+	// ExecuteWithStreaming runs with real-time output
+	// spec should be *bootstrap.BootstrapSpec, output should be io.Writer, returns *models.ExecutionResult
+	ExecuteWithStreaming(ctx context.Context, spec interface{}, output interface{}) (interface{}, error)
 
 	// SupportsComponent checks if this executor can handle the given component type
 	SupportsComponent(componentType string) bool
 
 	// GetDefaultFlags returns default CLI flags for the component type
 	GetDefaultFlags(componentType string) []string
+
+	// ValidateConfig validates component-specific configuration
+	ValidateConfig(config map[string]interface{}) error
 }
 
 // FallbackGeneratorInterface defines the contract for custom project generation

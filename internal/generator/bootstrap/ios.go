@@ -52,6 +52,83 @@ func (ie *iOSExecutor) SupportsComponent(componentType string) bool {
 	return componentType == "ios" || componentType == "mobile-ios"
 }
 
+// GetDefaultFlags returns default flags for iOS generation
+func (ie *iOSExecutor) GetDefaultFlags(componentType string) []string {
+	if !ie.SupportsComponent(componentType) {
+		return []string{}
+	}
+
+	return []string{"package", "init", "--type", "executable"}
+}
+
+// ValidateConfig validates component-specific configuration
+func (ie *iOSExecutor) ValidateConfig(config map[string]interface{}) error {
+	// Validate name
+	if name, ok := config["name"].(string); !ok || name == "" {
+		return fmt.Errorf("name is required and must be a string")
+	}
+
+	// Validate bundle_id if provided
+	if bundleID, exists := config["bundle_id"]; exists {
+		if bundleStr, ok := bundleID.(string); ok {
+			// Basic validation for bundle identifier format
+			if len(bundleStr) == 0 {
+				return fmt.Errorf("bundle_id cannot be empty")
+			}
+			// Bundle ID should contain at least one dot
+			hasDot := false
+			for _, c := range bundleStr {
+				if c == '.' {
+					hasDot = true
+					break
+				}
+			}
+			if !hasDot {
+				return fmt.Errorf("bundle_id must be a valid bundle identifier (e.g., com.example.app)")
+			}
+		} else {
+			return fmt.Errorf("bundle_id must be a string")
+		}
+	}
+
+	// Validate deployment_target if provided
+	if target, exists := config["deployment_target"]; exists {
+		if targetStr, ok := target.(string); ok {
+			// Basic validation for iOS version format (e.g., "14.0", "15.0")
+			if len(targetStr) == 0 {
+				return fmt.Errorf("deployment_target cannot be empty")
+			}
+			// Should contain at least one dot
+			hasDot := false
+			for _, c := range targetStr {
+				if c == '.' {
+					hasDot = true
+					break
+				}
+			}
+			if !hasDot {
+				return fmt.Errorf("deployment_target must be a valid iOS version (e.g., 14.0)")
+			}
+		} else {
+			return fmt.Errorf("deployment_target must be a string")
+		}
+	}
+
+	// Validate language if provided
+	if lang, exists := config["language"]; exists {
+		if langStr, ok := lang.(string); ok {
+			validLangs := map[string]bool{"swift": true, "objective-c": true}
+			if !validLangs[langStr] {
+				return fmt.Errorf("language must be either 'swift' or 'objective-c'")
+			}
+		} else {
+			return fmt.Errorf("language must be a string")
+		}
+	}
+
+	return nil
+}
+
 // detectiOSTool detects which iOS tool is available
 func (ie *iOSExecutor) detectiOSTool() (string, error) {
 	// iOS development only works on macOS

@@ -393,7 +393,7 @@ Key requirements for template changes:
 - All used functions must have corresponding import statements
 - Follow Go import organization conventions (standard library, third-party, local)
 - Run validation tools before committing: `go run cmd/generator/main.go template validate`
-- Test template compilation with sample data: `go run cmd/generator/main.go generate --config configs/test-config.yaml --output test-validation`
+- Test template compilation with sample data: `go run cmd/generator/main.go generate --config configs/minimal.yaml --output test-validation`
 
 ### Code Documentation Standards
 
@@ -534,7 +534,7 @@ docker compose --profile testing up generator-test-integration
 ./bin/generator template validate
 
 # Generate test project to verify templates
-./bin/generator generate --config configs/test-config.yaml --output test-validation
+./bin/generator generate --config configs/minimal.yaml --output test-validation
 ```
 
 ## Documentation

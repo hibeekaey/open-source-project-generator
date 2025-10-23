@@ -163,12 +163,30 @@ var _ interfaces.ToolDiscoveryInterface = (*ToolDiscovery)(nil)
 func (td *ToolDiscovery) IsAvailable(toolName string) (bool, error) {
 	// Check cache first
 	if td.cache != nil {
-		if cached, found := td.cache.Get(toolName); found {
+		// Use offline-aware cache retrieval
+		var cached *models.CachedTool
+		var found bool
+
+		if td.isOffline {
+			cached, found = td.cache.GetWithOfflineSupport(toolName)
+		} else {
+			cached, found = td.cache.Get(toolName)
+		}
+
+		if found {
 			if td.logger != nil {
 				td.logger.Debug(fmt.Sprintf("Tool '%s' availability from cache: %v", toolName, cached.Available))
 			}
 			return cached.Available, nil
 		}
+	}
+
+	// In offline mode, if not in cache, assume unavailable
+	if td.isOffline {
+		if td.logger != nil {
+			td.logger.Debug(fmt.Sprintf("Tool '%s' not in cache and offline mode active", toolName))
+		}
+		return false, fmt.Errorf("tool not in cache and offline mode active")
 	}
 
 	// Check if tool exists in PATH
@@ -195,12 +213,26 @@ func (td *ToolDiscovery) IsAvailable(toolName string) (bool, error) {
 func (td *ToolDiscovery) GetVersion(toolName string) (string, error) {
 	// Check cache first
 	if td.cache != nil {
-		if cached, found := td.cache.Get(toolName); found && cached.Version != "" {
+		var cached *models.CachedTool
+		var found bool
+
+		if td.isOffline {
+			cached, found = td.cache.GetWithOfflineSupport(toolName)
+		} else {
+			cached, found = td.cache.Get(toolName)
+		}
+
+		if found && cached.Version != "" {
 			if td.logger != nil {
 				td.logger.Debug(fmt.Sprintf("Tool '%s' version from cache: %s", toolName, cached.Version))
 			}
 			return cached.Version, nil
 		}
+	}
+
+	// In offline mode, if not in cache, return error
+	if td.isOffline {
+		return "", fmt.Errorf("tool version not in cache and offline mode active")
 	}
 
 	// Get tool metadata

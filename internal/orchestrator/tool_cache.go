@@ -22,6 +22,7 @@ type ToolCache struct {
 	autoSave     bool
 	lastSaved    time.Time
 	saveInterval time.Duration
+	offlineMode  bool
 }
 
 // ToolCacheConfig holds configuration for the tool cache
@@ -66,6 +67,7 @@ func NewToolCache(config *ToolCacheConfig, log *logger.Logger) (*ToolCache, erro
 		autoSave:     config.AutoSave,
 		saveInterval: config.SaveInterval,
 		lastSaved:    time.Now(),
+		offlineMode:  false,
 	}
 
 	// Load existing cache from disk
@@ -267,4 +269,54 @@ func (tc *ToolCache) GetStats() map[string]interface{} {
 		"ttl":         tc.ttl.String(),
 		"last_saved":  tc.lastSaved,
 	}
+}
+
+// SetOfflineMode sets whether the cache is in offline mode
+func (tc *ToolCache) SetOfflineMode(offline bool) {
+	tc.cacheMu.Lock()
+	defer tc.cacheMu.Unlock()
+
+	tc.offlineMode = offline
+
+	if tc.logger != nil {
+		if offline {
+			tc.logger.Debug("Cache set to offline mode - will not expire entries")
+		} else {
+			tc.logger.Debug("Cache set to online mode")
+		}
+	}
+}
+
+// IsOfflineMode returns whether the cache is in offline mode
+func (tc *ToolCache) IsOfflineMode() bool {
+	tc.cacheMu.RLock()
+	defer tc.cacheMu.RUnlock()
+
+	return tc.offlineMode
+}
+
+// GetWithOfflineSupport retrieves a cached tool entry, respecting offline mode
+func (tc *ToolCache) GetWithOfflineSupport(toolName string) (*models.CachedTool, bool) {
+	tc.cacheMu.RLock()
+	defer tc.cacheMu.RUnlock()
+
+	cached, exists := tc.cache[toolName]
+	if !exists {
+		return nil, false
+	}
+
+	// In offline mode, don't check expiration
+	if tc.offlineMode {
+		if tc.logger != nil {
+			tc.logger.Debug(fmt.Sprintf("Tool '%s' retrieved from cache (offline mode)", toolName))
+		}
+		return cached, true
+	}
+
+	// Check if cache entry is expired in online mode
+	if time.Since(cached.CachedAt) > cached.TTL {
+		return nil, false
+	}
+
+	return cached, true
 }

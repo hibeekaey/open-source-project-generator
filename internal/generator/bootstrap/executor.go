@@ -222,3 +222,21 @@ func (be *BaseExecutor) ValidateFlags(flags []string) error {
 func (be *BaseExecutor) SanitizeOutput(output string) string {
 	return be.toolValidator.SanitizeCommandOutput(output)
 }
+
+// SupportsComponent is a default implementation that returns false
+// Specific executors should override this method
+func (be *BaseExecutor) SupportsComponent(componentType string) bool {
+	return false
+}
+
+// GetDefaultFlags is a default implementation that returns empty flags
+// Specific executors should override this method
+func (be *BaseExecutor) GetDefaultFlags(componentType string) []string {
+	return []string{}
+}
+
+// ValidateConfig is a default implementation that does no validation
+// Specific executors should override this method
+func (be *BaseExecutor) ValidateConfig(config map[string]interface{}) error {
+	return nil
+}

@@ -4,52 +4,56 @@ This directory contains example configuration files for the Open Source Project 
 
 ## Available Examples
 
+### Quick Start
+
+- **`minimal.yaml`** - Minimal configuration with only required fields
+  - Demonstrates bare minimum configuration
+  - All optional settings use defaults
+  - Best starting point for new users
+
 ### Full-Stack Applications
 
-- **`fullstack-complete.yaml`** - Complete full-stack application with web, mobile, and backend
+- **`fullstack-complete.yaml`** - Complete full-stack application with all components
   - Next.js frontend
   - Go backend API
   - Android and iOS mobile apps
   - Docker Compose integration
   - Build scripts and documentation
 
-### Web Applications
-
-- **`web-and-api.yaml`** - Web application with backend API (most common)
-  - Next.js frontend
+- **`mobile-app-with-backend.yaml`** - Mobile apps with shared backend
+  - Android (Kotlin) and iOS (Swift) apps
   - Go backend API
-  - Docker Compose for local development
-  - Integration scripts
+  - No web frontend
+  - Ideal for mobile-first applications
+
+### Single Component Projects
 
 - **`frontend-only.yaml`** - Standalone frontend application
   - Next.js application only
   - Ideal for JAMstack, static sites, or connecting to existing APIs
   - No backend or mobile components
 
-### Backend Services
-
 - **`backend-only.yaml`** - Standalone backend API
   - Go API server with Gin framework
   - Docker Compose for services (database, cache)
   - Ideal for microservices or API-first development
-
-### Mobile Applications
 
 - **`mobile-only.yaml`** - Native mobile applications
   - Android (Kotlin) and iOS (Swift) apps
   - Connects to external APIs
   - No web frontend or backend
 
-### Quick Start
+### Advanced Examples
 
-- **`minimal.yaml`** - Minimal configuration with only required fields
-  - Demonstrates bare minimum configuration
-  - All optional settings use defaults
+- **`advanced-options.yaml`** - Comprehensive configuration reference
+  - Demonstrates all available configuration options
+  - Detailed comments explaining each option
+  - Use as reference documentation
 
-### Legacy Examples
-
-- **`example-project.yaml`** - Original example configuration
-- **`test-config.yaml`** - Comprehensive test configuration with all options
+- **`performance-optimized.yaml`** - Performance-focused configuration
+  - Shows performance-specific options
+  - Parallel generation settings
+  - Optimized for large projects
 
 ## Usage
 
@@ -60,7 +64,7 @@ Generate a project using any example configuration:
 project-generator generate --config configs/fullstack-complete.yaml
 
 # Preview without creating files (dry run)
-project-generator generate --config configs/web-and-api.yaml --dry-run
+project-generator generate --config configs/minimal.yaml --dry-run
 
 # Verbose output for debugging
 project-generator generate --config configs/backend-only.yaml --verbose
