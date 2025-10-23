@@ -16,7 +16,8 @@ DOCKER_VERSION := $(shell echo $(VERSION) | sed 's/\//-/g')
 
 .PHONY: help build test clean run install dev fmt vet lint security-scan \
         validate audit dist package release docker-build docker-test docker-push \
-        docker-login docker-info ci check benchmark version validate-setup
+        docker-login docker-info ci check benchmark version validate-setup \
+        check-versions
 
 # Default target
 help: ## Show this help message
@@ -101,6 +102,10 @@ security-scan: ## Run all security scanners (installs tools if needed)
 	@govulncheck ./...
 	@staticcheck ./...
 	@echo "Security scans completed. SARIF report: results.sarif"
+
+# Version Management
+check-versions: ## Check for latest versions of dependencies
+	@./scripts/check-latest-versions.sh
 
 # Project Validation
 validate: build ## Validate a project (Usage: make validate PROJECT=./path)

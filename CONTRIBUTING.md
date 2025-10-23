@@ -745,9 +745,9 @@ Understanding the project structure helps with contributions:
 
 **Docker Files:**
 
-- **`Dockerfile`**: Production image (alpine:3.19, ~39 MB, UID 1001)
+- **`Dockerfile`**: Production image (alpine:3.22, ~39 MB, UID 1001)
 - **`Dockerfile.dev`**: Development image (golang:1.25-alpine, ~500 MB, UID 1001)
-- **`Dockerfile.build`**: Build image (ubuntu:24.04, ~1.5 GB, UID 1001)
+- **`Dockerfile.build`**: Build image (ubuntu:25.10, ~1.5 GB, UID 1001)
 - **`docker-compose.yml`**: Multi-profile orchestration (production, development, testing, build, lint, security)
 
 **Configuration Files:**

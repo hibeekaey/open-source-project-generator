@@ -170,7 +170,7 @@ options:
   config:
     name: mobile-ios                        # Required: App name
     bundle_id: com.example.app              # Required: Bundle identifier
-    deployment_target: "16.0"               # Optional: Min iOS version (default: "16.0")
+    deployment_target: "26.0"               # Optional: Min iOS version (default: "26.0")
     language: swift                         # Optional: Language (default: swift)
 ```
 

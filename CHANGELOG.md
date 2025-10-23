@@ -380,8 +380,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Default Version Management**: Updated to latest stable versions for all package dependencies
   - React: `^19.2.0`, Next.js: `16.0.0`, Go: `1.25.0`, Node.js: `20.11.0`
-  - Kotlin: `2.1.0`, Swift: `6.0` with automatic version resolution
-  - Android: SDK 35, Gradle 8.11.1, AndroidX Core KTX 1.17.0
+  - Kotlin: `2.2.21`, Swift: `6.2` with automatic version resolution
+  - Android: SDK 36, Gradle 9.1.0, AndroidX Core KTX 1.17.0, AppCompat 1.7.1, Material 1.13.0, ConstraintLayout 2.2.1
 - **Enhanced Security**: Comprehensive security improvements across all templates
   - Secure file operations with path validation and traversal protection
   - Secure file permissions (0600 for files, 0750 for directories)
@@ -508,15 +508,15 @@ This version consolidates all development work leading up to the first stable re
 - Updated Next.js templates to version 16.0.0
 - Updated React templates to version 19.2.0
 - Updated TypeScript templates to version 5.9.3
-- Updated Kotlin templates to version 2.1.0
+- Updated Kotlin templates to version 2.2.21
 - Updated Swift templates to version 6.0
 - Updated Android SDK to API level 35
 - Updated Gradle to version 8.11.1
-- Updated AndroidX libraries to latest stable versions
+- Updated AndroidX libraries to latest stable versions (Core KTX 1.17.0, AppCompat 1.7.1, Material 1.13.0, ConstraintLayout 2.2.1)
 - Updated Go backend frameworks (Gin 1.11.0, Echo 4.13.4, Fiber 2.52.9)
-- Updated Docker base images to alpine:3.19, golang:1.25-alpine
-- Updated Kubernetes API versions to 1.28+
-- Updated Terraform templates to version 1.6+
+- Updated Docker base images to alpine:3.22, golang:1.25-alpine
+- Updated Kubernetes API versions to 1.34+
+- Updated Terraform templates to version 1.13+
 
 #### Critical Bug Fixes
 

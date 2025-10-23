@@ -103,9 +103,9 @@ docker compose --profile build build
 
 | Image | Base | Size | Purpose | User |
 |-------|------|------|---------|------|
-| Dockerfile | alpine:3.19 | ~39 MB | Production runtime | generator (UID 1001) |
+| Dockerfile | alpine:3.22 | ~39 MB | Production runtime | generator (UID 1001) |
 | Dockerfile.dev | golang:1.25-alpine | ~500 MB | Development | developer (UID 1001) |
-| Dockerfile.build | ubuntu:24.04 | ~1.5 GB | Package building | builder (UID 1001) |
+| Dockerfile.build | ubuntu:25.10 | ~1.5 GB | Package building | builder (UID 1001) |
 
 ### Docker Compose Profiles
 
@@ -744,7 +744,7 @@ dpkg-deb --contents packages/deb/generator_VERSION_amd64.deb
 rpm2cpio packages/rpm/generator-VERSION-1.x86_64.rpm | cpio -tv
 
 # Test package installation in Docker
-docker run --rm -v $(pwd)/packages:/packages ubuntu:24.04 bash -c \
+docker run --rm -v $(pwd)/packages:/packages ubuntu:25.10 bash -c \
   "apt update && dpkg -i /packages/deb/generator_VERSION_amd64.deb && generator version"
 
 docker run --rm -v $(pwd)/packages:/packages fedora:latest bash -c \
@@ -853,9 +853,9 @@ docker compose --profile security up generator-security
 ### File Reference
 
 - **Makefile** - Build automation and commands
-- **Dockerfile** - Production image (alpine:3.19, 39 MB)
+- **Dockerfile** - Production image (alpine:3.22, 39 MB)
 - **Dockerfile.dev** - Development image (golang:1.25-alpine, ~500 MB)
-- **Dockerfile.build** - Build image (ubuntu:24.04, ~1.5 GB)
+- **Dockerfile.build** - Build image (ubuntu:25.10, ~1.5 GB)
 - **docker-compose.yml** - Multi-profile orchestration
 - **env.example** - Environment variable reference
 - **go.mod** - Go dependencies (Go 1.25.0)

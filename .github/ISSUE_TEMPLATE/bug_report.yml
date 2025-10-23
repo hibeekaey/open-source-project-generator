@@ -82,7 +82,7 @@ body:
     attributes:
       label: Environment
       placeholder: |
-        OS: Ubuntu 24.04
+        OS: Ubuntu 25.10
         Go: 1.25.0
         Shell: bash
       render: shell

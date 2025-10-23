@@ -345,7 +345,7 @@ include ':app'`,
 
 android {
     namespace 'com.test.app'
-    compileSdk 35
+    compileSdk 36
 }`,
 		"app/src/main/AndroidManifest.xml": `<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -372,7 +372,7 @@ func (te *TestEnvironment) CreateMockIOSProject(dir string, appName string) erro
 	te.t.Helper()
 
 	files := map[string]string{
-		"Package.swift": fmt.Sprintf(`// swift-tools-version:6.0
+		"Package.swift": fmt.Sprintf(`// swift-tools-version:6.2
 import PackageDescription
 
 let package = Package(

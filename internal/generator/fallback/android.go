@@ -176,7 +176,7 @@ func (g *AndroidGenerator) generateRootBuildGradle() string {
 plugins {
     id 'com.android.application' version '8.7.3' apply false
     id 'com.android.library' version '8.7.3' apply false
-    id 'org.jetbrains.kotlin.android' version '2.1.0' apply false
+    id 'org.jetbrains.kotlin.android' version '2.2.21' apply false
 }
 
 task clean(type: Delete) {
@@ -202,12 +202,12 @@ func (g *AndroidGenerator) generateAppBuildGradle(packageName string) string {
 
 android {
     namespace '%s'
-    compileSdk 35
+    compileSdk 36
 
     defaultConfig {
         applicationId "%s"
         minSdk 24
-        targetSdk 35
+        targetSdk 36
         versionCode 1
         versionName "1.0"
 
@@ -237,9 +237,9 @@ android {
 
 dependencies {
     implementation 'androidx.core:core-ktx:1.17.0'
-    implementation 'androidx.appcompat:appcompat:1.7.0'
-    implementation 'com.google.android.material:material:1.12.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.2.0'
+    implementation 'androidx.appcompat:appcompat:1.7.1'
+    implementation 'com.google.android.material:material:1.13.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.2.1'
     
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'
@@ -359,7 +359,7 @@ func (g *AndroidGenerator) generateThemes() string {
 func (g *AndroidGenerator) generateGradleWrapperProperties() string {
 	return `distributionBase=GRADLE_USER_HOME
 distributionPath=wrapper/dists
-distributionUrl=https\://services.gradle.org/distributions/gradle-8.11.1-bin.zip
+distributionUrl=https\://services.gradle.org/distributions/gradle-9.1.0-bin.zip
 zipStoreBase=GRADLE_USER_HOME
 zipStorePath=wrapper/dists
 `

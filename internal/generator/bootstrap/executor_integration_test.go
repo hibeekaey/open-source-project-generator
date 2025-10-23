@@ -297,8 +297,8 @@ func TestIOSExecutor_RequiresFallback(t *testing.T) {
 			"xcodebuild": true,
 		},
 		versions: map[string]string{
-			"swift":      "6.0.0",
-			"xcodebuild": "16.0",
+			"swift":      "6.2.0",
+			"xcodebuild": "26.0.1",
 		},
 	}
 

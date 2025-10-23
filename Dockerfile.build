@@ -30,7 +30,7 @@
 # Note: This builds Linux packages only. For macOS/Windows binaries,
 #       cross-compilation is used but native packages are not created.
 
-FROM ubuntu:24.04
+FROM ubuntu:25.10
 
 # Build arguments for versioning and metadata
 ARG VERSION=dev
