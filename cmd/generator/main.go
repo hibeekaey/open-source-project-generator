@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"github.com/cuesoftinc/open-source-project-generator/internal/generator"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/config"
@@ -30,21 +31,31 @@ func main() {
 
 	projectPath := filepath.Join(projectInput.OutputFolder, projectInput.Name)
 
-	if err := filesystem.CreateProjectStructure(projectPath, constants.ProjectFolders); err != nil {
+	if err := filesystem.CreateProjectStructure(projectPath, projectInput.SelectedFolders); err != nil {
 		fmt.Printf("%v\n", err)
 		os.Exit(1)
 	}
 
-	nextjsGen := &generator.NextJSGenerator{
-		Version:    versions.Frontend.NextJS.Version,
-		ProjectDir: projectPath,
-		AppFolder:  constants.FolderApp,
-		Apps:       []string{"main", "admin", "home"},
-	}
+	if slices.Contains(projectInput.SelectedFolders, constants.FolderApp) {
+		selectedApps, err := input.SelectApps(reader)
+		if err != nil {
+			fmt.Printf("%v\n", err)
+			os.Exit(1)
+		}
 
-	if err := nextjsGen.Generate(projectInput.Name); err != nil {
-		fmt.Printf("%v\n", err)
-		os.Exit(1)
+		if len(selectedApps) > 0 {
+			nextjsGen := &generator.NextJSGenerator{
+				Version:    versions.Frontend.NextJS.Version,
+				ProjectDir: projectPath,
+				AppFolder:  constants.FolderApp,
+				Apps:       selectedApps,
+			}
+
+			if err := nextjsGen.Generate(projectInput.Name); err != nil {
+				fmt.Printf("%v\n", err)
+				os.Exit(1)
+			}
+		}
 	}
 
 	output.PrintSuccess(projectInput.Name, projectPath)
