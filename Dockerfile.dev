@@ -17,11 +17,12 @@
 #   -v generator-config:/home/developer/.config/generator # Persist generator config
 #   -v generator-cache:/home/developer/.cache/generator   # Persist generator cache
 
-FROM golang:1.25-alpine
-
-# Build arguments for platform detection
+# Build arguments
+ARG GOLANG_IMAGE_VERSION=1.25-alpine
 ARG TARGETARCH
 ARG TARGETOS
+
+FROM golang:${GOLANG_IMAGE_VERSION}
 
 # Update base image packages to fix vulnerabilities
 RUN apk update && apk upgrade --no-cache

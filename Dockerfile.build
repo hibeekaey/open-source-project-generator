@@ -30,13 +30,17 @@
 # Note: This builds Linux packages only. For macOS/Windows binaries,
 #       cross-compilation is used but native packages are not created.
 
-FROM ubuntu:25.10
+# Build arguments (must be before FROM)
+ARG UBUNTU_VERSION=25.10
+ARG GO_VERSION=1.25.0
+
+FROM ubuntu:${UBUNTU_VERSION}
 
 # Build arguments for versioning and metadata
 ARG VERSION=dev
 ARG GIT_COMMIT=unknown
 ARG BUILD_TIME=unknown
-ARG GO_VERSION=1.25.0
+ARG GO_VERSION
 ARG TARGETARCH
 
 # Labels for image metadata

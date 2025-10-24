@@ -24,8 +24,12 @@
 #   GENERATOR_CACHE_DIR     - Cache directory for offline mode
 #   GENERATOR_OUTPUT_PATH   - Output directory for generated projects
 
+# Global build arguments (must be before any FROM)
+ARG GOLANG_IMAGE_VERSION=1.25-alpine
+ARG ALPINE_VERSION=3.22
+
 # Build stage
-FROM golang:1.25-alpine AS builder
+FROM golang:${GOLANG_IMAGE_VERSION} AS builder
 
 # Build arguments for versioning and metadata
 ARG VERSION=dev
@@ -65,7 +69,7 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build \
     ./generator version || echo "Binary built successfully"
 
 # Final stage - minimal production image
-FROM alpine:3.22
+FROM alpine:${ALPINE_VERSION}
 
 # Build arguments for labels
 ARG VERSION=dev

@@ -140,10 +140,14 @@ release: test lint security-scan dist package ## Prepare full release
 # Docker targets
 docker-build: ## Build Docker image
 	@echo "Building Docker image: $(IMAGE_NAME):$(DOCKER_VERSION)"
+	@GOLANG_IMAGE_VERSION=$$(yq '.docker.golang.version' configs/versions.yaml 2>/dev/null || echo "1.25-alpine"); \
+	ALPINE_VERSION=$$(yq '.docker.alpine.version' configs/versions.yaml 2>/dev/null || echo "3.22"); \
 	docker build \
 		--build-arg VERSION=$(VERSION) \
 		--build-arg GIT_COMMIT=$(GIT_COMMIT) \
 		--build-arg BUILD_TIME=$(BUILD_TIME) \
+		--build-arg GOLANG_IMAGE_VERSION=$$GOLANG_IMAGE_VERSION \
+		--build-arg ALPINE_VERSION=$$ALPINE_VERSION \
 		-t $(IMAGE_NAME):$(DOCKER_VERSION) \
 		-t $(IMAGE_NAME):latest .
 
