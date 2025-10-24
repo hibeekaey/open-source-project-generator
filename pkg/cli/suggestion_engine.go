@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"runtime"
 	"strings"
@@ -29,7 +30,8 @@ func (se *SuggestionEngine) GenerateSuggestions(err error) []string {
 	suggestions := make([]string, 0)
 
 	// Check for CLIError types
-	if cliErr, ok := err.(*CLIError); ok {
+	cliErr := &CLIError{}
+	if errors.As(err, &cliErr) {
 		// Return existing suggestions if available
 		if len(cliErr.Suggestions) > 0 {
 			return cliErr.Suggestions
@@ -55,7 +57,8 @@ func (se *SuggestionEngine) GenerateSuggestions(err error) []string {
 	}
 
 	// Check for GenerationError types
-	if genErr, ok := err.(*orchestrator.GenerationError); ok {
+	genErr := &orchestrator.GenerationError{}
+	if errors.As(err, &genErr) {
 		// Return existing suggestions if available
 		if len(genErr.Suggestions) > 0 {
 			return genErr.Suggestions

@@ -7,8 +7,8 @@ import (
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
 )
 
-// Generator defines the interface for fallback project generation
-type Generator interface {
+// GeneratorInterface defines the interface for fallback project generation
+type GeneratorInterface interface {
 	// Generate creates a project component using custom templates
 	Generate(ctx context.Context, spec *models.FallbackSpec) (*models.ComponentResult, error)
 
@@ -21,23 +21,23 @@ type Generator interface {
 
 // Registry manages fallback generators for different component types
 type Registry struct {
-	generators map[string]Generator
+	generators map[string]GeneratorInterface
 }
 
 // NewRegistry creates a new fallback generator registry
 func NewRegistry() *Registry {
 	return &Registry{
-		generators: make(map[string]Generator),
+		generators: make(map[string]GeneratorInterface),
 	}
 }
 
 // Register adds a generator for a specific component type
-func (r *Registry) Register(componentType string, generator Generator) {
+func (r *Registry) Register(componentType string, generator GeneratorInterface) {
 	r.generators[componentType] = generator
 }
 
 // Get retrieves a generator for the specified component type
-func (r *Registry) Get(componentType string) (Generator, error) {
+func (r *Registry) Get(componentType string) (GeneratorInterface, error) {
 	gen, exists := r.generators[componentType]
 	if !exists {
 		return nil, fmt.Errorf("no fallback generator registered for component type: %s", componentType)

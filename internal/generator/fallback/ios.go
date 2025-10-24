@@ -34,7 +34,7 @@ func (g *IOSGenerator) Generate(ctx context.Context, spec *models.FallbackSpec) 
 	}
 
 	// Create target directory
-	if err := os.MkdirAll(spec.TargetDir, 0755); err != nil {
+	if err := os.MkdirAll(spec.TargetDir, 0750); err != nil {
 		result.Success = false
 		result.Error = fmt.Errorf("failed to create target directory: %w", err)
 		return result, result.Error
@@ -105,7 +105,7 @@ func (g *IOSGenerator) createDirectoryStructure(targetDir, appName string) error
 
 	for _, dir := range dirs {
 		fullPath := filepath.Join(targetDir, dir)
-		if err := os.MkdirAll(fullPath, 0755); err != nil {
+		if err := os.MkdirAll(fullPath, 0750); err != nil {
 			return fmt.Errorf("failed to create directory %s: %w", dir, err)
 		}
 	}
@@ -133,7 +133,12 @@ func (g *IOSGenerator) generateFiles(targetDir, appName, bundleID, organizationN
 
 	for filePath, content := range files {
 		fullPath := filepath.Join(targetDir, filePath)
-		if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
+		// Use 0644 for public files (README, .gitignore), 0600 for source code
+		perm := os.FileMode(0600)
+		if filePath == "README.md" || filePath == ".gitignore" {
+			perm = 0644 // #nosec G306 - Public documentation files
+		}
+		if err := os.WriteFile(fullPath, []byte(content), perm); err != nil {
 			return fmt.Errorf("failed to write file %s: %w", filePath, err)
 		}
 	}
@@ -142,7 +147,7 @@ func (g *IOSGenerator) generateFiles(targetDir, appName, bundleID, organizationN
 }
 
 func (g *IOSGenerator) generateProjectPbxproj(appName, bundleID, organizationName string) string {
-	return fmt.Sprintf(`// !$*UTF8*$!
+	return `// !$*UTF8*$!
 {
 	archiveVersion = 1;
 	classes = {
@@ -181,7 +186,7 @@ func (g *IOSGenerator) generateProjectPbxproj(appName, bundleID, organizationNam
 	};
 	rootObject = /* Project object */;
 }
-`)
+`
 }
 
 func (g *IOSGenerator) generateAppFile(appName string) string {

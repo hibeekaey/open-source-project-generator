@@ -12,11 +12,11 @@ import (
 // iOSExecutor handles iOS project generation
 type iOSExecutor struct {
 	*BaseExecutor
-	toolDiscovery ToolDiscovery
+	toolDiscovery ToolDiscoveryInterface
 }
 
 // NewiOSExecutor creates a new iOS executor
-func NewiOSExecutor(toolDiscovery ToolDiscovery) *iOSExecutor {
+func NewiOSExecutor(toolDiscovery ToolDiscoveryInterface) *iOSExecutor {
 	return &iOSExecutor{
 		BaseExecutor:  NewBaseExecutor("swift"),
 		toolDiscovery: toolDiscovery,
@@ -161,7 +161,7 @@ func (ie *iOSExecutor) detectiOSTool() (string, error) {
 }
 
 // generateWithSwiftPackage generates an iOS project using Swift Package Manager
-func (ie *iOSExecutor) generateWithSwiftPackage(ctx context.Context, spec *BootstrapSpec) (*models.ExecutionResult, error) {
+func (ie *iOSExecutor) generateWithSwiftPackage(_ context.Context, spec *BootstrapSpec) (*models.ExecutionResult, error) {
 	// Get project configuration
 	_, ok := spec.Config["name"].(string)
 	if !ok {
@@ -175,7 +175,7 @@ func (ie *iOSExecutor) generateWithSwiftPackage(ctx context.Context, spec *Boots
 }
 
 // generateWithXcodebuild generates an iOS project using xcodebuild
-func (ie *iOSExecutor) generateWithXcodebuild(ctx context.Context, spec *BootstrapSpec) (*models.ExecutionResult, error) {
+func (ie *iOSExecutor) generateWithXcodebuild(_ context.Context, spec *BootstrapSpec) (*models.ExecutionResult, error) {
 	// Get project configuration
 	projectName, ok := spec.Config["name"].(string)
 	if !ok || projectName == "" {

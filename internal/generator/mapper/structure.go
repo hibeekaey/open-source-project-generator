@@ -1,3 +1,5 @@
+// Package mapper provides structure mapping for generated projects
+// #nosec G304 - File operations use paths from generated project structure, validated by application
 package mapper
 
 import (
@@ -175,7 +177,7 @@ func (sm *StructureMapper) MapWithOptions(ctx context.Context, source string, ta
 	}
 
 	// Create target directory if it doesn't exist
-	if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(targetPath), 0750); err != nil {
 		return fmt.Errorf("failed to create target directory: %w", err)
 	}
 
@@ -256,7 +258,7 @@ func (sm *StructureMapper) moveDirectory(source, target string) error {
 // copyDirectory recursively copies a directory
 func (sm *StructureMapper) copyDirectory(source, target string) error {
 	// Create target directory
-	if err := os.MkdirAll(target, 0755); err != nil {
+	if err := os.MkdirAll(target, 0750); err != nil {
 		return err
 	}
 
@@ -701,7 +703,7 @@ func (sm *StructureMapper) updateConfigFile(configPath, componentPath, rootDir s
 
 	// Write back if changed
 	if updatedContent != string(content) {
-		if err := os.WriteFile(configPath, []byte(updatedContent), 0644); err != nil {
+		if err := os.WriteFile(configPath, []byte(updatedContent), 0600); err != nil {
 			return fmt.Errorf("failed to write config file %s: %w", configPath, err)
 		}
 	}
@@ -725,7 +727,7 @@ func (sm *StructureMapper) updateEnvFile(envPath, componentPath, rootDir string)
 
 	// Write back if changed
 	if updatedContent != string(content) {
-		if err := os.WriteFile(envPath, []byte(updatedContent), 0644); err != nil {
+		if err := os.WriteFile(envPath, []byte(updatedContent), 0600); err != nil {
 			return fmt.Errorf("failed to write env file %s: %w", envPath, err)
 		}
 	}

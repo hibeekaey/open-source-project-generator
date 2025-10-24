@@ -19,14 +19,25 @@ func TestParallelComponentGeneration(t *testing.T) {
 	// Create coordinator
 	coordinator := NewProjectCoordinator(log)
 
-	// Create test config with multiple components
+	// Create test config with multiple components that have fallback generators
 	config := &models.ProjectConfig{
 		Name:      "test-parallel",
 		OutputDir: t.TempDir(),
 		Components: []models.ComponentConfig{
-			{Type: "nextjs", Name: "web", Enabled: true, Config: make(map[string]interface{})},
-			{Type: "go-backend", Name: "api", Enabled: true, Config: make(map[string]interface{})},
-			{Type: "android", Name: "mobile-android", Enabled: true, Config: make(map[string]interface{})},
+			{Type: "android", Name: "mobile-android", Enabled: true, Config: map[string]interface{}{
+				"packageName":      "com.example.test",
+				"minSdkVersion":    21,
+				"targetSdkVersion": 33,
+			}},
+			{Type: "ios", Name: "mobile-ios", Enabled: true, Config: map[string]interface{}{
+				"bundleId":      "com.example.test",
+				"minIOSVersion": "14.0",
+			}},
+			{Type: "android", Name: "mobile-android-2", Enabled: true, Config: map[string]interface{}{
+				"packageName":      "com.example.test2",
+				"minSdkVersion":    21,
+				"targetSdkVersion": 33,
+			}},
 		},
 		Options: models.ProjectOptions{
 			UseExternalTools: false, // Use fallback to avoid needing actual tools
@@ -40,7 +51,7 @@ func TestParallelComponentGeneration(t *testing.T) {
 	toolCheckResult := &models.ToolCheckResult{
 		AllAvailable: false,
 		Tools:        make(map[string]*models.Tool),
-		Missing:      []string{"npx", "go", "gradle"},
+		Missing:      []string{"gradle", "xcodebuild"},
 		Outdated:     []string{},
 	}
 
@@ -61,6 +72,7 @@ func TestParallelComponentGeneration(t *testing.T) {
 		assert.NotNil(t, result, "Result %d should not be nil", i)
 		assert.Equal(t, config.Components[i].Type, result.Type)
 		assert.Equal(t, config.Components[i].Name, result.Name)
+		assert.True(t, result.Success, "Component %s should be generated successfully", result.Name)
 	}
 
 	t.Logf("Parallel generation completed in %v", duration)
@@ -74,13 +86,20 @@ func TestSequentialComponentGeneration(t *testing.T) {
 	// Create coordinator
 	coordinator := NewProjectCoordinator(log)
 
-	// Create test config with multiple components
+	// Create test config with multiple components that have fallback generators
 	config := &models.ProjectConfig{
 		Name:      "test-sequential",
 		OutputDir: t.TempDir(),
 		Components: []models.ComponentConfig{
-			{Type: "nextjs", Name: "web", Enabled: true, Config: make(map[string]interface{})},
-			{Type: "go-backend", Name: "api", Enabled: true, Config: make(map[string]interface{})},
+			{Type: "android", Name: "mobile-android", Enabled: true, Config: map[string]interface{}{
+				"packageName":      "com.example.test",
+				"minSdkVersion":    21,
+				"targetSdkVersion": 33,
+			}},
+			{Type: "ios", Name: "mobile-ios", Enabled: true, Config: map[string]interface{}{
+				"bundleId":      "com.example.test",
+				"minIOSVersion": "14.0",
+			}},
 		},
 		Options: models.ProjectOptions{
 			UseExternalTools: false,
@@ -94,7 +113,7 @@ func TestSequentialComponentGeneration(t *testing.T) {
 	toolCheckResult := &models.ToolCheckResult{
 		AllAvailable: false,
 		Tools:        make(map[string]*models.Tool),
-		Missing:      []string{"npx", "go"},
+		Missing:      []string{"gradle", "xcodebuild"},
 		Outdated:     []string{},
 	}
 
@@ -115,6 +134,7 @@ func TestSequentialComponentGeneration(t *testing.T) {
 		assert.NotNil(t, result, "Result %d should not be nil", i)
 		assert.Equal(t, config.Components[i].Type, result.Type)
 		assert.Equal(t, config.Components[i].Name, result.Name)
+		assert.True(t, result.Success, "Component %s should be generated successfully", result.Name)
 	}
 
 	t.Logf("Sequential generation completed in %v", duration)
@@ -141,9 +161,9 @@ func TestStreamingWriter(t *testing.T) {
 	writer := NewStreamingWriter(&buf, "test", true)
 
 	// Write some lines
-	writer.Write([]byte("Line 1\n"))
-	writer.Write([]byte("Line 2\n"))
-	writer.Write([]byte("Line 3"))
+	_, _ = writer.Write([]byte("Line 1\n")) // Error intentionally ignored for test output
+	_, _ = writer.Write([]byte("Line 2\n")) // Error intentionally ignored for test output
+	_, _ = writer.Write([]byte("Line 3"))   // Error intentionally ignored for test output
 	writer.Flush()
 
 	output := buf.String()

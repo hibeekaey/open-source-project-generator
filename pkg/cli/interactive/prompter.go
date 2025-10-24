@@ -11,8 +11,8 @@ import (
 	"golang.org/x/term"
 )
 
-// Prompter defines the interface for user input prompts
-type Prompter interface {
+// PrompterInterface defines the interface for user input prompts
+type PrompterInterface interface {
 	// Input prompts for a single line of text
 	Input(message string, defaultValue string) (string, error)
 
@@ -46,9 +46,9 @@ func NewCLIPrompter() *CLIPrompter {
 // Input prompts for a single line of text
 func (p *CLIPrompter) Input(message string, defaultValue string) (string, error) {
 	if defaultValue != "" {
-		fmt.Fprintf(p.writer, "%s [%s]: ", message, defaultValue)
+		_, _ = fmt.Fprintf(p.writer, "%s [%s]: ", message, defaultValue) // Error intentionally ignored for interactive output
 	} else {
-		fmt.Fprintf(p.writer, "%s: ", message)
+		_, _ = fmt.Fprintf(p.writer, "%s: ", message) // Error intentionally ignored for interactive output
 	}
 
 	input, err := p.reader.ReadString('\n')
@@ -70,11 +70,11 @@ func (p *CLIPrompter) Select(message string, options []string) (string, error) {
 		return "", fmt.Errorf("no options provided")
 	}
 
-	fmt.Fprintln(p.writer, message)
+	_, _ = fmt.Fprintln(p.writer, message) // Error intentionally ignored for interactive output
 	for i, option := range options {
-		fmt.Fprintf(p.writer, "  %d) %s\n", i+1, option)
+		_, _ = fmt.Fprintf(p.writer, "  %d) %s\n", i+1, option) // Error intentionally ignored for interactive output
 	}
-	fmt.Fprintf(p.writer, "Select (1-%d): ", len(options))
+	_, _ = fmt.Fprintf(p.writer, "Select (1-%d): ", len(options)) // Error intentionally ignored for interactive output
 
 	for {
 		input, err := p.reader.ReadString('\n')
@@ -84,13 +84,13 @@ func (p *CLIPrompter) Select(message string, options []string) (string, error) {
 
 		input = strings.TrimSpace(input)
 		if input == "" {
-			fmt.Fprintf(p.writer, "Please select an option (1-%d): ", len(options))
+			_, _ = fmt.Fprintf(p.writer, "Please select an option (1-%d): ", len(options)) // Error intentionally ignored for interactive output
 			continue
 		}
 
 		choice, err := strconv.Atoi(input)
 		if err != nil || choice < 1 || choice > len(options) {
-			fmt.Fprintf(p.writer, "Invalid selection. Please enter a number between 1 and %d: ", len(options))
+			_, _ = fmt.Fprintf(p.writer, "Invalid selection. Please enter a number between 1 and %d: ", len(options)) // Error intentionally ignored for interactive output
 			continue
 		}
 
@@ -104,11 +104,11 @@ func (p *CLIPrompter) MultiSelect(message string, options []string) ([]string, e
 		return nil, fmt.Errorf("no options provided")
 	}
 
-	fmt.Fprintln(p.writer, message)
+	_, _ = fmt.Fprintln(p.writer, message) // Error intentionally ignored for interactive output
 	for i, option := range options {
-		fmt.Fprintf(p.writer, "  %d) %s\n", i+1, option)
+		_, _ = fmt.Fprintf(p.writer, "  %d) %s\n", i+1, option) // Error intentionally ignored for interactive output
 	}
-	fmt.Fprintf(p.writer, "Select multiple (comma-separated, e.g., 1,3,4) or 'all': ")
+	_, _ = fmt.Fprintf(p.writer, "Select multiple (comma-separated, e.g., 1,3,4) or 'all': ") // Error intentionally ignored for interactive output
 
 	for {
 		input, err := p.reader.ReadString('\n')
@@ -118,7 +118,7 @@ func (p *CLIPrompter) MultiSelect(message string, options []string) ([]string, e
 
 		input = strings.TrimSpace(input)
 		if input == "" {
-			fmt.Fprintf(p.writer, "Please select at least one option: ")
+			_, _ = fmt.Fprintf(p.writer, "Please select at least one option: ") // Error intentionally ignored for interactive output
 			continue
 		}
 
@@ -136,7 +136,7 @@ func (p *CLIPrompter) MultiSelect(message string, options []string) ([]string, e
 			part = strings.TrimSpace(part)
 			choice, err := strconv.Atoi(part)
 			if err != nil || choice < 1 || choice > len(options) {
-				fmt.Fprintf(p.writer, "Invalid selection '%s'. Please enter numbers between 1 and %d (comma-separated): ", part, len(options))
+				_, _ = fmt.Fprintf(p.writer, "Invalid selection '%s'. Please enter numbers between 1 and %d (comma-separated): ", part, len(options)) // Error intentionally ignored for interactive output
 				valid = false
 				break
 			}
@@ -156,7 +156,7 @@ func (p *CLIPrompter) Confirm(message string, defaultValue bool) (bool, error) {
 		defaultStr = "Y/n"
 	}
 
-	fmt.Fprintf(p.writer, "%s [%s]: ", message, defaultStr)
+	_, _ = fmt.Fprintf(p.writer, "%s [%s]: ", message, defaultStr) // Error intentionally ignored for interactive output
 
 	input, err := p.reader.ReadString('\n')
 	if err != nil {
@@ -175,14 +175,14 @@ func (p *CLIPrompter) Confirm(message string, defaultValue bool) (bool, error) {
 	case "n", "no":
 		return false, nil
 	default:
-		fmt.Fprintf(p.writer, "Please answer 'y' or 'n': ")
+		_, _ = fmt.Fprintf(p.writer, "Please answer 'y' or 'n': ") // Error intentionally ignored for interactive output
 		return p.Confirm(message, defaultValue)
 	}
 }
 
 // Password prompts for password input (hidden)
 func (p *CLIPrompter) Password(message string) (string, error) {
-	fmt.Fprintf(p.writer, "%s: ", message)
+	_, _ = fmt.Fprintf(p.writer, "%s: ", message) // Error intentionally ignored for interactive output
 
 	// Check if stdin is a terminal
 	fd := int(os.Stdin.Fd())
@@ -201,6 +201,6 @@ func (p *CLIPrompter) Password(message string) (string, error) {
 		return "", fmt.Errorf("failed to read password: %w", err)
 	}
 
-	fmt.Fprintln(p.writer) // Print newline after password input
+	_, _ = fmt.Fprintln(p.writer) // Error intentionally ignored for interactive output (newline after password)
 	return string(password), nil
 }

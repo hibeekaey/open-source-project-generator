@@ -53,7 +53,7 @@ func NewToolCache(config *ToolCacheConfig, log *logger.Logger) (*ToolCache, erro
 	}
 
 	// Ensure cache directory exists
-	if err := os.MkdirAll(config.CacheDir, 0755); err != nil {
+	if err := os.MkdirAll(config.CacheDir, 0750); err != nil {
 		return nil, fmt.Errorf("failed to create cache directory: %w", err)
 	}
 
@@ -113,7 +113,11 @@ func (tc *ToolCache) Set(toolName string, available bool, version string) {
 
 	// Auto-save if enabled and interval has passed
 	if tc.autoSave && time.Since(tc.lastSaved) > tc.saveInterval {
-		go tc.Save() // Save asynchronously
+		go func() {
+			if err := tc.Save(); err != nil && tc.logger != nil {
+				tc.logger.Debug(fmt.Sprintf("Failed to auto-save cache: %v", err))
+			}
+		}()
 	}
 }
 
@@ -186,13 +190,16 @@ func (tc *ToolCache) Save() error {
 
 	// Write to temporary file first
 	tempFile := tc.cacheFile + ".tmp"
-	if err := os.WriteFile(tempFile, data, 0644); err != nil {
+	if err := os.WriteFile(tempFile, data, 0600); err != nil {
 		return fmt.Errorf("failed to write cache file: %w", err)
 	}
 
 	// Atomic rename
 	if err := os.Rename(tempFile, tc.cacheFile); err != nil {
-		os.Remove(tempFile) // Clean up temp file
+		// Clean up temp file, log error if cleanup fails
+		if removeErr := os.Remove(tempFile); removeErr != nil && tc.logger != nil {
+			tc.logger.Debug(fmt.Sprintf("Failed to remove temp file %s: %v", tempFile, removeErr))
+		}
 		return fmt.Errorf("failed to rename cache file: %w", err)
 	}
 

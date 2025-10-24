@@ -138,7 +138,11 @@ func (od *OfflineDetector) checkHTTP() bool {
 		cancel()
 
 		if err == nil {
-			resp.Body.Close()
+			defer func() {
+				if closeErr := resp.Body.Close(); closeErr != nil && od.logger != nil {
+					od.logger.Debugf("Failed to close response body: %v", closeErr)
+				}
+			}()
 			if resp.StatusCode >= 200 && resp.StatusCode < 500 {
 				return true // Online
 			}

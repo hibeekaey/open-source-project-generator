@@ -37,7 +37,7 @@ func (ge *GoExecutor) Execute(ctx context.Context, spec *BootstrapSpec) (*models
 
 	// Create project directory
 	projectDir := filepath.Join(spec.TargetDir, projectName)
-	if err := os.MkdirAll(projectDir, 0755); err != nil {
+	if err := os.MkdirAll(projectDir, 0750); err != nil {
 		return nil, fmt.Errorf("failed to create project directory: %w", err)
 	}
 
@@ -232,13 +232,14 @@ func (ge *GoExecutor) generateServerFiles(projectDir, moduleName, framework stri
 	// Create main.go
 	mainContent := ge.generateMainFile(moduleName, framework)
 	mainPath := filepath.Join(projectDir, "main.go")
-	if err := os.WriteFile(mainPath, []byte(mainContent), 0644); err != nil {
+	if err := os.WriteFile(mainPath, []byte(mainContent), 0600); err != nil {
 		return fmt.Errorf("failed to write main.go: %w", err)
 	}
 
 	// Create .gitignore
 	gitignoreContent := ge.generateGitignore()
 	gitignorePath := filepath.Join(projectDir, ".gitignore")
+	// #nosec G306 - Public documentation file, 0644 is appropriate
 	if err := os.WriteFile(gitignorePath, []byte(gitignoreContent), 0644); err != nil {
 		return fmt.Errorf("failed to write .gitignore: %w", err)
 	}
@@ -246,6 +247,7 @@ func (ge *GoExecutor) generateServerFiles(projectDir, moduleName, framework stri
 	// Create README.md
 	readmeContent := ge.generateReadme(moduleName, framework)
 	readmePath := filepath.Join(projectDir, "README.md")
+	// #nosec G306 - Public documentation file, 0644 is appropriate
 	if err := os.WriteFile(readmePath, []byte(readmeContent), 0644); err != nil {
 		return fmt.Errorf("failed to write README.md: %w", err)
 	}

@@ -44,7 +44,7 @@ func (pi *ProgressIndicator) Start() {
 
 	if !pi.showSpinner {
 		// Just print the message once
-		fmt.Fprintf(pi.writer, "%s\n", pi.message)
+		_, _ = fmt.Fprintf(pi.writer, "%s\n", pi.message) // Error intentionally ignored for output formatting
 		return
 	}
 
@@ -61,7 +61,7 @@ func (pi *ProgressIndicator) Start() {
 				pi.mu.Lock()
 				if pi.active {
 					// Clear line and print spinner
-					fmt.Fprintf(pi.writer, "\r%s %s", pi.spinner[pi.spinnerIdx], pi.message)
+					_, _ = fmt.Fprintf(pi.writer, "\r%s %s", pi.spinner[pi.spinnerIdx], pi.message) // Error intentionally ignored for output formatting
 					pi.spinnerIdx = (pi.spinnerIdx + 1) % len(pi.spinner)
 				}
 				pi.mu.Unlock()
@@ -83,7 +83,7 @@ func (pi *ProgressIndicator) Stop() {
 	if pi.showSpinner {
 		close(pi.done)
 		// Clear the spinner line
-		fmt.Fprintf(pi.writer, "\r%s\r", strings.Repeat(" ", len(pi.message)+3))
+		_, _ = fmt.Fprintf(pi.writer, "\r%s\r", strings.Repeat(" ", len(pi.message)+3)) // Error intentionally ignored for output formatting
 	}
 }
 
@@ -94,7 +94,7 @@ func (pi *ProgressIndicator) Update(message string) {
 
 	pi.message = message
 	if !pi.showSpinner && pi.active {
-		fmt.Fprintf(pi.writer, "%s\n", message)
+		_, _ = fmt.Fprintf(pi.writer, "%s\n", message) // Error intentionally ignored for output formatting
 	}
 }
 
@@ -150,7 +150,7 @@ func (sw *StreamingWriter) Write(p []byte) (n int, err error) {
 		// Check line limit
 		if sw.maxLines > 0 && sw.lineCount >= sw.maxLines {
 			if sw.lineCount == sw.maxLines {
-				fmt.Fprintf(sw.writer, "%s[Output truncated - too many lines]\n", sw.getPrefix())
+				_, _ = fmt.Fprintf(sw.writer, "%s[Output truncated - too many lines]\n", sw.getPrefix()) // Error intentionally ignored for output formatting
 				sw.lineCount++
 			}
 			continue
@@ -158,7 +158,7 @@ func (sw *StreamingWriter) Write(p []byte) (n int, err error) {
 
 		// Write line with prefix
 		if len(line) > 0 {
-			fmt.Fprintf(sw.writer, "%s%s\n", sw.getPrefix(), string(line))
+			_, _ = fmt.Fprintf(sw.writer, "%s%s\n", sw.getPrefix(), string(line)) // Error intentionally ignored for output formatting
 			sw.lineCount++
 		}
 	}
@@ -172,7 +172,7 @@ func (sw *StreamingWriter) Flush() {
 	defer sw.mu.Unlock()
 
 	if len(sw.buffer) > 0 && sw.lineCount < sw.maxLines {
-		fmt.Fprintf(sw.writer, "%s%s\n", sw.getPrefix(), string(sw.buffer))
+		_, _ = fmt.Fprintf(sw.writer, "%s%s\n", sw.getPrefix(), string(sw.buffer)) // Error intentionally ignored for output formatting
 		sw.buffer = sw.buffer[:0]
 		sw.lineCount++
 	}
@@ -233,11 +233,11 @@ func (pt *ProgressTracker) Increment(itemName string) {
 			eta = fmt.Sprintf(" (ETA: %v)", remaining.Round(time.Second))
 		}
 
-		fmt.Fprintf(pt.writer, "\r[%d/%d] %.0f%% - %s%s",
-			pt.completed, pt.total, percentage, itemName, eta)
+		_, _ = fmt.Fprintf(pt.writer, "\r[%d/%d] %.0f%% - %s%s",
+			pt.completed, pt.total, percentage, itemName, eta) // Error intentionally ignored for output formatting
 
 		if pt.completed == pt.total {
-			fmt.Fprintf(pt.writer, "\n")
+			_, _ = fmt.Fprintf(pt.writer, "\n") // Error intentionally ignored for output formatting
 		}
 	}
 }
@@ -250,7 +250,7 @@ func (pt *ProgressTracker) Complete() {
 	if pt.showProgress && pt.completed < pt.total {
 		pt.completed = pt.total
 		elapsed := time.Since(pt.startTime)
-		fmt.Fprintf(pt.writer, "\r[%d/%d] 100%% - Completed in %v\n",
-			pt.total, pt.total, elapsed.Round(time.Second))
+		_, _ = fmt.Fprintf(pt.writer, "\r[%d/%d] 100%% - Completed in %v\n",
+			pt.total, pt.total, elapsed.Round(time.Second)) // Error intentionally ignored for output formatting
 	}
 }

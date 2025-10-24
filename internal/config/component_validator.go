@@ -1,11 +1,12 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 )
 
-// ConfigValidator defines the interface for component config validation
-type ConfigValidator interface {
+// ConfigValidatorInterface defines the interface for component config validation
+type ConfigValidatorInterface interface {
 	// Validate validates the configuration
 	Validate(config map[string]interface{}) error
 
@@ -21,18 +22,18 @@ type ConfigValidator interface {
 
 // ComponentConfigValidator validates component-specific configurations
 type ComponentConfigValidator struct {
-	validators map[string]ConfigValidator
+	validators map[string]ConfigValidatorInterface
 }
 
 // NewComponentConfigValidator creates a new component config validator
 func NewComponentConfigValidator() *ComponentConfigValidator {
 	return &ComponentConfigValidator{
-		validators: make(map[string]ConfigValidator),
+		validators: make(map[string]ConfigValidatorInterface),
 	}
 }
 
 // RegisterValidator registers a validator for a component type
-func (ccv *ComponentConfigValidator) RegisterValidator(componentType string, validator ConfigValidator) {
+func (ccv *ComponentConfigValidator) RegisterValidator(componentType string, validator ConfigValidatorInterface) {
 	ccv.validators[componentType] = validator
 }
 
@@ -48,7 +49,7 @@ func (ccv *ComponentConfigValidator) Validate(componentType string, config map[s
 }
 
 // GetValidator returns the validator for a specific component type
-func (ccv *ComponentConfigValidator) GetValidator(componentType string) (ConfigValidator, bool) {
+func (ccv *ComponentConfigValidator) GetValidator(componentType string) (ConfigValidatorInterface, bool) {
 	validator, exists := ccv.validators[componentType]
 	return validator, exists
 }
@@ -116,7 +117,8 @@ func (ccv *ComponentConfigValidator) ValidateWithDetails(componentType string, c
 	if err := validator.Validate(config); err != nil {
 		result.Valid = false
 		// Try to extract field-specific errors
-		if fieldErr, ok := err.(*FieldError); ok {
+		fieldErr := &FieldError{}
+		if errors.As(err, &fieldErr) {
 			result.Errors = append(result.Errors, *fieldErr)
 		} else {
 			result.Errors = append(result.Errors, FieldError{
@@ -156,14 +158,5 @@ func NewFieldError(field, message string) *FieldError {
 	return &FieldError{
 		Field:   field,
 		Message: message,
-	}
-}
-
-// NewFieldErrorWithDescription creates a new field error with description
-func NewFieldErrorWithDescription(field, message, description string) *FieldError {
-	return &FieldError{
-		Field:       field,
-		Message:     message,
-		Description: description,
 	}
 }

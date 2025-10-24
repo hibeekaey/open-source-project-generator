@@ -1,3 +1,4 @@
+// Package orchestrator provides project generation orchestration and coordination.
 package orchestrator
 
 import (
@@ -458,7 +459,7 @@ func (pc *ProjectCoordinator) Generate(ctx context.Context, configInterface inte
 }
 
 // DryRun previews what would be generated without creating files
-func (pc *ProjectCoordinator) DryRun(ctx context.Context, configInterface interface{}) (interface{}, error) {
+func (pc *ProjectCoordinator) DryRun(_ context.Context, configInterface interface{}) (interface{}, error) {
 	// Type assert the configuration
 	config, ok := configInterface.(*models.ProjectConfig)
 	if !ok {
@@ -656,21 +657,6 @@ func (pc *ProjectCoordinator) logToolAvailability(result *models.ToolCheckResult
 	}
 }
 
-// createBackup creates a backup of the output directory
-func (pc *ProjectCoordinator) createBackup(outputDir string) error {
-	// Use rollback manager to create and register backup
-	backupPath, err := pc.rollbackManager.CreateBackup(outputDir)
-	if err != nil {
-		return fmt.Errorf("failed to create backup: %w", err)
-	}
-
-	if backupPath != "" {
-		pc.logger.Info(fmt.Sprintf("Backup created at: %s", backupPath))
-	}
-
-	return nil
-}
-
 // prepareOutputDirectory prepares the output directory for generation
 func (pc *ProjectCoordinator) prepareOutputDirectory(config *models.ProjectConfig) error {
 	// Check if directory exists
@@ -688,7 +674,7 @@ func (pc *ProjectCoordinator) prepareOutputDirectory(config *models.ProjectConfi
 	}
 
 	// Create output directory
-	if err := os.MkdirAll(config.OutputDir, 0755); err != nil {
+	if err := os.MkdirAll(config.OutputDir, 0750); err != nil {
 		return fmt.Errorf("failed to create output directory: %w", err)
 	}
 
@@ -700,10 +686,7 @@ func (pc *ProjectCoordinator) prepareOutputDirectory(config *models.ProjectConfi
 // generateComponents generates all enabled components
 func (pc *ProjectCoordinator) generateComponents(ctx context.Context, config *models.ProjectConfig, toolCheckResult *models.ToolCheckResult) ([]*models.ComponentResult, error) {
 	// Check if parallel generation is enabled (default: true)
-	enableParallel := true
-	if config.Options.DisableParallel {
-		enableParallel = false
-	}
+	enableParallel := !config.Options.DisableParallel
 
 	if enableParallel {
 		return pc.generateComponentsParallel(ctx, config, toolCheckResult)
@@ -991,7 +974,7 @@ func (pc *ProjectCoordinator) generateComponent(ctx context.Context, comp *model
 func (pc *ProjectCoordinator) generateWithBootstrap(ctx context.Context, comp *models.ComponentConfig, config *models.ProjectConfig, result *models.ComponentResult) error {
 	// Create temporary directory for generation
 	tempDir := filepath.Join(config.OutputDir, ".temp", comp.Name)
-	if err := os.MkdirAll(tempDir, 0755); err != nil {
+	if err := os.MkdirAll(tempDir, 0750); err != nil {
 		return fmt.Errorf("failed to create temp directory: %w", err)
 	}
 
@@ -1087,7 +1070,7 @@ func (pc *ProjectCoordinator) generateWithFallback(ctx context.Context, comp *mo
 
 	// Create temporary directory for generation
 	tempDir := filepath.Join(config.OutputDir, ".temp", comp.Name)
-	if err := os.MkdirAll(tempDir, 0755); err != nil {
+	if err := os.MkdirAll(tempDir, 0750); err != nil {
 		return fmt.Errorf("failed to create temp directory: %w", err)
 	}
 

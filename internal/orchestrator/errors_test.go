@@ -68,7 +68,7 @@ func TestGenerationError_Unwrap(t *testing.T) {
 	}
 
 	unwrapped := err.Unwrap()
-	if unwrapped != cause {
+	if !errors.Is(unwrapped, cause) {
 		t.Errorf("Unwrap() = %v, want %v", unwrapped, cause)
 	}
 }
@@ -80,7 +80,8 @@ func TestGenerationError_WithSuggestions(t *testing.T) {
 		Suggestions: []string{},
 	}
 
-	err.WithSuggestions("suggestion 1", "suggestion 2")
+	// Return value intentionally ignored - testing side effect on err.Suggestions
+	_ = err.WithSuggestions("suggestion 1", "suggestion 2")
 
 	if len(err.Suggestions) != 2 {
 		t.Errorf("WithSuggestions() resulted in %d suggestions, want 2", len(err.Suggestions))
@@ -148,7 +149,7 @@ func TestNewGenerationError(t *testing.T) {
 		t.Errorf("Message = %q, want %q", err.Message, "test message")
 	}
 
-	if err.Cause != cause {
+	if !errors.Is(err.Cause, cause) {
 		t.Errorf("Cause = %v, want %v", err.Cause, cause)
 	}
 
@@ -193,7 +194,7 @@ func TestNewToolExecutionError(t *testing.T) {
 		t.Errorf("Component = %q, want %q", err.Component, "nextjs")
 	}
 
-	if err.Cause != cause {
+	if !errors.Is(err.Cause, cause) {
 		t.Errorf("Cause = %v, want %v", err.Cause, cause)
 	}
 
@@ -230,7 +231,7 @@ func TestNewFileSystemError(t *testing.T) {
 		t.Errorf("Category = %v, want %v", err.Category, ErrCategoryFileSystem)
 	}
 
-	if err.Cause != cause {
+	if !errors.Is(err.Cause, cause) {
 		t.Errorf("Cause = %v, want %v", err.Cause, cause)
 	}
 

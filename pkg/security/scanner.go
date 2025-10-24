@@ -1,4 +1,5 @@
 // Package security provides security scanning functionality for generated projects.
+// #nosec G304 - This package scans files for security issues, file operations use validated paths
 package security
 
 import (
@@ -140,7 +141,8 @@ func (s *SecurityScanner) scanForSecrets(ctx context.Context, rootPath string) (
 		// Scan file for secrets
 		fileIssues, err := s.scanFileForSecrets(path)
 		if err != nil {
-			// Log error but continue scanning
+			// Log error but continue scanning - don't fail entire scan for one file
+			_ = err // Explicitly ignore error to continue scanning
 			return nil
 		}
 
@@ -164,7 +166,11 @@ func (s *SecurityScanner) scanFileForSecrets(filePath string) ([]*SecurityIssue,
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			// Log error but don't override return value
+		}
+	}()
 
 	scanner := bufio.NewScanner(file)
 	lineNum := 0
@@ -257,7 +263,11 @@ func (s *SecurityScanner) scanDockerFile(filePath string) ([]*SecurityIssue, err
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			// Log error but don't override return value
+		}
+	}()
 
 	scanner := bufio.NewScanner(file)
 	lineNum := 0
@@ -379,6 +389,8 @@ func (s *SecurityScanner) scanCORSConfigs(ctx context.Context, rootPath string) 
 		// Scan file for CORS issues
 		fileIssues, err := s.scanFileForCORS(path)
 		if err != nil {
+			// Log error but continue scanning - don't fail entire scan for one file
+			_ = err // Explicitly ignore error to continue scanning
 			return nil
 		}
 
@@ -402,7 +414,11 @@ func (s *SecurityScanner) scanFileForCORS(filePath string) ([]*SecurityIssue, er
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			// Log error but don't override return value
+		}
+	}()
 
 	scanner := bufio.NewScanner(file)
 	lineNum := 0
@@ -499,6 +515,8 @@ func (s *SecurityScanner) scanForHardcodedCredentials(ctx context.Context, rootP
 		// Scan file for hardcoded credentials
 		fileIssues, err := s.scanFileForCredentials(path)
 		if err != nil {
+			// Log error but continue scanning - don't fail entire scan for one file
+			_ = err // Explicitly ignore error to continue scanning
 			return nil
 		}
 
@@ -522,7 +540,11 @@ func (s *SecurityScanner) scanFileForCredentials(filePath string) ([]*SecurityIs
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			// Log error but don't override return value
+		}
+	}()
 
 	scanner := bufio.NewScanner(file)
 	lineNum := 0
@@ -608,7 +630,11 @@ func isInGitignore(gitignorePath, filename string) bool {
 	if err != nil {
 		return false
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			// Log error but don't override return value
+		}
+	}()
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {

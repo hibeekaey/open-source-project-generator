@@ -1,7 +1,9 @@
+// Package main provides the CLI entry point for the open-source-project-generator tool.
 package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -129,7 +131,7 @@ func init() {
 	checkToolsCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging")
 }
 
-func runCheckTools(cmd *cobra.Command, args []string) error {
+func runCheckTools(_ *cobra.Command, args []string) error {
 	// Initialize logger
 	log := logger.NewLogger()
 	if verbose {
@@ -180,7 +182,7 @@ func runCheckTools(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func displayToolCheckResults(result *models.ToolCheckResult, discovery *orchestrator.ToolDiscovery, log *logger.Logger, suggestionEngine *cli.SuggestionEngine) {
+func displayToolCheckResults(result *models.ToolCheckResult, discovery *orchestrator.ToolDiscovery, _ *logger.Logger, suggestionEngine *cli.SuggestionEngine) {
 	fmt.Println("\n" + separator("="))
 	fmt.Println("TOOL AVAILABILITY CHECK")
 	fmt.Println(separator("="))
@@ -260,34 +262,6 @@ func displayToolCheckResults(result *models.ToolCheckResult, discovery *orchestr
 	fmt.Println(separator("=") + "\n")
 }
 
-// indentText indents each line of text with the given prefix
-func indentText(text, indent string) string {
-	lines := splitLines(text)
-	result := ""
-	for _, line := range lines {
-		result += indent + line + "\n"
-	}
-	return result
-}
-
-// splitLines splits text into lines
-func splitLines(text string) []string {
-	var lines []string
-	current := ""
-	for _, char := range text {
-		if char == '\n' {
-			lines = append(lines, current)
-			current = ""
-		} else {
-			current += string(char)
-		}
-	}
-	if current != "" {
-		lines = append(lines, current)
-	}
-	return lines
-}
-
 var initConfigCmd = &cobra.Command{
 	Use:   "init-config [output-file]",
 	Short: "Generate a configuration template file",
@@ -339,7 +313,7 @@ func init() {
 	initConfigCmd.Flags().BoolVar(&forceInitOverwrite, "force", false, "Force overwrite existing configuration file")
 }
 
-func runInitConfig(cmd *cobra.Command, args []string) error {
+func runInitConfig(_ *cobra.Command, args []string) error {
 	// Determine output file
 	outputFile := "project-config.yaml"
 	if len(args) > 0 {
@@ -392,7 +366,7 @@ func runInitConfig(cmd *cobra.Command, args []string) error {
 	fullContent := header + "\n" + data
 
 	// Write to file
-	if err := os.WriteFile(outputFile, []byte(fullContent), 0644); err != nil {
+	if err := os.WriteFile(outputFile, []byte(fullContent), 0600); err != nil {
 		return cli.NewFileSystemError("write", outputFile, err).
 			WithSuggestions(
 				"Check that you have write permissions in the current directory",
@@ -772,7 +746,7 @@ func marshalConfigWithComments(config *models.ProjectConfig) (string, error) {
 
 	// Add inline comments to explain each section
 	lines := strings.Split(string(data), "\n")
-	var result []string
+	result := make([]string, 0, len(lines)*2) // Pre-allocate with estimated capacity
 
 	for i, line := range lines {
 		// Add comments for major sections
@@ -941,7 +915,7 @@ func init() {
 	generateCmd.Flags().BoolVar(&noRollback, "no-rollback", false, "Disable automatic rollback on failure (leave generated files for inspection)")
 }
 
-func runGenerate(cmd *cobra.Command, args []string) error {
+func runGenerate(_ *cobra.Command, args []string) error {
 	// Setup context with cancellation
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -978,7 +952,7 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 		config, err = runInteractiveMode(log)
 		if err != nil {
 			// Check if user cancelled
-			if err == cli.ErrUserCancelled {
+			if errors.Is(err, cli.ErrUserCancelled) {
 				return cli.NewUserCancelledError("interactive mode cancelled by user")
 			}
 
@@ -1100,7 +1074,8 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 			}
 
 			// Check for specific error types and provide better messages
-			if genErr, ok := err.(*orchestrator.GenerationError); ok {
+			genErr := &orchestrator.GenerationError{}
+			if errors.As(err, &genErr) {
 				return cli.NewGenerationError("dry-run", genErr.Message, genErr).
 					WithSuggestions(genErr.Suggestions...)
 			}
@@ -1128,7 +1103,8 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 			}
 
 			// Check for specific error types and provide better messages
-			if genErr, ok := err.(*orchestrator.GenerationError); ok {
+			genErr := &orchestrator.GenerationError{}
+			if errors.As(err, &genErr) {
 				if verbose {
 					log.Debug(fmt.Sprintf("Generation error category: %s", genErr.Category))
 					log.Debug(fmt.Sprintf("Component: %s", genErr.Component))
@@ -1207,7 +1183,7 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 // loadConfigFile loads a project configuration from a YAML or JSON file
 func loadConfigFile(path string) (*models.ProjectConfig, error) {
 	// Read file
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) // #nosec G304 - Path is from CLI argument, validated by user
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, cli.NewFileSystemError("read", path, err).
@@ -1280,7 +1256,7 @@ func runInteractiveMode(log *logger.Logger) (*models.ProjectConfig, error) {
 }
 
 // displayPreview displays the dry-run preview results
-func displayPreview(preview *models.PreviewResult, log *logger.Logger) {
+func displayPreview(preview *models.PreviewResult, _ *logger.Logger) {
 	fmt.Println("\n" + separator("="))
 	fmt.Println("DRY RUN PREVIEW")
 	fmt.Println(separator("="))
@@ -1338,7 +1314,7 @@ func displayPreview(preview *models.PreviewResult, log *logger.Logger) {
 }
 
 // displayResults displays the generation results
-func displayResults(result *models.GenerationResult, log *logger.Logger) {
+func displayResults(result *models.GenerationResult, _ *logger.Logger) {
 	fmt.Println("\n" + separator("="))
 	if result.Success {
 		fmt.Println("✓ PROJECT GENERATION SUCCESSFUL")
@@ -1477,7 +1453,7 @@ func init() {
 	cacheToolsCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging")
 }
 
-func runCacheTools(cmd *cobra.Command, args []string) error {
+func runCacheTools(_ *cobra.Command, args []string) error {
 	// Initialize logger
 	log := logger.NewLogger()
 	if verbose {
@@ -1624,7 +1600,8 @@ func runCacheTools(cmd *cobra.Command, args []string) error {
 			available, _ := toolDiscovery.IsAvailable(toolName)
 			if available {
 				// Also get version to cache it
-				toolDiscovery.GetVersion(toolName)
+				// Error intentionally ignored - version caching is best-effort
+				_, _ = toolDiscovery.GetVersion(toolName)
 			}
 		}
 

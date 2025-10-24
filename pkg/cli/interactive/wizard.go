@@ -13,7 +13,7 @@ import (
 
 // InteractiveWizard manages the interactive configuration flow
 type InteractiveWizard struct {
-	prompter  Prompter
+	prompter  PrompterInterface
 	logger    *logger.Logger
 	sanitizer *security.Sanitizer
 }

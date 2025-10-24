@@ -1,3 +1,4 @@
+// Package bootstrap provides executors for bootstrapping projects using external CLI tools.
 package bootstrap
 
 import (
@@ -11,17 +12,17 @@ import (
 // AndroidExecutor handles Android project generation
 type AndroidExecutor struct {
 	*BaseExecutor
-	toolDiscovery ToolDiscovery
+	toolDiscovery ToolDiscoveryInterface
 }
 
-// ToolDiscovery interface for checking tool availability
-type ToolDiscovery interface {
+// ToolDiscoveryInterface interface for checking tool availability
+type ToolDiscoveryInterface interface {
 	IsAvailable(toolName string) (bool, error)
 	GetVersion(toolName string) (string, error)
 }
 
 // NewAndroidExecutor creates a new Android executor
-func NewAndroidExecutor(toolDiscovery ToolDiscovery) *AndroidExecutor {
+func NewAndroidExecutor(toolDiscovery ToolDiscoveryInterface) *AndroidExecutor {
 	return &AndroidExecutor{
 		BaseExecutor:  NewBaseExecutor("gradle"),
 		toolDiscovery: toolDiscovery,
@@ -164,16 +165,16 @@ func (ae *AndroidExecutor) detectAndroidTool() (string, error) {
 }
 
 // generateWithGradle generates an Android project using Gradle
-func (ae *AndroidExecutor) generateWithGradle(ctx context.Context, spec *BootstrapSpec) (*models.ExecutionResult, error) {
+func (ae *AndroidExecutor) generateWithGradle(_ context.Context, spec *BootstrapSpec) (*models.ExecutionResult, error) {
 	// Get project configuration
 	projectName, ok := spec.Config["name"].(string)
 	if !ok || projectName == "" {
 		return nil, fmt.Errorf("project name is required in config")
 	}
 
-	packageName, ok := spec.Config["package"].(string)
-	if !ok || packageName == "" {
-		packageName = fmt.Sprintf("com.example.%s", projectName)
+	_, ok = spec.Config["package"].(string)
+	if !ok {
+		// Package name will be generated in fallback mode
 	}
 
 	// Note: Gradle doesn't have a built-in project generator like create-next-app
@@ -228,14 +229,14 @@ func (ae *AndroidExecutor) generateWithAndroidCLI(ctx context.Context, spec *Boo
 
 	result, err := ae.BaseExecutor.Execute(ctx, execSpec)
 	if err != nil {
-		return result, fmt.Errorf("Android CLI generation failed: %w (fallback may be required)", err)
+		return result, fmt.Errorf("android CLI generation failed: %w (fallback may be required)", err)
 	}
 
 	return result, nil
 }
 
 // GetManualSteps returns manual steps required after Android generation
-func (ae *AndroidExecutor) GetManualSteps(spec *BootstrapSpec) []string {
+func (ae *AndroidExecutor) GetManualSteps(_ *BootstrapSpec) []string {
 	return []string{
 		"Install Android Studio from https://developer.android.com/studio",
 		"Open the project in Android Studio",

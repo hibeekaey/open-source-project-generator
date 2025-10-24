@@ -130,7 +130,7 @@ func ValidateIOSVersion(input string) error {
 }
 
 // InputWithValidation prompts for input with validation
-func InputWithValidation(prompter Prompter, message string, defaultValue string, validator Validator) (string, error) {
+func InputWithValidation(prompter PrompterInterface, message string, defaultValue string, validator Validator) (string, error) {
 	for {
 		input, err := prompter.Input(message, defaultValue)
 		if err != nil {

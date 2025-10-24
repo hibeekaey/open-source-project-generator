@@ -1,6 +1,7 @@
 package orchestrator
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -423,7 +424,8 @@ func ShouldFallback(err *GenerationError, ctx *ErrorContext) bool {
 
 // FormatError formats an error for display to the user
 func FormatError(err error) string {
-	if genErr, ok := err.(*GenerationError); ok {
+	genErr := &GenerationError{}
+	if errors.As(err, &genErr) {
 		var builder strings.Builder
 
 		builder.WriteString(genErr.Error())

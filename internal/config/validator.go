@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -17,22 +18,6 @@ type Validator struct {
 func NewValidator() *Validator {
 	v := &Validator{
 		schema:             DefaultSchema(),
-		componentValidator: NewComponentConfigValidator(),
-	}
-
-	// Register component-specific validators
-	v.componentValidator.RegisterValidator("nextjs", NewNextJSConfigValidator())
-	v.componentValidator.RegisterValidator("go-backend", NewGoConfigValidator())
-	v.componentValidator.RegisterValidator("android", NewAndroidConfigValidator())
-	v.componentValidator.RegisterValidator("ios", NewIOSConfigValidator())
-
-	return v
-}
-
-// NewValidatorWithSchema creates a validator with a custom schema
-func NewValidatorWithSchema(schema *Schema) *Validator {
-	v := &Validator{
-		schema:             schema,
 		componentValidator: NewComponentConfigValidator(),
 	}
 
@@ -269,7 +254,8 @@ func (v *Validator) ValidateComponentWithDetails(comp *models.ComponentConfig) *
 	if err == nil {
 		if schemaErr := compSchema.ValidateConfig(comp.Config); schemaErr != nil {
 			result.Valid = false
-			if fieldErr, ok := schemaErr.(*FieldError); ok {
+			fieldErr := &FieldError{}
+			if errors.As(schemaErr, &fieldErr) {
 				result.Errors = append(result.Errors, *fieldErr)
 			} else {
 				result.Errors = append(result.Errors, FieldError{
@@ -363,7 +349,8 @@ func (v *Validator) ValidateWithReport(config *models.ProjectConfig) *Validation
 	if err := v.Validate(config); err != nil {
 		report.Valid = false
 		// Try to extract field-specific errors
-		if valErr, ok := err.(*ValidationError); ok {
+		valErr := &ValidationError{}
+		if errors.As(err, &valErr) {
 			report.Errors = append(report.Errors, *valErr)
 		} else {
 			report.Errors = append(report.Errors, ValidationError{

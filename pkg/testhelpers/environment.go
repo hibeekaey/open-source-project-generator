@@ -1,3 +1,5 @@
+// Package testhelpers provides utilities for testing
+// #nosec G301 G304 G306 - Test helper package, file/directory permissions and paths are acceptable for test environment
 package testhelpers
 
 import (
@@ -39,7 +41,7 @@ func SetupTestEnv(t *testing.T) *TestEnvironment {
 	tempDir := t.TempDir()
 	mockBinDir := filepath.Join(tempDir, "mock-bin")
 
-	if err := os.MkdirAll(mockBinDir, 0755); err != nil {
+	if err := os.MkdirAll(mockBinDir, 0755); err != nil { // #nosec G301 - Test helper, permissions acceptable for test environment
 		t.Fatalf("Failed to create mock bin directory: %v", err)
 	}
 
@@ -60,7 +62,7 @@ func (te *TestEnvironment) Cleanup() {
 
 	// Restore original PATH
 	if te.OriginalPATH != "" {
-		os.Setenv("PATH", te.OriginalPATH)
+		_ = os.Setenv("PATH", te.OriginalPATH) // Error intentionally ignored in test cleanup
 	}
 }
 
@@ -168,7 +170,7 @@ func (te *TestEnvironment) CreateProjectStructure(projectName string) (string, e
 	}
 
 	for _, dir := range dirs {
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0755); err != nil { // #nosec G301 - Test helper, permissions acceptable for test environment
 			return "", fmt.Errorf("failed to create directory %s: %w", dir, err)
 		}
 	}
@@ -452,7 +454,7 @@ func AssertFileExists(t *testing.T, path string) {
 func AssertFileContains(t *testing.T, path string, expected string) {
 	t.Helper()
 
-	content, err := os.ReadFile(path)
+	content, err := os.ReadFile(path) // #nosec G304 - Test helper, path is controlled by test code
 	if err != nil {
 		t.Fatalf("Failed to read file %s: %v", path, err)
 	}

@@ -42,53 +42,6 @@ func NewRollbackManager(log *logger.Logger) *RollbackManager {
 	}
 }
 
-// RegisterBackup registers a backup for potential rollback
-func (rm *RollbackManager) RegisterBackup(originalPath, backupPath string) {
-	rm.mu.Lock()
-	defer rm.mu.Unlock()
-
-	rm.backups[originalPath] = backupPath
-
-	if rm.logger != nil {
-		rm.logger.Debug(fmt.Sprintf("Registered backup: %s -> %s", originalPath, backupPath))
-	}
-}
-
-// CreateBackup creates a backup of the specified path and registers it for rollback
-func (rm *RollbackManager) CreateBackup(path string) (string, error) {
-	if rm.backupManager == nil {
-		return "", fmt.Errorf("backup manager not initialized")
-	}
-
-	// Check if path exists
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		// Path doesn't exist, no backup needed
-		if rm.logger != nil {
-			rm.logger.Debug(fmt.Sprintf("Path does not exist, skipping backup: %s", path))
-		}
-		return "", nil
-	}
-
-	if rm.logger != nil {
-		rm.logger.Info(fmt.Sprintf("Creating backup of: %s", path))
-	}
-
-	// Create backup
-	backupPath, err := rm.backupManager.Backup(path)
-	if err != nil {
-		return "", fmt.Errorf("failed to create backup: %w", err)
-	}
-
-	// Register backup for potential rollback
-	rm.RegisterBackup(path, backupPath)
-
-	if rm.logger != nil {
-		rm.logger.Info(fmt.Sprintf("Backup created: %s", backupPath))
-	}
-
-	return backupPath, nil
-}
-
 // RegisterTempDir registers a temporary directory for cleanup
 func (rm *RollbackManager) RegisterTempDir(tempDir string) {
 	rm.mu.Lock()
@@ -248,42 +201,6 @@ func (rm *RollbackManager) restoreBackup(originalPath, backupPath string) error 
 	}
 
 	return nil
-}
-
-// CleanupTempDirs cleans up all registered temporary directories without restoring backups
-func (rm *RollbackManager) CleanupTempDirs() error {
-	rm.mu.Lock()
-	defer rm.mu.Unlock()
-
-	var errors []error
-
-	for _, tempDir := range rm.tempDirs {
-		if err := rm.cleanupTempDir(tempDir); err != nil {
-			errors = append(errors, err)
-		}
-	}
-
-	// Clear temp dirs after cleanup
-	rm.tempDirs = make([]string, 0)
-
-	if len(errors) > 0 {
-		return fmt.Errorf("cleanup completed with errors: %v", errors)
-	}
-
-	return nil
-}
-
-// Clear clears all registered backups and temp directories without performing any operations
-func (rm *RollbackManager) Clear() {
-	rm.mu.Lock()
-	defer rm.mu.Unlock()
-
-	rm.backups = make(map[string]string)
-	rm.tempDirs = make([]string, 0)
-
-	if rm.logger != nil {
-		rm.logger.Debug("Rollback manager cleared")
-	}
 }
 
 // HasBackups returns true if there are registered backups

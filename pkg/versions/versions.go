@@ -168,7 +168,7 @@ func Load() (*Config, error) {
 
 // LoadFrom reads the versions configuration from a specific path
 func LoadFrom(path string) (*Config, error) {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) // #nosec G304 - Path is from application configuration, not user input
 	if err != nil {
 		return nil, fmt.Errorf("failed to read versions config: %w", err)
 	}

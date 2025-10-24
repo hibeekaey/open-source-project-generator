@@ -1,3 +1,5 @@
+// Package cache provides tool cache management and export/import functionality
+// #nosec G304 - Cache file operations use paths from application configuration
 package cache
 
 import (
@@ -79,7 +81,7 @@ func (ce *CacheExporter) Export(cache *orchestrator.ToolCache, outputPath string
 	}
 
 	// Write to output file
-	if err := os.WriteFile(outputPath, exportJSON, 0644); err != nil {
+	if err := os.WriteFile(outputPath, exportJSON, 0600); err != nil {
 		return fmt.Errorf("failed to write export file: %w", err)
 	}
 

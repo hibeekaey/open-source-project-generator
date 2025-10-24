@@ -22,14 +22,14 @@ type Schema struct {
 // ComponentSchema defines validation rules for a specific component type
 type ComponentSchema struct {
 	Type           string
-	RequiredConfig []string                        // Required config keys
-	OptionalConfig []string                        // Optional config keys
-	ConfigDefaults map[string]interface{}          // Default values for config
-	Validators     map[string]ConfigFieldValidator // Custom validators for config fields
+	RequiredConfig []string                            // Required config keys
+	OptionalConfig []string                            // Optional config keys
+	ConfigDefaults map[string]interface{}              // Default values for config
+	Validators     map[string]ConfigFieldValidatorFunc // Custom validators for config fields
 }
 
-// ConfigFieldValidator is a function that validates a specific config field
-type ConfigFieldValidator func(value interface{}) error
+// ConfigFieldValidatorFunc is a function that validates a specific config field
+type ConfigFieldValidatorFunc func(value interface{}) error
 
 // DefaultSchema returns the default validation schema
 func DefaultSchema() *Schema {
@@ -58,7 +58,7 @@ func DefaultSchema() *Schema {
 					"app_router": true,
 					"eslint":     true,
 				},
-				Validators: map[string]ConfigFieldValidator{
+				Validators: map[string]ConfigFieldValidatorFunc{
 					"name": validateProjectName,
 				},
 			},
@@ -70,7 +70,7 @@ func DefaultSchema() *Schema {
 					"framework": "gin",
 					"port":      8080,
 				},
-				Validators: map[string]ConfigFieldValidator{
+				Validators: map[string]ConfigFieldValidatorFunc{
 					"name":   validateProjectName,
 					"module": validateGoModule,
 					"port":   validatePort,
@@ -85,7 +85,7 @@ func DefaultSchema() *Schema {
 					"target_sdk": 34,
 					"language":   "kotlin",
 				},
-				Validators: map[string]ConfigFieldValidator{
+				Validators: map[string]ConfigFieldValidatorFunc{
 					"name":    validateProjectName,
 					"package": validateAndroidPackage,
 				},
@@ -98,7 +98,7 @@ func DefaultSchema() *Schema {
 					"deployment_target": "15.0",
 					"language":          "swift",
 				},
-				Validators: map[string]ConfigFieldValidator{
+				Validators: map[string]ConfigFieldValidatorFunc{
 					"name":      validateProjectName,
 					"bundle_id": validateBundleID,
 				},

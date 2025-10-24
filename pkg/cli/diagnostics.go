@@ -1,6 +1,8 @@
+// Package cli provides CLI error types and utilities.
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"runtime"
 	"runtime/debug"
@@ -155,7 +157,8 @@ func (dc *DiagnosticsCollector) formatErrorDetails(err error) string {
 	builder.WriteString(fmt.Sprintf("Message: %s\n", err.Error()))
 
 	// Check for CLIError
-	if cliErr, ok := err.(*CLIError); ok {
+	cliErr := &CLIError{}
+	if errors.As(err, &cliErr) {
 		builder.WriteString(fmt.Sprintf("Category: %s\n", cliErr.Category))
 		builder.WriteString(fmt.Sprintf("Exit Code: %d\n", cliErr.ExitCode))
 
@@ -173,7 +176,8 @@ func (dc *DiagnosticsCollector) formatErrorDetails(err error) string {
 	}
 
 	// Check for GenerationError
-	if genErr, ok := err.(*orchestrator.GenerationError); ok {
+	genErr := &orchestrator.GenerationError{}
+	if errors.As(err, &genErr) {
 		builder.WriteString(fmt.Sprintf("Category: %s\n", genErr.Category))
 		builder.WriteString(fmt.Sprintf("Component: %s\n", genErr.Component))
 		builder.WriteString(fmt.Sprintf("Recoverable: %t\n", genErr.Recoverable))

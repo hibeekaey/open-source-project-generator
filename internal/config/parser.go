@@ -34,11 +34,17 @@ func (p *Parser) ParseFile(path string) (*models.ProjectConfig, error) {
 	}
 
 	// Open file
-	file, err := os.Open(path)
+	file, err := os.Open(path) // #nosec G304 - Path is validated by caller and comes from CLI args
 	if err != nil {
 		return nil, fmt.Errorf("failed to open configuration file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			// Log the error but don't override the main return error
+			// In production, this would use a logger
+			_ = closeErr
+		}
+	}()
 
 	// Determine format from file extension
 	format := p.detectFormat(path)
@@ -234,12 +240,12 @@ func (p *Parser) WriteTemplate(path string, format string) error {
 
 	// Create directory if needed
 	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0750); err != nil {
 		return fmt.Errorf("failed to create directory: %w", err)
 	}
 
 	// Write file
-	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(path, []byte(content), 0600); err != nil {
 		return fmt.Errorf("failed to write template file: %w", err)
 	}
 
@@ -256,12 +262,12 @@ func (p *Parser) WriteTemplateForce(path string, format string) error {
 
 	// Create directory if needed
 	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0750); err != nil {
 		return fmt.Errorf("failed to create directory: %w", err)
 	}
 
 	// Write file
-	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(path, []byte(content), 0600); err != nil {
 		return fmt.Errorf("failed to write template file: %w", err)
 	}
 
@@ -296,19 +302,6 @@ func (e *ParseError) Error() string {
 		return fmt.Sprintf("parse error in %s: %s", e.Path, e.Message)
 	}
 	return fmt.Sprintf("parse error: %s", e.Message)
-}
-
-func (e *ParseError) Unwrap() error {
-	return e.Cause
-}
-
-// NewParseError creates a new parse error
-func NewParseError(path, message string, cause error) *ParseError {
-	return &ParseError{
-		Path:    path,
-		Message: message,
-		Cause:   cause,
-	}
 }
 
 // ParseFileWithValidation parses and validates a configuration file

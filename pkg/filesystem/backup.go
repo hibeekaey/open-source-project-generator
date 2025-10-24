@@ -204,7 +204,7 @@ func (bm *BackupManager) CleanupOldBackups(maxAge time.Duration) error {
 	}
 
 	if len(errors) > 0 {
-		return fmt.Errorf("cleanup failed with %d errors: %v", len(errors), errors[0])
+		return fmt.Errorf("cleanup failed with %d errors: %w", len(errors), errors[0])
 	}
 
 	return nil

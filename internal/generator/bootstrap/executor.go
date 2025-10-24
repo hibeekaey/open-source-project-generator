@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os/exec"
@@ -153,7 +154,8 @@ func (be *BaseExecutor) executeCommand(ctx context.Context, command string, args
 		}
 
 		// Get exit code
-		if exitErr, ok := err.(*exec.ExitError); ok {
+		exitErr := &exec.ExitError{}
+		if errors.As(err, &exitErr) {
 			result.ExitCode = exitErr.ExitCode()
 		}
 
@@ -191,7 +193,8 @@ func (be *BaseExecutor) executeWithStreaming(ctx context.Context, command string
 		}
 
 		// Get exit code
-		if exitErr, ok := err.(*exec.ExitError); ok {
+		exitErr := &exec.ExitError{}
+		if errors.As(err, &exitErr) {
 			result.ExitCode = exitErr.ExitCode()
 		}
 

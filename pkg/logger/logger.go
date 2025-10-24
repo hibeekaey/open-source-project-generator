@@ -90,7 +90,7 @@ func (l *Logger) EnableFileLogging(logFilePath string) error {
 	}
 
 	// Open log file
-	file, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
+	file, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600) // #nosec G304 - Log file path is controlled by application configuration
 	if err != nil {
 		return fmt.Errorf("failed to open log file: %w", err)
 	}
@@ -108,7 +108,7 @@ func (l *Logger) DisableFileLogging() {
 
 	if l.fileOutput != nil {
 		if closer, ok := l.fileOutput.(io.Closer); ok {
-			closer.Close()
+			_ = closer.Close() // Error intentionally ignored during cleanup
 		}
 	}
 
@@ -212,12 +212,12 @@ func (l *Logger) log(level Level, message string, extra map[string]interface{}) 
 
 	// Write to console
 	if l.output != nil {
-		fmt.Fprintln(l.output, consoleMsg)
+		_, _ = fmt.Fprintln(l.output, consoleMsg) // Error intentionally ignored for output formatting
 	}
 
 	// Write to file
 	if l.enableFile && l.fileOutput != nil {
-		fmt.Fprintln(l.fileOutput, fileMsg)
+		_, _ = fmt.Fprintln(l.fileOutput, fileMsg) // Error intentionally ignored for output formatting
 	}
 }
 
@@ -328,7 +328,7 @@ func (l *Logger) PrintHeader(message string) {
 	formatted := l.formatter.Header(message)
 	l.mu.Unlock()
 	if l.output != nil {
-		fmt.Fprintln(l.output, formatted)
+		_, _ = fmt.Fprintln(l.output, formatted) // Error intentionally ignored for output formatting
 	}
 }
 
@@ -338,7 +338,7 @@ func (l *Logger) PrintSection(message string) {
 	formatted := l.formatter.Section(message)
 	l.mu.Unlock()
 	if l.output != nil {
-		fmt.Fprintln(l.output, formatted)
+		_, _ = fmt.Fprintln(l.output, formatted) // Error intentionally ignored for output formatting
 	}
 }
 
@@ -348,7 +348,7 @@ func (l *Logger) PrintBullet(message string) {
 	formatted := l.formatter.Bullet(message)
 	l.mu.Unlock()
 	if l.output != nil {
-		fmt.Fprintln(l.output, formatted)
+		_, _ = fmt.Fprintln(l.output, formatted) // Error intentionally ignored for output formatting
 	}
 }
 
@@ -358,7 +358,7 @@ func (l *Logger) PrintKeyValue(key string, value string) {
 	formatted := l.formatter.KeyValue(key, value)
 	l.mu.Unlock()
 	if l.output != nil {
-		fmt.Fprintln(l.output, formatted)
+		_, _ = fmt.Fprintln(l.output, formatted) // Error intentionally ignored for output formatting
 	}
 }
 

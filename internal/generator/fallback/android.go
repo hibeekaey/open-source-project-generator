@@ -36,7 +36,7 @@ func (g *AndroidGenerator) Generate(ctx context.Context, spec *models.FallbackSp
 	}
 
 	// Create target directory
-	if err := os.MkdirAll(spec.TargetDir, 0755); err != nil {
+	if err := os.MkdirAll(spec.TargetDir, 0750); err != nil {
 		result.Success = false
 		result.Error = fmt.Errorf("failed to create target directory: %w", err)
 		return result, result.Error
@@ -111,7 +111,7 @@ func (g *AndroidGenerator) createDirectoryStructure(targetDir, packageName strin
 
 	for _, dir := range dirs {
 		fullPath := filepath.Join(targetDir, dir)
-		if err := os.MkdirAll(fullPath, 0755); err != nil {
+		if err := os.MkdirAll(fullPath, 0750); err != nil {
 			return fmt.Errorf("failed to create directory %s: %w", dir, err)
 		}
 	}
@@ -142,7 +142,12 @@ func (g *AndroidGenerator) generateFiles(targetDir, packageName, appName string)
 
 	for filePath, content := range files {
 		fullPath := filepath.Join(targetDir, filePath)
-		if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
+		// Use 0644 for public files (README, .gitignore), 0600 for source code and config
+		perm := os.FileMode(0600)
+		if filePath == "README.md" || filePath == ".gitignore" {
+			perm = 0644 // #nosec G306 - Public documentation files
+		}
+		if err := os.WriteFile(fullPath, []byte(content), perm); err != nil {
 			return fmt.Errorf("failed to write file %s: %w", filePath, err)
 		}
 	}

@@ -339,6 +339,21 @@ func NewFileSystemError(operation string, path string, cause error) *CLIError {
 	}
 }
 
+// NewSecurityError creates a security-related error
+func NewSecurityError(message string, cause error) *CLIError {
+	return &CLIError{
+		Category: "security",
+		Message:  message,
+		Cause:    cause,
+		ExitCode: ExitConfigError,
+		Suggestions: []string{
+			"Review the security requirements",
+			"Ensure all inputs are properly validated",
+			"Check for path traversal or injection attempts",
+		},
+	}
+}
+
 // NewUserCancelledError creates a user cancellation error
 func NewUserCancelledError(message string) *CLIError {
 	return &CLIError{

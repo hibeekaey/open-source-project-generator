@@ -2,7 +2,6 @@ package orchestrator
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 )
 
@@ -404,7 +403,7 @@ func TestErrorUnwrapping(t *testing.T) {
 	err := NewToolExecutionError("npx", "nextjs", cause)
 
 	unwrapped := errors.Unwrap(err)
-	if unwrapped != cause {
+	if !errors.Is(unwrapped, cause) {
 		t.Errorf("Unwrap() = %v, want %v", unwrapped, cause)
 	}
 
@@ -470,35 +469,4 @@ func TestErrorCategorization(t *testing.T) {
 			}
 		})
 	}
-}
-
-// Example demonstrates how to use errors with context and suggestions
-func ExampleGenerationError() {
-	// Create an error with context
-	err := NewToolNotFoundError("npx", "nextjs-frontend")
-
-	// Add additional suggestions
-	err.WithSuggestions("Run 'npm install -g npx' to install globally")
-
-	// Format the error for display
-	formatted := FormatError(err)
-	fmt.Println(formatted)
-
-	// Check if we should retry or fallback
-	ctx := &ErrorContext{
-		Operation:     "bootstrap",
-		Component:     "nextjs-frontend",
-		Phase:         "generation",
-		AttemptNumber: 1,
-		CanRetry:      true,
-		CanFallback:   true,
-	}
-
-	if ShouldFallback(err, ctx) {
-		fmt.Println("Falling back to custom generation")
-	}
-
-	// Get recovery strategy
-	strategy := GetRecoveryStrategy(err)
-	fmt.Printf("Recovery strategy: %s\n", strategy.Description)
 }

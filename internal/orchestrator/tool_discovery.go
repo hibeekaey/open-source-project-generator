@@ -48,24 +48,6 @@ func NewToolDiscovery(log *logger.Logger) *ToolDiscovery {
 	return td
 }
 
-// NewToolDiscoveryWithCache creates a new tool discovery instance with a custom cache
-func NewToolDiscoveryWithCache(log *logger.Logger, cache *ToolCache) *ToolDiscovery {
-	td := &ToolDiscovery{
-		registry: &models.ToolRegistry{
-			Tools: make(map[string]*models.ToolMetadata),
-		},
-		cache:     cache,
-		logger:    log,
-		cacheTTL:  5 * time.Minute,
-		isOffline: false,
-	}
-
-	// Register known tools
-	td.registerKnownTools()
-
-	return td
-}
-
 // registerKnownTools registers all known bootstrap tools with their metadata
 func (td *ToolDiscovery) registerKnownTools() {
 	// Get versions from centralized config
@@ -260,9 +242,9 @@ func (td *ToolDiscovery) GetVersion(toolName string) (string, error) {
 
 	var cmd *exec.Cmd
 	if metadata.VersionFlag != "" {
-		cmd = exec.CommandContext(ctx, metadata.Command, metadata.VersionFlag)
+		cmd = exec.CommandContext(ctx, metadata.Command, metadata.VersionFlag) // #nosec G204 - Command and args from trusted internal metadata, not user input
 	} else {
-		cmd = exec.CommandContext(ctx, metadata.Command, "version")
+		cmd = exec.CommandContext(ctx, metadata.Command, "version") // #nosec G204 - Command from trusted internal metadata, not user input
 	}
 
 	output, err := cmd.CombinedOutput()
