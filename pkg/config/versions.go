@@ -1,10 +1,13 @@
 package config
 
 import (
-	"os"
+	_ "embed"
 
 	"gopkg.in/yaml.v3"
 )
+
+//go:embed versions.yaml
+var versionsData []byte
 
 type Versions struct {
 	Frontend struct {
@@ -14,14 +17,9 @@ type Versions struct {
 	} `yaml:"frontend"`
 }
 
-func LoadVersions(configPath string) (*Versions, error) {
-	data, err := os.ReadFile(configPath)
-	if err != nil {
-		return nil, err
-	}
-
+func LoadVersions() (*Versions, error) {
 	var versions Versions
-	if err := yaml.Unmarshal(data, &versions); err != nil {
+	if err := yaml.Unmarshal(versionsData, &versions); err != nil {
 		return nil, err
 	}
 

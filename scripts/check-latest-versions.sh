@@ -66,7 +66,7 @@ fi
 
 # JSON output array
 JSON_RESULTS='[]'
-VERSIONS_FILE="configs/versions.yaml"
+VERSIONS_FILE="pkg/config/versions.yaml"
 
 if [ "$JSON_OUTPUT" = false ]; then
     echo -e "${BLUE}=== Checking Latest Versions ===${NC}\n"

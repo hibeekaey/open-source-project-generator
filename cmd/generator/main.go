@@ -16,7 +16,7 @@ import (
 )
 
 func main() {
-	versions, err := config.LoadVersions(constants.VersionsConfigPath)
+	versions, err := config.LoadVersions()
 	if err != nil {
 		fmt.Printf("%v\n", output.NewError("error loading versions: %v", err))
 		os.Exit(1)
