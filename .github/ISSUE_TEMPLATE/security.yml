@@ -8,47 +8,57 @@ body:
   - type: markdown
     attributes:
       value: |
-        **IMPORTANT**: Please do not report security vulnerabilities through public GitHub issues. Instead, please follow our responsible disclosure process.
+        **⚠️ CRITICAL VULNERABILITIES: Use Private Reporting**
 
-  - type: textarea
-    id: vulnerability-description
+        **For critical security vulnerabilities (High/Critical severity), DO NOT use this form.**
+
+        Report privately at: https://github.com/cuesoftinc/open-source-project-generator/security/advisories/new
+
+        Or email: support@cuesoft.io
+
+        See [SECURITY.md](https://github.com/cuesoftinc/open-source-project-generator/blob/main/SECURITY.md) for complete security policy.
+
+        ---
+
+        **This public form is ONLY for:**
+        - Security hardening suggestions
+        - Low/Medium severity issues
+        - Security-related questions or discussions
+        - Non-exploitable security concerns
+
+  - type: dropdown
+    id: vulnerability-type
     attributes:
-      label: Vulnerability Description
-      description: A clear and concise description of the security vulnerability.
-      placeholder: Describe the security issue...
+      label: Vulnerability Type
+      options:
+        - Code/Command Injection
+        - Path Traversal
+        - Information Disclosure
+        - Denial of Service
+        - Dependency Vulnerability
+        - Other
     validations:
       required: true
 
   - type: textarea
-    id: impact
+    id: description
     attributes:
-      label: Impact
-      description: Describe the potential impact of this vulnerability
-      placeholder: What could an attacker do with this vulnerability?
-    validations:
-      required: true
-
-  - type: textarea
-    id: steps-to-reproduce
-    attributes:
-      label: Steps to Reproduce
-      description: How can this vulnerability be reproduced?
+      label: Description & Impact
       placeholder: |
-        1. Go to '...'
-        2. Click on '....'
-        3. See vulnerability
+        What: ...
+        Impact: ...
+        Environment: OS, Go version, Generator version
     validations:
       required: true
 
   - type: textarea
-    id: environment
+    id: reproduce
     attributes:
-      label: Environment
-      description: Please provide your environment details
+      label: Reproduction Steps
       placeholder: |
-        - OS: [e.g. Ubuntu 20.04, macOS 12.0, Windows 10]
-        - Go Version: [e.g. 1.25.0]
-        - Generator Version: [e.g. 1.4.0]
+        1. ...
+        2. ...
+      render: shell
     validations:
       required: true
 
@@ -56,7 +66,6 @@ body:
     id: severity
     attributes:
       label: Severity
-      description: How severe is this vulnerability?
       options:
         - Low
         - Medium
@@ -66,32 +75,11 @@ body:
       required: true
 
   - type: textarea
-    id: additional-context
+    id: additional
     attributes:
-      label: Additional Context
-      description: Add any other context about the vulnerability here.
-      placeholder: Any additional information that might be helpful...
-
-  - type: markdown
-    attributes:
-      value: |
-        ## Responsible Disclosure
-
-        **Please do not create a public issue for security vulnerabilities.**
-
-        Instead, please:
-
-        1. **Email us directly** at [INSERT SECURITY EMAIL]
-        2. **Use GitHub Security Advisories** if you have access
-        3. **Contact maintainers privately** through other secure channels
-
-        We will:
-        - Acknowledge receipt within 48 hours
-        - Provide regular updates on our progress
-        - Credit you in our security advisories (if desired)
-        - Work with you to coordinate disclosure
-
-        Thank you for helping keep our project secure!
+      label: Additional Details
+      placeholder: PoC code, CVE/CWE references, etc.
+      render: shell
 
   - type: checkboxes
     id: terms

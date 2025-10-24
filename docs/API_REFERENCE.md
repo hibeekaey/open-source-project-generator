@@ -1,599 +1,610 @@
 # API Reference
 
-This document provides a developer-focused API reference for the Open Source Project Generator.
+Developer API documentation for the Open Source Project Generator.
+
+## Table of Contents
+
+- [Core Interfaces](#core-interfaces)
+- [Key Types](#key-types)
+- [Models](#models)
+- [Usage Examples](#usage-examples)
+- [Error Handling](#error-handling)
+
+---
 
 ## Core Interfaces
 
-### CLI Interface
+### ProjectCoordinatorInterface
 
-The main CLI interface provides comprehensive command-line functionality:
+Main interface for project generation orchestration.
+
+**Location:** `pkg/interfaces/coordinator.go`
 
 ```go
-type CLIInterface interface {
-    // Core operations
-    Run(args []string) error
-    PromptProjectDetails() (*models.ProjectConfig, error)
-    SelectComponents() ([]string, error)
-    ConfirmGeneration(*models.ProjectConfig) bool
-
-    // Non-interactive operations
-    GenerateFromConfig(path string, options GenerateOptions) error
-    ValidateProject(path string, options ValidationOptions) (*ValidationResult, error)
-    AuditProject(path string, options AuditOptions) (*AuditResult, error)
-
-    // Template operations
-    ListTemplates(filter TemplateFilter) ([]TemplateInfo, error)
-    GetTemplateInfo(name string) (*TemplateInfo, error)
-    ValidateTemplate(path string) (*TemplateValidationResult, error)
-
-    // Configuration operations
-    ShowConfig() error
-    SetConfig(key, value string) error
-    LoadConfiguration(sources []string) (*models.ProjectConfig, error)
-
-    // Version operations
-    ShowVersion(options VersionOptions) error
-    CheckUpdates() (*UpdateInfo, error)
-    GetPackageVersions() (map[string]string, error)
+type ProjectCoordinatorInterface interface {
+    Generate(ctx context.Context, config interface{}) (interface{}, error)
+    DryRun(ctx context.Context, config interface{}) (interface{}, error)
+    Validate(config interface{}) error
 }
 ```
 
-### Template Engine
+**Methods:**
 
-Handles template processing and rendering:
+- `Generate` - Generate a complete project from configuration
+- `DryRun` - Preview what would be generated without creating files
+- `Validate` - Validate configuration before generation
+
+**Usage:**
 
 ```go
-type TemplateEngine interface {
-    ProcessTemplate(templatePath string, config *models.ProjectConfig) ([]byte, error)
-    ProcessDirectory(templateDir string, outputDir string, config *models.ProjectConfig) error
-    RegisterFunctions(funcMap template.FuncMap)
-    LoadTemplate(templatePath string) (*template.Template, error)
-    RenderTemplate(tmpl *template.Template, data interface{}) ([]byte, error)
+coordinator := orchestrator.NewProjectCoordinator(logger)
+
+result, err := coordinator.Generate(ctx, config)
+if err != nil {
+    log.Fatal(err)
+}
+
+generationResult := result.(*models.GenerationResult)
+```
+
+### BootstrapExecutorInterface
+
+Interface for bootstrap tool executors.
+
+**Location:** `pkg/interfaces/executor.go`
+
+```go
+type BootstrapExecutorInterface interface {
+    Execute(ctx context.Context, spec *BootstrapSpec) (*ExecutionResult, error)
+    SupportsComponent(componentType string) bool
+    GetDefaultFlags(componentType string) []string
 }
 ```
 
-### Configuration Manager
+**Methods:**
 
-Handles configuration loading and validation:
+- `Execute` - Execute the bootstrap tool with given specification
+- `SupportsComponent` - Check if executor supports a component type
+- `GetDefaultFlags` - Get default flags for a component type
+
+### StructureMapperInterface
+
+Interface for mapping generated structures.
+
+**Location:** `pkg/interfaces/mapper.go`
 
 ```go
-type ConfigManager interface {
-    LoadConfig(path string) (*models.ProjectConfig, error)
-    SaveConfig(config *models.ProjectConfig, path string) error
-    LoadDefaults() (*models.ProjectConfig, error)
-    GetSetting(key string) (interface{}, error)
-    SetSetting(key string, value interface{}) error
-    ValidateConfig(config *models.ProjectConfig) error
+type StructureMapperInterface interface {
+    Map(ctx context.Context, source, target, componentType string) error
+    UpdateImportPaths(targetPath, componentType string) error
 }
 ```
 
-### Version Manager
+**Methods:**
 
-Provides version management and update capabilities:
+- `Map` - Map generated files to target structure
+- `UpdateImportPaths` - Update import paths in generated files
 
-```go
-type VersionManager interface {
-    GetLatestNodeVersion() (string, error)
-    GetLatestGoVersion() (string, error)
-    GetLatestNPMPackage(packageName string) (string, error)
-    GetLatestGoModule(moduleName string) (string, error)
-    UpdateVersionsConfig() (*models.VersionConfig, error)
-    CheckForUpdates() (*UpdateInfo, error)
-    GetPackageVersions() (map[string]string, error)
-}
-```
+---
 
-### Validation Engine
+## Key Types
 
-Provides comprehensive project validation:
+### ProjectConfig
 
-```go
-type ValidationEngine interface {
-    ValidateProject(path string) (*models.ValidationResult, error)
-    ValidateProjectStructure(path string) (*StructureValidationResult, error)
-    ValidateProjectDependencies(path string) (*DependencyValidationResult, error)
-    ValidateConfiguration(config *models.ProjectConfig) (*ConfigValidationResult, error)
-    FixValidationIssues(path string, issues []ValidationIssue) (*FixResult, error)
-}
-```
+Project configuration structure.
 
-### Audit Engine
-
-Provides security and quality auditing:
-
-```go
-type AuditEngine interface {
-    AuditSecurity(path string) (*SecurityAuditResult, error)
-    AuditCodeQuality(path string) (*QualityAuditResult, error)
-    AuditLicenses(path string) (*LicenseAuditResult, error)
-    AuditPerformance(path string) (*PerformanceAuditResult, error)
-}
-```
-
-## Data Models
-
-### Project Configuration
+**Location:** `pkg/models/project.go`
 
 ```go
 type ProjectConfig struct {
-    Name         string            `json:"name" yaml:"name"`
-    Organization string            `json:"organization" yaml:"organization"`
-    Description  string            `json:"description" yaml:"description"`
-    License      string            `json:"license" yaml:"license"`
-    Author       string            `json:"author,omitempty" yaml:"author,omitempty"`
-    Email        string            `json:"email,omitempty" yaml:"email,omitempty"`
-    Repository   string            `json:"repository,omitempty" yaml:"repository,omitempty"`
-    OutputPath   string            `json:"output_path" yaml:"output_path"`
-    Components   Components        `json:"components" yaml:"components"`
-    Versions     *VersionConfig    `json:"versions,omitempty" yaml:"versions,omitempty"`
-    CustomVars   map[string]interface{} `json:"custom_vars,omitempty" yaml:"custom_vars,omitempty"`
-    GenerateOptions GenerateOptions `json:"generate_options,omitempty" yaml:"generate_options,omitempty"`
+    Name        string              `yaml:"name" json:"name"`
+    Description string              `yaml:"description" json:"description"`
+    OutputDir   string              `yaml:"output_dir" json:"output_dir"`
+    Author      string              `yaml:"author,omitempty" json:"author,omitempty"`
+    Email       string              `yaml:"email,omitempty" json:"email,omitempty"`
+    License     string              `yaml:"license,omitempty" json:"license,omitempty"`
+    Repository  string              `yaml:"repository,omitempty" json:"repository,omitempty"`
+    Components  []ComponentConfig   `yaml:"components" json:"components"`
+    Integration IntegrationConfig   `yaml:"integration" json:"integration"`
+    Options     ProjectOptions      `yaml:"options" json:"options"`
 }
 ```
 
-### Component Selection
+**Fields:**
+
+- `Name` - Project name (required)
+- `Description` - Project description
+- `OutputDir` - Output directory path (required)
+- `Author` - Project author
+- `Email` - Author email
+- `License` - License type (e.g., "MIT", "Apache-2.0")
+- `Repository` - Repository URL
+- `Components` - List of components to generate
+- `Integration` - Integration settings
+- `Options` - Generation options
+
+### ComponentConfig
+
+Component configuration structure.
 
 ```go
-type Components struct {
-    Frontend      FrontendComponents      `json:"frontend" yaml:"frontend"`
-    Backend       BackendComponents       `json:"backend" yaml:"backend"`
-    Mobile        MobileComponents        `json:"mobile" yaml:"mobile"`
-    Infrastructure InfrastructureComponents `json:"infrastructure" yaml:"infrastructure"`
-}
-
-type FrontendComponents struct {
-    MainApp         bool `json:"main_app" yaml:"main_app"`
-    Home            bool `json:"home" yaml:"home"`
-    Admin           bool `json:"admin" yaml:"admin"`
-    SharedComponents bool `json:"shared_components" yaml:"shared_components"`
-}
-
-type BackendComponents struct {
-    API      bool `json:"api" yaml:"api"`
-    Auth     bool `json:"auth" yaml:"auth"`
-    Database bool `json:"database" yaml:"database"`
-}
-
-type MobileComponents struct {
-    Android bool `json:"android" yaml:"android"`
-    iOS     bool `json:"ios" yaml:"ios"`
-    Shared  bool `json:"shared" yaml:"shared"`
-}
-
-type InfrastructureComponents struct {
-    Docker      bool `json:"docker" yaml:"docker"`
-    Kubernetes  bool `json:"kubernetes" yaml:"kubernetes"`
-    Terraform   bool `json:"terraform" yaml:"terraform"`
-    Monitoring  bool `json:"monitoring" yaml:"monitoring"`
+type ComponentConfig struct {
+    Type    string                 `yaml:"type" json:"type"`
+    Name    string                 `yaml:"name" json:"name"`
+    Enabled bool                   `yaml:"enabled" json:"enabled"`
+    Config  map[string]interface{} `yaml:"config" json:"config"`
 }
 ```
 
-### Generation Options
+**Fields:**
+
+- `Type` - Component type (e.g., "nextjs", "go-backend")
+- `Name` - Component name
+- `Enabled` - Whether component is enabled
+- `Config` - Component-specific configuration
+
+### IntegrationConfig
+
+Integration configuration structure.
 
 ```go
-type GenerateOptions struct {
-    Force           bool     `json:"force" yaml:"force"`
-    Minimal         bool     `json:"minimal" yaml:"minimal"`
-    Offline         bool     `json:"offline" yaml:"offline"`
-    UpdateVersions  bool     `json:"update_versions" yaml:"update_versions"`
-    SkipValidation  bool     `json:"skip_validation" yaml:"skip_validation"`
-    BackupExisting  bool     `json:"backup_existing" yaml:"backup_existing"`
-    IncludeExamples bool     `json:"include_examples" yaml:"include_examples"`
-    Templates       []string `json:"templates" yaml:"templates"`
-    DryRun          bool     `json:"dry_run" yaml:"dry_run"`
-    NonInteractive  bool     `json:"non_interactive" yaml:"non_interactive"`
+type IntegrationConfig struct {
+    GenerateDockerCompose bool              `yaml:"generate_docker_compose" json:"generate_docker_compose"`
+    GenerateScripts       bool              `yaml:"generate_scripts" json:"generate_scripts"`
+    APIEndpoints          map[string]string `yaml:"api_endpoints" json:"api_endpoints"`
+    SharedEnvironment     map[string]string `yaml:"shared_environment" json:"shared_environment"`
 }
 ```
 
-### Validation Options
+**Fields:**
+
+- `GenerateDockerCompose` - Generate Docker Compose file
+- `GenerateScripts` - Generate build/run scripts
+- `APIEndpoints` - API endpoint configuration
+- `SharedEnvironment` - Shared environment variables
+
+### ProjectOptions
+
+Generation options structure.
 
 ```go
-type ValidationOptions struct {
-    Verbose        bool     `json:"verbose"`
-    Fix            bool     `json:"fix"`
-    Report         bool     `json:"report"`
-    ReportFormat   string   `json:"report_format"`
-    Rules          []string `json:"rules"`
-    IgnoreWarnings bool     `json:"ignore_warnings"`
-    OutputFile     string   `json:"output_file"`
-    Strict         bool     `json:"strict"`
-    ShowFixes      bool     `json:"show_fixes"`
+type ProjectOptions struct {
+    UseExternalTools bool `yaml:"use_external_tools" json:"use_external_tools"`
+    DryRun           bool `yaml:"dry_run" json:"dry_run"`
+    Verbose          bool `yaml:"verbose" json:"verbose"`
+    CreateBackup     bool `yaml:"create_backup" json:"create_backup"`
+    ForceOverwrite   bool `yaml:"force_overwrite" json:"force_overwrite"`
 }
 ```
 
-### Audit Options
+**Fields:**
+
+- `UseExternalTools` - Use bootstrap tools or force fallback
+- `DryRun` - Preview mode (don't create files)
+- `Verbose` - Enable verbose logging
+- `CreateBackup` - Create backup before overwriting
+- `ForceOverwrite` - Force overwrite existing directory
+
+---
+
+## Models
+
+### GenerationResult
+
+Result of project generation.
 
 ```go
-type AuditOptions struct {
-    Security     bool     `json:"security"`
-    Quality      bool     `json:"quality"`
-    Licenses     bool     `json:"licenses"`
-    Performance  bool     `json:"performance"`
-    OutputFormat string   `json:"output_format"`
-    OutputFile   string   `json:"output_file"`
-    Detailed     bool     `json:"detailed"`
-    FailOnHigh   bool     `json:"fail_on_high"`
-    FailOnMedium bool     `json:"fail_on_medium"`
-    MinScore     float64  `json:"min_score"`
+type GenerationResult struct {
+    Success     bool               `json:"success"`
+    ProjectRoot string             `json:"project_root"`
+    Components  []*ComponentResult `json:"components"`
+    Duration    time.Duration      `json:"duration"`
+    Errors      []error            `json:"errors,omitempty"`
+    Warnings    []string           `json:"warnings,omitempty"`
+    DryRun      bool               `json:"dry_run"`
+    LogFile     string             `json:"log_file,omitempty"`
 }
 ```
+
+**Fields:**
+
+- `Success` - Whether generation succeeded
+- `ProjectRoot` - Root directory of generated project
+- `Components` - Results for each component
+- `Duration` - Total generation time
+- `Errors` - List of errors encountered
+- `Warnings` - List of warnings
+- `DryRun` - Whether this was a dry run
+- `LogFile` - Path to log file
+
+### ComponentResult
+
+Result of component generation.
+
+```go
+type ComponentResult struct {
+    Name        string        `json:"name"`
+    Type        string        `json:"type"`
+    Success     bool          `json:"success"`
+    Method      string        `json:"method"`
+    ToolUsed    string        `json:"tool_used"`
+    OutputPath  string        `json:"output_path"`
+    Duration    time.Duration `json:"duration"`
+    Error       error         `json:"error,omitempty"`
+    Warnings    []string      `json:"warnings,omitempty"`
+    ManualSteps []string      `json:"manual_steps,omitempty"`
+}
+```
+
+**Fields:**
+
+- `Name` - Component name
+- `Type` - Component type
+- `Success` - Whether generation succeeded
+- `Method` - Generation method ("bootstrap" or "fallback")
+- `ToolUsed` - Tool that was used
+- `OutputPath` - Path to generated component
+- `Duration` - Generation time
+- `Error` - Error if generation failed
+- `Warnings` - List of warnings
+- `ManualSteps` - Manual steps required (for fallback)
+
+### ToolCheckResult
+
+Result of tool availability check.
+
+```go
+type ToolCheckResult struct {
+    AllAvailable bool                  `json:"all_available"`
+    Tools        map[string]*ToolInfo  `json:"tools"`
+    Missing      []string              `json:"missing"`
+    Outdated     []string              `json:"outdated"`
+    CheckedAt    time.Time             `json:"checked_at"`
+}
+```
+
+**Fields:**
+
+- `AllAvailable` - Whether all required tools are available
+- `Tools` - Information about each tool
+- `Missing` - List of missing tools
+- `Outdated` - List of outdated tools
+- `CheckedAt` - When check was performed
+
+### ToolInfo
+
+Information about a tool.
+
+```go
+type ToolInfo struct {
+    Available        bool   `json:"available"`
+    InstalledVersion string `json:"installed_version,omitempty"`
+    MinVersion       string `json:"min_version,omitempty"`
+    Path             string `json:"path,omitempty"`
+}
+```
+
+**Fields:**
+
+- `Available` - Whether tool is available
+- `InstalledVersion` - Installed version
+- `MinVersion` - Minimum required version
+- `Path` - Path to tool executable
+
+---
 
 ## Usage Examples
 
-### Basic CLI Usage
+### Basic Project Generation
 
 ```go
 package main
 
 import (
-    "fmt"
+    "context"
     "log"
     
-    "github.com/cuesoftinc/open-source-project-generator/pkg/cli"
-    "github.com/cuesoftinc/open-source-project-generator/pkg/config"
-    "github.com/cuesoftinc/open-source-project-generator/pkg/validation"
-)
-
-func main() {
-    // Initialize components
-    configManager := config.NewManager()
-    validator := validation.NewEngine()
-    cliInterface := cli.NewCLI(configManager, validator)
-    
-    // Collect project configuration
-    projectConfig, err := cliInterface.PromptProjectDetails()
-    if err != nil {
-        log.Fatalf("Failed to collect project details: %v", err)
-    }
-    
-    // Validate configuration
-    if err := configManager.ValidateConfig(projectConfig); err != nil {
-        log.Fatalf("Invalid configuration: %v", err)
-    }
-    
-    // Confirm generation
-    if !cliInterface.ConfirmGeneration(projectConfig) {
-        fmt.Println("Generation canceled by user")
-        return
-    }
-}
-```
-
-### Template Processing
-
-```go
-package main
-
-import (
-    "fmt"
-    "log"
-    
-    "github.com/cuesoftinc/open-source-project-generator/pkg/template"
+    "github.com/cuesoftinc/open-source-project-generator/internal/orchestrator"
+    "github.com/cuesoftinc/open-source-project-generator/pkg/logger"
     "github.com/cuesoftinc/open-source-project-generator/pkg/models"
 )
 
 func main() {
-    // Create template engine
-    engine := template.NewEngine()
+    // Create logger
+    log := logger.NewLogger()
     
-    // Register custom functions
-    engine.RegisterFunctions(template.FuncMap{
-        "toUpper": strings.ToUpper,
-        "toLower": strings.ToLower,
-        "replace": strings.ReplaceAll,
-    })
-    
-    // Process template
+    // Create configuration
     config := &models.ProjectConfig{
-        Name: "my-project",
-        Organization: "my-org",
+        Name:      "my-project",
+        OutputDir: "./my-project",
+        Components: []models.ComponentConfig{
+            {
+                Type:    "nextjs",
+                Name:    "web-app",
+                Enabled: true,
+                Config: map[string]interface{}{
+                    "typescript": true,
+                    "tailwind":   true,
+                },
+            },
+        },
+        Integration: models.IntegrationConfig{
+            GenerateDockerCompose: true,
+            GenerateScripts:       true,
+        },
+        Options: models.ProjectOptions{
+            UseExternalTools: true,
+            CreateBackup:     true,
+        },
     }
     
-    content, err := engine.ProcessTemplate("templates/package.json.tmpl", config)
+    // Create coordinator
+    coordinator := orchestrator.NewProjectCoordinator(log)
+    
+    // Generate project
+    result, err := coordinator.Generate(context.Background(), config)
     if err != nil {
-        log.Fatalf("Failed to process template: %v", err)
+        log.Fatal("Generation failed:", err)
     }
     
-    fmt.Printf("Generated content: %s\n", string(content))
-}
-```
-
-### Configuration Management
-
-```go
-package main
-
-import (
-    "fmt"
-    "log"
-    
-    "github.com/cuesoftinc/open-source-project-generator/pkg/config"
-    "github.com/cuesoftinc/open-source-project-generator/pkg/models"
-)
-
-func main() {
-    // Create config manager
-    configManager := config.NewManager()
-    
-    // Load default configuration
-    defaultConfig, err := configManager.LoadDefaults()
-    if err != nil {
-        log.Fatalf("Failed to load defaults: %v", err)
-    }
-    
-    // Load configuration from file
-    config, err := configManager.LoadConfig("project.yaml")
-    if err != nil {
-        log.Fatalf("Failed to load config: %v", err)
-    }
-    
-    // Merge configurations
-    mergedConfig := configManager.MergeConfigs(defaultConfig, config)
-    
-    // Validate configuration
-    if err := configManager.ValidateConfig(mergedConfig); err != nil {
-        log.Fatalf("Invalid configuration: %v", err)
-    }
-    
-    fmt.Printf("Configuration loaded: %s\n", mergedConfig.Name)
-}
-```
-
-### Version Management
-
-```go
-package main
-
-import (
-    "fmt"
-    "log"
-    
-    "github.com/cuesoftinc/open-source-project-generator/pkg/version"
-)
-
-func main() {
-    // Create version manager
-    versionManager := version.NewManager()
-    
-    // Get latest Node.js version
-    nodeVersion, err := versionManager.GetLatestNodeVersion()
-    if err != nil {
-        log.Fatalf("Failed to get Node.js version: %v", err)
-    }
-    
-    // Get latest NPM package version
-    reactVersion, err := versionManager.GetLatestNPMPackage("react")
-    if err != nil {
-        log.Fatalf("Failed to get React version: %v", err)
-    }
-    
-    fmt.Printf("Latest Node.js: %s\n", nodeVersion)
-    fmt.Printf("Latest React: %s\n", reactVersion)
-}
-```
-
-### Project Validation
-
-```go
-package main
-
-import (
-    "fmt"
-    "log"
-    
-    "github.com/cuesoftinc/open-source-project-generator/pkg/validation"
-)
-
-func main() {
-    // Create validation engine
-    validator := validation.NewEngine()
-    
-    // Validate project
-    result, err := validator.ValidateProject("./my-project")
-    if err != nil {
-        log.Fatalf("Failed to validate project: %v", err)
-    }
-    
-    if result.Valid {
-        fmt.Println("✅ Project validation passed")
+    // Check result
+    genResult := result.(*models.GenerationResult)
+    if genResult.Success {
+        log.Info("Project generated successfully!")
+        log.Info("Location:", genResult.ProjectRoot)
     } else {
-        fmt.Printf("⚠️ Project validation failed with %d issues\n", len(result.Issues))
-        for _, issue := range result.Issues {
-            fmt.Printf("- %s: %s\n", issue.Severity, issue.Message)
-        }
+        log.Error("Generation failed with errors:", genResult.Errors)
     }
 }
 ```
 
-### Security Auditing
+### Dry Run
 
 ```go
-package main
+// Preview what would be generated
+result, err := coordinator.DryRun(context.Background(), config)
+if err != nil {
+    log.Fatal(err)
+}
 
-import (
-    "fmt"
-    "log"
-    
-    "github.com/cuesoftinc/open-source-project-generator/pkg/audit"
-)
-
-func main() {
-    // Create audit engine
-    auditEngine := audit.NewEngine()
-    
-    // Perform security audit
-    result, err := auditEngine.AuditSecurity("./my-project")
-    if err != nil {
-        log.Fatalf("Failed to audit project: %v", err)
-    }
-    
-    fmt.Printf("Security Score: %.1f/10\n", result.Score)
-    fmt.Printf("Vulnerabilities Found: %d\n", len(result.Vulnerabilities))
-    
-    for _, vuln := range result.Vulnerabilities {
-        fmt.Printf("- %s (Severity: %s)\n", vuln.Description, vuln.Severity)
-    }
+previewResult := result.(*models.PreviewResult)
+log.Info("Would generate", len(previewResult.Components), "components")
+for _, comp := range previewResult.Components {
+    log.Info("Component:", comp.Name, "Type:", comp.Type)
 }
 ```
+
+### Check Tool Availability
+
+```go
+// Create tool discovery
+toolDiscovery := orchestrator.NewToolDiscovery(log)
+
+// Check specific tools
+tools := []string{"npx", "go", "gradle"}
+result, err := toolDiscovery.CheckRequirements(tools)
+if err != nil {
+    log.Fatal(err)
+}
+
+toolResult := result.(*models.ToolCheckResult)
+if toolResult.AllAvailable {
+    log.Info("All tools available!")
+} else {
+    log.Warn("Missing tools:", toolResult.Missing)
+}
+```
+
+### Custom Executor
+
+```go
+package bootstrap
+
+import (
+    "context"
+    "github.com/cuesoftinc/open-source-project-generator/pkg/logger"
+)
+
+type CustomExecutor struct {
+    *BaseExecutor
+}
+
+func NewCustomExecutor(log *logger.Logger) *CustomExecutor {
+    return &CustomExecutor{
+        BaseExecutor: &BaseExecutor{logger: log},
+    }
+}
+
+func (ce *CustomExecutor) Execute(ctx context.Context, spec *BootstrapSpec) (*ExecutionResult, error) {
+    // Custom implementation
+    ce.logger.Info("Executing custom tool")
+    
+    // Build command
+    spec.Tool = "custom-tool"
+    spec.Flags = []string{"create", spec.Config["name"].(string)}
+    
+    // Execute
+    return ce.BaseExecutor.Execute(ctx, spec)
+}
+
+func (ce *CustomExecutor) SupportsComponent(componentType string) bool {
+    return componentType == "custom"
+}
+
+func (ce *CustomExecutor) GetDefaultFlags(componentType string) []string {
+    return []string{"--default"}
+}
+```
+
+---
 
 ## Error Handling
 
 ### Error Types
 
-```go
-// Configuration errors
-type ConfigError struct {
-    Field   string
-    Value   string
-    Message string
-}
+The generator uses typed errors for better error handling:
 
-// Template errors
-type TemplateError struct {
-    Template string
-    Line     int
-    Message  string
-}
+```go
+import "github.com/cuesoftinc/open-source-project-generator/pkg/errors"
+
+// Configuration errors
+errors.NewConfigError("invalid configuration", err)
+
+// Tool errors
+errors.NewToolError("tool not found", err)
+
+// File system errors
+errors.NewFileSystemError("permission denied", err)
 
 // Validation errors
-type ValidationError struct {
-    File     string
-    Rule     string
-    Severity string
-    Message  string
-}
+errors.NewValidationError("invalid input", err)
+
+// Security errors
+errors.NewSecurityError("path traversal detected", err)
 ```
 
-### Error Handling Patterns
+### Error Handling Example
 
 ```go
-// Handle specific error types
-if configErr, ok := err.(*ConfigError); ok {
-    fmt.Printf("Configuration error in field %s: %s\n", configErr.Field, configErr.Message)
-}
-
-// Wrap errors with context
+result, err := coordinator.Generate(ctx, config)
 if err != nil {
-    return fmt.Errorf("failed to process template %s: %w", templatePath, err)
-}
-
-// Validate and handle multiple errors
-if result, err := validator.ValidateProject(path); err != nil {
-    return err
-} else if !result.Valid {
-    for _, issue := range result.Issues {
-        if issue.Severity == "error" {
-            return fmt.Errorf("validation error: %s", issue.Message)
-        }
+    switch e := err.(type) {
+    case *errors.ConfigError:
+        log.Error("Configuration error:", e)
+        // Handle configuration error
+    case *errors.ToolError:
+        log.Error("Tool error:", e)
+        // Handle tool error
+    case *errors.FileSystemError:
+        log.Error("File system error:", e)
+        // Handle file system error
+    default:
+        log.Error("Unknown error:", e)
     }
+    return
 }
 ```
 
-## Performance Considerations
-
-### Caching
-
-The API implements multiple levels of caching:
-
-- **Template Caching**: Parsed templates are cached for reuse
-- **Version Caching**: Package versions are cached to reduce registry calls
-- **Render Caching**: Rendered template results are cached
-
-### Parallel Processing
-
-Where appropriate, operations are parallelized:
+### Checking Specific Errors
 
 ```go
-// Process multiple templates concurrently
-var wg sync.WaitGroup
-for _, template := range templates {
-    wg.Add(1)
-    go func(tmpl string) {
-        defer wg.Done()
-        processTemplate(tmpl, config)
-    }(template)
-}
-wg.Wait()
-```
+import "errors"
 
-## Security Considerations
-
-### Input Validation
-
-All user input is validated:
-
-```go
-// Validate project name
-if !isValidProjectName(config.Name) {
-    return fmt.Errorf("invalid project name: %s", config.Name)
+if errors.Is(err, ErrToolNotFound) {
+    log.Warn("Tool not found, using fallback")
+    // Use fallback generator
 }
 
-// Sanitize file paths
-outputPath := filepath.Clean(config.OutputPath)
-if !isWithinAllowedPath(outputPath) {
-    return fmt.Errorf("output path not allowed: %s", outputPath)
+if errors.Is(err, ErrConfigInvalid) {
+    log.Error("Invalid configuration")
+    // Show validation errors
 }
 ```
 
-### Template Security
+---
 
-Template processing includes security measures:
+## Logger Interface
 
-- Restricted template functions
-- Path traversal prevention
-- Input sanitization
-- Secure defaults
-
-### Dependency Security
-
-Version management includes security scanning:
+### Logger Methods
 
 ```go
-// Check for security vulnerabilities
-vulnerabilities, err := versionManager.CheckSecurity("package-name", "1.0.0")
+type Logger interface {
+    Debug(msg string, args ...interface{})
+    Info(msg string, args ...interface{})
+    Warn(msg string, args ...interface{})
+    Error(msg string, args ...interface{})
+    Fatal(msg string, args ...interface{})
+    SetLevel(level LogLevel)
+}
+```
+
+### Logger Usage
+
+```go
+log := logger.NewLogger()
+
+// Set log level
+log.SetLevel(logger.DebugLevel)
+
+// Log messages
+log.Debug("Debug message", "key", "value")
+log.Info("Info message")
+log.Warn("Warning message")
+log.Error("Error message", "error", err)
+```
+
+---
+
+## Configuration Validation
+
+### Validator Interface
+
+```go
+type Validator interface {
+    Validate(config *models.ProjectConfig) error
+    ApplyDefaults(config *models.ProjectConfig) error
+}
+```
+
+### Validator Usage
+
+```go
+validator := config.NewValidator()
+
+// Validate configuration
+if err := validator.Validate(config); err != nil {
+    log.Fatal("Validation failed:", err)
+}
+
+// Apply defaults
+if err := validator.ApplyDefaults(config); err != nil {
+    log.Fatal("Failed to apply defaults:", err)
+}
+```
+
+---
+
+## Security
+
+### Input Sanitization
+
+```go
+import "github.com/cuesoftinc/open-source-project-generator/pkg/security"
+
+sanitizer := security.NewSanitizer()
+
+// Sanitize path
+cleanPath, err := sanitizer.SanitizePath(userPath)
 if err != nil {
-    return fmt.Errorf("security check failed: %w", err)
+    log.Fatal("Invalid path:", err)
 }
 
-if len(vulnerabilities) > 0 {
-    for _, vuln := range vulnerabilities {
-        fmt.Printf("Security vulnerability: %s (severity: %s)\n", vuln.Description, vuln.Severity)
-    }
+// Sanitize project name
+cleanName, err := sanitizer.SanitizeName(userName)
+if err != nil {
+    log.Fatal("Invalid name:", err)
 }
 ```
 
-## Testing
-
-### Unit Tests
+### Path Validation
 
 ```go
-func TestTemplateProcessing(t *testing.T) {
-    engine := template.NewEngine()
-    config := &models.ProjectConfig{
-        Name: "test-project",
-    }
-    
-    content, err := engine.ProcessTemplate("test.tmpl", config)
-    assert.NoError(t, err)
-    assert.Contains(t, string(content), "test-project")
+// Validate path is safe
+if err := security.ValidatePath(path); err != nil {
+    log.Fatal("Unsafe path:", err)
+}
+
+// Check for path traversal
+if security.HasPathTraversal(path) {
+    log.Fatal("Path traversal detected")
 }
 ```
 
-### Integration Tests
+---
 
-```go
-func TestProjectGeneration(t *testing.T) {
-    // Create temporary directory
-    tempDir := t.TempDir()
-    
-    // Generate project
-    err := generateProject(tempDir, testConfig)
-    assert.NoError(t, err)
-    
-    // Validate generated files
-    assert.FileExists(t, filepath.Join(tempDir, "package.json"))
-    assert.FileExists(t, filepath.Join(tempDir, "README.md"))
-}
-```
+## See Also
 
-This API reference provides the essential information needed for developers to integrate with and extend the Open Source Project Generator.
+- [Architecture](ARCHITECTURE.md) - System architecture
+- [Adding Tools](ADDING_TOOLS.md) - Adding new bootstrap tools
+- [Getting Started](GETTING_STARTED.md) - Installation and usage
+- [Configuration Guide](CONFIGURATION.md) - Configuration options

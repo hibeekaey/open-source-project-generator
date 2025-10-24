@@ -29,7 +29,7 @@ This project and everyone participating in it is governed by our Code of Conduct
 - 📝 **Documentation**: Improve our documentation
 - 🧪 **Testing**: Add or improve tests
 - 💻 **Code**: Submit bug fixes or new features
-- 🎨 **Templates**: Add or improve project templates
+- 🔧 **Tools**: Add support for new bootstrap tools
 
 ### Before You Start
 
@@ -65,8 +65,8 @@ Ensure you have the required tools installed:
 2. **Environment Setup**
 
    ```bash
-   # Set up development environment
-   make setup
+   # Install dependencies
+   go mod download
    
    # Build the generator
    make build
@@ -96,9 +96,15 @@ git checkout -b feature/your-feature-name
 # Make your changes
 # ... edit files ...
 
-# Test your changes
-make test
-make lint
+# Run all checks (recommended before committing)
+make check
+
+# This runs: fmt, vet, lint, test
+
+# Or run individual checks
+make test            # Run tests
+make lint            # Run linter
+make security-scan   # Run security scans
 
 # Commit your changes
 git add .
@@ -109,6 +115,37 @@ git push origin feature/your-feature-name
 
 # Create a Pull Request on GitHub
 ```
+
+### Docker Compose Development Workflow
+
+Use Docker Compose for a containerized development environment:
+
+```bash
+# Start development environment
+docker compose --profile development up -d generator-dev
+
+# Enter interactive shell
+docker compose --profile development run --rm generator-dev bash
+
+# Inside the container, you can:
+make build
+make test
+make check
+
+# Run tests in containers
+docker compose --profile testing up generator-test
+
+# Run security scans in containers
+docker compose --profile security up generator-security
+
+# Run linting in containers
+docker compose --profile lint up generator-lint
+
+# Stop all services
+docker compose down
+```
+
+See [docker-compose.yml](docker-compose.yml) for all available profiles and services.
 
 ## Contributing Guidelines
 
@@ -134,12 +171,12 @@ git push origin feature/your-feature-name
 - Fix typos and grammar
 - Add examples and tutorials
 
-#### 🎨 Templates
+#### 🔧 Bootstrap Tools
 
-- Add new project templates
-- Improve existing templates
-- Update templates to latest versions
-- Add template validation
+- Add support for new CLI tools (Vite, Angular, etc.)
+- Improve existing tool executors
+- Add fallback generators for tools
+- Update tool version requirements
 
 #### 🧪 Tests
 
@@ -160,11 +197,13 @@ git push origin feature/your-feature-name
 
 ### Before Submitting
 
-- [ ] **Tests Pass**: Ensure all tests pass locally
-- [ ] **Linting**: Code passes all linting checks
+- [ ] **All Checks Pass**: Run all checks (`make check`)
+- [ ] **Tests Pass**: Ensure all tests pass locally (`make test`)
+- [ ] **Security Scans**: Run security scans if needed (`make security-scan`)
 - [ ] **Documentation**: Update relevant documentation
-- [ ] **Templates**: Test template generation if templates were modified
+- [ ] **Tool Testing**: Test tool executors if bootstrap code was modified
 - [ ] **Rebase**: Rebase your branch on the latest main branch
+- [ ] **Docker**: Test Docker builds if Dockerfiles were modified (`make docker-build`)
 
 ### PR Checklist
 
@@ -178,7 +217,7 @@ git push origin feature/your-feature-name
 - [ ] I have updated the documentation accordingly
 - [ ] My commits are properly formatted and descriptive
 - [ ] I have rebased my branch on the latest main branch
-- [ ] I have tested template generation if templates were modified
+- [ ] I have tested tool executors if bootstrap code was modified
 
 ## Description
 
@@ -190,7 +229,7 @@ Brief description of changes...
 - [ ] New feature (non-breaking change which adds functionality)
 - [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
 - [ ] Documentation update
-- [ ] Template update
+- [ ] Bootstrap tool update
 - [ ] Performance improvement
 - [ ] Code refactoring
 
@@ -198,19 +237,20 @@ Brief description of changes...
 
 Describe the tests you ran and how to reproduce them...
 
-## Template Testing (if applicable)
+## Tool Executor Testing (if applicable)
 
-If you modified templates, describe how you tested them:
-- [ ] Generated sample projects with modified templates
+If you modified tool executors, describe how you tested them:
+- [ ] Generated sample projects with modified executors
 - [ ] Verified generated projects build successfully
 - [ ] Tested with different component combinations
+- [ ] Tested fallback generation when tool is unavailable
 ```
 
 ### Review Process
 
 1. **Automated Checks**: All PRs must pass automated CI checks
 2. **Code Review**: At least one maintainer must review and approve
-3. **Template Testing**: Template changes are tested with sample generation
+3. **Tool Testing**: Tool executor changes are tested with sample generation
 4. **Merge**: Approved PRs are merged by maintainers
 
 ## Coding Standards
@@ -229,13 +269,12 @@ If you modified templates, describe how you tested them:
 
 ```go
 // Use clear, descriptive names
-type TemplateEngine struct {
-    versionManager interfaces.VersionManager
-    logger         *slog.Logger
+type BootstrapExecutor struct {
+    logger *logger.Logger
 }
 
 // Document public functions
-// ProcessTemplate processes a template file with the provided configuration
+// Execute runs the bootstrap tool with the provided configuration
 func (e *TemplateEngine) ProcessTemplate(templatePath string, config *models.ProjectConfig) error {
     if err := e.validateTemplate(templatePath); err != nil {
         return fmt.Errorf("template validation failed: %w", err)
@@ -256,33 +295,76 @@ func (e *TemplateEngine) ProcessTemplate(templatePath string, config *models.Pro
 
 #### File Organization
 
+The project follows a tool-orchestration architecture with clear separation of concerns:
+
 ```text
 cmd/                    # Command-line applications
 └── generator/          # Main generator CLI
+    └── main.go        # Main entry point with Cobra commands
 
 internal/               # Private application code
-├── app/               # Application logic
-├── config/            # Configuration management
-└── container/         # Dependency injection
+├── config/            # Configuration parsing and validation
+│   ├── parser.go      # YAML/JSON parsing
+│   ├── validator.go   # Configuration validation
+│   ├── schema.go      # Configuration schema
+│   ├── nextjs_validator.go    # Next.js validation
+│   ├── go_validator.go        # Go validation
+│   ├── android_validator.go   # Android validation
+│   └── ios_validator.go       # iOS validation
+├── generator/         # Component generators
+│   ├── bootstrap/     # Bootstrap tool executors
+│   │   ├── executor.go    # Base executor
+│   │   ├── nextjs.go      # Next.js executor (uses create-next-app)
+│   │   ├── golang.go      # Go executor (uses go mod init)
+│   │   ├── android.go     # Android executor (uses Gradle)
+│   │   └── ios.go         # iOS executor (uses Xcode)
+│   ├── fallback/      # Fallback generators
+│   │   ├── generator.go   # Generator interface and registry
+│   │   ├── android.go     # Android fallback
+│   │   ├── ios.go         # iOS fallback
+│   │   └── templates/     # Minimal templates
+│   └── mapper/        # Structure mapping
+│       └── structure.go   # Maps generated output to standard layout
+└── orchestrator/      # Project generation orchestration
+    ├── coordinator.go         # Main coordinator
+    ├── tool_discovery.go      # Tool detection and version checking
+    ├── executor_registry.go   # Executor registry
+    ├── integration.go         # Component integration
+    ├── rollback.go           # Rollback on failure
+    ├── progress.go           # Progress tracking
+    └── cache/                # Tool metadata caching
+        └── manager.go        # Cache management
 
 pkg/                   # Public interfaces and libraries
-├── cli/               # CLI interface
-├── filesystem/        # File system operations
-├── interfaces/        # Core interfaces
-├── models/           # Data models
-├── template/         # Template processing
-├── validation/       # Validation engine
-├── version/          # Version management
-├── security/         # Security utilities
-├── ui/               # User interface components
-└── utils/            # Utility functions
-
-pkg/template/templates/ # Template files
-├── base/             # Base project templates
-├── frontend/         # Frontend templates
-├── backend/          # Backend templates
-├── mobile/           # Mobile templates
-└── infrastructure/   # Infrastructure templates
+├── cli/              # CLI utilities and error types
+│   ├── exit_codes.go      # Exit code definitions
+│   ├── diagnostics.go     # Error diagnostics
+│   ├── suggestion_engine.go # Error suggestions
+│   └── interactive/       # Interactive prompts
+│       └── prompter.go    # User prompts
+├── filesystem/       # File system operations
+│   ├── operations.go     # File operations
+│   └── backup.go         # Backup and restore
+├── interfaces/       # Core interfaces
+│   ├── executor.go       # Executor interface
+│   ├── generator.go      # Generator interface
+│   └── mapper.go         # Mapper interface
+├── logger/           # Logging infrastructure
+│   ├── logger.go         # Logger implementation
+│   └── formatter.go      # Output formatting
+├── models/           # Data structures
+│   ├── project.go        # Project configuration
+│   ├── result.go         # Generation results
+│   └── tool.go           # Tool metadata
+├── security/         # Security operations
+│   ├── sanitizer.go      # Path sanitization
+│   ├── scanner.go        # Security scanning
+│   ├── validator.go      # Input validation
+│   └── tool_validator.go # Tool command validation
+└── testhelpers/      # Test utilities
+    └── environment.go    # Test environment setup
+├── utils/            # Utility functions
+└── constants/        # Application constants
 ```
 
 ### Template Standards
@@ -314,7 +396,7 @@ Key requirements for template changes:
 - All used functions must have corresponding import statements
 - Follow Go import organization conventions (standard library, third-party, local)
 - Run validation tools before committing: `go run cmd/generator/main.go template validate`
-- Test template compilation with sample data: `go run cmd/generator/main.go generate --config configs/test-config.yaml --output test-validation`
+- Test template compilation with sample data: `go run cmd/generator/main.go generate --config configs/minimal.yaml --output test-validation`
 
 ### Code Documentation Standards
 
@@ -322,6 +404,9 @@ Key requirements for template changes:
 - **Function Documentation**: Document all public functions
 - **README Updates**: Update README for user-facing changes
 - **Template Documentation**: Document template variables and usage
+- **Security Documentation**: Update SECURITY.md for security-related changes
+- **Distribution Documentation**: Update DISTRIBUTION.md for build/release changes
+- **Docker Documentation**: Update docker-compose.yml comments for service changes
 
 ### Git Standards
 
@@ -385,7 +470,7 @@ func TestTemplateEngine_ProcessTemplate(t *testing.T) {
     }
     
     // Execute
-    err := engine.ProcessTemplate("templates/test.tmpl", config)
+    result, err := executor.Execute(ctx, spec)
     
     // Assert
     assert.NoError(t, err)
@@ -421,23 +506,38 @@ func TestProjectGeneration_FullWorkflow(t *testing.T) {
 ### Running Tests
 
 ```bash
-# Run all tests
+# Run all tests with coverage
 make test
 
-# Run tests with coverage
-make test-coverage
+# Run tests with specific flags
+make test TEST_FLAGS="-v -race"
 
-# Run specific test packages
-go test ./pkg/template/...
+# Run tests with integration tags
+make test TEST_FLAGS="-tags=integration"
+go test ./internal/generator/...
 
-# Run integration tests
-go test ./test/integration/...
+# Run all security scans (gosec, govulncheck, staticcheck)
+make security-scan
+
+# Run linting
+make lint
+
+# Format code
+make fmt
+
+# Run go vet
+make vet
+
+# Using Docker Compose for testing
+docker compose --profile testing up generator-test
+docker compose --profile testing up generator-test-coverage
+docker compose --profile testing up generator-test-integration
 
 # Validate templates (recommended before committing template changes)
-go run cmd/generator/main.go template validate
+./bin/generator template validate
 
 # Generate test project to verify templates
-go run cmd/generator/main.go generate --config configs/test-config.yaml --output test-validation
+./bin/generator generate --config configs/minimal.yaml --output test-validation
 ```
 
 ## Documentation
@@ -487,9 +587,22 @@ When requesting features, please include:
 
 Instead, please report them responsibly:
 
-- **Email**: <security@your-org.com>
 - **Security Advisory**: Use GitHub's private vulnerability reporting
-- **Details**: See our Security Policy for full details
+- **Details**: See [SECURITY.md](SECURITY.md) for complete security policy and reporting guidelines
+
+### Security Best Practices for Contributors
+
+When contributing code, follow these security practices:
+
+- **Path Sanitization**: Always use `pkg/security/SanitizePath()` for user-provided paths
+- **Categorized Errors**: Use error types from `pkg/cli` package
+- **No Code Execution**: Never execute user-provided code
+- **Input Validation**: Validate all user inputs through `internal/config/` validators
+- **Tool Execution**: Validate all tool commands before execution
+- **File Permissions**: Use restrictive permissions (0600 for files, 0750 for directories)
+- **Security Scanning**: Run `make security-scan` before submitting PRs
+
+See [SECURITY.md](SECURITY.md) for detailed security guidelines.
 
 ## Community
 
@@ -506,7 +619,84 @@ Instead, please report them responsibly:
 - **Be Constructive**: Provide helpful feedback and suggestions
 - **Be Patient**: Remember that everyone is learning and growing
 
+## Modular Development Guidelines
+
+### Working with the Refactored Structure
+
+The codebase has been refactored into a modular architecture. Understanding this structure is crucial for effective contributions.
+
+#### Adding New Features
+
+1. **Identify the Package**: Determine which package the feature belongs to based on the modular structure
+2. **Check Interfaces**: Ensure the feature fits existing interfaces in `pkg/interfaces/` or create new ones
+3. **Follow Patterns**: Use existing patterns for similar functionality within the same package
+4. **Maintain Modularity**: Keep components focused and avoid cross-cutting concerns
+5. **Add Tests**: Include comprehensive tests for new components
+6. **Update Documentation**: Document new functionality and interfaces
+
+#### Modifying Existing Features
+
+1. **Locate Components**: Use the modular package structure to find relevant code quickly
+2. **Check Dependencies**: Understand component dependencies through interfaces in `pkg/interfaces/`
+3. **Respect Boundaries**: Ensure changes don't violate component boundaries
+4. **Test Changes**: Ensure changes don't break existing functionality
+5. **Update Tests**: Modify tests to reflect changes, including component-specific tests
+6. **Validate Integration**: Run integration tests to ensure system coherence
+
+#### Package-Specific Development
+
+**CLI Development** (`cmd/generator/` and `pkg/cli/`):
+
+- **Main Entry**: Main CLI logic in `cmd/generator/main.go`
+- **Error Types**: Custom error types in `pkg/cli/exit_codes.go`
+- **Diagnostics**: Error diagnostics in `pkg/cli/diagnostics.go`
+- **Suggestions**: Error suggestions in `pkg/cli/suggestion_engine.go`
+- **Interactive**: Interactive prompts in `pkg/cli/interactive/`
+
+**Bootstrap Tool Development** (`internal/generator/bootstrap/`):
+
+- **Executors**: Tool executors in `internal/generator/bootstrap/` (~200 lines max per executor)
+- **Base Executor**: Common functionality in `executor.go`
+- **Tool-Specific**: Component executors (nextjs.go, golang.go, android.go, ios.go)
+- **Testing**: Comprehensive tests for each executor
+
+**Fallback Generator Development** (`internal/generator/fallback/`):
+
+- **Generators**: Fallback generators for when tools are unavailable
+- **Android**: Android fallback in `android.go`
+- **iOS**: iOS fallback in `ios.go`
+- **Templates**: Minimal templates in `templates/` directory
+
+**Configuration Development** (`internal/config/`):
+
+- **Parser**: Configuration parsing in `parser.go`
+- **Validator**: Configuration validation in `validator.go`
+- **Component Validators**: Component-specific validation (nextjs_validator.go, go_validator.go, etc.)
+- **Schema**: Configuration schema in `schema.go`
+
+#### Best Practices for Modular Development
+
+- **Keep Files Small**: Target maximum 1,000 lines per file (strictly enforced)
+- **Single Responsibility**: Each file should have one clear, focused purpose
+- **Interface First**: Design interfaces in `pkg/interfaces/` before implementations
+- **Component Isolation**: Ensure components can be tested and developed independently
+- **Clear Dependencies**: Use dependency injection through interfaces
+- **Test Coverage**: Maintain high test coverage for all components
+- **Documentation**: Keep documentation up-to-date with changes
+- **Package Cohesion**: Keep related functionality within the same package
+- **Minimal Coupling**: Minimize dependencies between packages
+
+For detailed information about the package structure, see the [Package Structure Documentation](docs/PACKAGE_STRUCTURE.md) and [Migration Guide](docs/MIGRATION_GUIDE.md).
+
 ## Development Resources
+
+### Project Documentation
+
+- **[README.md](README.md)**: Project overview and quick start
+- **[SECURITY.md](SECURITY.md)**: Security practices and reporting
+- **[DISTRIBUTION.md](DISTRIBUTION.md)**: Distribution and release process
+- **[env.example](env.example)**: Environment variable reference
+- **[docker-compose.yml](docker-compose.yml)**: Docker orchestration with profiles
 
 ### Useful Links
 
@@ -514,46 +704,152 @@ Instead, please report them responsibly:
 - **Cobra CLI**: [https://cobra.dev/](https://cobra.dev/)
 - **Go Templates**: [https://pkg.go.dev/text/template](https://pkg.go.dev/text/template)
 - **Testing**: [https://golang.org/doc/tutorial/add-a-test](https://golang.org/doc/tutorial/add-a-test)
+- **Docker Compose**: [https://docs.docker.com/compose/](https://docs.docker.com/compose/)
+- **Conventional Commits**: [https://www.conventionalcommits.org/](https://www.conventionalcommits.org/)
 
 ### Project Structure
 
 Understanding the project structure helps with contributions:
 
-- **`cmd/`**: Command-line applications
-- **`internal/`**: Private application code
-- **`pkg/`**: Public interfaces and libraries
-- **`pkg/template/templates/`**: Project templates
-- **`configs/`**: Configuration examples
-- **`scripts/`**: Build and utility scripts
+**Core Directories:**
+
+```text
+.
+├── cmd/                    # Command-line applications
+│   └── generator/          # Main generator CLI (main.go)
+├── internal/               # Private application code
+│   ├── config/            # Configuration parsing and validation
+│   ├── generator/         # Component generators
+│   │   ├── bootstrap/     # Bootstrap tool executors (nextjs, go, android, ios)
+│   │   ├── fallback/      # Fallback generators when tools unavailable
+│   │   └── mapper/        # Structure mapping
+│   └── orchestrator/      # Project generation orchestration
+│       └── cache/         # Tool metadata caching
+├── pkg/                   # Public interfaces and libraries
+│   ├── cli/              # CLI utilities and error types
+│   │   └── interactive/  # Interactive prompts
+│   ├── filesystem/       # File operations
+│   ├── interfaces/       # Core interfaces
+│   ├── logger/           # Logging infrastructure
+│   ├── models/           # Data structures
+│   ├── security/         # Security operations
+│   └── testhelpers/      # Test utilities
+├── configs/              # Example configuration files
+├── docs/                 # Documentation
+├── scripts/              # Build and utility scripts
+└── .github/              # GitHub workflows and templates
+```
+
 - **`docs/`**: Documentation files
 - **`output/`**: Generated project output
+
+**Docker Files:**
+
+- **`Dockerfile`**: Production image (alpine:3.22, ~39 MB, UID 1001)
+- **`Dockerfile.dev`**: Development image (golang:1.25-alpine, ~500 MB, UID 1001)
+- **`Dockerfile.build`**: Build image (ubuntu:25.10, ~1.5 GB, UID 1001)
+- **`docker-compose.yml`**: Multi-profile orchestration (production, development, testing, build, lint, security)
+
+**Configuration Files:**
+
+- **`Makefile`**: Build automation and commands
+- **`go.mod`**: Go dependencies (Go 1.25.0)
+- **`env.example`**: Environment variable reference
+
+**Documentation:**
+
+- **`README.md`**: Project overview and quick start
+- **`CONTRIBUTING.md`**: This file - contribution guidelines
+- **`SECURITY.md`**: Security practices and reporting
+- **`DISTRIBUTION.md`**: Distribution and release process
+- **`LICENSE`**: MIT License
+
+**Important Notes:**
+
+- All Docker containers use **UID 1001** for consistency
+- Use `pkg/security/` for path sanitization
+- Use `pkg/cli` error types for categorized error handling
+- Follow the modular architecture patterns
 
 ## FAQ
 
 ### Common Questions
 
-**Q: How do I add a new template?**
-A: Create the template files in the appropriate `templates/` subdirectory, following existing patterns. Include proper variable substitution and test the template generation.
+**Q: How do I add support for a new tool?**
+A: Create a new executor in `internal/generator/bootstrap/`, register it in the tool discovery system, and add tests. See `docs/ADDING_TOOLS.md` for detailed instructions.
 
-**Q: How do I test template changes?**
-A: Use `make test` to run unit tests, validate templates with `go run scripts/validate-templates/main.go --check-imports`, then test template generation manually with `./bin/generator generate --dry-run`.
+**Q: How do I test tool executor changes?**
+A: Run `make test` for unit tests, then test template generation manually with `./bin/generator generate` or use Docker Compose: `docker compose --profile testing up generator-test`.
 
 **Q: What should I work on as a first contribution?**
-A: Look for issues labeled `good first issue` or `help wanted`. Template improvements are often good starting points.
+A: Look for issues labeled `good first issue` or `help wanted`. Template improvements, documentation updates, and test additions are often good starting points.
 
 **Q: How do I update package versions in templates?**
-A: Update the version variables in template files and test that generated projects build successfully with the new versions.
+A: Update the version variables in template files and test that generated projects build successfully with the new versions. Run `make test` and generate a test project to verify.
 
 **Q: Can I add support for a new technology stack?**
 A: Yes! Create an issue first to discuss the approach, then add the necessary templates and update the CLI to support the new stack.
+
+**Q: How do I work with Docker for development?**
+A: Use `docker compose --profile development run --rm generator-dev bash` to get an interactive shell with all development tools. All containers use UID 1001.
+
+**Q: What security practices should I follow?**
+A: Always use `pkg/security/SanitizePath()` for user paths, return categorized errors from `pkg/cli` error types, and run `make security-scan` before submitting PRs. See [SECURITY.md](SECURITY.md) for details.
+
+**Q: How do I run CI checks locally?**
+A: Run `make check` for quick checks (fmt, vet, lint, test) or `make ci` for the full CI pipeline. For release validation, run `make release`.
+
+**Q: What's the difference between the three Dockerfiles?**
+A: `Dockerfile` is for production (39 MB), `Dockerfile.dev` is for development with all tools (500 MB), and `Dockerfile.build` is for creating packages (1.5 GB). All use UID 1001.
 
 ## Thank You
 
 Thank you for contributing to the Open Source Project Generator! Your contributions help developers worldwide create better projects with modern best practices.
 
+## Quick Command Reference
+
+### Essential Commands
+
+```bash
+# Development
+make build              # Build for current platform
+make test               # Run tests with coverage
+make check              # Run all checks (fmt, vet, lint, test)
+make fmt                # Format code
+make dev                # Run in development mode
+
+# Quality Assurance
+make lint               # Run linter (auto-installs if needed)
+make security-scan      # Run all security scans (auto-installs tools)
+make ci                 # Run full CI pipeline
+make release            # Full release validation
+
+# Docker Compose
+docker compose --profile development run --rm generator-dev bash
+docker compose --profile testing up generator-test
+docker compose --profile lint up generator-lint
+docker compose --profile security up generator-security
+
+# Testing
+make test                                    # Tests with coverage
+make test TEST_FLAGS="-v -race"              # With race detector
+make test TEST_FLAGS="-tags=integration"     # Integration tests
+
+# Building
+make dist               # Build cross-platform binaries
+make package            # Build distribution packages (DEB, RPM, Arch)
+make release            # Full release (test, lint, security-scan, dist, package)
+make docker-build       # Build production Docker image
+make docker-test        # Test Docker image
+
+# Utilities
+make version            # Show version information
+make validate-setup     # Validate project setup
+make clean              # Clean all build artifacts (binaries, packages, reports, archives)
+```
+
 ---
 
 **Questions?** Feel free to reach out through GitHub Discussions or create an issue.
 
-*Last updated: December 2024*
-</text>
+**Need Help?** Check out our [README](README.md), [SECURITY.md](SECURITY.md), or [DISTRIBUTION.md](DISTRIBUTION.md) for more information.

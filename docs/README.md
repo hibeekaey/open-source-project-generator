@@ -1,136 +1,95 @@
-# Documentation Index
+# Documentation
 
-Welcome to the Open Source Project Generator documentation. This index provides an overview of all available documentation and guides you to the right resources for your needs.
+Welcome to the Open Source Project Generator documentation. This tool uses a **tool-orchestration architecture** that delegates project creation to industry-standard CLI tools.
 
-## 📚 Documentation Overview
+## 📚 Documentation
 
 ### For Users
 
-- **[Getting Started Guide](GETTING_STARTED.md)** - Complete installation and usage guide
-  - Installation instructions for all platforms
-  - Quick start examples
-  - Configuration management
-  - Usage examples and best practices
-
-- **[Configuration Guide](CONFIGURATION.md)** - Advanced configuration options
-  - Environment variables
-  - Configuration file formats
-  - Global settings and preferences
-  - Template configuration
-  - Validation rules and audit settings
-
-- **[Troubleshooting Guide](TROUBLESHOOTING.md)** - Common issues and solutions
-  - Installation problems
-  - Configuration issues
-  - Generation errors
-  - Performance problems
-  - Debugging techniques
+- **[Getting Started](GETTING_STARTED.md)** - Installation, quick start, and basic usage
+- **[Interactive Mode Guide](INTERACTIVE_MODE.md)** - Step-by-step guide for interactive configuration wizard
+- **[CLI Commands](CLI_COMMANDS.md)** - Complete command reference with exit codes
+- **[Configuration Guide](CONFIGURATION.md)** - Configuration file format, validation rules, and options
+- **[Examples](EXAMPLES.md)** - Real-world project configurations
+- **[Troubleshooting](TROUBLESHOOTING.md)** - Common issues, cache management, and solutions
 
 ### For Developers
 
+- **[Architecture](ARCHITECTURE.md)** - System design and architecture overview
+- **[Adding Bootstrap Tools](ADDING_TOOLS.md)** - Guide for adding new tool support
 - **[API Reference](API_REFERENCE.md)** - Developer API documentation
-  - Core interfaces and data models
-  - Usage examples and code samples
-  - Error handling patterns
-  - Performance considerations
-  - Security guidelines
+- **[Contributing](../CONTRIBUTING.md)** - How to contribute to the project
 
-- **[Template Development Guide](TEMPLATE_DEVELOPMENT.md)** - Creating and maintaining templates
-  - Template structure and syntax
-  - Template variables and functions
-  - Custom template creation
-  - Template validation and maintenance
-  - Best practices and guidelines
+## 🚀 Quick Links
 
-- **[CI/CD Testing Guide](CI_TESTING.md)** - Testing strategy and implementation
-  - Unified testing approach
-  - Test optimizations and performance
-  - CI/CD pipeline configuration
-  - Local development testing
-  - Troubleshooting test issues
+| I want to... | Go to... |
+|--------------|----------|
+| Install and use the generator | [Getting Started](GETTING_STARTED.md) |
+| Use the interactive wizard | [Interactive Mode Guide](INTERACTIVE_MODE.md) |
+| See all available commands | [CLI Commands](CLI_COMMANDS.md) |
+| Understand exit codes | [CLI Commands - Exit Codes](CLI_COMMANDS.md#exit-codes-reference) |
+| Create a configuration file | [Configuration Guide](CONFIGURATION.md) |
+| Validate my configuration | [Configuration Guide - Validation](CONFIGURATION.md#configuration-validation) |
+| See example projects | [Examples](EXAMPLES.md) |
+| Fix an issue | [Troubleshooting](TROUBLESHOOTING.md) |
+| Manage tool cache | [Troubleshooting - Cache Issues](TROUBLESHOOTING.md#cache-management-issues) |
+| Understand the architecture | [Architecture](ARCHITECTURE.md) |
+| Add support for a new tool | [Adding Bootstrap Tools](ADDING_TOOLS.md) |
+| Contribute code | [Contributing](../CONTRIBUTING.md) |
 
-## 🚀 Quick Navigation
+## 🎯 What is Tool-Orchestration?
 
-### I'm New to the Project
+Instead of maintaining templates manually, this generator:
 
-Start with the **[Getting Started Guide](GETTING_STARTED.md)** to learn how to install and use the generator.
+1. **Discovers** available bootstrap tools on your system (like `npx`, `go`, `gradle`)
+2. **Executes** these tools to generate projects using their official CLIs
+3. **Maps** the generated output to a standardized directory structure
+4. **Integrates** components together with Docker Compose, scripts, etc.
 
-### I Want to Configure the Generator
+**Benefits:**
 
-Check the **[Configuration Guide](CONFIGURATION.md)** for all configuration options and settings.
-
-### I'm Having Problems
-
-Visit the **[Troubleshooting Guide](TROUBLESHOOTING.md)** for solutions to common issues.
-
-### I Want to Create Custom Templates
-
-Read the **[Template Development Guide](TEMPLATE_DEVELOPMENT.md)** to learn how to create and maintain templates.
-
-### I'm Contributing to the Project
-
-Review the **[API Reference](API_REFERENCE.md)** and **[CI/CD Testing Guide](CI_TESTING.md)** for development information.
+- ✅ Always up-to-date dependencies (no manual template maintenance)
+- ✅ Industry-standard project structures
+- ✅ Leverages community expertise
+- ✅ Graceful fallback when tools unavailable
+- ✅ Offline support with caching
 
 ## 📖 Documentation Structure
 
 ```text
 docs/
-├── README.md                    # This index
-├── GETTING_STARTED.md          # User guide (installation, usage, examples)
-├── CONFIGURATION.md            # Configuration options and settings
-├── TROUBLESHOOTING.md          # Problem solving and debugging
-├── API_REFERENCE.md            # Developer API documentation
-├── TEMPLATE_DEVELOPMENT.md     # Template creation and maintenance
-└── CI_TESTING.md              # Testing strategy and implementation
+├── README.md                   # This file - Documentation index
+├── GETTING_STARTED.md          # Installation, quick start, tool requirements
+├── INTERACTIVE_MODE.md         # Interactive configuration wizard guide
+├── CLI_COMMANDS.md             # Complete CLI command reference with exit codes
+├── CONFIGURATION.md            # Configuration file format, validation, and options
+├── EXAMPLES.md                 # Real-world configuration examples
+├── TROUBLESHOOTING.md          # Common issues, cache management, and solutions
+├── ARCHITECTURE.md             # System architecture and design
+├── ADDING_TOOLS.md             # Guide for adding new bootstrap tools
+└── API_REFERENCE.md            # Developer API documentation
 ```
 
-## 🎯 Documentation Goals
+### Documentation Coverage
 
-Our documentation is designed to be:
+- ✅ **10 documentation files** covering all aspects
+- ✅ **Comprehensive documentation** for users and developers
+- ✅ **Interactive mode** fully documented with examples
+- ✅ **Exit codes** reference and usage guide
+- ✅ **Tool management** troubleshooting and best practices
+- ✅ **Component validation** rules and examples
+- ✅ **10+ examples** for common project types
+- ✅ **All CLI commands** fully documented
+- ✅ **All 4 component types** (Next.js, Go, Android, iOS) explained
+- ✅ **Tool-orchestration architecture** documented
 
-- **Comprehensive** - Covers all aspects of the generator
-- **User-focused** - Organized by user needs and use cases
-- **Practical** - Includes real examples and working code
-- **Maintainable** - Easy to update and extend
-- **Accessible** - Clear language and good organization
+## 🆘 Getting Help
 
-## 🤝 Contributing to Documentation
-
-We welcome contributions to improve our documentation:
-
-1. **Report issues** - Found a problem? Let us know
-2. **Suggest improvements** - Have ideas for better documentation?
-3. **Submit changes** - Fix typos, add examples, improve clarity
-4. **Share feedback** - Tell us what works and what doesn't
-
-### Documentation Guidelines
-
-- Use clear, concise language
-- Include practical examples
-- Keep information up-to-date
-- Follow the established structure
-- Test all code examples
-
-## 📞 Getting Help
-
-If you can't find what you're looking for:
-
-- **Check the Troubleshooting Guide** - Common issues and solutions
-- **Search the documentation** - Use your browser's search function
-- **Ask the community** - GitHub Discussions or Issues
-- **Contact support** - [support@generator.dev](mailto:support@generator.dev)
-
-## 🔄 Documentation Updates
-
-This documentation is regularly updated to reflect:
-
-- New features and capabilities
-- Improved workflows and best practices
-- Bug fixes and issue resolutions
-- Community feedback and suggestions
-
-**Last updated**: December 2024
+- **Documentation**: Start with [Getting Started](GETTING_STARTED.md)
+- **Issues**: [GitHub Issues](https://github.com/cuesoftinc/open-source-project-generator/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/cuesoftinc/open-source-project-generator/discussions)
+- **Email**: <support@cuesoft.io>
 
 ---
 
-**Ready to get started?** Begin with the [Getting Started Guide](GETTING_STARTED.md) or jump to the [Configuration Guide](CONFIGURATION.md) if you're already familiar with the basics.
+**Ready to start?** Begin with the [Getting Started Guide](GETTING_STARTED.md)!

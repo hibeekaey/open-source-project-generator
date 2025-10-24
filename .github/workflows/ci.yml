@@ -1,13 +1,18 @@
 name: CI
-permissions:
-  contents: read
-  security-events: write
 
 on:
   push:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/develop' }}
+
+permissions:
+  contents: read
+  security-events: write
 
 env:
   GO_VERSION: "1.25"
@@ -27,35 +32,33 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
-      - name: Cache Go modules
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-
       - name: Download dependencies
         run: make install
 
       - name: Verify dependencies
         run: go mod verify
 
-      - name: Run tests
-        run: make test-coverage
+      - name: Run CI pipeline
+        run: make ci
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
-          files: ./coverage.out
+          files: ./test-reports/coverage.out
           flags: unittests
           name: codecov-umbrella
           fail_ci_if_error: false
 
-  lint:
-    name: Lint
+      - name: Generate summary
+        if: success()
+        run: |
+          echo "### Test Results :test_tube:" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All tests passed" >> $GITHUB_STEP_SUMMARY
+          echo "Go version: ${{ env.GO_VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "Coverage report uploaded to Codecov" >> $GITHUB_STEP_SUMMARY
+
+  check:
+    name: Code Quality Checks
     runs-on: ubuntu-latest
 
     steps:
@@ -68,10 +71,8 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v8
-        with:
-          args: --timeout=5m
+      - name: Run all checks (fmt, vet, lint)
+        run: make check
 
   build:
     name: Build
@@ -90,8 +91,29 @@ jobs:
       - name: Build binary
         run: make build
 
-      - name: Test binary
-        run: ./bin/generator version
+      - name: Verify binary version
+        run: |
+          ./bin/generator version
+          make version
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: generator-linux
+          path: bin/generator
+          retention-days: 7
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
 
   security:
     name: Security Scan
@@ -107,13 +129,10 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
-      - name: Install Gosec
-        run: go install github.com/securego/gosec/v2/cmd/gosec@latest
+      - name: Run security scans
+        run: make security-scan
 
-      - name: Run Gosec Security Scanner
-        run: gosec -no-fail -fmt sarif -out results.sarif ./...
-
-      - name: Upload SARIF file
+      - name: Upload SARIF to GitHub Security
         if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         uses: github/codeql-action/upload-sarif@v3
         with:

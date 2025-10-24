@@ -8,14 +8,31 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for your question! We're here to help. Please provide as much detail as possible.
+        Thanks for your question! Please check the docs first, then provide details below.
+
+  - type: dropdown
+    id: question-category
+    attributes:
+      label: Question Category
+      description: What is your question about?
+      options:
+        - Installation & Setup
+        - Usage & Commands
+        - Templates & Customization
+        - Configuration
+        - Validation & Security
+        - CI/CD Integration
+        - Troubleshooting
+        - Best Practices
+        - Other
+    validations:
+      required: true
 
   - type: textarea
     id: question
     attributes:
       label: Question
-      description: What would you like to know?
-      placeholder: Ask your question here...
+      placeholder: What would you like to know?
     validations:
       required: true
 
@@ -23,38 +40,19 @@ body:
     id: context
     attributes:
       label: Context
-      description: Provide any relevant context about your question
       placeholder: |
-        - What are you trying to accomplish?
-        - What have you tried so far?
-        - Any specific challenges you're facing?
-
-  - type: textarea
-    id: environment
-    attributes:
-      label: Environment (if applicable)
-      description: If your question is environment-specific, please provide details
-      placeholder: |
-        - OS: [e.g. Ubuntu 20.04, macOS 12.0, Windows 10]
-        - Go Version: [e.g. 1.25.0]
-        - Generator Version: [e.g. 1.4.0]
-        - Shell: [e.g. bash, zsh, PowerShell]
-
-  - type: textarea
-    id: research
-    attributes:
-      label: Research Done
-      description: What have you already looked into or tried?
-      placeholder: |
-        - I've checked the documentation at...
-        - I've tried...
-        - I've searched for...
+        What I'm trying to do: ...
+        What I've tried: ...
+        Environment (if relevant): OS, Go version, Generator version
 
   - type: checkboxes
     id: terms
     attributes:
-      label: Code of Conduct
-      description: By submitting this issue, you agree to follow our [Code of Conduct](CODE_OF_CONDUCT.md)
+      label: Checklist
       options:
-        - label: I agree to follow this project's Code of Conduct
+        - label: I've checked the [documentation](https://github.com/cuesoftinc/open-source-project-generator/tree/main/docs)
+          required: true
+        - label: I've searched existing issues
+          required: true
+        - label: I agree to follow the Code of Conduct
           required: true

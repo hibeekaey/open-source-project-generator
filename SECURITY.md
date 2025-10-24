@@ -10,22 +10,25 @@ This document outlines the security measures implemented in the Open Source Proj
 
 **Fix**:
 
-- Created `pkg/utils/security.go` with path validation functions
-- Implemented `ValidatePath()` to detect and prevent path traversal attempts
-- Added `SafeReadFile()`, `SafeWriteFile()`, `SafeMkdirAll()`, and `SafeOpenFile()` functions
-- Updated config manager to use secure file operations
+- Created `pkg/security/` package with path validation and sanitization functions
+- Implemented `SanitizePath()` to detect and prevent path traversal attempts
+- Added secure file operation wrappers with automatic path validation
+- Updated config manager and filesystem operations to use security package
+- All security errors use categorized error types from `pkg/errors/`
 
 **Functions**:
 
 ```go
-// Validates paths and prevents directory traversal
+// Sanitizes and validates paths, prevents directory traversal
+func SanitizePath(path string) (string, error)
+
+// Validates paths against allowed base paths
 func ValidatePath(path string, allowedBasePaths ...string) error
 
-// Safe file operations with path validation
+// Secure file operations with automatic path validation
 func SafeReadFile(path string, allowedBasePaths ...string) ([]byte, error)
 func SafeWriteFile(path string, data []byte, allowedBasePaths ...string) error
 func SafeMkdirAll(path string, allowedBasePaths ...string) error
-func SafeOpenFile(path string, flag int, perm os.FileMode, allowedBasePaths ...string) (*os.File, error)
 ```
 
 ### 2. File Permission Hardening (G301/G302/G306 - CWE-276)
@@ -40,17 +43,25 @@ func SafeOpenFile(path string, flag int, perm os.FileMode, allowedBasePaths ...s
 
 **Files Updated**:
 
-- `internal/config/manager.go`
-- `internal/app/logger.go`
-- `internal/app/app.go`
-- `pkg/filesystem/generator.go`
-- `pkg/cli/cli.go`
+- `pkg/security/` - Security operations package
+- `internal/config/manager.go` - Config file operations
+- `internal/app/logger.go` - Log file creation
+- `internal/app/app.go` - Application initialization
+- `pkg/filesystem/` - File system operations
+- `pkg/cli/` - CLI command handlers
 
 ### 3. Error Handling (G104 - CWE-703)
 
 **Issue**: Some function calls that could return errors were not being handled.
 
-**Status**: Identified in generated code (not core generator code). These should be addressed in templates.
+**Fix**:
+
+- All security operations return categorized errors from `pkg/errors/`
+- Security errors use `errors.NewSecurityError()` for consistent handling
+- Validation errors use `errors.NewValidationError()` for input issues
+- Config errors use `errors.NewConfigError()` for configuration problems
+
+**Status**: Core generator code uses proper error handling. Templates updated to follow same patterns.
 
 ### 4. Template Security Enhancements
 
@@ -79,48 +90,100 @@ func SafeOpenFile(path string, flag int, perm os.FileMode, allowedBasePaths ...s
 
 ### File Operations
 
-1. Always validate file paths before operations
+1. Always sanitize file paths using `pkg/security` before operations
 2. Use restrictive file permissions (0600 for files, 0750 for directories)
-3. Sanitize user input that affects file paths
+3. Validate user input that affects file paths
 4. Use absolute paths when possible
+5. Return categorized errors from `pkg/errors/` for proper error handling
+
+### Path Sanitization
+
+```go
+import (
+    "github.com/cuesoftinc/open-source-project-generator/pkg/security"
+    "github.com/cuesoftinc/open-source-project-generator/pkg/errors"
+)
+
+// Always sanitize user input before file operations
+sanitized, err := security.SanitizePath(userPath)
+if err != nil {
+    return errors.NewSecurityError("invalid path", err)
+}
+```
 
 ### Path Validation
 
 ```go
-// Example usage
-if err := utils.ValidatePath(userPath, "/allowed/base/path"); err != nil {
-    return fmt.Errorf("invalid path: %w", err)
+// Validate against allowed base paths
+if err := security.ValidatePath(sanitized, "/allowed/base/path"); err != nil {
+    return errors.NewSecurityError("path traversal detected", err)
 }
 ```
 
-### Secure File Creation
+### Secure File Operations
 
 ```go
-// Use secure utilities instead of direct os calls
-content, err := utils.SafeReadFile(path, allowedBasePaths...)
-err = utils.SafeWriteFile(path, data, allowedBasePaths...)
-err = utils.SafeMkdirAll(path, allowedBasePaths...)
+// Use security package functions instead of direct os calls
+content, err := security.SafeReadFile(path, allowedBasePaths...)
+if err != nil {
+    return errors.NewSecurityError("failed to read file", err)
+}
+
+err = security.SafeWriteFile(path, data, allowedBasePaths...)
+if err != nil {
+    return errors.NewSecurityError("failed to write file", err)
+}
+
+err = security.SafeMkdirAll(path, allowedBasePaths...)
+if err != nil {
+    return errors.NewSecurityError("failed to create directory", err)
+}
+```
+
+### Architecture Integration
+
+Security operations follow the project's dependency injection pattern:
+
+```go
+// Components receive security dependencies via interfaces
+type FileSystemManager struct {
+    security security.Interface
+    validator validation.Interface
+}
+
+func NewFileSystemManager(sec security.Interface, val validation.Interface) *FileSystemManager {
+    return &FileSystemManager{
+        security: sec,
+        validator: val,
+    }
+}
 ```
 
 ## Remaining Security Considerations
 
-### Template Security
+### Tool Execution Security
 
-- Templates should be reviewed for security issues
-- Generated code should follow security best practices
-- Consider implementing template sandboxing
+- Only whitelisted tools and flags are executed
+- All tool commands are validated before execution
+- Command injection prevention through parameter validation
+- Tool output is sanitized before processing
+- Timeout protection prevents hanging processes
 
 ### Input Validation
 
-- Validate all user inputs (project names, paths, configurations)
-- Sanitize template variables
-- Implement proper error handling
+- All user inputs validated through `internal/config/` validators
+- Path inputs sanitized via `pkg/security/SanitizePath()`
+- Configuration fields validated before tool execution
+- Categorized error handling via `pkg/cli` error types
+- Early validation with fail-fast approach
 
 ### Dependency Security
 
-- Regularly update dependencies
-- Use dependency scanning tools
-- Pin dependency versions
+- Regularly update dependencies using `go get -u`
+- Use dependency scanning tools (nancy, govulncheck)
+- Pin dependency versions in `go.mod`
+- Tool version requirements defined in `internal/orchestrator/tool_discovery.go`
+- Offline mode supported via cached tool metadata
 
 ## Security Testing
 
@@ -139,8 +202,8 @@ staticcheck ./...
 # Run govulncheck for Go vulnerabilities
 govulncheck ./...
 
-# Scan for secrets in templates
-trufflehog filesystem ./pkg/template/templates/
+# Scan for secrets in code
+trufflehog filesystem ./
 
 # Validate generated projects
 generator audit ./output --security --fail-on-high
@@ -188,11 +251,14 @@ The generator creates projects with built-in security features:
 
 ## Security Checklist for Contributors
 
-- [ ] Validate all file paths
-- [ ] Use secure file permissions
-- [ ] Handle all errors appropriately
-- [ ] Sanitize user inputs
-- [ ] Review templates for security issues
-- [ ] Run security scanners before submitting PRs
+- [ ] Sanitize all file paths using `pkg/security/SanitizePath()`
+- [ ] Use secure file permissions (0600 for files, 0750 for directories)
+- [ ] Return categorized errors from `pkg/cli` error types
+- [ ] Validate user inputs through `internal/config/` validators
+- [ ] Use dependency injection with interfaces from `pkg/interfaces/`
+- [ ] Review tool execution code for command injection vulnerabilities
+- [ ] Run security scanners before submitting PRs (`make security-scan`)
 - [ ] Test generated projects for security vulnerabilities
 - [ ] Update security documentation for new features
+- [ ] Follow clean architecture patterns (presentation → business logic → infrastructure)
+- [ ] Never use direct `os` package calls; use `pkg/filesystem/` and `pkg/security/` abstractions
