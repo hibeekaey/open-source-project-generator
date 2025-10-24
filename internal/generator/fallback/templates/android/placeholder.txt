@@ -1,2 +1,0 @@
-This is a placeholder file to satisfy the Go embed directive.
-The Android fallback generator creates files programmatically.
