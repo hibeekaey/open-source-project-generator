@@ -443,10 +443,11 @@ check_maven() {
     local artifact=$2
     local current=$3
     local category=${4:-"android"}
+    local display_name=${5:-"$artifact"}
     local package_name="$group:$artifact"
     
     if [ "$JSON_OUTPUT" = false ] && [ "$QUIET_MODE" = false ]; then
-        echo -n "Checking $artifact... "
+        echo -n "Checking $display_name... "
     fi
     
     if command -v curl >/dev/null 2>&1; then
@@ -488,7 +489,7 @@ check_maven() {
                 symbol="✓"
             fi
             
-            add_json_result "$category" "$artifact" "$current" "$latest" "$status"
+            add_json_result "$category" "$display_name" "$current" "$latest" "$status"
             
             if [ "$JSON_OUTPUT" = false ]; then
                 if [ "$QUIET_MODE" = true ] && [ "$status" = "up-to-date" ]; then
@@ -497,13 +498,13 @@ check_maven() {
                 echo -e "${color}${symbol} Latest: $latest${NC} (Current: $current)"
             fi
         else
-            add_json_result "$category" "$artifact" "$current" "N/A" "error"
+            add_json_result "$category" "$display_name" "$current" "N/A" "error"
             if [ "$JSON_OUTPUT" = false ] && [ "$QUIET_MODE" = false ]; then
                 echo -e "${YELLOW}Unable to fetch (check manually)${NC}"
             fi
         fi
     else
-        add_json_result "$category" "$artifact" "$current" "N/A" "tool-missing"
+        add_json_result "$category" "$display_name" "$current" "N/A" "tool-missing"
         if [ "$JSON_OUTPUT" = false ] && [ "$QUIET_MODE" = false ]; then
             echo -e "${YELLOW}curl not installed${NC}"
         fi
@@ -562,6 +563,12 @@ check_maven "androidx.core" "core-ktx" "$(get_version '.android.androidx.core_kt
 check_maven "androidx.appcompat" "appcompat" "$(get_version '.android.androidx.appcompat.version' '1.7.1')" "android"
 check_maven "com.google.android.material" "material" "$(get_version '.android.androidx.material.version' '1.13.0')" "android"
 check_maven "androidx.constraintlayout" "constraintlayout" "$(get_version '.android.androidx.constraintlayout.version' '2.2.1')" "android"
+
+# Android Testing Dependencies
+print_section "Android Testing Dependencies"
+check_maven "junit" "junit" "$(get_version '.android.testing.junit.version' '4.13.2')" "android" "JUnit"
+check_maven "androidx.test.ext" "junit" "$(get_version '.android.testing.androidx_junit.version' '1.2.1')" "android" "AndroidX JUnit"
+check_maven "androidx.test.espresso" "espresso-core" "$(get_version '.android.testing.espresso.version' '3.6.1')" "android" "Espresso"
 
 # Function to check Android SDK API level
 check_android_sdk() {
@@ -658,6 +665,7 @@ check_xcode() {
 # Android Build Tools
 print_section "Android Build Tools"
 check_gradle "$(get_version '.android.gradle.version' '9.1.0')" "android"
+check_maven "com.android.tools.build" "gradle" "$(get_version '.android.gradle_plugin.version' '8.7.3')" "android" "Android Gradle Plugin"
 check_github_release "JetBrains/kotlin" "$(get_version '.android.kotlin.version' '2.2.21')" "android" "Kotlin"
 check_android_sdk "$(get_version '.android.compile_sdk' '36')" "android"
 

@@ -33,12 +33,17 @@ backend:
       package: "github.com/gofiber/fiber/v2"
 # Android Dependencies
 android:
-  sdk_api_level: "36"
+  compile_sdk: "36"
+  min_sdk: "24"
+  target_sdk: "36"
+  java_version: "17"
   kotlin:
     version: "v2.2.21"
   gradle:
     version: "9.1.0"
     distribution_url: "https://services.gradle.org/distributions/gradle-9.1.0-bin.zip"
+  gradle_plugin:
+    version: "8.13.0"
   androidx:
     core_ktx:
       version: "1.17.0"
@@ -52,6 +57,16 @@ android:
     constraintlayout:
       version: "2.2.1"
       package: "androidx.constraintlayout:constraintlayout"
+  testing:
+    junit:
+      version: "4.13.2"
+      package: "junit:junit"
+    androidx_junit:
+      version: "1.3.0"
+      package: "androidx.test.ext:junit"
+    espresso:
+      version: "3.7.0"
+      package: "androidx.test.espresso:espresso-core"
 # iOS Dependencies
 ios:
   swift:
@@ -76,5 +91,5 @@ infrastructure:
     version: "v1.34.1"
 # Metadata
 metadata:
-  last_updated: "2025-10-23"
+  last_updated: "2025-10-24"
   schema_version: "1.0.0"

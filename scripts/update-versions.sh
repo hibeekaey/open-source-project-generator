@@ -208,6 +208,22 @@ while read -r item; do
                 yq -i ".android.gradle.distribution_url = \"https://services.gradle.org/distributions/gradle-$latest-bin.zip\"" "$TEMP_FILE"
                 echo -e "${YELLOW}📦 Updated Gradle → $latest${NC}"
                 ;;
+            "Android Gradle Plugin")
+                yq -i ".android.gradle_plugin.version = \"$latest\"" "$TEMP_FILE"
+                echo -e "${YELLOW}📦 Updated Android Gradle Plugin → $latest${NC}"
+                ;;
+            "JUnit")
+                yq -i ".android.testing.junit.version = \"$latest\"" "$TEMP_FILE"
+                echo -e "${YELLOW}📦 Updated JUnit → $latest${NC}"
+                ;;
+            "AndroidX JUnit")
+                yq -i ".android.testing.androidx_junit.version = \"$latest\"" "$TEMP_FILE"
+                echo -e "${YELLOW}📦 Updated AndroidX JUnit → $latest${NC}"
+                ;;
+            "Espresso")
+                yq -i ".android.testing.espresso.version = \"$latest\"" "$TEMP_FILE"
+                echo -e "${YELLOW}📦 Updated Espresso → $latest${NC}"
+                ;;
             "android-sdk")
                 yq -i ".android.compile_sdk = \"$latest\"" "$TEMP_FILE"
                 yq -i ".android.target_sdk = \"$latest\"" "$TEMP_FILE"
