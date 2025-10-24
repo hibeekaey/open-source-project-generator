@@ -78,13 +78,28 @@ func MultiSelect(prompt string, options []string) ([]string, error) {
 		case buf[0] == 13 || buf[0] == 10:
 			_ = term.Restore(int(os.Stdin.Fd()), oldState)
 
+			fmt.Print("\033[" + fmt.Sprintf("%d", lines) + "A")
+
+			for i := 0; i < lines; i++ {
+				fmt.Print("\r\033[K\r\n")
+			}
+
+			fmt.Print("\033[" + fmt.Sprintf("%d", lines) + "A")
+			fmt.Print("\r" + output.ColorCyan + prompt + output.ColorReset + "\r\n")
 			fmt.Print("\r\n")
+
 			result := []string{}
 			for i, sel := range selected {
 				if sel {
 					result = append(result, options[i])
 				}
 			}
+
+			for _, item := range result {
+				fmt.Print("\r" + output.ColorGreen + "  ✓ " + item + output.ColorReset + "\r\n")
+			}
+
+			fmt.Print("\r\n")
 			return result, nil
 
 		case buf[0] == 32:
