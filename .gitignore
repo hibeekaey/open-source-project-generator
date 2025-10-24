@@ -41,7 +41,7 @@ go.work.sum
 # Project-Specific Build Artifacts
 # =============================================================================
 # Generated project output
-output/
+./output/
 generated/
 
 # Package build artifacts
