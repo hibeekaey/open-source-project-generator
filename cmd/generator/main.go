@@ -37,7 +37,7 @@ func main() {
 	}
 
 	if slices.Contains(projectInput.SelectedFolders, constants.FolderApp) {
-		selectedApps, err := input.SelectApps(reader)
+		selectedApps, err := input.MultiSelect("Select Next.js apps to create:", constants.NextJSApps)
 		if err != nil {
 			fmt.Printf("%v\n", err)
 			os.Exit(1)

@@ -21,7 +21,6 @@ func (s *Spinner) Start() {
 	go func() {
 		spinner := []rune{'⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'}
 		i := 0
-		fmt.Print("\n")
 		for {
 			select {
 			case <-s.done:
