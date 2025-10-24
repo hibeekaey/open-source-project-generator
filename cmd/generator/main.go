@@ -1,62 +1,36 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"os"
-	"path/filepath"
-	"slices"
 
-	"github.com/cuesoftinc/open-source-project-generator/internal/generator"
-	"github.com/cuesoftinc/open-source-project-generator/pkg/config"
-	"github.com/cuesoftinc/open-source-project-generator/pkg/constants"
-	"github.com/cuesoftinc/open-source-project-generator/pkg/filesystem"
-	"github.com/cuesoftinc/open-source-project-generator/pkg/input"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/output"
 )
 
+const version = "1.0.0"
+
 func main() {
-	versions, err := config.LoadVersions()
-	if err != nil {
-		fmt.Printf("%v\n", output.NewError("error loading versions: %v", err))
-		os.Exit(1)
+	if len(os.Args) < 2 {
+		printUsage()
+		os.Exit(0)
 	}
 
-	reader := bufio.NewReader(os.Stdin)
-	projectInput, err := input.ReadProjectInput(reader, constants.DefaultOutputFolder)
-	if err != nil {
-		fmt.Printf("%v\n", err)
-		os.Exit(1)
-	}
+	command := os.Args[1]
 
-	projectPath := filepath.Join(projectInput.OutputFolder, projectInput.Name)
-
-	if err := filesystem.CreateProjectStructure(projectPath, projectInput.SelectedFolders); err != nil {
-		fmt.Printf("%v\n", err)
-		os.Exit(1)
-	}
-
-	if slices.Contains(projectInput.SelectedFolders, constants.FolderApp) {
-		selectedApps, err := input.MultiSelect("Select Next.js apps to create:", constants.NextJSApps)
-		if err != nil {
-			fmt.Printf("%v\n", err)
-			os.Exit(1)
+	switch command {
+	case "generate":
+		runGenerate()
+	case "help", "--help", "-h":
+		if len(os.Args) > 2 {
+			printCommandHelp(os.Args[2])
+		} else {
+			printHelp()
 		}
-
-		if len(selectedApps) > 0 {
-			nextjsGen := &generator.NextJSGenerator{
-				Version:    versions.Frontend.NextJS.Version,
-				ProjectDir: projectPath,
-				AppFolder:  constants.FolderApp,
-				Apps:       selectedApps,
-			}
-
-			if err := nextjsGen.Generate(projectInput.Name); err != nil {
-				fmt.Printf("%v\n", err)
-				os.Exit(1)
-			}
-		}
+	case "version", "--version", "-v":
+		fmt.Printf("generator version %s\n", version)
+	default:
+		fmt.Fprintf(os.Stderr, output.ColorRed+"Error: unknown command '%s'\n"+output.ColorReset, command)
+		fmt.Fprintln(os.Stderr, "Run 'generator --help' for usage.")
+		os.Exit(1)
 	}
-
-	output.PrintSuccess(projectInput.Name, projectPath)
 }
