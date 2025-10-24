@@ -12,11 +12,12 @@ import (
 type NextJSGenerator struct {
 	Version    string
 	ProjectDir string
+	AppFolder  string
 	Apps       []string
 }
 
 func (g *NextJSGenerator) Generate(projectName string) error {
-	appPath := filepath.Join(g.ProjectDir, "App")
+	appPath := filepath.Join(g.ProjectDir, g.AppFolder)
 
 	for _, app := range g.Apps {
 		appName := projectName + "-" + app
