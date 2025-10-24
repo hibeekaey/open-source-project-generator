@@ -7,7 +7,11 @@ import (
 	"github.com/cuesoftinc/open-source-project-generator/pkg/output"
 )
 
-const version = "1.0.0"
+var (
+	Version   = "dev"
+	GitCommit = "unknown"
+	BuildTime = "unknown"
+)
 
 func main() {
 	if len(os.Args) < 2 {
@@ -27,7 +31,7 @@ func main() {
 			printHelp()
 		}
 	case "version", "--version", "-v":
-		fmt.Printf("generator version %s\n", version)
+		fmt.Println(Version)
 	default:
 		fmt.Fprintf(os.Stderr, output.ColorRed+"Error: unknown command '%s'\n"+output.ColorReset, command)
 		fmt.Fprintln(os.Stderr, "Run 'generator --help' for usage.")
