@@ -97,7 +97,7 @@ jobs:
           make version
 
       - name: Upload binary artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: generator-linux
           path: bin/generator
