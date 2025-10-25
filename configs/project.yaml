@@ -1,0 +1,14 @@
+project_name: my-project
+output_folder: output/generated
+
+components:
+  frontend:
+    - main
+    - admin
+    - home
+  backend: true
+  mobile: true
+  deploy: true
+  docs: true
+  scripts: true
+  github: true
