@@ -9,15 +9,15 @@ import (
 	"github.com/cuesoftinc/open-source-project-generator/pkg/output"
 )
 
-type NextJSGenerator struct {
+type FrontendGenerator struct {
 	Version    string
 	ProjectDir string
-	AppFolder  string
+	Component  string
 	Apps       []string
 }
 
-func (g *NextJSGenerator) Generate(projectName string) error {
-	appPath := filepath.Join(g.ProjectDir, g.AppFolder)
+func (g *FrontendGenerator) Generate(projectName string) error {
+	appPath := filepath.Join(g.ProjectDir, g.Component)
 
 	for _, app := range g.Apps {
 		appName := projectName + "-" + app
@@ -43,13 +43,13 @@ func (g *NextJSGenerator) Generate(projectName string) error {
 		spinner.Stop()
 
 		if err != nil {
-			return output.NewError("error creating %s app: %v", app, err)
+			return fmt.Errorf("failed to create %s app: %w", app, err)
 		}
 
 		oldPath := filepath.Join(appPath, appName)
 		newPath := filepath.Join(appPath, app)
 		if err := os.Rename(oldPath, newPath); err != nil {
-			return output.NewError("error renaming %s folder: %v", app, err)
+			return fmt.Errorf("failed to rename %s folder: %w", app, err)
 		}
 
 		fmt.Printf(output.ColorGreen+"✔"+output.ColorReset+" Done setting up %s app\n", app)

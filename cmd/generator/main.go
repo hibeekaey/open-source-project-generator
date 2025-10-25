@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 
@@ -23,7 +24,23 @@ func main() {
 
 	switch command {
 	case "generate":
-		runGenerate()
+		generateCmd := flag.NewFlagSet("generate", flag.ContinueOnError)
+		generateCmd.SetOutput(os.Stderr)
+		configFile := generateCmd.String("config-file", "", "Path to project configuration file")
+		generateCmd.StringVar(configFile, "c", "", "Path to project configuration file (shorthand)")
+		generateCmd.Usage = printGenerateHelp
+
+		if err := generateCmd.Parse(os.Args[2:]); err != nil {
+			os.Exit(1)
+		}
+
+		if generateCmd.NArg() > 0 {
+			fmt.Fprintf(os.Stderr, output.ColorRed+"Error: unexpected argument '%s'\n"+output.ColorReset, generateCmd.Arg(0))
+			fmt.Fprintln(os.Stderr, "Run 'generator generate --help' for usage.")
+			os.Exit(1)
+		}
+
+		runGenerate(*configFile)
 	case "help", "--help", "-h":
 		if len(os.Args) > 2 {
 			printCommandHelp(os.Args[2])
