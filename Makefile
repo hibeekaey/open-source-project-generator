@@ -97,7 +97,7 @@ security-scan: ## Run all security scanners (installs tools if needed)
 		echo "Installing staticcheck..."; \
 		go install honnef.co/go/tools/cmd/staticcheck@latest; \
 	fi
-	@gosec -no-fail -fmt=sarif -out=results.sarif ./... 2>/dev/null || true
+	@gosec -no-fail -fmt=sarif -out=results.sarif -exclude-generated ./... 2>/dev/null || true
 	@echo "  ✓ gosec completed (results.sarif)"
 	@govulncheck ./...
 	@staticcheck ./...
