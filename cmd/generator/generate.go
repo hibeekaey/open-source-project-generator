@@ -12,6 +12,7 @@ import (
 	"github.com/cuesoftinc/open-source-project-generator/pkg/constants"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/filesystem"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/input"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/output"
 )
 
@@ -33,7 +34,7 @@ func runGenerate() {
 	}
 
 	var projectInput *input.ProjectInput
-	var selectedApps []string
+	var selectedApps models.Apps
 
 	if configFile != "" {
 		fmt.Printf("%sUsing config file: %s%s\n\n", output.ColorCyan, configFile, output.ColorReset)
@@ -52,18 +53,10 @@ func runGenerate() {
 		selectedApps = project.Apps
 	} else {
 		reader := bufio.NewReader(os.Stdin)
-		projectInput, err = input.ReadProjectInput(reader, constants.DefaultOutputFolder)
+		projectInput, selectedApps, err = input.ReadProjectInput(reader, constants.DefaultOutputFolder)
 		if err != nil {
 			fmt.Printf("%v\n", err)
 			os.Exit(1)
-		}
-
-		if slices.Contains(projectInput.SelectedFolders, constants.ComponentFrontend) {
-			selectedApps, err = input.MultiSelect("Select Next.js apps to create:", constants.Apps.Frontend)
-			if err != nil {
-				fmt.Printf("%v\n", err)
-				os.Exit(1)
-			}
 		}
 	}
 
@@ -74,12 +67,12 @@ func runGenerate() {
 		os.Exit(1)
 	}
 
-	if slices.Contains(projectInput.SelectedFolders, constants.ComponentFrontend) && len(selectedApps) > 0 {
+	if slices.Contains(projectInput.SelectedFolders, constants.ComponentFrontend) && len(selectedApps.Frontend) > 0 {
 		frontendGen := &generator.FrontendGenerator{
 			Version:    versions.Frontend.NextJS.Version,
 			ProjectDir: projectPath,
 			Component:  constants.ComponentFrontend,
-			Apps:       selectedApps,
+			Apps:       selectedApps.Frontend,
 		}
 
 		if err := frontendGen.Generate(projectInput.Name); err != nil {

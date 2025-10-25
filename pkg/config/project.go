@@ -4,22 +4,19 @@ import (
 	"os"
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/constants"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/mapper"
+	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
 	"gopkg.in/yaml.v3"
 )
 
-type FrontendConfig struct {
-	Enabled bool     `yaml:"enabled"`
-	Apps    []string `yaml:"apps"`
-}
-
 type Components struct {
-	Frontend interface{} `yaml:"frontend"`
-	Backend  bool        `yaml:"backend"`
-	Mobile   bool        `yaml:"mobile"`
-	Deploy   bool        `yaml:"deploy"`
-	Docs     bool        `yaml:"docs"`
-	Scripts  bool        `yaml:"scripts"`
-	Github   bool        `yaml:"github"`
+	Frontend any  `yaml:"frontend"`
+	Backend  bool `yaml:"backend"`
+	Mobile   bool `yaml:"mobile"`
+	Deploy   bool `yaml:"deploy"`
+	Docs     bool `yaml:"docs"`
+	Scripts  bool `yaml:"scripts"`
+	Github   bool `yaml:"github"`
 }
 
 type ProjectConfig struct {
@@ -32,7 +29,7 @@ type Project struct {
 	ProjectName  string
 	OutputFolder string
 	Folders      []string
-	Apps         []string
+	Apps         models.Apps
 }
 
 func LoadProject(path string) (*Project, error) {
@@ -50,42 +47,42 @@ func LoadProject(path string) (*Project, error) {
 		ProjectName:  cfg.ProjectName,
 		OutputFolder: cfg.OutputFolder,
 		Folders:      []string{},
-		Apps:         []string{},
+		Apps:         models.Apps{},
 	}
 
 	switch frontendValue := cfg.Components.Frontend.(type) {
-	case []interface{}:
+	case []any:
 		if len(frontendValue) > 0 {
-			project.Folders = append(project.Folders, constants.ComponentFrontend)
+			project.Folders = append(project.Folders, mapper.ComponentToFolder("frontend"))
 			for _, app := range frontendValue {
 				if appStr, ok := app.(string); ok {
-					project.Apps = append(project.Apps, appStr)
+					project.Apps.Frontend = append(project.Apps.Frontend, appStr)
 				}
 			}
 		}
 	case bool:
 		if frontendValue {
-			project.Folders = append(project.Folders, constants.ComponentFrontend)
-			project.Apps = constants.Apps.Frontend
+			project.Folders = append(project.Folders, mapper.ComponentToFolder("frontend"))
+			project.Apps.Frontend = constants.Apps.Frontend
 		}
 	}
 	if cfg.Components.Backend {
-		project.Folders = append(project.Folders, constants.ComponentBackend)
+		project.Folders = append(project.Folders, mapper.ComponentToFolder("backend"))
 	}
 	if cfg.Components.Mobile {
-		project.Folders = append(project.Folders, constants.ComponentMobile)
+		project.Folders = append(project.Folders, mapper.ComponentToFolder("mobile"))
 	}
 	if cfg.Components.Deploy {
-		project.Folders = append(project.Folders, constants.ComponentDeploy)
+		project.Folders = append(project.Folders, mapper.ComponentToFolder("deploy"))
 	}
 	if cfg.Components.Docs {
-		project.Folders = append(project.Folders, constants.ComponentDocs)
+		project.Folders = append(project.Folders, mapper.ComponentToFolder("docs"))
 	}
 	if cfg.Components.Scripts {
-		project.Folders = append(project.Folders, constants.ComponentScripts)
+		project.Folders = append(project.Folders, mapper.ComponentToFolder("scripts"))
 	}
 	if cfg.Components.Github {
-		project.Folders = append(project.Folders, constants.ComponentGithub)
+		project.Folders = append(project.Folders, mapper.ComponentToFolder("github"))
 	}
 
 	return project, nil
