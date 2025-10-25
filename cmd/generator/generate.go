@@ -16,25 +16,11 @@ import (
 	"github.com/cuesoftinc/open-source-project-generator/pkg/output"
 )
 
-func runGenerate() {
+func runGenerate(configFile string) {
 	versions, err := config.LoadVersions()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, output.ColorRed+"Error: %v\n"+output.ColorReset, err)
 		os.Exit(1)
-	}
-
-	var configFile string
-	for i := 2; i < len(os.Args); i++ {
-		if os.Args[i] == "--config-file" || os.Args[i] == "-c" {
-			if i+1 < len(os.Args) {
-				configFile = os.Args[i+1]
-			} else {
-				fmt.Fprintf(os.Stderr, output.ColorRed+"Error: %s requires a file path\n"+output.ColorReset, os.Args[i])
-				fmt.Fprintln(os.Stderr, "Run 'generator generate --help' for usage.")
-				os.Exit(1)
-			}
-			break
-		}
 	}
 
 	var projectInput *input.ProjectInput
