@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-func NewError(format string, args ...interface{}) error {
+func NewError(format string, args ...any) error {
 	message := fmt.Sprintf(format, args...)
 	return errors.New(ColorRed + message + ColorReset)
 }
