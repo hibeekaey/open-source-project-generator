@@ -11,7 +11,7 @@ import (
 )
 
 type Components struct {
-	Frontend any  `yaml:"frontend"` // bool (all apps) or []string (specific apps)
+	Frontend any  `yaml:"frontend"` // bool (true for all apps) or []string (list of specific app names) in YAML
 	Backend  bool `yaml:"backend"`
 	Mobile   bool `yaml:"mobile"`
 	Deploy   bool `yaml:"deploy"`
