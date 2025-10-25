@@ -43,13 +43,13 @@ func (g *FrontendGenerator) Generate(projectName string) error {
 		spinner.Stop()
 
 		if err != nil {
-			return output.NewError("error creating %s app: %v", app, err)
+			return fmt.Errorf("failed to create %s app: %w", app, err)
 		}
 
 		oldPath := filepath.Join(appPath, appName)
 		newPath := filepath.Join(appPath, app)
 		if err := os.Rename(oldPath, newPath); err != nil {
-			return output.NewError("error renaming %s folder: %v", app, err)
+			return fmt.Errorf("failed to rename %s folder: %w", app, err)
 		}
 
 		fmt.Printf(output.ColorGreen+"✔"+output.ColorReset+" Done setting up %s app\n", app)

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/cuesoftinc/open-source-project-generator/pkg/constants"
@@ -10,7 +11,7 @@ import (
 )
 
 type Components struct {
-	Frontend any  `yaml:"frontend"`
+	Frontend any  `yaml:"frontend"` // bool (all apps) or []string (specific apps)
 	Backend  bool `yaml:"backend"`
 	Mobile   bool `yaml:"mobile"`
 	Deploy   bool `yaml:"deploy"`
@@ -35,12 +36,12 @@ type Project struct {
 func LoadProject(path string) (*Project, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
 
 	var cfg ProjectConfig
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse config file: %w", err)
 	}
 
 	project := &Project{
@@ -55,9 +56,11 @@ func LoadProject(path string) (*Project, error) {
 		if len(frontendValue) > 0 {
 			project.Folders = append(project.Folders, mapper.ComponentToFolder("frontend"))
 			for _, app := range frontendValue {
-				if appStr, ok := app.(string); ok {
-					project.Apps.Frontend = append(project.Apps.Frontend, appStr)
+				appStr, ok := app.(string)
+				if !ok {
+					return nil, fmt.Errorf("frontend apps must be strings, got %T", app)
 				}
+				project.Apps.Frontend = append(project.Apps.Frontend, appStr)
 			}
 		}
 	case bool:

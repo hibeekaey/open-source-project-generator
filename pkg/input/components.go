@@ -1,6 +1,8 @@
 package input
 
 import (
+	"fmt"
+
 	"github.com/cuesoftinc/open-source-project-generator/pkg/constants"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/mapper"
 	"github.com/cuesoftinc/open-source-project-generator/pkg/models"
@@ -14,7 +16,7 @@ type ComponentSelection struct {
 func ReadComponentSelection() (*ComponentSelection, error) {
 	selectedComponents, err := MultiSelect("Select components to create:", mapper.ComponentOptions)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("component selection failed: %w", err)
 	}
 
 	selection := &ComponentSelection{
@@ -31,7 +33,7 @@ func ReadComponentSelection() (*ComponentSelection, error) {
 		if component == "frontend" {
 			apps, err := MultiSelect("Select frontend apps to create:", constants.Apps.Frontend)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("app selection failed: %w", err)
 			}
 			selection.Apps.Frontend = apps
 		}

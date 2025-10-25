@@ -19,7 +19,7 @@ import (
 func runGenerate() {
 	versions, err := config.LoadVersions()
 	if err != nil {
-		fmt.Printf("%v\n", output.NewError("error loading versions: %v", err))
+		fmt.Fprintf(os.Stderr, output.ColorRed+"Error: %v\n"+output.ColorReset, err)
 		os.Exit(1)
 	}
 
@@ -28,6 +28,10 @@ func runGenerate() {
 		if os.Args[i] == "--config-file" || os.Args[i] == "-c" {
 			if i+1 < len(os.Args) {
 				configFile = os.Args[i+1]
+			} else {
+				fmt.Fprintf(os.Stderr, output.ColorRed+"Error: %s requires a file path\n"+output.ColorReset, os.Args[i])
+				fmt.Fprintln(os.Stderr, "Run 'generator generate --help' for usage.")
+				os.Exit(1)
 			}
 			break
 		}
@@ -37,11 +41,11 @@ func runGenerate() {
 	var selectedApps models.Apps
 
 	if configFile != "" {
-		fmt.Printf("%sUsing config file: %s%s\n\n", output.ColorCyan, configFile, output.ColorReset)
+		fmt.Printf(output.ColorCyan+"Using config file: %s"+output.ColorReset+"\n\n", configFile)
 
 		project, err := config.LoadProject(configFile)
 		if err != nil {
-			fmt.Printf("%v\n", output.NewError("failed to load config: %v", err))
+			fmt.Fprintf(os.Stderr, output.ColorRed+"Error: %v\n"+output.ColorReset, err)
 			os.Exit(1)
 		}
 
@@ -55,7 +59,7 @@ func runGenerate() {
 		reader := bufio.NewReader(os.Stdin)
 		projectInput, selectedApps, err = input.ReadProjectInput(reader, constants.DefaultOutputFolder)
 		if err != nil {
-			fmt.Printf("%v\n", err)
+			fmt.Fprintf(os.Stderr, output.ColorRed+"Error: %v\n"+output.ColorReset, err)
 			os.Exit(1)
 		}
 	}
@@ -63,7 +67,7 @@ func runGenerate() {
 	projectPath := filepath.Join(projectInput.OutputFolder, projectInput.Name)
 
 	if err := filesystem.CreateProjectStructure(projectPath, projectInput.SelectedFolders); err != nil {
-		fmt.Printf("%v\n", err)
+		fmt.Fprintf(os.Stderr, output.ColorRed+"Error: %v\n"+output.ColorReset, err)
 		os.Exit(1)
 	}
 
@@ -76,7 +80,7 @@ func runGenerate() {
 		}
 
 		if err := frontendGen.Generate(projectInput.Name); err != nil {
-			fmt.Printf("%v\n", err)
+			fmt.Fprintf(os.Stderr, output.ColorRed+"Error: %v\n"+output.ColorReset, err)
 			os.Exit(1)
 		}
 	}

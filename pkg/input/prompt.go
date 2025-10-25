@@ -22,17 +22,17 @@ func ReadProjectInput(reader *bufio.Reader, defaultOutputFolder string) (*Projec
 	projectName = strings.TrimSpace(projectName)
 
 	if projectName == "" {
-		return nil, models.Apps{}, output.NewError("project name cannot be empty")
+		return nil, models.Apps{}, fmt.Errorf("project name cannot be empty")
 	}
 
 	validName := regexp.MustCompile(`^[a-z0-9-]+$`)
 	if !validName.MatchString(projectName) {
-		return nil, models.Apps{}, output.NewError("project name must contain only lowercase letters, numbers, and hyphens")
+		return nil, models.Apps{}, fmt.Errorf("project name must contain only lowercase letters, numbers, and hyphens")
 	}
 
 	componentSelection, err := ReadComponentSelection()
 	if err != nil {
-		return nil, models.Apps{}, err
+		return nil, models.Apps{}, fmt.Errorf("failed to read component selection: %w", err)
 	}
 
 	fmt.Print("\n" + output.ColorCyan + "Output folder (default: " + defaultOutputFolder + "): " + output.ColorReset)
