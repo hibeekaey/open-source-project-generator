@@ -1,13 +1,19 @@
 package constants
 
 const (
-	AppMain  = "main"
-	AppAdmin = "admin"
-	AppHome  = "home"
+	FrontendAppMain  = "main"
+	FrontendAppAdmin = "admin"
+	FrontendAppHome  = "home"
 )
 
-var NextJSApps = []string{
-	AppMain,
-	AppAdmin,
-	AppHome,
+type AppsStruct struct {
+	Frontend []string
+}
+
+var Apps = AppsStruct{
+	Frontend: []string{
+		FrontendAppMain,
+		FrontendAppAdmin,
+		FrontendAppHome,
+	},
 }

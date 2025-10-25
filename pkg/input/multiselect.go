@@ -99,7 +99,6 @@ func MultiSelect(prompt string, options []string) ([]string, error) {
 				fmt.Print("\r" + output.ColorGreen + "  ✓ " + item + output.ColorReset + "\r\n")
 			}
 
-			fmt.Print("\r\n")
 			return result, nil
 
 		case buf[0] == 32:
