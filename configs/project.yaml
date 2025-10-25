@@ -2,10 +2,7 @@ project_name: my-project
 output_folder: output/generated
 
 components:
-  frontend:
-    - main
-    - admin
-    - home
+  frontend: true
   backend: true
   mobile: true
   deploy: true

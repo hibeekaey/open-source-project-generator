@@ -36,6 +36,8 @@ func runGenerate() {
 	var selectedApps []string
 
 	if configFile != "" {
+		fmt.Printf("%sUsing config file: %s%s\n\n", output.ColorCyan, configFile, output.ColorReset)
+
 		project, err := config.LoadProject(configFile)
 		if err != nil {
 			fmt.Printf("%v\n", output.NewError("failed to load config: %v", err))
@@ -56,8 +58,8 @@ func runGenerate() {
 			os.Exit(1)
 		}
 
-		if slices.Contains(projectInput.SelectedFolders, constants.FolderApp) {
-			selectedApps, err = input.MultiSelect("Select Next.js apps to create:", constants.NextJSApps)
+		if slices.Contains(projectInput.SelectedFolders, constants.ComponentFrontend) {
+			selectedApps, err = input.MultiSelect("Select Next.js apps to create:", constants.Apps.Frontend)
 			if err != nil {
 				fmt.Printf("%v\n", err)
 				os.Exit(1)
@@ -72,15 +74,15 @@ func runGenerate() {
 		os.Exit(1)
 	}
 
-	if slices.Contains(projectInput.SelectedFolders, constants.FolderApp) && len(selectedApps) > 0 {
-		nextjsGen := &generator.NextJSGenerator{
+	if slices.Contains(projectInput.SelectedFolders, constants.ComponentFrontend) && len(selectedApps) > 0 {
+		frontendGen := &generator.FrontendGenerator{
 			Version:    versions.Frontend.NextJS.Version,
 			ProjectDir: projectPath,
-			AppFolder:  constants.FolderApp,
+			Component:  constants.ComponentFrontend,
 			Apps:       selectedApps,
 		}
 
-		if err := nextjsGen.Generate(projectInput.Name); err != nil {
+		if err := frontendGen.Generate(projectInput.Name); err != nil {
 			fmt.Printf("%v\n", err)
 			os.Exit(1)
 		}

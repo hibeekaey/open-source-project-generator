@@ -9,15 +9,15 @@ import (
 	"github.com/cuesoftinc/open-source-project-generator/pkg/output"
 )
 
-type NextJSGenerator struct {
+type FrontendGenerator struct {
 	Version    string
 	ProjectDir string
-	AppFolder  string
+	Component  string
 	Apps       []string
 }
 
-func (g *NextJSGenerator) Generate(projectName string) error {
-	appPath := filepath.Join(g.ProjectDir, g.AppFolder)
+func (g *FrontendGenerator) Generate(projectName string) error {
+	appPath := filepath.Join(g.ProjectDir, g.Component)
 
 	for _, app := range g.Apps {
 		appName := projectName + "-" + app

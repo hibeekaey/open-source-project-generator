@@ -30,7 +30,7 @@ func ReadProjectInput(reader *bufio.Reader, defaultOutputFolder string) (*Projec
 		return nil, output.NewError("project name must contain only lowercase letters, numbers, and hyphens")
 	}
 
-	selectedFolders, err := MultiSelect("Select folders to create:", constants.ProjectFolders)
+	selectedFolders, err := MultiSelect("Select folders to create:", constants.ProjectComponents)
 	if err != nil {
 		return nil, err
 	}

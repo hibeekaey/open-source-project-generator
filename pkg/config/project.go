@@ -56,7 +56,7 @@ func LoadProject(path string) (*Project, error) {
 	switch frontendValue := cfg.Components.Frontend.(type) {
 	case []interface{}:
 		if len(frontendValue) > 0 {
-			project.Folders = append(project.Folders, constants.FolderApp)
+			project.Folders = append(project.Folders, constants.ComponentFrontend)
 			for _, app := range frontendValue {
 				if appStr, ok := app.(string); ok {
 					project.Apps = append(project.Apps, appStr)
@@ -65,26 +65,27 @@ func LoadProject(path string) (*Project, error) {
 		}
 	case bool:
 		if frontendValue {
-			project.Folders = append(project.Folders, constants.FolderApp)
+			project.Folders = append(project.Folders, constants.ComponentFrontend)
+			project.Apps = constants.Apps.Frontend
 		}
 	}
 	if cfg.Components.Backend {
-		project.Folders = append(project.Folders, constants.FolderCommonServer)
+		project.Folders = append(project.Folders, constants.ComponentBackend)
 	}
 	if cfg.Components.Mobile {
-		project.Folders = append(project.Folders, constants.FolderMobile)
+		project.Folders = append(project.Folders, constants.ComponentMobile)
 	}
 	if cfg.Components.Deploy {
-		project.Folders = append(project.Folders, constants.FolderDeploy)
+		project.Folders = append(project.Folders, constants.ComponentDeploy)
 	}
 	if cfg.Components.Docs {
-		project.Folders = append(project.Folders, constants.FolderDocs)
+		project.Folders = append(project.Folders, constants.ComponentDocs)
 	}
 	if cfg.Components.Scripts {
-		project.Folders = append(project.Folders, constants.FolderScripts)
+		project.Folders = append(project.Folders, constants.ComponentScripts)
 	}
 	if cfg.Components.Github {
-		project.Folders = append(project.Folders, constants.FolderGithub)
+		project.Folders = append(project.Folders, constants.ComponentGithub)
 	}
 
 	return project, nil
