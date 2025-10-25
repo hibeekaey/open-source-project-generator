@@ -22,6 +22,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      security-events: write
 
     steps:
       - name: Checkout code
@@ -82,7 +83,7 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: aquasecurity/trivy-action@0.33.1
         with:
-          image-ref: ${{ fromJSON(steps.build.outputs.metadata)['image.name'] }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
           format: "sarif"
           output: "trivy-results.sarif"
           severity: "CRITICAL,HIGH"
